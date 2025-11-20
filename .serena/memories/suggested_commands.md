@@ -1,6 +1,7 @@
 # Suggested Commands
 
 ## Development Server
+
 ```bash
 pnpm dev              # Start Expo dev server (all platforms)
 pnpm ios              # Launch in iOS simulator (macOS only)
@@ -10,6 +11,7 @@ pnpm start:clean      # Start with cleared Metro cache
 ```
 
 ## Quality Checks (Pre-commit/Pre-push)
+
 ```bash
 pnpm typecheck        # TypeScript type checking (REQUIRED before push)
 pnpm lint             # ESLint validation
@@ -18,6 +20,7 @@ pnpm format:check     # Check formatting without modifying
 ```
 
 ## Testing
+
 ```bash
 pnpm test                           # Run all Jest tests
 pnpm test:watch                     # Run in watch mode
@@ -29,6 +32,7 @@ pnpm maestro:record                 # Record new E2E flow
 ```
 
 ## Build & Deploy
+
 ```bash
 pnpm build:web        # Build static web bundle → dist/
 eas build --profile preview         # Preview build (Android + iOS)
@@ -36,12 +40,14 @@ eas build --profile production      # Production build
 ```
 
 ## Maintenance
+
 ```bash
 pnpm clean:metro      # Clear Metro bundler cache
 pnpm clean:all        # Nuclear: clear everything and reinstall
 ```
 
 ## System Utilities (Darwin/macOS)
+
 ```bash
 ls                    # List directory contents
 cd                    # Change directory
@@ -52,6 +58,7 @@ git log               # View commit history
 ```
 
 ## Single Test Execution
+
 ```bash
 # Run specific test file
 pnpm test -- components/Button.test.tsx

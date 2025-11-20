@@ -1,6 +1,7 @@
 # Project Structure
 
 ## Directory Layout
+
 ```
 Sobriety-Waypoint/
 ├── app/                    # Expo Router screens (file-based routing)
@@ -58,6 +59,7 @@ Sobriety-Waypoint/
 ```
 
 ## Key Files
+
 - `app.config.ts` - Expo configuration (bundle IDs, plugins, EAS project)
 - `tsconfig.json` - TypeScript configuration (strict mode, path aliases)
 - `eslint.config.js` - ESLint configuration
@@ -68,6 +70,7 @@ Sobriety-Waypoint/
 - `CLAUDE.md` - AI assistant guidance
 
 ## Routing Architecture
+
 - **File-based routing** via Expo Router
 - Routes map to files in `app/` directory
 - Route groups: `(tabs)/` for authenticated navigation
@@ -75,12 +78,14 @@ Sobriety-Waypoint/
 - Typed routes enabled in `app.config.ts`
 
 ## Authentication Flow (enforced in `app/_layout.tsx`)
+
 1. Unauthenticated user → `/login`
 2. User without profile → `/onboarding`
 3. User with incomplete profile → `/onboarding`
 4. Complete user → `/(tabs)` (main app)
 
 ## Data Flow
+
 - Supabase client (`lib/supabase.ts`) → single source for all DB operations
 - Database types (`types/database.ts`) → used throughout app
 - Context providers wrap root layout

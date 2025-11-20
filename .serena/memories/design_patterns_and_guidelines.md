@@ -1,7 +1,9 @@
 # Design Patterns & Guidelines
 
 ## Authentication Guard Pattern
+
 The root layout (`app/_layout.tsx`) enforces authentication flow:
+
 ```typescript
 // Check user state and route accordingly
 if (!user && inAuthGroup) {
@@ -16,7 +18,9 @@ if (!user && inAuthGroup) {
 **Key principle**: Never bypass auth guards. All routes are protected.
 
 ## Context Provider Pattern
+
 Root layout wraps entire app with providers:
+
 ```typescript
 <ErrorBoundary>
   <ThemeProvider>
@@ -28,11 +32,14 @@ Root layout wraps entire app with providers:
 ```
 
 **Access contexts via hooks**:
+
 - `useAuth()` → user, session, profile, auth methods
 - `useTheme()` → theme, isDark, setTheme
 
 ## Platform-Aware Storage Adapter
+
 `lib/supabase.ts` implements cross-platform storage:
+
 ```typescript
 const ExpoSecureStoreAdapter = {
   getItem: (key) => {
@@ -48,25 +55,27 @@ const ExpoSecureStoreAdapter = {
 **Pattern**: Check `Platform.OS` for platform-specific implementations.
 
 ## Typed Database Access
+
 All Supabase queries use generated types:
+
 ```typescript
 import { Profile } from '@/types/database';
-const { data } = await supabase
-  .from('profiles')
-  .select('*')
-  .single();
+const { data } = await supabase.from('profiles').select('*').single();
 ```
 
 **Never use `any` for database results** - types are canonical.
 
 ## Error Handling Strategy
+
 1. **Global**: Sentry SDK wraps root component
 2. **Component-level**: ErrorBoundary for React errors
 3. **Async operations**: Try-catch with user-friendly messages
 4. **Production-only tracking**: `if (!__DEV__)` guards Sentry calls
 
 ## Theme System
+
 ThemeContext provides centralized theme management:
+
 - System mode respects OS preference
 - Persists across sessions (SecureStore/localStorage)
 - Components use `useTheme()` hook for colors
@@ -74,7 +83,9 @@ ThemeContext provides centralized theme management:
 **Pattern**: Define colors in theme, not hardcoded in components.
 
 ## Supabase Real-time Subscriptions
+
 For live updates (messages, tasks):
+
 ```typescript
 const channel = supabase
   .channel('table-changes')
@@ -82,13 +93,17 @@ const channel = supabase
   .subscribe();
 
 // Cleanup
-return () => { channel.unsubscribe(); };
+return () => {
+  channel.unsubscribe();
+};
 ```
 
 **Remember**: Unsubscribe in cleanup to prevent memory leaks.
 
 ## Row Level Security (RLS)
+
 All database access governed by RLS policies in Supabase:
+
 - Users can only see their own data
 - Sponsor-sponsee relationships enforce access
 - No client-side permission checks needed
@@ -96,14 +111,16 @@ All database access governed by RLS policies in Supabase:
 **Trust RLS** - don't duplicate permission logic in frontend.
 
 ## Navigation Patterns
+
 Expo Router provides typed navigation:
+
 ```typescript
 import { useRouter } from 'expo-router';
 const router = useRouter();
 
-router.push('/profile');       // Add to stack
-router.replace('/login');      // Replace current
-router.back();                 // Go back
+router.push('/profile'); // Add to stack
+router.replace('/login'); // Replace current
+router.back(); // Go back
 ```
 
 **Use typed routes** - TypeScript will catch invalid paths.
@@ -111,14 +128,18 @@ router.back();                 // Go back
 ## Testing Patterns
 
 ### Component Testing
+
 Use `renderWithProviders` to wrap components with contexts:
+
 ```typescript
 import { renderWithProviders } from '@/test-utils';
 renderWithProviders(<MyComponent />);
 ```
 
 ### API Mocking
+
 MSW handlers in `__mocks__/` for Supabase calls:
+
 ```typescript
 rest.get('https://xyz.supabase.co/rest/v1/profiles', (req, res, ctx) => {
   return res(ctx.json([mockProfile]));
@@ -126,7 +147,9 @@ rest.get('https://xyz.supabase.co/rest/v1/profiles', (req, res, ctx) => {
 ```
 
 ### E2E Testing
+
 Maestro flows for critical paths:
+
 - Authentication flow
 - Task creation/completion
 - Messaging
