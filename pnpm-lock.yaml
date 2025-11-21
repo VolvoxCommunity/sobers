@@ -87,8 +87,8 @@ importers:
         specifier: ~15.0.9
         version: 15.0.9(expo@54.0.25)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))
       lucide-react-native:
-        specifier: ^0.553.0
-        version: 0.553.0(react-native-svg@15.15.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0)
+        specifier: ^0.554.0
+        version: 0.554.0(react-native-svg@15.15.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0)
       react:
         specifier: 19.2.0
         version: 19.2.0
@@ -3656,8 +3656,8 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react-native@0.553.0:
-    resolution: {integrity: sha512-8Ny42mSzJNW1obB08LtZxq0uQ9Kh0VeZvpbYPBRNUDWX/8uNva6JOapFRjS0cKpHz1Vz6cqMqkhLD9WMcx33jA==}
+  lucide-react-native@0.554.0:
+    resolution: {integrity: sha512-r9BIigpxb05BuU+FOZTDnLkHTdu2huC+h3ZkEdiM00HiSB5VzQjxYxkZK7s+FWxu5gsmmF2OcggElMfpO7SSrA==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-native: '*'
@@ -9510,7 +9510,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react-native@0.553.0(react-native-svg@15.15.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0):
+  lucide-react-native@0.554.0(react-native-svg@15.15.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.2.6)(react@19.2.0)
