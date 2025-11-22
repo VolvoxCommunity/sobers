@@ -51,13 +51,18 @@ export default function JourneyScreen() {
   const { theme } = useTheme();
   const { daysSober, loading: loadingDaysSober } = useDaysSober();
   // Calculate journey days from original sobriety date
+  // Shared utility function to calculate date difference in days
+  function getDateDiffInDays(date1: Date, date2: Date): number {
+    const diffTime = date2.getTime() - date1.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  }
+
   const journeyDays = useMemo(() => {
     if (!profile?.sobriety_date) return 0;
     const sobrietyDate = new Date(profile.sobriety_date);
     const today = new Date();
-    const diffTime = today.getTime() - sobrietyDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
+    return getDateDiffInDays(sobrietyDate, today);
   }, [profile?.sobriety_date]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
