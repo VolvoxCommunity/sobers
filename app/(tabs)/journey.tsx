@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -50,6 +50,15 @@ export default function JourneyScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
   const { daysSober, loading: loadingDaysSober } = useDaysSober();
+  // Calculate journey days from original sobriety date
+  const journeyDays = useMemo(() => {
+    if (!profile?.sobriety_date) return 0;
+    const sobrietyDate = new Date(profile.sobriety_date);
+    const today = new Date();
+    const diffTime = today.getTime() - sobrietyDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  }, [profile?.sobriety_date]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
