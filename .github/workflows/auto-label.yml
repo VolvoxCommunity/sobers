@@ -57,8 +57,6 @@ jobs:
             - `authentication` - Authentication related issues
             - `ci/cd` - CI/CD pipeline related
             - `refactor` - Code refactoring
-            - `priority: high` - High priority issue
-            - `priority: low` - Low priority issue
 
             **Instructions:**
 
