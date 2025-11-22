@@ -96,16 +96,12 @@ export function initializeSentry(): void {
 /**
  * Set user context for Sentry events
  */
-export function setSentryUser(userId: string, role?: string): void {
+export function setSentryUser(userId: string): void {
   if (!shouldInitialize()) return;
 
   Sentry.setUser({
     id: userId,
   });
-
-  if (role) {
-    Sentry.setTag('user.role', role);
-  }
 }
 
 /**

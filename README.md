@@ -113,8 +113,8 @@ pnpm build:web  # Static web build → dist/
 - Email/password ready out of the box
 - Google OAuth setup documented in `GOOGLE_OAUTH_SETUP.md`
 - Apple Sign In design lives in `docs/plans/2025-11-12-apple-signin-design.md`
-- Deep link scheme: `12stepstracker://`
-- Bundle IDs: `com.billchirico.12steptracker` (iOS) / `com.billchirico.twelvesteptracker` (Android)
+- Deep link scheme: `sobrietywaypoint://`
+- Bundle IDs: `com.volvox.sobrietywaypoint` (iOS) / `com.volvox.sobrietywaypoint` (Android)
 - Root layout enforces the flow: login → onboarding (profile + role) → authenticated tabs
 
 ## Observability & Privacy

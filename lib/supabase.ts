@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -12,41 +12,32 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-const ExpoSecureStoreAdapter = {
+const SupabaseStorageAdapter = {
   getItem: (key: string) => {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       return Promise.resolve(localStorage.getItem(key));
     }
-    if (Platform.OS !== 'web') {
-      return SecureStore.getItemAsync(key);
-    }
-    return Promise.resolve(null);
+    return AsyncStorage.getItem(key);
   },
   setItem: (key: string, value: string) => {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       localStorage.setItem(key, value);
       return Promise.resolve();
     }
-    if (Platform.OS !== 'web') {
-      return SecureStore.setItemAsync(key, value);
-    }
-    return Promise.resolve();
+    return AsyncStorage.setItem(key, value);
   },
   removeItem: (key: string) => {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       localStorage.removeItem(key);
       return Promise.resolve();
     }
-    if (Platform.OS !== 'web') {
-      return SecureStore.deleteItemAsync(key);
-    }
-    return Promise.resolve();
+    return AsyncStorage.removeItem(key);
   },
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: ExpoSecureStoreAdapter as any,
+    storage: SupabaseStorageAdapter as any,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',

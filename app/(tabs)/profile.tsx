@@ -185,11 +185,7 @@ export default function ProfileScreen() {
       setSponsorRelationships(asSponsee || []);
       setSponseeRelationships(asSponsor || []);
 
-      if (
-        (profile.role === 'sponsor' || profile.role === 'both') &&
-        asSponsor &&
-        asSponsor.length > 0
-      ) {
+      if (asSponsor && asSponsor.length > 0) {
         const stats: { [key: string]: { total: number; completed: number } } = {};
 
         for (const rel of asSponsor) {
@@ -399,6 +395,8 @@ export default function ProfileScreen() {
 
       if (updateError) {
         console.error('Error updating invite code:', updateError);
+        // Note: This error usually indicates a missing RLS policy in Supabase.
+        // Run scripts/fix_invite_codes_rls.sql to fix it.
       }
 
       await supabase.from('notifications').insert([
@@ -1322,18 +1320,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       marginBottom: 12,
-    },
-    roleBadge: {
-      backgroundColor: theme.primaryLight,
-      paddingHorizontal: 16,
-      paddingVertical: 6,
-      borderRadius: 16,
-    },
-    roleText: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.primary,
     },
     sobrietyCard: {
       backgroundColor: theme.card,

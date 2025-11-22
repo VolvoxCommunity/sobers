@@ -1,4 +1,3 @@
-export type UserRole = 'sponsor' | 'sponsee' | 'both';
 export type RelationshipStatus = 'pending' | 'active' | 'inactive';
 export type TaskStatus = 'assigned' | 'in_progress' | 'completed';
 export type NotificationType =
@@ -15,7 +14,6 @@ export interface Profile {
   last_initial: string;
   phone?: string;
   avatar_url?: string;
-  role?: UserRole;
   sobriety_date?: string;
   bio?: string;
   timezone: string;

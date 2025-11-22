@@ -13,23 +13,44 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
-import { Calendar } from 'lucide-react-native';
+import { Calendar, LogOut } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function OnboardingScreen() {
   const { theme } = useTheme();
-  const { user, profile, refreshProfile } = useAuth();
-  const [step, setStep] = useState(1);
-  const [firstName, setFirstName] = useState('');
-  const [lastInitial, setLastInitial] = useState('');
-  const [sobrietyDate, setSobrietyDate] = useState(new Date());
+  const { user, profile, refreshProfile, signOut } = useAuth();
+  const router = useRouter();
+
+  const needsName =
+    profile?.first_name === 'User' ||
+    !profile?.first_name ||
+    !profile?.last_initial ||
+    profile?.last_initial === 'U';
+
+  const [step, setStep] = useState(needsName ? 1 : 2);
+  const [firstName, setFirstName] = useState(
+    profile?.first_name !== 'User' ? profile?.first_name || '' : ''
+  );
+  const [lastInitial, setLastInitial] = useState(
+    profile?.last_initial !== 'U' ? profile?.last_initial || '' : ''
+  );
+  const [sobrietyDate, setSobrietyDate] = useState(
+    profile?.sobriety_date ? new Date(profile.sobriety_date) : new Date()
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const needsName = profile?.first_name === 'User' || !profile?.first_name;
 
   // Ref for field navigation
   const lastInitialRef = useRef<TextInput>(null);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.replace('/login');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   const handleComplete = async () => {
     if (!user) return;
@@ -37,7 +58,6 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       const updateData: any = {
-        role: 'both',
         sobriety_date: sobrietyDate.toISOString().split('T')[0],
       };
 
@@ -129,6 +149,11 @@ export default function OnboardingScreen() {
           >
             <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <LogOut size={20} color={theme.textSecondary} />
+            <Text style={styles.signOutText}>Back to Sign In</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     );
@@ -215,6 +240,13 @@ export default function OnboardingScreen() {
             <Text style={styles.buttonText}>{loading ? 'Setting up...' : 'Complete Setup'}</Text>
           </TouchableOpacity>
         </View>
+
+        {!needsName && (
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <LogOut size={20} color={theme.textSecondary} />
+            <Text style={styles.signOutText}>Back to Sign In</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );
@@ -398,5 +430,19 @@ const createStyles = (theme: any) =>
     },
     fullWidthButton: {
       flex: 1,
+    },
+    signOutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 24,
+      padding: 12,
+    },
+    signOutText: {
+      marginLeft: 8,
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      fontWeight: '600',
     },
   });

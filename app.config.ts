@@ -29,9 +29,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     icon: './assets/images/logo.png',
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
-      foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
+      foregroundImage: './assets/images/logo.png',
+      backgroundImage: './assets/images/logo.png',
+      monochromeImage: './assets/images/logo.png',
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,

@@ -70,13 +70,24 @@ function RootLayoutNav() {
     const inOnboarding = segments[0] === 'onboarding';
     const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup';
 
+    const DEFAULT_FIRST_NAME = 'User';
+    const DEFAULT_LAST_INITIAL = 'U';
+
+    const hasName =
+      profile?.first_name &&
+      profile.first_name !== DEFAULT_FIRST_NAME &&
+      profile.last_initial &&
+      profile.last_initial !== DEFAULT_LAST_INITIAL;
+    const hasSobrietyDate = !!profile?.sobriety_date;
+    const isProfileComplete = hasName && hasSobrietyDate;
+
     if (!user && inAuthGroup) {
       router.replace('/login');
     } else if (!user && !inAuthScreen) {
       router.replace('/login');
-    } else if (user && profile && profile.sobriety_date && (inAuthScreen || inOnboarding)) {
+    } else if (user && profile && isProfileComplete && (inAuthScreen || inOnboarding)) {
       router.replace('/(tabs)');
-    } else if (user && profile && !profile.sobriety_date && !inOnboarding) {
+    } else if (user && profile && !isProfileComplete && !inOnboarding) {
       router.replace('/onboarding');
     } else if (user && !profile && !inOnboarding) {
       router.replace('/onboarding');

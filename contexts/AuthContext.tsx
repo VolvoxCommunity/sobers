@@ -116,11 +116,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Set loading to true when session exists to prevent routing with incomplete data
-      if (session?.user) {
-        setLoading(true);
-      }
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
 
+        if (session?.user) {
+          setLoading(true);
+          await createOAuthProfileIfNeeded(session.user);
+          await fetchProfile(session.user.id);
+          setLoading(false);
+        }
+      });
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -140,9 +148,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update Sentry context when profile changes
   useEffect(() => {
     if (profile) {
-      setSentryUser(profile.id, profile.role);
+      setSentryUser(profile.id);
       setSentryContext('profile', {
-        role: profile.role,
+        email: profile.email,
       });
     } else {
       clearSentryUser();
@@ -168,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } else {
       const redirectUrl = makeRedirectUri({
-        scheme: 'twelvesteptracker',
+        scheme: 'sobrietywaypoint',
         path: 'auth/callback',
       });
 
@@ -213,8 +221,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('[Google Auth] Hash access_token:', hashParams.get('access_token'));
           console.log('[Google Auth] Hash refresh_token:', hashParams.get('refresh_token'));
 
-          const access_token = url.searchParams.get('access_token');
-          const refresh_token = url.searchParams.get('refresh_token');
+          let access_token = url.searchParams.get('access_token');
+          let refresh_token = url.searchParams.get('refresh_token');
+
+          if (!access_token || !refresh_token) {
+            const hashParams = new URLSearchParams(url.hash.substring(1));
+            access_token = hashParams.get('access_token');
+            refresh_token = hashParams.get('refresh_token');
+          }
 
           if (access_token && refresh_token) {
             console.log('[Google Auth] Tokens found in query params, setting session');
