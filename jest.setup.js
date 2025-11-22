@@ -27,6 +27,8 @@ jest.mock('react-native', () => {
     TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
+    ActivityIndicator: ({ size, color, ...props }) =>
+      React.createElement('ActivityIndicator', { size, color, ...props }),
     Alert: {
       alert: jest.fn(),
     },
