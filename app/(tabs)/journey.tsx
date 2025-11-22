@@ -49,7 +49,7 @@ interface TimelineEvent {
 export default function JourneyScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
-  const { daysSober, loading: loadingDaysSober } = useDaysSober();
+  const { daysSober, hasSlipUps, mostRecentSlipUp, loading: loadingDaysSober } = useDaysSober();
   // Calculate journey days from original sobriety date
   // Shared utility function to calculate date difference in days
   function getDateDiffInDays(date1: Date, date2: Date): number {
@@ -67,7 +67,6 @@ export default function JourneyScreen() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasSlipUps, setHasSlipUps] = useState(false);
 
   const fetchTimelineData = useCallback(async () => {
     if (!profile) return;
@@ -91,7 +90,7 @@ export default function JourneyScreen() {
         });
       }
 
-      // 2. Fetch slip ups
+      // 2. Fetch slip ups for timeline events
       const { data: slipUps, error: slipUpsError } = await supabase
         .from('slip_ups')
         .select('*')
@@ -99,9 +98,6 @@ export default function JourneyScreen() {
         .order('slip_up_date', { ascending: false });
 
       if (slipUpsError) throw slipUpsError;
-
-      // Track if user has any slip-ups
-      setHasSlipUps(slipUps ? slipUps.length > 0 : false);
 
       slipUps?.forEach((slipUp: SlipUp) => {
         timelineEvents.push({
@@ -198,9 +194,7 @@ export default function JourneyScreen() {
 
       // 6. Calculate sobriety milestones from current streak
       if (profile.sobriety_date) {
-        // Determine streak start date (most recent slip-up or original sobriety date)
-        // Assumption: slipUps[0] is the most recent slip-up because slipUps is already sorted in reverse chronological order.
-        const mostRecentSlipUp = slipUps && slipUps.length > 0 ? slipUps[0] : null;
+        // Use mostRecentSlipUp from useDaysSober hook for consistency
         const streakStartDate = mostRecentSlipUp
           ? new Date(mostRecentSlipUp.recovery_restart_date)
           : new Date(profile.sobriety_date);
@@ -250,7 +244,7 @@ export default function JourneyScreen() {
     } finally {
       setLoading(false);
     }
-  }, [profile, theme]);
+  }, [profile, theme, mostRecentSlipUp]);
 
   useFocusEffect(
     useCallback(() => {

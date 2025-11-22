@@ -9,6 +9,7 @@ export interface DaysSoberResult {
   journeyStartDate: string | null;
   currentStreakStartDate: string | null;
   hasSlipUps: boolean;
+  mostRecentSlipUp: SlipUp | null;
   loading: boolean;
   error: PostgrestError | Error | null;
 }
@@ -101,6 +102,7 @@ export function useDaysSober(userId?: string): DaysSoberResult {
       journeyStartDate: sobrietyDate || null,
       currentStreakStartDate: calculationDate,
       hasSlipUps: mostRecentSlipUp !== null,
+      mostRecentSlipUp,
       loading,
       error,
     };

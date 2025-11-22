@@ -72,7 +72,15 @@ describe('JourneyScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useAuth as jest.Mock).mockReturnValue({ profile: mockProfile });
-    (useDaysSober as jest.Mock).mockReturnValue({ daysSober: 100, loading: false });
+    (useDaysSober as jest.Mock).mockReturnValue({
+      daysSober: 100,
+      hasSlipUps: false,
+      mostRecentSlipUp: null,
+      journeyStartDate: '2024-01-01',
+      currentStreakStartDate: '2024-01-01',
+      loading: false,
+      error: null,
+    });
   });
 
   const setupSupabaseMock = (slipUps: any[] = [], steps: any[] = [], tasks: any[] = []) => {
@@ -121,8 +129,16 @@ describe('JourneyScreen', () => {
     ];
     setupSupabaseMock(slipUps, [], []);
 
-    // Update days sober to reflect current streak
-    (useDaysSober as jest.Mock).mockReturnValue({ daysSober: 50, loading: false });
+    // Update days sober to reflect current streak with slip-up
+    (useDaysSober as jest.Mock).mockReturnValue({
+      daysSober: 50,
+      hasSlipUps: true,
+      mostRecentSlipUp: slipUps[0],
+      journeyStartDate: '2024-01-01',
+      currentStreakStartDate: '2024-02-02',
+      loading: false,
+      error: null,
+    });
 
     render(<JourneyScreen />);
 
