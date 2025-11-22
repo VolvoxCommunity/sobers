@@ -467,6 +467,33 @@ const createStyles = (theme: any) =>
       color: theme.textSecondary,
       marginTop: 4,
     },
+    statMainDual: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      gap: 16,
+      marginBottom: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    statMainColumn: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 8,
+    },
+    statMainNumberSmall: {
+      fontSize: 32,
+      fontFamily: theme.fontRegular,
+      fontWeight: '700',
+      color: theme.primary,
+    },
+    statMainLabelSmall: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginTop: 4,
+      textAlign: 'center',
+    },
     statRow: {
       flexDirection: 'row',
       gap: 16,
