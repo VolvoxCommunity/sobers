@@ -199,6 +199,7 @@ export default function JourneyScreen() {
       // 6. Calculate sobriety milestones from current streak
       if (profile.sobriety_date) {
         // Determine streak start date (most recent slip-up or original sobriety date)
+        // Assumption: slipUps[0] is the most recent slip-up because slipUps is already sorted in reverse chronological order.
         const mostRecentSlipUp = slipUps && slipUps.length > 0 ? slipUps[0] : null;
         const streakStartDate = mostRecentSlipUp
           ? new Date(mostRecentSlipUp.recovery_restart_date)
