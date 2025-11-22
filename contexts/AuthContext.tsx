@@ -116,6 +116,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Set loading to true when session exists to prevent routing with incomplete data
+      if (session?.user) {
+        setLoading(true);
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
 
