@@ -47,8 +47,14 @@ export default function OnboardingScreen() {
     try {
       await signOut();
       router.replace('/login');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
+      await signOut();
+      router.replace('/login');
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert('Error', 'An unknown error occurred');
+      }
     }
   };
 
@@ -57,7 +63,11 @@ export default function OnboardingScreen() {
 
     setLoading(true);
     try {
-      const updateData: any = {
+      const updateData: {
+        sobriety_date: string;
+        first_name?: string;
+        last_initial?: string;
+      } = {
         sobriety_date: sobrietyDate.toISOString().split('T')[0],
       };
 
@@ -72,11 +82,14 @@ export default function OnboardingScreen() {
 
       await refreshProfile();
       router.replace('/(tabs)');
-    } catch (error: any) {
+      await refreshProfile();
+      router.replace('/(tabs)');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update profile';
       if (Platform.OS === 'web') {
-        window.alert('Error: ' + (error.message || 'Failed to update profile'));
+        window.alert('Error: ' + message);
       } else {
-        Alert.alert('Error', error.message || 'Failed to update profile');
+        Alert.alert('Error', message);
       }
     } finally {
       setLoading(false);

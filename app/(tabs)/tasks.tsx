@@ -16,7 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { Task, Profile } from '@/types/database';
 import { CheckCircle, Circle, X, Calendar, Plus, Clock, Trash2 } from 'lucide-react-native';
@@ -63,6 +63,7 @@ export default function TasksScreen() {
   const [manageTasks, setManageTasks] = useState<Task[]>([]);
   const [sponsees, setSponsees] = useState<Profile[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [preselectedSponseeId, setPreselectedSponseeId] = useState<string | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<'all' | 'assigned' | 'completed'>('all');
   const [selectedSponseeFilter, setSelectedSponseeFilter] = useState<string>('all');
 
@@ -698,6 +699,7 @@ export default function TasksScreen() {
                       <TouchableOpacity
                         style={styles.addTaskButton}
                         onPress={() => {
+                          setPreselectedSponseeId(sponseeId);
                           setShowCreateModal(true);
                         }}
                       >
@@ -806,7 +808,7 @@ export default function TasksScreen() {
 // =============================================================================
 // Styles
 // =============================================================================
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

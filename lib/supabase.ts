@@ -15,7 +15,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Check if we're in a browser/client environment (not SSR/Node.js)
 const isClient = typeof window !== 'undefined';
 
-const SupabaseStorageAdapter = {
+// Define the storage interface expected by Supabase Auth
+interface AuthStorage {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+}
+
+const SupabaseStorageAdapter: AuthStorage = {
   getItem: (key: string) => {
     if (!isClient) {
       // During SSR, return null (no session)
@@ -57,7 +64,7 @@ function getSupabaseClient(): SupabaseClient {
   if (!supabaseInstance) {
     supabaseInstance = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        storage: SupabaseStorageAdapter as any,
+        storage: SupabaseStorageAdapter,
         autoRefreshToken: isClient,
         persistSession: isClient,
         detectSessionInUrl: isClient && Platform.OS === 'web',
@@ -70,6 +77,11 @@ function getSupabaseClient(): SupabaseClient {
 // Export a Proxy to allow lazy initialization
 export const supabase = new Proxy({} as SupabaseClient, {
   get: (_, prop) => {
-    return (getSupabaseClient() as any)[prop];
+    const client = getSupabaseClient();
+    const value = (client as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
   },
 });

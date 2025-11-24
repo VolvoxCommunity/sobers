@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { TaskTemplate, Profile } from '@/types/database';
+import { ThemeColors } from '@/contexts/ThemeContext';
 import { X, ChevronDown, Calendar } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -22,7 +23,7 @@ interface TaskCreationModalProps {
   sponsorId: string;
   sponsees: Profile[];
   preselectedSponseeId?: string;
-  theme: any;
+  theme: ThemeColors;
 }
 
 export default function TaskCreationModal({
@@ -109,7 +110,7 @@ export default function TaskCreationModal({
     setIsSubmitting(true);
 
     try {
-      const taskData: any = {
+      const taskData = {
         sponsor_id: sponsorId,
         sponsee_id: selectedSponseeId,
         step_number: selectedStepNumber || null,
@@ -139,7 +140,7 @@ export default function TaskCreationModal({
       resetForm();
       onTaskCreated();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating task:', err);
       setError('Failed to create task. Please try again.');
     } finally {
@@ -434,7 +435,7 @@ export default function TaskCreationModal({
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     modalOverlay: {
       flex: 1,
