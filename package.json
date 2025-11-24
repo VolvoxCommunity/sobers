@@ -52,7 +52,7 @@
     "expo-updates": "~29.0.13",
     "expo-web-browser": "~15.0.9",
     "lucide-react-native": "^0.554.0",
-    "react": "19.1.0",
+    "react": "19.2.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.29.1",
@@ -67,7 +67,7 @@
   "devDependencies": {
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
-    "@types/react": "~19.1.17",
+    "@types/react": "~19.2.7",
     "babel-jest": "^29.7.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
