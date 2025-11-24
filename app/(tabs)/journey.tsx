@@ -182,8 +182,10 @@ export default function JourneyScreen() {
       if (profile.sobriety_date) {
         const sobrietyDate = new Date(profile.sobriety_date);
         const today = new Date();
-        const daysSober = Math.floor(
-          (today.getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24)
+        // Prevent negative days (guard against future dates from timezone issues or data entry errors)
+        const daysSober = Math.max(
+          0,
+          Math.floor((today.getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24))
         );
 
         const milestones = [
