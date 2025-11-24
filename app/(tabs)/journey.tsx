@@ -200,7 +200,7 @@ export default function JourneyScreen() {
 
       // 6. Calculate sobriety milestones from current streak
       // Use daysSober from hook for consistency (handles date calculations and edge cases)
-      if (profile.sobriety_date && daysSober >= 0) {
+      if (profile.sobriety_date) {
         // Use mostRecentSlipUp from useDaysSober hook for milestone dates
         const streakStartDate = mostRecentSlipUp
           ? new Date(mostRecentSlipUp.recovery_restart_date)
