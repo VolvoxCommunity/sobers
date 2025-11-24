@@ -74,6 +74,7 @@ describe('JourneyScreen', () => {
     (useAuth as jest.Mock).mockReturnValue({ profile: mockProfile });
     (useDaysSober as jest.Mock).mockReturnValue({
       daysSober: 100,
+      journeyDays: 100,
       hasSlipUps: false,
       mostRecentSlipUp: null,
       journeyStartDate: '2024-01-01',
@@ -132,6 +133,7 @@ describe('JourneyScreen', () => {
     // Update days sober to reflect current streak with slip-up
     (useDaysSober as jest.Mock).mockReturnValue({
       daysSober: 50,
+      journeyDays: 100,
       hasSlipUps: true,
       mostRecentSlipUp: slipUps[0],
       journeyStartDate: '2024-01-01',
