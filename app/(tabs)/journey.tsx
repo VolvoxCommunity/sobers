@@ -96,7 +96,7 @@ export default function JourneyScreen() {
         });
       }
 
-      // 2. Fetch slip ups for timeline events
+      // 2. Fetch slip ups for timeline events (display only - milestone calculation uses hook data)
       const { data: slipUps, error: slipUpsError } = await supabase
         .from('slip_ups')
         .select('*')

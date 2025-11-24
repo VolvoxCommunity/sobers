@@ -147,8 +147,10 @@ describe('JourneyScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('Current Streak')).toBeTruthy();
       expect(screen.getByText('Journey Started')).toBeTruthy();
-      // 50 days streak
+      // 50 days current streak
       expect(screen.getByText('50')).toBeTruthy();
+      // 100 days journey total
+      expect(screen.getByText('100')).toBeTruthy();
     });
   });
 
