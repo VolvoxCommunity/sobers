@@ -121,22 +121,24 @@ export default function ManageTasksScreen() {
   };
 
   const getTaskStats = () => {
+    const now = new Date();
     const total = tasks.length;
     const assigned = tasks.filter((t) => t.status === 'assigned').length;
     const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
     const completed = tasks.filter((t) => t.status === 'completed').length;
     const overdue = tasks.filter(
-      (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed'
+      (t) => t.due_date && new Date(t.due_date) < now && t.status !== 'completed'
     ).length;
 
     return { total, assigned, inProgress, completed, overdue };
   };
 
-  const isOverdue = (task: Task) => {
+  const isOverdue = (task: Task, now: Date = new Date()) => {
     if (!task.due_date || task.status === 'completed') return false;
-    return new Date(task.due_date) < new Date();
+    return new Date(task.due_date) < now;
   };
 
+  const now = new Date();
   const stats = getTaskStats();
   const filteredTasks = getFilteredTasks();
   const styles = createStyles(theme);
@@ -330,7 +332,7 @@ export default function ManageTasksScreen() {
                 {sponseeTasks.map((task) => (
                   <View
                     key={task.id}
-                    style={[styles.taskCard, isOverdue(task) && styles.taskCardOverdue]}
+                    style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
                   >
                     <View style={styles.taskHeader}>
                       <View style={styles.stepBadge}>
@@ -338,7 +340,7 @@ export default function ManageTasksScreen() {
                       </View>
                       {task.status === 'completed' ? (
                         <CheckCircle size={20} color="#10b981" />
-                      ) : isOverdue(task) ? (
+                      ) : isOverdue(task, now) ? (
                         <Clock size={20} color="#ef4444" />
                       ) : (
                         <Clock size={20} color={theme.textSecondary} />
@@ -354,12 +356,12 @@ export default function ManageTasksScreen() {
                       <View style={styles.taskMeta}>
                         <Calendar
                           size={14}
-                          color={isOverdue(task) ? '#ef4444' : theme.textSecondary}
+                          color={isOverdue(task, now) ? '#ef4444' : theme.textSecondary}
                         />
                         <Text
                           style={[
                             styles.taskMetaText,
-                            isOverdue(task) && styles.taskMetaTextOverdue,
+                            isOverdue(task, now) && styles.taskMetaTextOverdue,
                           ]}
                         >
                           Due {new Date(task.due_date).toLocaleDateString()}
