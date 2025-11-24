@@ -120,6 +120,11 @@ export default function ManageTasksScreen() {
     return filtered;
   };
 
+  /**
+   * Calculates task statistics including total, assigned, in progress, completed, and overdue counts.
+   *
+   * @returns Object containing task statistics
+   */
   const getTaskStats = () => {
     const now = new Date();
     const total = tasks.length;
@@ -133,6 +138,13 @@ export default function ManageTasksScreen() {
     return { total, assigned, inProgress, completed, overdue };
   };
 
+  /**
+   * Checks if a task is overdue.
+   *
+   * @param task - The task to check
+   * @param now - Current date/time for comparison (defaults to new Date() if not provided)
+   * @returns True if the task is overdue, false otherwise
+   */
   const isOverdue = (task: Task, now: Date = new Date()) => {
     if (!task.due_date || task.status === 'completed') return false;
     return new Date(task.due_date) < now;

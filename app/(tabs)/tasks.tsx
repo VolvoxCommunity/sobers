@@ -785,7 +785,13 @@ export default function TasksScreen() {
 
           {/* FAB */}
           {sponsees.length > 0 && (
-            <TouchableOpacity style={styles.fab} onPress={() => setShowCreateModal(true)}>
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={() => {
+                setPreselectedSponseeId(undefined);
+                setShowCreateModal(true);
+              }}
+            >
               <Plus size={24} color="#ffffff" />
             </TouchableOpacity>
           )}
@@ -793,10 +799,14 @@ export default function TasksScreen() {
           {/* Task Creation Modal */}
           <TaskCreationModal
             visible={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
+            onClose={() => {
+              setShowCreateModal(false);
+              setPreselectedSponseeId(undefined);
+            }}
             onTaskCreated={fetchManageData}
             sponsorId={profile?.id || ''}
             sponsees={sponsees}
+            preselectedSponseeId={preselectedSponseeId}
             theme={theme}
           />
         </>
