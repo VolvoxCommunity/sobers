@@ -105,6 +105,7 @@ android/local.properties
 
 # Git worktrees
 worktrees/
+.worktrees/
 
 # Expo environment types
 expo-env.d.ts

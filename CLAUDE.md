@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
 
 Use [Conventional Branch](https://conventional-branch.github.io/) naming format:
 
-```
+```text
 <type>/<description>
 ```
 
@@ -501,7 +501,7 @@ Examples:
 
 Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format with **required scope**:
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body]
@@ -535,7 +535,7 @@ Common scopes for this project:
 
 Examples:
 
-```
+```text
 feat(journey): add dual metrics display for slip-ups
 fix(supabase): make client SSR-compatible for static builds
 refactor(auth): simplify session refresh logic
@@ -546,7 +546,7 @@ docs(readme): update setup instructions
 
 Breaking changes use `!` after scope:
 
-```
+```text
 feat(auth)!: migrate to new session storage format
 ```
 
