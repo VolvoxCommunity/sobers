@@ -199,18 +199,12 @@ export default function JourneyScreen() {
       }
 
       // 6. Calculate sobriety milestones from current streak
-      if (profile.sobriety_date) {
-        // Use mostRecentSlipUp from useDaysSober hook for consistency
+      // Use daysSober from hook for consistency (handles date calculations and edge cases)
+      if (profile.sobriety_date && daysSober >= 0) {
+        // Use mostRecentSlipUp from useDaysSober hook for milestone dates
         const streakStartDate = mostRecentSlipUp
           ? new Date(mostRecentSlipUp.recovery_restart_date)
           : new Date(profile.sobriety_date);
-
-        const today = new Date();
-        // Prevent negative days (guard against future dates from timezone issues or data entry errors)
-        const daysSinceStreakStart = Math.max(
-          0,
-          Math.floor((today.getTime() - streakStartDate.getTime()) / (1000 * 60 * 60 * 24))
-        );
 
         const milestones = [
           { days: 30, label: '30 Days Sober' },
@@ -223,7 +217,7 @@ export default function JourneyScreen() {
         ];
 
         milestones.forEach(({ days, label }) => {
-          if (daysSinceStreakStart >= days) {
+          if (daysSober >= days) {
             const milestoneDate = new Date(streakStartDate);
             milestoneDate.setDate(milestoneDate.getDate() + days);
 
@@ -250,7 +244,7 @@ export default function JourneyScreen() {
     } finally {
       setLoading(false);
     }
-  }, [profile, theme, mostRecentSlipUp]);
+  }, [profile, theme, mostRecentSlipUp, daysSober]);
 
   useFocusEffect(
     useCallback(() => {

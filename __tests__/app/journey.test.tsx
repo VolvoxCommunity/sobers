@@ -197,4 +197,108 @@ describe('JourneyScreen', () => {
       expect(screen.getByText('Your journey is just beginning')).toBeTruthy();
     });
   });
+
+  it('calculates milestones from current streak start when slip-ups exist', async () => {
+    const slipUps = [
+      {
+        id: 'slip-1',
+        slip_up_date: '2024-02-01',
+        recovery_restart_date: '2024-02-02',
+        notes: 'Test slip',
+      },
+    ];
+    setupSupabaseMock(slipUps, [], []);
+
+    // Mock 35 days since recovery restart (should show 30-day milestone)
+    (useDaysSober as jest.Mock).mockReturnValue({
+      daysSober: 35,
+      journeyDays: 66, // Total days from original sobriety_date
+      hasSlipUps: true,
+      mostRecentSlipUp: slipUps[0],
+      journeyStartDate: '2024-01-01',
+      currentStreakStartDate: '2024-02-02',
+      loading: false,
+      error: null,
+    });
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      // Should display 30-day milestone (calculated from recovery_restart_date, not original sobriety_date)
+      expect(screen.getByText('30 Days Sober')).toBeTruthy();
+      // Should NOT display 60-day milestone (only 35 days since streak start)
+      expect(screen.queryByText('60 Days Sober')).toBeNull();
+    });
+  });
+
+  it('uses only the most recent slip-up for milestone calculation when multiple exist', async () => {
+    const slipUps = [
+      {
+        id: 'slip-2',
+        slip_up_date: '2024-03-01',
+        recovery_restart_date: '2024-03-02',
+        notes: 'Most recent',
+      },
+      {
+        id: 'slip-1',
+        slip_up_date: '2024-02-01',
+        recovery_restart_date: '2024-02-02',
+        notes: 'Older slip',
+      },
+    ];
+    setupSupabaseMock(slipUps, [], []);
+
+    // Mock 40 days since most recent recovery restart
+    (useDaysSober as jest.Mock).mockReturnValue({
+      daysSober: 40,
+      journeyDays: 100,
+      hasSlipUps: true,
+      mostRecentSlipUp: slipUps[0], // Most recent slip-up
+      journeyStartDate: '2024-01-01',
+      currentStreakStartDate: '2024-03-02', // From most recent recovery_restart_date
+      loading: false,
+      error: null,
+    });
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      // Should show 30-day milestone (40 days > 30)
+      expect(screen.getByText('30 Days Sober')).toBeTruthy();
+      // Should NOT show 60-day milestone (only 40 days since most recent restart)
+      expect(screen.queryByText('60 Days Sober')).toBeNull();
+    });
+  });
+
+  it('handles edge case of 0 days since streak start', async () => {
+    const slipUps = [
+      {
+        id: 'slip-1',
+        slip_up_date: new Date().toISOString().split('T')[0], // Today
+        recovery_restart_date: new Date().toISOString().split('T')[0], // Today
+        notes: 'Same day restart',
+      },
+    ];
+    setupSupabaseMock(slipUps, [], []);
+
+    (useDaysSober as jest.Mock).mockReturnValue({
+      daysSober: 0,
+      journeyDays: 100,
+      hasSlipUps: true,
+      mostRecentSlipUp: slipUps[0],
+      journeyStartDate: '2024-01-01',
+      currentStreakStartDate: new Date().toISOString().split('T')[0],
+      loading: false,
+      error: null,
+    });
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      // Should display streak as 0 (may have multiple 0s from stats)
+      expect(screen.getAllByText('0').length).toBeGreaterThan(0);
+      // Should NOT show any milestones (0 days = no milestones reached)
+      expect(screen.queryByText('30 Days Sober')).toBeNull();
+    });
+  });
 });
