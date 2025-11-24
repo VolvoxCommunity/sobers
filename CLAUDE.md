@@ -365,6 +365,59 @@ Examples:
 - `refactor/theme-context-hooks`
 - `chore/bump-expo-sdk`
 
+**Commit Messages (Conventional Commits):**
+
+Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format with **required scope**:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Types (same as branch naming):
+
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation only
+- `style` - Code style/formatting (not CSS)
+- `refactor` - Code refactoring
+- `test` - Adding/updating tests
+- `chore` - Maintenance tasks
+- `perf` - Performance improvements
+- `ci` - CI/CD changes
+
+Common scopes for this project:
+
+- `auth` - Authentication (login, signup, session)
+- `journey` - Journey/timeline screen
+- `tasks` - Task management
+- `steps` - 12-step content
+- `profile` - User profile
+- `supabase` - Database/Supabase client
+- `theme` - Theming system
+- `deps` - Dependencies
+- `config` - Configuration files
+
+Examples:
+
+```
+feat(journey): add dual metrics display for slip-ups
+fix(supabase): make client SSR-compatible for static builds
+refactor(auth): simplify session refresh logic
+test(journey): add coverage for timeline events
+chore(deps): bump expo-router to v6.0.15
+docs(readme): update setup instructions
+```
+
+Breaking changes use `!` after scope:
+
+```
+feat(auth)!: migrate to new session storage format
+```
+
 ## Common Pitfalls
 
 1. **Don't bypass auth guards** - always test routes with different auth states
