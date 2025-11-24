@@ -11,7 +11,7 @@ describe('SegmentedControl', () => {
   };
 
   it('renders all segments', () => {
-    let component: any;
+    let component: ReturnType<typeof renderer.create>;
     act(() => {
       component = renderer.create(
         <ThemeProvider>

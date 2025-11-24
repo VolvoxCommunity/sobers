@@ -62,6 +62,7 @@ const darkTheme: ThemeColors = {
   text: '#f9fafb',
   textSecondary: '#9ca3af',
   textTertiary: '#6b7280',
+  textOnPrimary: '#ffffff',
   primary: '#007AFF',
   primaryLight: '#003d7a',
   border: '#374151',
