@@ -214,7 +214,8 @@ export default function TaskCreationModal({
                       }}
                     >
                       <Text style={styles.dropdownItemText}>
-                        {sponsee.first_name} {sponsee.last_initial}.
+                        {sponsee?.first_name}
+                        {sponsee?.last_initial ? ` ${sponsee?.last_initial}.` : ''}
                       </Text>
                     </TouchableOpacity>
                   ))}

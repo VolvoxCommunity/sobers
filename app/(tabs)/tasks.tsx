@@ -638,7 +638,8 @@ export default function TasksScreen() {
                         selectedSponseeFilter === sponsee.id && styles.filterChipTextActive,
                       ]}
                     >
-                      {sponsee.first_name} {sponsee.last_initial}.
+                      {sponsee?.first_name}
+                      {sponsee?.last_initial ? ` ${sponsee?.last_initial}.` : ''}
                     </Text>
                   </TouchableOpacity>
                 ))}
