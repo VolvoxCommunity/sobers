@@ -23,6 +23,7 @@ export default function ManageTasksScreen() {
   const [sponsees, setSponsees] = useState<Profile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [preselectedSponseeId, setPreselectedSponseeId] = useState<string | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<'all' | 'assigned' | 'completed'>('all');
   const [selectedSponseeFilter, setSelectedSponseeFilter] = useState<string>('all');
 
@@ -320,6 +321,7 @@ export default function ManageTasksScreen() {
                   <TouchableOpacity
                     style={styles.addTaskButton}
                     onPress={() => {
+                      setPreselectedSponseeId(sponseeId);
                       setShowCreateModal(true);
                     }}
                   >
@@ -404,17 +406,27 @@ export default function ManageTasksScreen() {
       </ScrollView>
 
       {sponsees.length > 0 && (
-        <TouchableOpacity style={styles.fab} onPress={() => setShowCreateModal(true)}>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => {
+            setPreselectedSponseeId(undefined);
+            setShowCreateModal(true);
+          }}
+        >
           <Plus size={24} color="#ffffff" />
         </TouchableOpacity>
       )}
 
       <TaskCreationModal
         visible={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => {
+          setShowCreateModal(false);
+          setPreselectedSponseeId(undefined);
+        }}
         onTaskCreated={fetchData}
         sponsorId={profile?.id || ''}
         sponsees={sponsees}
+        preselectedSponseeId={preselectedSponseeId}
         theme={theme}
       />
     </View>
