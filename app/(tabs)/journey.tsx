@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -46,30 +46,36 @@ interface TimelineEvent {
   metadata?: any;
 }
 
+/**
+ * Displays the user's recovery journey timeline with milestones.
+ *
+ * @remarks
+ * This component fetches timeline events from Supabase and displays
+ * them in chronological order with visual indicators. Day counts
+ * automatically update at midnight via the useDaysSober hook.
+ *
+ * @see {@link useDaysSober} for sobriety calculation logic
+ */
 export default function JourneyScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
-  const { daysSober, hasSlipUps, mostRecentSlipUp, loading: loadingDaysSober } = useDaysSober();
-  // Calculate journey days from original sobriety date
-  // Shared utility function to calculate date difference in days
-  function getDateDiffInDays(date1: Date, date2: Date): number {
-    const diffTime = date2.getTime() - date1.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  }
+  const {
+    daysSober,
+    journeyDays,
+    hasSlipUps,
+    mostRecentSlipUp,
+    loading: loadingDaysSober,
+  } = useDaysSober();
 
-  const journeyDays = useMemo(() => {
-    if (!profile?.sobriety_date) return 0;
-    const sobrietyDate = new Date(profile.sobriety_date);
-    const today = new Date();
-    return getDateDiffInDays(sobrietyDate, today);
-  }, [profile?.sobriety_date]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTimelineData = useCallback(async () => {
-    if (!profile) return;
+    if (!profile) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
