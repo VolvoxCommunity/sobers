@@ -272,7 +272,7 @@ export default function JourneyScreen() {
     timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
 
     setEvents(timelineEvents);
-  }, [profile, theme, timelineData, daysSober]);
+  }, [profile, theme, timelineData, daysSober]); // Re-run when raw data, display prefs, or sobriety calculation changes
 
   useFocusEffect(
     useCallback(() => {
