@@ -61,29 +61,23 @@ pnpm test -- -t "test name pattern"             # Run tests matching pattern
 1. **Formatting**: Run `pnpm format` to ensure consistent code formatting
 2. **Linting**: Run `pnpm lint` to check for code quality issues
 3. **Type Checking**: Run `pnpm typecheck` to verify TypeScript types
-4. **Build**: Run `pnpm build` to verify compilation passes
+4. **Build**: Run `pnpm build:web` to verify compilation passes
 5. **Testing**: Run `pnpm test` to verify all tests pass
-6. **Commit and Push**: After all checks pass, commit and push all changes
 
-These checks are not optional. All five validation steps must pass before committing. If any check fails, fix the issues and re-run all checks before proceeding.
+These checks are not optional. All five validation steps must pass before the user commits. If any check fails, fix the issues and re-run all checks before proceeding.
 
 **Complete Workflow:**
 
 ```bash
-# Step 1-5: Run all validation checks
-pnpm format && pnpm lint && pnpm typecheck && pnpm build && pnpm test
-
-# Step 6: If all checks pass, commit and push
-git add .
-git commit -m "your commit message"
-git push
+# Run all validation checks
+pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 ```
 
 **Important:**
 
-- Do NOT commit if any validation check fails
+- Do NOT commit or push changes - allow the user to do this manually
 - Do NOT skip the validation checks to save time
-- Always push after committing (unless explicitly told not to)
+- All validation checks must pass before changes are considered complete
 
 **Why this matters:**
 
@@ -91,7 +85,6 @@ git push
 - Maintains consistent code style across the project
 - Catches potential bugs and issues early
 - Ensures CI/CD pipeline will pass
-- Keeps remote repository in sync with local changes
 
 ## Architecture
 

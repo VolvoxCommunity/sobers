@@ -108,27 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let initialLoadComplete = false;
 
     /**
-     * Auth initialization timeout in milliseconds.
-     * Prevents the app from hanging if session retrieval fails silently.
-     */
-    const AUTH_TIMEOUT_MS = 10000;
-
-    /**
      * Fetches initial session and profile on mount.
      * Sets loading to false once complete.
-     * Includes a timeout to prevent indefinite loading states.
      */
     const initializeAuth = async () => {
-      // Create a timeout promise to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Auth initialization timeout')), AUTH_TIMEOUT_MS);
-      });
-
       try {
-        // Race between auth initialization and timeout
         const {
           data: { session },
-        } = await Promise.race([supabase.auth.getSession(), timeoutPromise]);
+        } = await supabase.auth.getSession();
 
         if (!isMounted) return;
 
@@ -140,13 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        // On timeout or error, clear any potentially corrupted session data
-        if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-          console.warn('Auth timeout - clearing stale session data');
-          Object.keys(localStorage)
-            .filter((k) => k.startsWith('sb-'))
-            .forEach((k) => localStorage.removeItem(k));
-        }
       } finally {
         if (isMounted) {
           initialLoadComplete = true;
