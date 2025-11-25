@@ -55,7 +55,6 @@ export function initializeSentry(): void {
   }
 
   const environment = getEnvironment();
-
   console.log(`[Sentry] Initializing for environment: ${environment}`);
 
   try {
