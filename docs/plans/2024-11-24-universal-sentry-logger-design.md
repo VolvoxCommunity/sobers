@@ -152,12 +152,17 @@ function createBreadcrumb(
   metadata?: Record<string, any>
 ): void {
   try {
+    // Extract category from metadata to avoid duplication in data object.
+    // When metadata is nullish, defaults to {} so category becomes undefined,
+    // which is then handled by the fallback to 'log' below.
+    const { category, ...restMetadata } = metadata ?? {};
+
     Sentry.addBreadcrumb({
       level: mapLevelToSentry(level),
-      category: metadata?.category || 'log',
+      category: typeof category === 'string' ? category : 'log',
       message,
       data: {
-        ...metadata,
+        ...restMetadata,
         ...(error && { error: error.message, stack: error.stack }),
       },
       timestamp: Date.now() / 1000,
