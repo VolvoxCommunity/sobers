@@ -59,6 +59,9 @@ importers:
       expo-image:
         specifier: ~3.0.10
         version: 3.0.10(expo@54.0.25)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-insights:
+        specifier: ~0.10.7
+        version: 0.10.7(expo@54.0.25)
       expo-linking:
         specifier: ~8.0.9
         version: 8.0.9(expo@54.0.25)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -2715,6 +2718,11 @@ packages:
     peerDependenciesMeta:
       react-native-web:
         optional: true
+
+  expo-insights@0.10.7:
+    resolution: {integrity: sha512-Ie6LnONNLx7ExnURlLQdJFgrV8Zry/ro1KWH4J47or8oMQkYQp7jcu6WdQoDFpfaCKxJvVJvwTLx1Ybl/lOCug==}
+    peerDependencies:
+      expo: '*'
 
   expo-json-utils@0.15.0:
     resolution: {integrity: sha512-duRT6oGl80IDzH2LD2yEFWNwGIC2WkozsB6HF3cDYNoNNdUvFk6uN3YiwsTsqVM/D0z6LEAQ01/SlYvN+Fw0JQ==}
@@ -8366,6 +8374,11 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
     optionalDependencies:
       react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+
+  expo-insights@0.10.7(expo@54.0.25):
+    dependencies:
+      expo: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-eas-client: 1.0.7
 
   expo-json-utils@0.15.0: {}
 
