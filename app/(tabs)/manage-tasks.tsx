@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { Task, Profile } from '@/types/database';
 import { Plus, CheckCircle, Clock, Calendar, Trash2 } from 'lucide-react-native';
 import TaskCreationModal from '@/components/TaskCreationModal';
-import { formatSponseeName } from '@/lib/format';
+import { formatProfileName } from '@/lib/format';
 
 export default function ManageTasksScreen() {
   const { profile } = useAuth();
@@ -279,7 +279,7 @@ export default function ManageTasksScreen() {
                     selectedSponseeFilter === sponsee.id && styles.filterChipTextActive,
                   ]}
                 >
-                  {formatSponseeName(sponsee)}
+                  {formatProfileName(sponsee)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -324,7 +324,7 @@ export default function ManageTasksScreen() {
                     </Text>
                   </View>
                   <View style={styles.sponseeInfo}>
-                    <Text style={styles.sponseeName}>{formatSponseeName(sponsee)}</Text>
+                    <Text style={styles.sponseeName}>{formatProfileName(sponsee)}</Text>
                     <Text style={styles.sponseeMeta}>
                       {sponseeTasks.length} task
                       {sponseeTasks.length !== 1 ? 's' : ''}

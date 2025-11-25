@@ -22,7 +22,7 @@ import { Task, Profile } from '@/types/database';
 import { CheckCircle, Circle, X, Calendar, Plus, Clock, Trash2 } from 'lucide-react-native';
 import SegmentedControl from '@/components/SegmentedControl';
 import TaskCreationModal from '@/components/TaskCreationModal';
-import { formatSponseeName } from '@/lib/format';
+import { formatProfileName } from '@/lib/format';
 
 // =============================================================================
 // Types & Interfaces
@@ -382,7 +382,7 @@ export default function TasksScreen() {
                     )}
                     <View style={styles.taskFooter}>
                       <Text style={styles.sponsorText}>
-                        From: {formatSponseeName(task.sponsor)}
+                        From: {formatProfileName(task.sponsor)}
                       </Text>
                       <TouchableOpacity
                         style={styles.completeButton}
@@ -640,7 +640,7 @@ export default function TasksScreen() {
                         selectedSponseeFilter === sponsee.id && styles.filterChipTextActive,
                       ]}
                     >
-                      {formatSponseeName(sponsee)}
+                      {formatProfileName(sponsee)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -690,7 +690,7 @@ export default function TasksScreen() {
                         </Text>
                       </View>
                       <View style={styles.sponseeInfo}>
-                        <Text style={styles.sponseeName}>{formatSponseeName(sponsee)}</Text>
+                        <Text style={styles.sponseeName}>{formatProfileName(sponsee)}</Text>
                         <Text style={styles.sponseeMeta}>
                           {sponseeTasks.length} task
                           {sponseeTasks.length !== 1 ? 's' : ''}
