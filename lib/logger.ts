@@ -53,18 +53,6 @@ function log(level: LogLevel, message: string, error?: Error, metadata?: LogMeta
 }
 
 /**
- * Safely extract the category string from metadata.
- * Returns 'log' as default if category is not a valid string.
- *
- * @param metadata - The log metadata object
- * @returns The category string or 'log' default
- */
-function extractCategory(metadata?: LogMetadata): string {
-  if (!metadata?.category) return 'log';
-  return typeof metadata.category === 'string' ? metadata.category : 'log';
-}
-
-/**
  * Reserved keys used internally for error information in breadcrumb data.
  * These keys should not be used in metadata to avoid silent overwrites.
  */
@@ -111,21 +99,27 @@ function createBreadcrumb(
     if (__DEV__ && metadata) {
       const conflicts = RESERVED_ERROR_KEYS.filter((key) => key in metadata);
       if (conflicts.length > 0) {
-          console.warn(`[Logger] Metadata contains reserved keys that will be overwritten: ${conflicts.join(', ')}`);
+        console.warn(
+          `[Logger] Metadata contains reserved keys that will be overwritten: ${conflicts.join(', ')}`
+        );
       }
     }
 
+    // Extract category for breadcrumb field, spread remaining metadata into data
+    // This prevents duplicate 'category' keys in the breadcrumb
+    const { category, ...restMetadata } = metadata ?? {};
+
     // Build breadcrumb data with namespaced error keys to avoid conflicts
     const breadcrumbData: Record<string, unknown> = {
-      ...metadata,
+      ...restMetadata,
       ...(error && buildErrorInfo(error)),
     };
 
     Sentry.addBreadcrumb({
       level: mapLevelToSentry(level),
-      category: extractCategory(metadata),
+      category: typeof category === 'string' ? category : 'log',
       message,
-      data: breadcrumbData as Record<string, unknown>,
+      data: breadcrumbData,
       timestamp: Date.now() / 1000,
     });
   } catch {
