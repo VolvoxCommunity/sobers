@@ -29,7 +29,7 @@ jobs:
           use_sticky_comment: false
           prompt: |
             REPO: ${{ github.repository }}
-            ${{ github.event.pull_request && format('PR NUMBER: {0}', github.event.pull_request.number) || format('ISSUE NUMBER: {0}', github.issue.number) }}
+            ${{ github.event.pull_request && format('PR NUMBER: {0}', github.event.pull_request.number) || format('ISSUE NUMBER: {0}', github.event.issue.number) }}
 
             **Task: Intelligent Auto-Labeling**
 
@@ -70,7 +70,7 @@ jobs:
             2. **Apply Labels:**
                - Select 2-5 appropriate labels that best describe this ${{ github.event.pull_request && 'PR' || 'issue' }}
                - Use the `gh` CLI to add labels:
-                 ${{ github.event.pull_request && format('`gh pr edit {0} --add-label "label1,label2,label3"`', github.event.pull_request.number) || format('`gh issue edit {0} --add-label "label1,label2,label3"`', github.issue.number) }}
+                 ${{ github.event.pull_request && format('`gh pr edit {0} --add-label "label1,label2,label3"`', github.event.pull_request.number) || format('`gh issue edit {0} --add-label "label1,label2,label3"`', github.event.issue.number) }}
 
             3. **Labeling Guidelines:**
                - **Type Labels** (choose 1-2): bug, feature, enhancement, documentation, refactor, testing, dependencies
