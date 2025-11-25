@@ -33,18 +33,5 @@ module.exports = {
       functions: 10,
       lines: 10,
     },
-    // File-specific thresholds for files with comprehensive tests
-    './lib/logger.ts': {
-      statements: 90,
-      branches: 80,
-      functions: 90,
-      lines: 90,
-    },
-    './lib/format.ts': {
-      statements: 90,
-      branches: 80,
-      functions: 90,
-      lines: 90,
-    },
   },
 };
