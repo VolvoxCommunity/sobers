@@ -8,7 +8,7 @@ import {
   LayoutChangeEvent,
   Platform,
 } from 'react-native';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 
 type IconComponentType = React.ComponentType<{ size?: number; color?: string }>;
 
@@ -184,7 +184,7 @@ export default function AnimatedBottomNav({
   );
 }
 
-const createStyles = (theme: any, accentColor: string, isDark: boolean) => {
+const createStyles = (theme: ThemeColors, accentColor: string, isDark: boolean) => {
   const inactiveColor = isDark ? theme.textSecondary : theme.textTertiary;
   const backgroundColor = theme.card || theme.surface;
 
@@ -218,7 +218,7 @@ const createStyles = (theme: any, accentColor: string, isDark: boolean) => {
       minHeight: 60,
     },
     menuItemActive: {
-      backgroundColor: theme.secondary || 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: theme.primaryLight || 'rgba(0, 0, 0, 0.05)',
     },
     iconWrapper: {
       marginBottom: 4,

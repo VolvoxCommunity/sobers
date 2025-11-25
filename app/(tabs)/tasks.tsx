@@ -265,12 +265,13 @@ export default function TasksScreen() {
   };
 
   const getManageTaskStats = () => {
+    const now = new Date();
     const total = manageTasks.length;
     const assigned = manageTasks.filter((t) => t.status === 'assigned').length;
     const inProgress = manageTasks.filter((t) => t.status === 'in_progress').length;
     const completed = manageTasks.filter((t) => t.status === 'completed').length;
     const overdue = manageTasks.filter(
-      (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed'
+      (t) => t.due_date && new Date(t.due_date) < now && t.status !== 'completed'
     ).length;
 
     return { total, assigned, inProgress, completed, overdue };
