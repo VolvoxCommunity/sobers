@@ -96,7 +96,8 @@ export default function JourneyScreen() {
         });
       }
 
-      // 2. Fetch slip ups for timeline events (display only - milestone calculation uses hook data)
+      // 2. Fetch slip ups for timeline events (display only).
+      // Note: Milestone calculation now uses `mostRecentSlipUp` from the `useDaysSober` hook, not this fetched data.
       const { data: slipUps, error: slipUpsError } = await supabase
         .from('slip_ups')
         .select('*')
