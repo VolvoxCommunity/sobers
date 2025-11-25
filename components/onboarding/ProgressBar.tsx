@@ -14,6 +14,16 @@ interface ProgressBarProps {
   theme: ThemeColors;
 }
 
+/**
+ * Animated progress bar component for multi-step flows.
+ * @param props - Component props
+ * @param props.step - Current step number (1-indexed)
+ * @param props.totalSteps - Total number of steps
+ * @param props.theme - Theme colors from ThemeContext
+ * @returns Animated progress bar view
+ * @example
+ * <ProgressBar step={1} totalSteps={3} theme={theme} />
+ */
 const ProgressBar: React.FC<ProgressBarProps> = ({ step, totalSteps, theme }) => {
   const progress = useSharedValue(0);
 

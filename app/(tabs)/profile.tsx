@@ -10,7 +10,6 @@ import {
   Share,
   Platform,
   ActivityIndicator,
-  Linking,
   Modal,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,23 +17,20 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import {
-  LogOut,
   Heart,
   Share2,
   QrCode,
-  Moon,
-  Sun,
-  Monitor,
   UserMinus,
   Edit2,
   Calendar,
   AlertCircle,
   CheckCircle,
+  Settings,
 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import packageJson from '../../package.json';
 import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
+import { useRouter } from 'expo-router';
 
 // Component for displaying sponsee days sober using the hook
 function SponseeDaysDisplay({
@@ -133,8 +129,9 @@ function SponsorDaysDisplay({
 }
 
 export default function ProfileScreen() {
-  const { profile, signOut, refreshProfile } = useAuth();
-  const { theme, themeMode, setThemeMode } = useTheme();
+  const { profile, refreshProfile } = useAuth();
+  const { theme } = useTheme();
+  const router = useRouter();
   const [inviteCode, setInviteCode] = useState('');
   const [showInviteInput, setShowInviteInput] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -719,39 +716,16 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to sign out?');
-      if (confirmed) {
-        try {
-          await signOut();
-        } catch (error: any) {
-          window.alert('Error signing out: ' + error.message);
-        }
-      }
-    } else {
-      Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error: any) {
-              Alert.alert('Error', 'Failed to sign out: ' + error.message);
-            }
-          },
-        },
-      ]);
-    }
-  };
-
   const styles = createStyles(theme);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.settingsButton} onPress={() => router.push('/settings')}>
+            <Settings size={24} color={theme.text} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{profile?.first_name?.[0]?.toUpperCase() || '?'}</Text>
         </View>
@@ -920,83 +894,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-
-        <View style={styles.settingsCard}>
-          <View style={styles.settingRow}>
-            <Monitor size={20} color={theme.textSecondary} />
-            <Text style={styles.settingLabel}>Appearance</Text>
-          </View>
-
-          <View style={styles.themeOptions}>
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('light')}
-            >
-              <Sun size={20} color={themeMode === 'light' ? theme.primary : theme.textSecondary} />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'light' && styles.themeOptionTextSelected,
-                ]}
-              >
-                Light
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('dark')}
-            >
-              <Moon size={20} color={themeMode === 'dark' ? theme.primary : theme.textSecondary} />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'dark' && styles.themeOptionTextSelected,
-                ]}
-              >
-                Dark
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('system')}
-            >
-              <Monitor
-                size={20}
-                color={themeMode === 'system' ? theme.primary : theme.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'system' && styles.themeOptionTextSelected,
-                ]}
-              >
-                System
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <LogOut size={20} color="#ef4444" />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Sobriety Waypoint v{packageJson.version}</Text>
-        <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
-        <TouchableOpacity onPress={() => Linking.openURL('https://billchirico.dev')}>
-          <Text style={styles.footerCredit}>By Bill Chirico</Text>
-        </TouchableOpacity>
-      </View>
 
       {Platform.OS === 'web' && showSobrietyDatePicker && (
         <Modal visible={showSobrietyDatePicker} transparent animationType="fade">
@@ -1240,6 +1137,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       paddingTop: 60,
       backgroundColor: theme.surface,
     },
+    headerTop: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginBottom: 16,
+    },
+    settingsButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: theme.card,
+    },
     avatar: {
       width: 80,
       height: 80,
@@ -1415,116 +1323,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontWeight: '600',
       color: theme.textSecondary,
     },
-    signOutButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.card,
-      padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#fee2e2',
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    signOutText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: '#ef4444',
-      marginLeft: 12,
-    },
-    footer: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    footerText: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      fontWeight: '600',
-    },
-    footerSubtext: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      marginTop: 4,
-    },
-    footerCredit: {
-      fontSize: 11,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      marginTop: 12,
-      fontStyle: 'italic',
-      opacity: 0.7,
-    },
-    settingsCard: {
-      backgroundColor: theme.card,
-      padding: 16,
-      borderRadius: 12,
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    settingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-      paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderLight,
-    },
-    settingLabel: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-      marginLeft: 12,
-    },
-    settingSubRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 12,
-    },
-    settingSubLabel: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-    },
-    themeOptions: {
-      flexDirection: 'row',
-      gap: 8,
-      paddingTop: 8,
-    },
-    themeOption: {
-      flex: 1,
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: theme.border,
-      backgroundColor: theme.background,
-    },
-    themeOptionSelected: {
-      borderColor: theme.primary,
-      backgroundColor: theme.primaryLight,
-    },
-    themeOptionText: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      marginTop: 6,
-    },
-    themeOptionTextSelected: {
-      color: theme.primary,
-    },
     loadingContainer: {
       padding: 20,
       alignItems: 'center',
@@ -1601,7 +1399,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: '#ef4444',
-      marginLeft: 6,
+      marginLeft: 8,
     },
     emptyStateText: {
       fontSize: 14,
@@ -1609,7 +1407,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 16,
-      paddingVertical: 8,
     },
     buttonDisabled: {
       opacity: 0.6,
@@ -1622,18 +1419,19 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       padding: 20,
     },
     datePickerModal: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
       borderRadius: 16,
       padding: 24,
       width: '100%',
       maxWidth: 400,
+      alignItems: 'center',
     },
     slipUpModal: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
       borderRadius: 16,
       padding: 24,
       width: '100%',
-      maxWidth: 500,
+      maxWidth: 400,
       maxHeight: '90%',
     },
     modalTitle: {
@@ -1650,7 +1448,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 24,
-      lineHeight: 20,
     },
     dateSection: {
       marginBottom: 20,
@@ -1665,35 +1462,38 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     dateButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.borderLight,
+      backgroundColor: theme.card,
       padding: 12,
       borderRadius: 8,
-      gap: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
     },
     dateButtonText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+      marginLeft: 8,
     },
     notesSection: {
       marginBottom: 20,
     },
     notesInput: {
-      backgroundColor: theme.borderLight,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
       borderRadius: 8,
       padding: 12,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
-      minHeight: 100,
+      height: 100,
     },
     privacyNote: {
       fontSize: 12,
       fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
+      color: theme.textTertiary,
       textAlign: 'center',
-      fontStyle: 'italic',
-      marginBottom: 20,
+      marginBottom: 24,
     },
     modalButtons: {
       flexDirection: 'row',
@@ -1701,8 +1501,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     modalCancelButton: {
       flex: 1,
-      padding: 14,
+      padding: 12,
       borderRadius: 8,
+      backgroundColor: theme.card,
       borderWidth: 1,
       borderColor: theme.border,
       alignItems: 'center',
@@ -1711,11 +1512,11 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: theme.textSecondary,
+      color: theme.text,
     },
     modalConfirmButton: {
       flex: 1,
-      padding: 14,
+      padding: 12,
       borderRadius: 8,
       backgroundColor: theme.primary,
       alignItems: 'center',

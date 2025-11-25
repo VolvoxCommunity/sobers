@@ -202,7 +202,7 @@ export default function OnboardingScreen() {
           </View>
         </TouchableOpacity>
 
-        {(showDatePicker || Platform.OS === 'web') && Platform.OS !== 'web' && (
+        {showDatePicker && Platform.OS !== 'web' && (
           <DateTimePicker
             value={sobrietyDate}
             mode="date"
@@ -237,7 +237,10 @@ export default function OnboardingScreen() {
 
         <View style={styles.statsContainer}>
           <Text style={styles.statsCount}>
-            {Math.floor((new Date().getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24))}
+            {Math.max(
+              0,
+              Math.floor((new Date().getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24))
+            )}
           </Text>
           <Text style={styles.statsLabel}>Days Sober</Text>
         </View>
