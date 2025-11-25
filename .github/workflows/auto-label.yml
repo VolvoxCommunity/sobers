@@ -30,7 +30,6 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             ${{ github.event.pull_request && format('PR NUMBER: {0}', github.event.pull_request.number) || format('ISSUE NUMBER: {0}', github.event.issue.number) }}
-            EVENT TYPE: ${{ github.event.pull_request && 'pull_request' || 'issue' }}
 
             **Task: Intelligent Auto-Labeling**
 
@@ -56,53 +55,39 @@ jobs:
             - `ci/cd` - CI/CD pipeline related
             - `refactor` - Code refactoring
 
-            **Available Issue Types (ISSUES ONLY - choose exactly 1):**
-            - `Bug` - Something isn't working correctly
-            - `Feature` - New functionality or capability
-            - `Documentation` - Documentation improvements
-            - `Task` - General work item or chore
-
             **Instructions:**
 
             1. **Analyze the Content:**
                ${{ github.event.pull_request && '- Read the PR title, description, and changed files using `gh pr view`' || '- Read the issue title and description using `gh issue view`' }}
                ${{ github.event.pull_request && '- Use `gh pr diff` to understand what code is being changed' || '' }}
-               - Identify the type of change (bug fix, feature, documentation, task)
+               - Identify the type of change (bug fix, feature, documentation, etc.)
                - Determine which areas of the codebase are affected
 
-            2. **Assign Issue Type (ISSUES ONLY - REQUIRED):**
-               - Skip this step for pull requests
-               - For issues: Choose exactly ONE type that best describes this issue
-               - Use: ${{ github.event.issue && format('`gh issue edit {0} --type "TypeName"`', github.event.issue.number) || '(not applicable for PRs)' }}
-
-            3. **Apply Labels:**
+            2. **Apply Labels:**
                - Select all appropriate labels that apply to this ${{ github.event.pull_request && 'PR' || 'issue' }}
                - Use the `gh` CLI to add labels:
                  ${{ github.event.pull_request && format('`gh pr edit {0} --add-label "label1,label2,label3"`', github.event.pull_request.number) || format('`gh issue edit {0} --add-label "label1,label2,label3"`', github.event.issue.number) }}
 
-            4. **Labeling Guidelines:**
+            3. **Labeling Guidelines:**
                - **Type Labels**: bug, feature, enhancement, documentation, refactor, testing, dependencies
                - **Area Labels**: frontend, backend, supabase, authentication, ci/cd, android, ios, web
                - **Special Labels**: security, accessibility, performance
 
-            5. **Examples:**
-               - Issue reporting login crash → Type: `Bug`, Labels: `bug`, `authentication`, `frontend`
-               - Issue requesting new feature → Type: `Feature`, Labels: `feature`, `frontend`
-               - Issue requesting docs update → Type: `Documentation`, Labels: `documentation`
-               - Issue for general work → Type: `Task`, Labels: `enhancement`, `backend`
-               - PR adding new authentication flow → Labels: `feature`, `authentication`, `frontend`
-               - PR updating dependencies → Labels: `dependencies`
-               - PR improving accessibility → Labels: `enhancement`, `accessibility`, `frontend`
-               - PR refactoring database queries → Labels: `refactor`, `supabase`, `backend`
+            4. **Examples:**
+               - Issue reporting login crash → `bug`, `authentication`, `frontend`
+               - Issue requesting new feature → `feature`, `frontend`
+               - Issue requesting docs update → `documentation`
+               - PR adding new authentication flow → `feature`, `authentication`, `frontend`
+               - PR updating dependencies → `dependencies`
+               - PR improving accessibility → `enhancement`, `accessibility`, `frontend`
+               - PR refactoring database queries → `refactor`, `supabase`, `backend`
 
             **Important:**
             - Do NOT create new labels; only use the labels listed above
-            - For ISSUES: ALWAYS assign a type - this is required
-            - For PRs: Do NOT try to assign a type (types are for issues only)
             - Be conservative with labels: only add labels that clearly apply
             - For PRs, prioritize file changes over description
             - For issues, prioritize the problem description and impact
 
-            **Execute the labeling (and type assignment if this is an issue) now using the gh CLI.**
+            **Execute the labeling now using the gh CLI.**
 
-          claude_args: '--allowed-tools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue type:*)"'
+          claude_args: '--allowed-tools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue edit:*)"'
