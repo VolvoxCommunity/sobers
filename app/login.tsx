@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { Heart } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 
@@ -153,7 +153,7 @@ export default function LoginScreen() {
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

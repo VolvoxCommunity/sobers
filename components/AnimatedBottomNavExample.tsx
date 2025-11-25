@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import AnimatedBottomNav, { AnimatedNavItem } from './AnimatedBottomNav';
 import { Home, Briefcase, Calendar, Shield, Settings } from 'lucide-react-native';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 
 export default function AnimatedBottomNavExample() {
   const { theme } = useTheme();
@@ -85,7 +85,7 @@ const items = [
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

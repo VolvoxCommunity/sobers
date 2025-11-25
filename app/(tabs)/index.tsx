@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { SponsorSponseeRelationship, Task, Profile } from '@/types/database';
 import { useDaysSober } from '@/hooks/useDaysSober';
@@ -362,7 +362,7 @@ export default function HomeScreen() {
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

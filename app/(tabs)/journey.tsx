@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { UserStepProgress, SlipUp, Task } from '@/types/database';
 import {
@@ -33,15 +33,15 @@ interface TimelineEvent {
   title: string;
   description: string;
   icon:
-  | 'calendar'
-  | 'check'
-  | 'heart'
-  | 'refresh'
-  | 'award'
-  | 'trending'
-  | 'check-square'
-  | 'list-checks'
-  | 'target';
+    | 'calendar'
+    | 'check'
+    | 'heart'
+    | 'refresh'
+    | 'award'
+    | 'trending'
+    | 'check-square'
+    | 'list-checks'
+    | 'target';
   color: string;
   metadata?: any;
 }
@@ -67,11 +67,19 @@ export default function JourneyScreen() {
     loading: loadingDaysSober,
   } = useDaysSober();
 
+  interface TimelineRawData {
+    slipUps: SlipUp[];
+    stepProgress: UserStepProgress[];
+    completedTasks: Task[];
+  }
+
+  const [timelineData, setTimelineData] = useState<TimelineRawData | null>(null);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTimelineData = useCallback(async () => {
+  // Fetch raw data from Supabase - only depends on profile
+  const fetchRawData = useCallback(async () => {
     if (!profile) {
       setLoading(false);
       return;
@@ -81,23 +89,7 @@ export default function JourneyScreen() {
       setLoading(true);
       setError(null);
 
-      const timelineEvents: TimelineEvent[] = [];
-
-      // 1. Fetch sobriety start date
-      if (profile.sobriety_date) {
-        timelineEvents.push({
-          id: 'sobriety-start',
-          type: 'sobriety_start',
-          date: new Date(profile.sobriety_date),
-          title: 'Recovery Journey Began',
-          description: `Started your path to recovery`,
-          icon: 'calendar',
-          color: theme.primary,
-        });
-      }
-
-      // 2. Fetch slip ups for timeline events (display only).
-      // Note: Milestone calculation now uses `mostRecentSlipUp` from the `useDaysSober` hook, not this fetched data.
+      // 1. Fetch slip ups
       const { data: slipUps, error: slipUpsError } = await supabase
         .from('slip_ups')
         .select('*')
@@ -106,20 +98,7 @@ export default function JourneyScreen() {
 
       if (slipUpsError) throw slipUpsError;
 
-      slipUps?.forEach((slipUp: SlipUp) => {
-        timelineEvents.push({
-          id: `slip-up-${slipUp.id}`,
-          type: 'slip_up',
-          date: new Date(slipUp.slip_up_date),
-          title: 'Slip Up',
-          description: slipUp.notes || 'Recovery journey restarted',
-          icon: 'refresh',
-          color: '#f59e0b',
-          metadata: slipUp,
-        });
-      });
-
-      // 3. Fetch step completions
+      // 2. Fetch step completions
       const { data: stepProgress, error: stepsError } = await supabase
         .from('user_step_progress')
         .select('*')
@@ -129,22 +108,7 @@ export default function JourneyScreen() {
 
       if (stepsError) throw stepsError;
 
-      stepProgress?.forEach((progress: UserStepProgress) => {
-        if (progress.completed_at) {
-          timelineEvents.push({
-            id: `step-${progress.id}`,
-            type: 'step_completion',
-            date: new Date(progress.completed_at),
-            title: `Step ${progress.step_number} Completed`,
-            description: progress.notes || `Completed Step ${progress.step_number}`,
-            icon: 'check',
-            color: '#10b981',
-            metadata: progress,
-          });
-        }
-      });
-
-      // 4. Fetch completed tasks for timeline
+      // 3. Fetch completed tasks
       const { data: completedTasks, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
@@ -155,104 +119,156 @@ export default function JourneyScreen() {
 
       if (tasksError) throw tasksError;
 
-      // Add task completion events to timeline
-      completedTasks?.forEach((task: Task) => {
-        if (task.completed_at) {
-          timelineEvents.push({
-            id: `task-${task.id}`,
-            type: 'task_completion',
-            date: new Date(task.completed_at),
-            title: task.title,
-            description: task.completion_notes || task.description,
-            icon: 'check-square',
-            color: '#3b82f6', // blue
-            metadata: {
-              taskId: task.id,
-              stepNumber: task.step_number,
-              sponsorId: task.sponsor_id,
-            },
-          });
-        }
+      setTimelineData({
+        slipUps: slipUps || [],
+        stepProgress: stepProgress || [],
+        completedTasks: completedTasks || [],
       });
-
-      // 5. Calculate task milestones for timeline
-      if (completedTasks && completedTasks.length > 0) {
-        const milestones = [5, 10, 25, 50, 100, 250, 500];
-        const sortedTasks = [...completedTasks].sort(
-          (a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()
-        );
-
-        milestones.forEach((milestoneCount) => {
-          if (sortedTasks.length >= milestoneCount) {
-            const milestoneTask = sortedTasks[milestoneCount - 1];
-            timelineEvents.push({
-              id: `task-milestone-${milestoneCount}`,
-              type: 'task_milestone',
-              date: new Date(milestoneTask.completed_at!),
-              title: `${milestoneCount} Tasks Completed`,
-              description: `Reached ${milestoneCount} task completion milestone`,
-              icon: 'award',
-              color: '#f59e0b', // amber/gold
-              metadata: { milestoneCount },
-            });
-          }
-        });
-      }
-
-      // 6. Calculate sobriety milestones
-      if (profile.sobriety_date) {
-        const sobrietyDate = new Date(profile.sobriety_date);
-        const today = new Date();
-        // Prevent negative days (guard against future dates from timezone issues or data entry errors)
-        const daysSober = Math.max(
-          0,
-          Math.floor((today.getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24))
-        );
-
-        const milestones = [
-          { days: 30, label: '30 Days Sober' },
-          { days: 60, label: '60 Days Sober' },
-          { days: 90, label: '90 Days Sober' },
-          { days: 180, label: '6 Months Sober' },
-          { days: 365, label: '1 Year Sober' },
-          { days: 730, label: '2 Years Sober' },
-          { days: 1095, label: '3 Years Sober' },
-        ];
-
-        milestones.forEach(({ days, label }) => {
-          if (daysSober >= days) {
-            const milestoneDate = new Date(sobrietyDate);
-            milestoneDate.setDate(milestoneDate.getDate() + days);
-
-            timelineEvents.push({
-              id: `milestone-${days}`,
-              type: 'milestone',
-              date: milestoneDate,
-              title: label,
-              description: `Reached ${label} milestone`,
-              icon: 'award',
-              color: '#8b5cf6',
-            });
-          }
-        });
-      }
-
-      // Sort events by date (most recent first)
-      timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-      setEvents(timelineEvents);
     } catch (err) {
       console.error('Error fetching timeline data:', err);
       setError('Failed to load your journey timeline');
     } finally {
       setLoading(false);
     }
-  }, [profile, theme, mostRecentSlipUp, daysSober]);
+  }, [profile]);
+
+  // Process raw data into timeline events - depends on data + display preferences (theme, daysSober)
+  React.useEffect(() => {
+    if (!profile || !timelineData) return;
+
+    const { slipUps, stepProgress, completedTasks } = timelineData;
+    const timelineEvents: TimelineEvent[] = [];
+
+    // 1. Sobriety start date
+    if (profile.sobriety_date) {
+      timelineEvents.push({
+        id: 'sobriety-start',
+        type: 'sobriety_start',
+        date: new Date(profile.sobriety_date),
+        title: 'Recovery Journey Began',
+        description: `Started your path to recovery`,
+        icon: 'calendar',
+        color: theme.primary,
+      });
+    }
+
+    // 2. Slip ups
+    slipUps.forEach((slipUp) => {
+      timelineEvents.push({
+        id: `slip-up-${slipUp.id}`,
+        type: 'slip_up',
+        date: new Date(slipUp.slip_up_date),
+        title: 'Slip Up',
+        description: slipUp.notes || 'Recovery journey restarted',
+        icon: 'refresh',
+        color: '#f59e0b',
+        metadata: slipUp,
+      });
+    });
+
+    // 3. Step completions
+    stepProgress.forEach((progress) => {
+      if (progress.completed_at) {
+        timelineEvents.push({
+          id: `step-${progress.id}`,
+          type: 'step_completion',
+          date: new Date(progress.completed_at),
+          title: `Step ${progress.step_number} Completed`,
+          description: progress.notes || `Completed Step ${progress.step_number}`,
+          icon: 'check',
+          color: '#10b981',
+          metadata: progress,
+        });
+      }
+    });
+
+    // 4. Task completions
+    completedTasks.forEach((task) => {
+      if (task.completed_at) {
+        timelineEvents.push({
+          id: `task-${task.id}`,
+          type: 'task_completion',
+          date: new Date(task.completed_at),
+          title: task.title,
+          description: task.completion_notes || task.description,
+          icon: 'check-square',
+          color: '#3b82f6', // blue
+          metadata: {
+            taskId: task.id,
+            stepNumber: task.step_number,
+            sponsorId: task.sponsor_id,
+          },
+        });
+      }
+    });
+
+    // 5. Task milestones
+    if (completedTasks.length > 0) {
+      const milestones = [5, 10, 25, 50, 100, 250, 500];
+      const sortedTasks = [...completedTasks].sort(
+        (a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()
+      );
+
+      milestones.forEach((milestoneCount) => {
+        if (sortedTasks.length >= milestoneCount) {
+          const milestoneTask = sortedTasks[milestoneCount - 1];
+          timelineEvents.push({
+            id: `task-milestone-${milestoneCount}`,
+            type: 'task_milestone',
+            date: new Date(milestoneTask.completed_at!),
+            title: `${milestoneCount} Tasks Completed`,
+            description: `Reached ${milestoneCount} task completion milestone`,
+            icon: 'award',
+            color: '#f59e0b', // amber/gold
+            metadata: { milestoneCount },
+          });
+        }
+      });
+    }
+
+    // 6. Sobriety milestones
+    // Use the daysSober from the hook which updates at midnight
+    if (profile.sobriety_date) {
+      const sobrietyDate = new Date(profile.sobriety_date);
+
+      const milestones = [
+        { days: 30, label: '30 Days Sober' },
+        { days: 60, label: '60 Days Sober' },
+        { days: 90, label: '90 Days Sober' },
+        { days: 180, label: '6 Months Sober' },
+        { days: 365, label: '1 Year Sober' },
+        { days: 730, label: '2 Years Sober' },
+        { days: 1095, label: '3 Years Sober' },
+      ];
+
+      milestones.forEach(({ days, label }) => {
+        if (daysSober >= days) {
+          const milestoneDate = new Date(sobrietyDate);
+          milestoneDate.setDate(milestoneDate.getDate() + days);
+
+          timelineEvents.push({
+            id: `milestone-${days}`,
+            type: 'milestone',
+            date: milestoneDate,
+            title: label,
+            description: `Reached ${label} milestone`,
+            icon: 'award',
+            color: '#8b5cf6',
+          });
+        }
+      });
+    }
+
+    // Sort events by date (most recent first)
+    timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    setEvents(timelineEvents);
+  }, [profile, theme]); // Re-run when data or display prefs change
 
   useFocusEffect(
     useCallback(() => {
-      fetchTimelineData();
-    }, [fetchTimelineData])
+      fetchRawData();
+    }, [fetchRawData])
   );
 
   const getIcon = (iconType: string, color: string) => {
@@ -426,7 +442,7 @@ export default function JourneyScreen() {
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,

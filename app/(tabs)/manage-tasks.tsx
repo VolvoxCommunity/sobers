@@ -125,8 +125,7 @@ export default function ManageTasksScreen() {
    *
    * @returns Object containing task statistics
    */
-  const getTaskStats = () => {
-    const now = new Date();
+  const getTaskStats = (now: Date) => {
     const total = tasks.length;
     const assigned = tasks.filter((t) => t.status === 'assigned').length;
     const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
@@ -151,7 +150,7 @@ export default function ManageTasksScreen() {
   };
 
   const now = new Date();
-  const stats = getTaskStats();
+  const stats = getTaskStats(now);
   const filteredTasks = getFilteredTasks();
   const styles = createStyles(theme);
 
