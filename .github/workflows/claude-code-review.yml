@@ -3,12 +3,6 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
@@ -52,16 +46,6 @@ jobs:
             - **Fix Issues**: If you identify simple bugs, typos, or style violations, **commit the fixes directly to this PR branch**.
             - **Request Changes**: For significant issues or design flaws, request changes in your review.
             - **Be Constructive**: Provide clear explanations and suggestions for improvement.
-
-            **Review Process:**
-            1. Check if you have already left a review comment on this PR:
-               `gh pr view ${{ github.event.pull_request.number }} --json comments`
-            2. Look for a comment starting with "# Claude Code Review".
-            3. If found, **UPDATE** that comment using:
-               `gh pr comment ${{ github.event.pull_request.number }} --edit-last --body "..."`
-            4. If NOT found, create a **NEW** comment.
-
-            Commit any fixes, documentation updates, or improvements directly to this PR branch.
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
