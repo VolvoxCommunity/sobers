@@ -64,14 +64,16 @@ jobs:
                - Determine which areas of the codebase are affected
 
             2. **Apply Labels:**
-               - Select all appropriate labels that apply to this ${{ github.event.pull_request && 'PR' || 'issue' }}
+               - Select labels that **strongly** apply to this ${{ github.event.pull_request && 'PR' || 'issue' }}
+               - Aim for 2-4 labels in most cases; only exceed this for genuinely cross-cutting changes
+               - When uncertain, prefer fewer labels over more
                - Use the `gh` CLI to add labels:
                  ${{ github.event.pull_request && format('`gh pr edit {0} --add-label "label1,label2,label3"`', github.event.pull_request.number) || format('`gh issue edit {0} --add-label "label1,label2,label3"`', github.event.issue.number) }}
 
             3. **Labeling Guidelines:**
-               - **Type Labels**: bug, feature, enhancement, documentation, refactor, testing, dependencies
-               - **Area Labels**: frontend, backend, supabase, authentication, ci/cd, android, ios, web
-               - **Special Labels**: security, accessibility, performance
+               - **Type Labels** (pick 1, rarely 2): bug, feature, enhancement, documentation, refactor, testing, dependencies
+               - **Area Labels** (pick 1-2 primary areas): frontend, backend, supabase, authentication, ci/cd, android, ios, web
+               - **Special Labels** (only if directly relevant): security, accessibility, performance
 
             4. **Examples:**
                - Issue reporting login crash → `bug`, `authentication`, `frontend`
@@ -84,7 +86,8 @@ jobs:
 
             **Important:**
             - Do NOT create new labels; only use the labels listed above
-            - Be conservative with labels: only add labels that clearly apply
+            - Be selective: only add labels that **clearly and directly** apply
+            - Avoid tangential labels (e.g., don't add `backend` just because a frontend change calls an API)
             - For PRs, prioritize file changes over description
             - For issues, prioritize the problem description and impact
 

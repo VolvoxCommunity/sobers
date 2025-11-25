@@ -177,6 +177,35 @@ function sanitizeConsoleBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadc
 }
 
 /**
+ * Sanitize a single value from console breadcrumb data.
+ * Handles primitives, strings, arrays, and objects recursively.
+ *
+ * @param value - The value to sanitize
+ * @returns The sanitized value
+ */
+function sanitizeConsoleBreadcrumbValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    // Sanitize URLs and token values in string values
+    let sanitized = sanitizeUrlsInString(value);
+    sanitized = sanitizeTokenValues(sanitized);
+    return sanitized;
+  }
+
+  if (Array.isArray(value)) {
+    // Recursively sanitize each element in the array
+    return value.map(sanitizeConsoleBreadcrumbValue);
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    // Recursively sanitize nested objects
+    return sanitizeConsoleBreadcrumbData(value as Record<string, unknown>);
+  }
+
+  // Return primitives (numbers, booleans, null, undefined) as-is
+  return value;
+}
+
+/**
  * Sanitize the data object of a console breadcrumb.
  *
  * Console breadcrumb data can contain arbitrary arguments passed to console.log,
@@ -195,17 +224,7 @@ function sanitizeConsoleBreadcrumbData(data: Record<string, unknown>): Record<st
       continue;
     }
 
-    if (typeof value === 'string') {
-      // Sanitize URLs and token values in string values
-      let sanitizedValue = sanitizeUrlsInString(value);
-      sanitizedValue = sanitizeTokenValues(sanitizedValue);
-      sanitized[key] = sanitizedValue;
-    } else if (typeof value === 'object' && value !== null) {
-      // Recursively sanitize nested objects
-      sanitized[key] = sanitizeConsoleBreadcrumbData(value as Record<string, unknown>);
-    } else {
-      sanitized[key] = value;
-    }
+    sanitized[key] = sanitizeConsoleBreadcrumbValue(value);
   }
 
   return sanitized;

@@ -33,6 +33,10 @@ function shouldInitialize(): boolean {
  * Get the current environment name for Sentry.
  *
  * @returns Environment string: 'development', 'preview', or 'production'
+ *
+ * @remarks
+ * Returns 'development' when __DEV__ is true.
+ * Otherwise, reads EXPO_PUBLIC_APP_ENV, defaulting to 'production'.
  */
 function getEnvironment(): string {
   if (__DEV__) {
