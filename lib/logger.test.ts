@@ -31,14 +31,15 @@ describe('Logger', () => {
       });
     });
 
-    it('uses custom category from metadata', () => {
+    it('uses custom category from metadata and removes it from data', () => {
       logger.info('User signed in', { category: 'auth', userId: '123' });
 
+      // category is extracted to top-level breadcrumb field, not duplicated in data
       expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({
         level: 'info',
         category: 'auth',
         message: 'User signed in',
-        data: { category: 'auth', userId: '123' },
+        data: { userId: '123' },
         timestamp: expect.any(Number),
       });
     });
