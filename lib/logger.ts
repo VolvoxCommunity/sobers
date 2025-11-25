@@ -131,10 +131,16 @@ function logToConsole(
   const consoleMethod = getConsoleMethod(level);
   const formattedMessage = `[${level.toUpperCase()}] ${message}`;
 
+  const hasMetadata = metadata && Object.keys(metadata).length > 0;
+
   if (error) {
-    // Console methods handle unknown values via stringification
-    consoleMethod(formattedMessage, error, metadata ?? '');
-  } else if (metadata && Object.keys(metadata).length > 0) {
+    // Only include metadata if it has content to avoid cluttering output
+    if (hasMetadata) {
+      consoleMethod(formattedMessage, error, metadata);
+    } else {
+      consoleMethod(formattedMessage, error);
+    }
+  } else if (hasMetadata) {
     consoleMethod(formattedMessage, metadata);
   } else {
     consoleMethod(formattedMessage);
