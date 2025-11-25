@@ -254,7 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (result.type === 'success' && result.url) {
           logger.debug('Google Auth redirect received', {
             category: LogCategory.AUTH,
-            // Note: Not logging redirect URL to avoid exposing OAuth tokens
+            // Note: Not logging result.url to avoid exposing OAuth tokens
           });
 
           const url = new URL(result.url);
