@@ -312,9 +312,13 @@ export default function ProfileScreen() {
         .single();
 
       if (sponsorError || !sponsorProfile) {
-        logger.error('Sponsor profile fetch failed', sponsorError as Error, {
-          category: LogCategory.DATABASE,
-        });
+        logger.error(
+          'Sponsor profile fetch failed',
+          sponsorError || new Error('Sponsor profile not found'),
+          {
+            category: LogCategory.DATABASE,
+          }
+        );
         if (Platform.OS === 'web') {
           window.alert('Unable to fetch sponsor information');
         } else {
