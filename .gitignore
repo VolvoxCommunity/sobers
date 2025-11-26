@@ -110,3 +110,6 @@ worktrees/
 
 # Documentation plans
 docs/plans
+
+# Test credentials (sensitive information)
+.agent/rules/login-information.md

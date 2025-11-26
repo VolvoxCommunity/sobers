@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,43 @@ import {
   Alert,
   Platform,
   TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
-import { Calendar, LogOut } from 'lucide-react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Calendar, LogOut, ChevronRight, ChevronLeft, Info } from 'lucide-react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import ProgressBar from '@/components/onboarding/ProgressBar';
+import OnboardingStep from '@/components/onboarding/OnboardingStep';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
+// =============================================================================
+// Constants
+// =============================================================================
+/** Number of milliseconds in one day (24 hours) */
+const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * OnboardingScreen handles the initial user setup flow after authentication.
+ *
+ * The onboarding consists of two steps:
+ * - Step 1: Collects user's first name and last initial for personalization
+ * - Step 2: Collects the user's sobriety date to track their recovery journey
+ *
+ * Users who already have a name set will skip directly to step 2.
+ * Upon completion, the user's profile is updated and they are redirected to the main app.
+ *
+ * @returns The onboarding screen component with step-based navigation
+ *
+ * @example
+ * ```tsx
+ * // Used as a route in Expo Router - navigated to automatically
+ * // when user is authenticated but profile is incomplete
+ * <OnboardingScreen />
+ * ```
+ */
 export default function OnboardingScreen() {
   const { theme } = useTheme();
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -39,9 +68,12 @@ export default function OnboardingScreen() {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   // Ref for field navigation
   const lastInitialRef = useRef<TextInput>(null);
+
+  const totalSteps = 2;
 
   const handleSignOut = async () => {
     try {
@@ -92,7 +124,7 @@ export default function OnboardingScreen() {
     }
   };
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
+  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
@@ -101,131 +133,145 @@ export default function OnboardingScreen() {
     }
   };
 
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
-  if (step === 1 && needsName) {
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome to Sobriety Waypoint</Text>
-          <Text style={styles.subtitle}>Let&apos;s get to know you</Text>
+  const renderStep1 = () => (
+    <OnboardingStep>
+      <View style={styles.headerContainer}>
+        <Text style={styles.title}>Welcome to Sobriety Waypoint</Text>
+        <Text style={styles.subtitle}>Let&apos;s get to know you better.</Text>
+      </View>
 
-          <View style={styles.nameContainer}>
-            <Text style={styles.sectionTitle}>What&apos;s your name?</Text>
-            <Text style={styles.sectionSubtitle}>
-              We only ask for your first name and last initial to protect your privacy.
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="John"
-                placeholderTextColor={theme.textTertiary}
-                value={firstName}
-                onChangeText={setFirstName}
-                autoCapitalize="words"
-                returnKeyType="next"
-                onSubmitEditing={() => lastInitialRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Last Initial</Text>
-              <TextInput
-                ref={lastInitialRef}
-                style={styles.input}
-                placeholder="D"
-                placeholderTextColor={theme.textTertiary}
-                value={lastInitial}
-                onChangeText={(text) => setLastInitial(text.toUpperCase())}
-                maxLength={1}
-                autoCapitalize="characters"
-                returnKeyType="done"
-                onSubmitEditing={() => setStep(2)}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              (!firstName || !lastInitial || lastInitial.length !== 1) && styles.buttonDisabled,
-            ]}
-            onPress={() => setStep(2)}
-            disabled={!firstName || !lastInitial || lastInitial.length !== 1}
-          >
-            <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-            <LogOut size={20} color={theme.textSecondary} />
-            <Text style={styles.signOutText}>Back to Sign In</Text>
-          </TouchableOpacity>
+      <View style={styles.card}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>First Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. John"
+            placeholderTextColor={theme.textTertiary}
+            value={firstName}
+            onChangeText={setFirstName}
+            autoCapitalize="words"
+            returnKeyType="next"
+            onSubmitEditing={() => lastInitialRef.current?.focus()}
+            blurOnSubmit={false}
+          />
         </View>
-      </ScrollView>
-    );
-  }
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.content}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Last Initial</Text>
+          <TextInput
+            ref={lastInitialRef}
+            style={styles.input}
+            placeholder="e.g. D"
+            placeholderTextColor={theme.textTertiary}
+            value={lastInitial}
+            onChangeText={(text) => setLastInitial(text.toUpperCase())}
+            maxLength={1}
+            autoCapitalize="characters"
+            returnKeyType="done"
+            onSubmitEditing={() => setStep(2)}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.infoButton} onPress={() => setShowInfo(!showInfo)}>
+          <Info size={16} color={theme.textSecondary} />
+          <Text style={styles.infoText}>Why do we ask for this?</Text>
+        </TouchableOpacity>
+
+        {showInfo && (
+          <Animated.View entering={FadeInDown} style={styles.infoBox}>
+            <Text style={styles.infoBoxText}>
+              We value your privacy. Your first name and last initial are used to personalize your
+              experience while maintaining anonymity within the community.
+            </Text>
+          </Animated.View>
+        )}
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (!firstName || !lastInitial || lastInitial.length !== 1) && styles.buttonDisabled,
+          ]}
+          onPress={() => setStep(2)}
+          disabled={!firstName || !lastInitial || lastInitial.length !== 1}
+        >
+          <Text style={styles.buttonText}>Continue</Text>
+          <ChevronRight size={20} color={theme.textOnPrimary} />
+        </TouchableOpacity>
+      </View>
+    </OnboardingStep>
+  );
+
+  const renderStep2 = () => (
+    <OnboardingStep>
+      <View style={styles.headerContainer}>
         <Text style={styles.title}>Your Sobriety Date</Text>
-        <Text style={styles.subtitle}>When did you begin your sobriety journey?</Text>
+        <Text style={styles.subtitle}>When did your journey begin?</Text>
+      </View>
 
-        <View style={styles.dateContainer}>
-          <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-            <Calendar size={24} color="#007AFF" />
-            <Text style={styles.dateText}>
+      <View style={styles.card}>
+        <TouchableOpacity style={styles.dateDisplay} onPress={() => setShowDatePicker(true)}>
+          <Calendar size={32} color={theme.primary} />
+          <View style={styles.dateTextContainer}>
+            <Text style={styles.dateLabel}>Sobriety Date</Text>
+            <Text style={styles.dateValue}>
               {sobrietyDate.toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
               })}
             </Text>
-          </TouchableOpacity>
-
-          {(showDatePicker || Platform.OS === 'web') && Platform.OS !== 'web' && (
-            <DateTimePicker
-              value={sobrietyDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={onDateChange}
-              maximumDate={new Date()}
-            />
-          )}
-
-          {Platform.OS === 'web' && showDatePicker && (
-            <View style={styles.webDatePicker}>
-              <input
-                type="date"
-                value={sobrietyDate.toISOString().split('T')[0]}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={(e) => {
-                  setSobrietyDate(new Date(e.target.value));
-                  setShowDatePicker(false);
-                }}
-                style={{
-                  padding: '12px',
-                  fontSize: '16px',
-                  fontFamily: theme.fontRegular,
-                  borderRadius: '8px',
-                  border: '2px solid #007AFF',
-                  marginBottom: '16px',
-                }}
-              />
-            </View>
-          )}
-
-          <View style={styles.daysContainer}>
-            <Text style={styles.daysCount}>
-              {Math.floor((new Date().getTime() - sobrietyDate.getTime()) / (1000 * 60 * 60 * 24))}
-            </Text>
-            <Text style={styles.daysLabel}>Days Sober</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
+        {showDatePicker && Platform.OS !== 'web' && (
+          <DateTimePicker
+            value={sobrietyDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onDateChange}
+            maximumDate={new Date()}
+          />
+        )}
+
+        {Platform.OS === 'web' && showDatePicker && (
+          <View style={styles.webDatePicker}>
+            <input
+              type="date"
+              value={sobrietyDate.toISOString().split('T')[0]}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                setSobrietyDate(new Date(e.target.value));
+                setShowDatePicker(false);
+              }}
+              style={{
+                padding: '12px',
+                fontSize: '16px',
+                fontFamily: theme.fontRegular,
+                borderRadius: '8px',
+                border: `2px solid ${theme.primary}`,
+                marginBottom: '16px',
+                width: '100%',
+              }}
+            />
+          </View>
+        )}
+
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsCount}>
+            {Math.max(
+              0,
+              Math.floor((new Date().getTime() - sobrietyDate.getTime()) / MILLISECONDS_PER_DAY)
+            )}
+          </Text>
+          <Text style={styles.statsLabel}>Days Sober</Text>
+        </View>
+      </View>
+
+      <View style={styles.footer}>
         <View style={styles.buttonGroup}>
           {needsName && (
             <TouchableOpacity
@@ -233,47 +279,72 @@ export default function OnboardingScreen() {
               onPress={() => setStep(1)}
               disabled={loading}
             >
+              <ChevronLeft size={20} color={theme.text} />
               <Text style={styles.secondaryButtonText}>Back</Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity
-            style={[
-              styles.button,
-              needsName ? styles.flexButton : styles.fullWidthButton,
-              loading && styles.buttonDisabled,
-            ]}
+            style={[styles.button, styles.flexButton, loading && styles.buttonDisabled]}
             onPress={handleComplete}
             disabled={loading}
           >
             <Text style={styles.buttonText}>{loading ? 'Setting up...' : 'Complete Setup'}</Text>
+            {!loading && <ChevronRight size={20} color={theme.textOnPrimary} />}
           </TouchableOpacity>
         </View>
-
-        {!needsName && (
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-            <LogOut size={20} color={theme.textSecondary} />
-            <Text style={styles.signOutText}>Back to Sign In</Text>
-          </TouchableOpacity>
-        )}
       </View>
-    </ScrollView>
+    </OnboardingStep>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <View style={styles.safeArea}>
+        <View style={styles.topBar}>
+          <ProgressBar step={step} totalSteps={totalSteps} theme={theme} />
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {step === 1 ? renderStep1() : renderStep2()}
+        </ScrollView>
+
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <LogOut size={16} color={theme.textSecondary} />
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
-      flexGrow: 1,
+      flex: 1,
       backgroundColor: theme.background,
     },
-    content: {
+    safeArea: {
       flex: 1,
-      padding: 24,
-      justifyContent: 'center',
+      paddingTop: Platform.OS === 'android' ? 40 : 60,
+    },
+    topBar: {
+      marginBottom: 20,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    headerContainer: {
+      marginBottom: 32,
+      alignItems: 'center',
     },
     title: {
-      fontSize: 32,
+      fontSize: 28,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
       color: theme.text,
@@ -285,96 +356,138 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       textAlign: 'center',
-      marginBottom: 40,
     },
-    sectionTitle: {
-      fontSize: 18,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-      marginBottom: 8,
-    },
-    sectionSubtitle: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
+    card: {
+      backgroundColor: theme.card,
+      borderRadius: 24,
+      padding: 24,
       marginBottom: 24,
-      lineHeight: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      elevation: 2,
     },
-    nameContainer: {
-      marginBottom: 32,
-    },
-    inputContainer: {
+    inputGroup: {
       marginBottom: 20,
     },
     label: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: theme.text,
+      color: theme.textSecondary,
       marginBottom: 8,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
     input: {
-      backgroundColor: theme.card,
-      borderWidth: 2,
+      backgroundColor: theme.background,
+      borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 12,
       padding: 16,
-      fontSize: 16,
+      fontSize: 18,
       fontFamily: theme.fontRegular,
       color: theme.text,
     },
-    dateContainer: {
-      alignItems: 'center',
-      marginBottom: 32,
-    },
-    dateButton: {
+    infoButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.card,
-      borderWidth: 2,
-      borderColor: '#007AFF',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 32,
+      justifyContent: 'center',
+      padding: 8,
+      gap: 6,
     },
-    webDatePicker: {
+    infoText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+    },
+    infoBox: {
+      marginTop: 12,
+      padding: 12,
+      backgroundColor: theme.background,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    infoBoxText: {
+      fontSize: 13,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      lineHeight: 18,
+    },
+    dateDisplay: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.background,
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
       marginBottom: 24,
     },
-    dateText: {
+    dateTextContainer: {
+      marginLeft: 16,
+    },
+    dateLabel: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginBottom: 4,
+    },
+    dateValue: {
       fontSize: 18,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.text,
-      marginLeft: 12,
     },
-    daysContainer: {
+    webDatePicker: {
+      marginBottom: 24,
+    },
+    statsContainer: {
       alignItems: 'center',
+      padding: 24,
+      backgroundColor: theme.background,
+      borderRadius: 16,
     },
-    daysCount: {
-      fontSize: 64,
+    statsCount: {
+      fontSize: 48,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
-      color: '#007AFF',
+      color: theme.primary,
+      marginBottom: 4,
     },
-    daysLabel: {
-      fontSize: 18,
+    statsLabel: {
+      fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
-      marginTop: 8,
+    },
+    footer: {
+      flexGrow: 1,
+      justifyContent: 'flex-end',
+      marginBottom: 24,
     },
     button: {
-      backgroundColor: '#007AFF',
-      borderRadius: 12,
-      padding: 16,
+      backgroundColor: theme.primary,
+      borderRadius: 16,
+      padding: 18,
+      flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
     buttonDisabled: {
-      opacity: 0.6,
+      opacity: 0.5,
+      shadowOpacity: 0,
     },
     buttonText: {
-      color: '#ffffff',
-      fontSize: 16,
+      color: theme.white,
+      fontSize: 18,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
     },
@@ -383,37 +496,38 @@ const createStyles = (theme: ThemeColors) =>
       gap: 12,
     },
     secondaryButton: {
+      backgroundColor: theme.card,
       borderWidth: 1,
-      borderColor: '#d1d5db',
-      borderRadius: 12,
-      padding: 16,
+      borderColor: theme.border,
+      borderRadius: 16,
+      padding: 18,
       alignItems: 'center',
-      flex: 1,
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 4,
+      minWidth: 100,
     },
     secondaryButtonText: {
-      color: '#374151',
+      color: theme.text,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
     },
     flexButton: {
-      flex: 2,
-    },
-    fullWidthButton: {
       flex: 1,
     },
     signOutButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: 24,
-      padding: 12,
+      padding: 16,
+      gap: 8,
+      marginBottom: 8,
     },
     signOutText: {
-      marginLeft: 8,
-      fontSize: 16,
+      fontSize: 14,
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
-      fontWeight: '600',
+      fontWeight: '500',
     },
   });

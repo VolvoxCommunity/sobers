@@ -8,10 +8,8 @@ import {
   TextInput,
   Alert,
   Share,
-  Switch,
   Platform,
   ActivityIndicator,
-  Linking,
   Modal,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,24 +17,20 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import {
-  LogOut,
   Heart,
   Share2,
   QrCode,
-  Bell,
-  Moon,
-  Sun,
-  Monitor,
   UserMinus,
   Edit2,
   Calendar,
   AlertCircle,
   CheckCircle,
+  Settings,
 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import packageJson from '../../package.json';
 import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
+import { useRouter } from 'expo-router';
 
 // Component for displaying sponsee days sober using the hook
 function SponseeDaysDisplay({
@@ -75,7 +69,7 @@ function SponseeDaysDisplay({
           )}
           {taskStats && (
             <View style={createStyles(theme).taskStatsInfo}>
-              <CheckCircle size={14} color="#10b981" />
+              <CheckCircle size={14} color={theme.success} />
               <Text style={createStyles(theme).taskStatsText}>
                 {taskStats.completed}/{taskStats.total} tasks completed
               </Text>
@@ -84,7 +78,7 @@ function SponseeDaysDisplay({
         </View>
       </View>
       <TouchableOpacity style={createStyles(theme).disconnectButton} onPress={onDisconnect}>
-        <UserMinus size={18} color="#ef4444" />
+        <UserMinus size={18} color={theme.danger} />
         <Text style={createStyles(theme).disconnectText}>Disconnect</Text>
       </TouchableOpacity>
     </View>
@@ -127,7 +121,7 @@ function SponsorDaysDisplay({
         </View>
       </View>
       <TouchableOpacity style={createStyles(theme).disconnectButton} onPress={onDisconnect}>
-        <UserMinus size={18} color="#ef4444" />
+        <UserMinus size={18} color={theme.danger} />
         <Text style={createStyles(theme).disconnectText}>Disconnect</Text>
       </TouchableOpacity>
     </View>
@@ -135,8 +129,9 @@ function SponsorDaysDisplay({
 }
 
 export default function ProfileScreen() {
-  const { profile, signOut, refreshProfile } = useAuth();
-  const { theme, themeMode, setThemeMode } = useTheme();
+  const { profile, refreshProfile } = useAuth();
+  const { theme } = useTheme();
+  const router = useRouter();
   const [inviteCode, setInviteCode] = useState('');
   const [showInviteInput, setShowInviteInput] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -147,12 +142,6 @@ export default function ProfileScreen() {
     []
   );
   const [loadingRelationships, setLoadingRelationships] = useState(true);
-  const [notificationSettings, setNotificationSettings] = useState({
-    tasks: profile?.notification_preferences?.tasks ?? true,
-    messages: profile?.notification_preferences?.messages ?? true,
-    milestones: profile?.notification_preferences?.milestones ?? true,
-    daily: profile?.notification_preferences?.daily ?? true,
-  });
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
   const [showSlipUpModal, setShowSlipUpModal] = useState(false);
@@ -186,18 +175,31 @@ export default function ProfileScreen() {
       setSponsorRelationships(asSponsee || []);
       setSponseeRelationships(asSponsor || []);
 
+      // Batch fetch all task stats in a single query (avoids N+1 problem)
       if (asSponsor && asSponsor.length > 0) {
+        const sponseeIds = asSponsor.map((rel) => rel.sponsee_id);
+
+        const { data: allTasks } = await supabase
+          .from('tasks')
+          .select('sponsee_id, status')
+          .in('sponsee_id', sponseeIds);
+
+        // Aggregate stats client-side
         const stats: { [key: string]: { total: number; completed: number } } = {};
 
-        for (const rel of asSponsor) {
-          const { data: tasks } = await supabase
-            .from('tasks')
-            .select('status')
-            .eq('sponsee_id', rel.sponsee_id);
+        // Initialize stats for all sponsees (ensures 0/0 for sponsees with no tasks)
+        for (const id of sponseeIds) {
+          stats[id] = { total: 0, completed: 0 };
+        }
 
-          const total = tasks?.length || 0;
-          const completed = tasks?.filter((t) => t.status === 'completed').length || 0;
-          stats[rel.sponsee_id] = { total, completed };
+        // Count tasks per sponsee
+        if (allTasks) {
+          for (const task of allTasks) {
+            stats[task.sponsee_id].total++;
+            if (task.status === 'completed') {
+              stats[task.sponsee_id].completed++;
+            }
+          }
         }
 
         setSponseeTaskStats(stats);
@@ -442,36 +444,19 @@ export default function ProfileScreen() {
 
       setShowInviteInput(false);
       setInviteCode('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Join with invite code failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message =
+        error instanceof Error ? error.message : 'Network error. Please check your connection.';
       if (Platform.OS === 'web') {
-        window.alert('Network error. Please check your connection and try again.');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Network error. Please check your connection and try again.');
+        Alert.alert('Error', message);
       }
     } finally {
       setIsConnecting(false);
-    }
-  };
-
-  const updateNotificationSetting = async (key: string, value: boolean) => {
-    if (!profile) return;
-
-    const newSettings = { ...notificationSettings, [key]: value };
-    setNotificationSettings(newSettings);
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ notification_preferences: newSettings })
-      .eq('id', profile.id);
-
-    if (error) {
-      Alert.alert('Error', 'Failed to update notification settings');
-      setNotificationSettings(notificationSettings);
-    } else {
-      await refreshProfile();
     }
   };
 
@@ -543,14 +528,15 @@ export default function ProfileScreen() {
       } else {
         Alert.alert('Success', 'Successfully disconnected');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Disconnect relationship failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message = error instanceof Error ? error.message : 'Failed to disconnect.';
       if (Platform.OS === 'web') {
-        window.alert('Failed to disconnect. Please try again.');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Failed to disconnect. Please try again.');
+        Alert.alert('Error', message);
       }
     }
   };
@@ -612,14 +598,15 @@ export default function ProfileScreen() {
       } else {
         Alert.alert('Success', 'Sobriety date updated successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Sobriety date update failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message = error instanceof Error ? error.message : 'Failed to update sobriety date.';
       if (Platform.OS === 'web') {
-        window.alert('Failed to update sobriety date');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Failed to update sobriety date');
+        Alert.alert('Error', message);
       }
     }
   };
@@ -732,45 +719,18 @@ export default function ProfileScreen() {
           'Your slip up has been logged. Remember, recovery is a journey. You are brave for being honest. Keep moving forward, one day at a time.'
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Slip up logging failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message = error instanceof Error ? error.message : 'Failed to log slip up.';
       if (Platform.OS === 'web') {
-        window.alert('Failed to log slip up. Please try again.');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Failed to log slip up. Please try again.');
+        Alert.alert('Error', message);
       }
     } finally {
       setIsLoggingSlipUp(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to sign out?');
-      if (confirmed) {
-        try {
-          await signOut();
-        } catch (error: any) {
-          window.alert('Error signing out: ' + error.message);
-        }
-      }
-    } else {
-      Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error: any) {
-              Alert.alert('Error', 'Failed to sign out: ' + error.message);
-            }
-          },
-        },
-      ]);
     }
   };
 
@@ -779,6 +739,16 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+          >
+            <Settings size={24} color={theme.text} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{profile?.first_name?.[0]?.toUpperCase() || '?'}</Text>
         </View>
@@ -820,7 +790,7 @@ export default function ProfileScreen() {
           </Text>
         )}
         <TouchableOpacity style={styles.slipUpButton} onPress={handleLogSlipUp}>
-          <AlertCircle size={18} color="#ffffff" />
+          <AlertCircle size={18} color={theme.white} />
           <Text style={styles.slipUpButtonText}>Log a Slip Up</Text>
         </TouchableOpacity>
       </View>
@@ -918,7 +888,7 @@ export default function ProfileScreen() {
                   disabled={isConnecting}
                 >
                   {isConnecting ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
+                    <ActivityIndicator size="small" color={theme.white} />
                   ) : (
                     <Text style={styles.inviteSubmitText}>Connect</Text>
                   )}
@@ -948,130 +918,6 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-
-        <View style={styles.settingsCard}>
-          <View style={styles.settingRow}>
-            <Monitor size={20} color={theme.textSecondary} />
-            <Text style={styles.settingLabel}>Appearance</Text>
-          </View>
-
-          <View style={styles.themeOptions}>
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('light')}
-            >
-              <Sun size={20} color={themeMode === 'light' ? theme.primary : theme.textSecondary} />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'light' && styles.themeOptionTextSelected,
-                ]}
-              >
-                Light
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('dark')}
-            >
-              <Moon size={20} color={themeMode === 'dark' ? theme.primary : theme.textSecondary} />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'dark' && styles.themeOptionTextSelected,
-                ]}
-              >
-                Dark
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('system')}
-            >
-              <Monitor
-                size={20}
-                color={themeMode === 'system' ? theme.primary : theme.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  themeMode === 'system' && styles.themeOptionTextSelected,
-                ]}
-              >
-                System
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={[styles.settingsCard, { marginTop: 16 }]}>
-          <View style={styles.settingRow}>
-            <Bell size={20} color={theme.textSecondary} />
-            <Text style={styles.settingLabel}>Notifications</Text>
-          </View>
-
-          <View style={styles.settingSubRow}>
-            <Text style={styles.settingSubLabel}>Task assignments</Text>
-            <Switch
-              value={notificationSettings.tasks}
-              onValueChange={(value) => updateNotificationSetting('tasks', value)}
-              trackColor={{ false: '#d1d5db', true: '#80c0ff' }}
-              thumbColor={notificationSettings.tasks ? theme.primary : '#f3f4f6'}
-            />
-          </View>
-
-          <View style={styles.settingSubRow}>
-            <Text style={styles.settingSubLabel}>Messages</Text>
-            <Switch
-              value={notificationSettings.messages}
-              onValueChange={(value) => updateNotificationSetting('messages', value)}
-              trackColor={{ false: '#d1d5db', true: '#80c0ff' }}
-              thumbColor={notificationSettings.messages ? theme.primary : '#f3f4f6'}
-            />
-          </View>
-
-          <View style={styles.settingSubRow}>
-            <Text style={styles.settingSubLabel}>Milestones</Text>
-            <Switch
-              value={notificationSettings.milestones}
-              onValueChange={(value) => updateNotificationSetting('milestones', value)}
-              trackColor={{ false: '#d1d5db', true: '#80c0ff' }}
-              thumbColor={notificationSettings.milestones ? theme.primary : '#f3f4f6'}
-            />
-          </View>
-
-          <View style={styles.settingSubRow}>
-            <Text style={styles.settingSubLabel}>Daily reminders</Text>
-            <Switch
-              value={notificationSettings.daily}
-              onValueChange={(value) => updateNotificationSetting('daily', value)}
-              trackColor={{ false: '#d1d5db', true: '#80c0ff' }}
-              thumbColor={notificationSettings.daily ? theme.primary : '#f3f4f6'}
-            />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <LogOut size={20} color="#ef4444" />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Sobriety Waypoint v{packageJson.version}</Text>
-        <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
-        <TouchableOpacity onPress={() => Linking.openURL('https://billchirico.dev')}>
-          <Text style={styles.footerCredit}>By Bill Chirico</Text>
-        </TouchableOpacity>
-      </View>
-
       {Platform.OS === 'web' && showSobrietyDatePicker && (
         <Modal visible={showSobrietyDatePicker} transparent animationType="fade">
           <View style={styles.modalOverlay}>
@@ -1086,7 +932,7 @@ export default function ProfileScreen() {
                   padding: 12,
                   fontSize: 16,
                   borderRadius: 8,
-                  border: '1px solid #d1d5db',
+                  border: `1px solid ${theme.border}`,
                   marginTop: 16,
                   marginBottom: 16,
                   width: '100%',
@@ -1171,7 +1017,7 @@ export default function ProfileScreen() {
                     padding: 12,
                     fontSize: 16,
                     borderRadius: 8,
-                    border: '1px solid #d1d5db',
+                    border: `1px solid ${theme.border}`,
                     width: '100%',
                   }}
                 />
@@ -1218,7 +1064,7 @@ export default function ProfileScreen() {
                     padding: 12,
                     fontSize: 16,
                     borderRadius: 8,
-                    border: '1px solid #d1d5db',
+                    border: `1px solid ${theme.border}`,
                     width: '100%',
                   }}
                 />
@@ -1289,7 +1135,7 @@ export default function ProfileScreen() {
                 disabled={isLoggingSlipUp}
               >
                 {isLoggingSlipUp ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
+                  <ActivityIndicator size="small" color={theme.white} />
                 ) : (
                   <Text style={styles.modalConfirmText}>Log Slip Up</Text>
                 )}
@@ -1314,6 +1160,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       paddingTop: 60,
       backgroundColor: theme.surface,
     },
+    headerTop: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginBottom: 16,
+    },
+    settingsButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: theme.card,
+    },
     avatar: {
       width: 80,
       height: 80,
@@ -1327,7 +1184,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 32,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
-      color: '#ffffff',
+      color: theme.white,
     },
     name: {
       fontSize: 24,
@@ -1364,7 +1221,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.text,
-      marginLeft: 8,
+      marginLeft: 12,
     },
     daysSober: {
       fontSize: 48,
@@ -1405,7 +1262,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#ef4444',
+      backgroundColor: theme.danger,
       paddingHorizontal: 20,
       paddingVertical: 12,
       borderRadius: 8,
@@ -1416,7 +1273,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     section: {
       padding: 16,
@@ -1477,7 +1334,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     inviteCancelButton: {
       padding: 12,
@@ -1488,116 +1345,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.textSecondary,
-    },
-    signOutButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.card,
-      padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#fee2e2',
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    signOutText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: '#ef4444',
-      marginLeft: 12,
-    },
-    footer: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    footerText: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      fontWeight: '600',
-    },
-    footerSubtext: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      marginTop: 4,
-    },
-    footerCredit: {
-      fontSize: 11,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      marginTop: 12,
-      fontStyle: 'italic',
-      opacity: 0.7,
-    },
-    settingsCard: {
-      backgroundColor: theme.card,
-      padding: 16,
-      borderRadius: 12,
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    settingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-      paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderLight,
-    },
-    settingLabel: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-      marginLeft: 12,
-    },
-    settingSubRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: 12,
-    },
-    settingSubLabel: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-    },
-    themeOptions: {
-      flexDirection: 'row',
-      gap: 8,
-      paddingTop: 8,
-    },
-    themeOption: {
-      flex: 1,
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: theme.border,
-      backgroundColor: theme.background,
-    },
-    themeOptionSelected: {
-      borderColor: theme.primary,
-      backgroundColor: theme.primaryLight,
-    },
-    themeOptionText: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.textSecondary,
-      marginTop: 6,
-    },
-    themeOptionTextSelected: {
-      color: theme.primary,
     },
     loadingContainer: {
       padding: 20,
@@ -1656,7 +1403,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     taskStatsText: {
       fontSize: 12,
       fontFamily: theme.fontRegular,
-      color: '#10b981',
+      color: theme.success,
       fontWeight: '600',
     },
     disconnectButton: {
@@ -1667,15 +1414,15 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       paddingHorizontal: 12,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
     disconnectText: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ef4444',
-      marginLeft: 6,
+      color: theme.danger,
+      marginLeft: 12,
     },
     emptyStateText: {
       fontSize: 14,
@@ -1683,7 +1430,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 16,
-      paddingVertical: 8,
     },
     buttonDisabled: {
       opacity: 0.6,
@@ -1696,18 +1442,19 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       padding: 20,
     },
     datePickerModal: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
       borderRadius: 16,
       padding: 24,
       width: '100%',
       maxWidth: 400,
+      alignItems: 'center',
     },
     slipUpModal: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
       borderRadius: 16,
       padding: 24,
       width: '100%',
-      maxWidth: 500,
+      maxWidth: 400,
       maxHeight: '90%',
     },
     modalTitle: {
@@ -1724,7 +1471,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 24,
-      lineHeight: 20,
     },
     dateSection: {
       marginBottom: 20,
@@ -1739,21 +1485,25 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     dateButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.borderLight,
+      backgroundColor: theme.card,
       padding: 12,
       borderRadius: 8,
-      gap: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
     },
     dateButtonText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+      marginLeft: 12,
     },
     notesSection: {
       marginBottom: 20,
     },
     notesInput: {
-      backgroundColor: theme.borderLight,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
       borderRadius: 8,
       padding: 12,
       fontSize: 16,
@@ -1764,10 +1514,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     privacyNote: {
       fontSize: 12,
       fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
+      color: theme.textTertiary,
       textAlign: 'center',
-      fontStyle: 'italic',
-      marginBottom: 20,
+      marginBottom: 24,
     },
     modalButtons: {
       flexDirection: 'row',
@@ -1775,8 +1524,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     modalCancelButton: {
       flex: 1,
-      padding: 14,
+      padding: 12,
       borderRadius: 8,
+      backgroundColor: theme.card,
       borderWidth: 1,
       borderColor: theme.border,
       alignItems: 'center',
@@ -1785,22 +1535,22 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: theme.textSecondary,
+      color: theme.text,
     },
     modalConfirmButton: {
       flex: 1,
-      padding: 14,
+      padding: 12,
       borderRadius: 8,
       backgroundColor: theme.primary,
       alignItems: 'center',
     },
     slipUpConfirmButton: {
-      backgroundColor: '#ef4444',
+      backgroundColor: theme.danger,
     },
     modalConfirmText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
   });

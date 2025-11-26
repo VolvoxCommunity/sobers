@@ -25,6 +25,7 @@ interface AuthContextType {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -32,11 +33,12 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  signIn: async () => { },
-  signInWithGoogle: async () => { },
-  signUp: async () => { },
-  signOut: async () => { },
-  refreshProfile: async () => { },
+  signIn: async () => {},
+  signInWithGoogle: async () => {},
+  signUp: async () => {},
+  signOut: async () => {},
+  refreshProfile: async () => {},
+  deleteAccount: async () => {},
 });
 
 export const useAuth = () => {
@@ -344,7 +346,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (existingProfile) {
         // Profile already exists - this is OK, user might be re-signing up
-        console.log('Profile already exists for user', data.user.id);
+        logger.info('Profile already exists for user', {
+          category: LogCategory.AUTH,
+          userId: data.user.id,
+        });
         return;
       }
 
@@ -375,6 +380,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
   };
 
+  /**
+   * Permanently deletes the user's account from the database.
+   * This calls a Supabase RPC function that deletes the user from auth.users,
+   * which cascades to delete the profile and all related data.
+   * After deletion, the user is signed out.
+   *
+   * @throws Error if the deletion fails
+   */
+  const deleteAccount = async () => {
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+
+    logger.info('Account deletion initiated', {
+      category: LogCategory.AUTH,
+      userId: user.id,
+    });
+
+    // Call the RPC function to delete the user account
+    const { error } = await supabase.rpc('delete_user_account');
+
+    if (error) {
+      logger.error('Account deletion failed', error as Error, {
+        category: LogCategory.AUTH,
+        userId: user.id,
+      });
+      throw error;
+    }
+
+    logger.info('Account deleted successfully', {
+      category: LogCategory.AUTH,
+    });
+
+    // Sign out first to clear session data and trigger auth state change
+    await supabase.auth.signOut();
+
+    // Clear local state and Sentry user
+    // Order matters: clear user/session first so routing logic sees !user → login
+    clearSentryUser();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -387,6 +436,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         refreshProfile,
+        deleteAccount,
       }}
     >
       {children}

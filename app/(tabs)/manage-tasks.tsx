@@ -97,14 +97,15 @@ export default function ManageTasksScreen() {
       } else {
         Alert.alert('Success', 'Task deleted successfully');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Task deletion failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message = error instanceof Error ? error.message : 'Failed to delete task.';
       if (Platform.OS === 'web') {
-        window.alert('Failed to delete task');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Failed to delete task');
+        Alert.alert('Error', message);
       }
     }
   };

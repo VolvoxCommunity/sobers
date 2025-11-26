@@ -144,14 +144,15 @@ export default function HomeScreen() {
       } else {
         Alert.alert('Success', 'Successfully disconnected');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Relationship disconnect failed', error as Error, {
         category: LogCategory.DATABASE,
       });
+      const message = error instanceof Error ? error.message : 'Failed to disconnect.';
       if (Platform.OS === 'web') {
-        window.alert('Failed to disconnect. Please try again.');
+        window.alert(message);
       } else {
-        Alert.alert('Error', 'Failed to disconnect. Please try again.');
+        Alert.alert('Error', message);
       }
     }
   };
