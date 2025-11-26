@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { Heart } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
+import { logger, LogCategory } from '@/lib/logger';
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -42,11 +43,12 @@ export default function LoginScreen() {
     try {
       await signIn(email, password);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to sign in';
+      const err = error instanceof Error ? error : new Error('Failed to sign in');
+      logger.error('Sign in failed', err, { category: LogCategory.AUTH, email });
       if (Platform.OS === 'web') {
-        window.alert('Error: ' + message);
+        window.alert('Error: ' + err.message);
       } else {
-        Alert.alert('Error', message);
+        Alert.alert('Error', err.message);
       }
     } finally {
       setLoading(false);
@@ -58,11 +60,12 @@ export default function LoginScreen() {
     try {
       await signInWithGoogle();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
+      const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
+      logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
       if (Platform.OS === 'web') {
-        window.alert('Error: ' + message);
+        window.alert('Error: ' + err.message);
       } else {
-        Alert.alert('Error', message);
+        Alert.alert('Error', err.message);
       }
     } finally {
       setGoogleLoading(false);

@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { Heart, ArrowLeft } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
+import { logger, LogCategory } from '@/lib/logger';
 
 export default function SignupScreen() {
   const { theme } = useTheme();
@@ -76,11 +77,12 @@ export default function SignupScreen() {
       await signUp(email, password, firstName, lastInitial);
       router.replace('/onboarding');
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to create account';
+      const err = error instanceof Error ? error : new Error('Failed to create account');
+      logger.error('Sign up failed', err, { category: LogCategory.AUTH, email });
       if (Platform.OS === 'web') {
-        window.alert('Error: ' + message);
+        window.alert('Error: ' + err.message);
       } else {
-        Alert.alert('Error', message);
+        Alert.alert('Error', err.message);
       }
     } finally {
       setLoading(false);
@@ -92,11 +94,12 @@ export default function SignupScreen() {
     try {
       await signInWithGoogle();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to sign in with Google';
+      const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
+      logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
       if (Platform.OS === 'web') {
-        window.alert('Error: ' + message);
+        window.alert('Error: ' + err.message);
       } else {
-        Alert.alert('Error', message);
+        Alert.alert('Error', err.message);
       }
     } finally {
       setGoogleLoading(false);
