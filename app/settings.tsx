@@ -523,29 +523,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-<<<<<<< HEAD
       backgroundColor: theme.dangerLight,
       padding: 16,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.dangerBorder,
-=======
-      backgroundColor: '#fef2f2',
-      padding: 16,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: '#fee2e2',
->>>>>>> 8d6f1ec (refactor: improve error handling with `unknown` and type guards, optimize sponsee task fetching, and refine sign-out logic.)
     },
     signOutText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-<<<<<<< HEAD
       color: theme.danger,
-=======
-      color: theme.error,
->>>>>>> 8d6f1ec (refactor: improve error handling with `unknown` and type guards, optimize sponsee task fetching, and refine sign-out logic.)
       marginLeft: 8,
     },
     footer: {
