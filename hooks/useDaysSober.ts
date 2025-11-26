@@ -4,6 +4,8 @@ import { getDateDiffInDays } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SlipUp, Profile } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { addDays } from 'date-fns';
 
 // =============================================================================
 // Types & Interfaces
@@ -33,22 +35,62 @@ export interface DaysSoberResult {
 // =============================================================================
 
 /**
- * Calculates the number of milliseconds until the next midnight.
+ * Calculates the number of milliseconds until the next midnight in a specific timezone.
  *
- * @returns Milliseconds until 00:00:00 of the next day
+ * This ensures the midnight refresh timer aligns with the user's profile timezone,
+ * not the device's local timezone. This is critical for consistent day count updates
+ * when users travel or have their device in a different timezone than their profile.
+ *
+ * @param timezone - IANA timezone string (e.g., 'America/Los_Angeles'). Defaults to device timezone
+ * @returns Milliseconds until 00:00:00 of the next day in the specified timezone
  *
  * @example
  * ```ts
- * const ms = getMillisecondsUntilMidnight();
+ * const ms = getMillisecondsUntilMidnight('America/Los_Angeles');
  * setTimeout(refresh, ms);
  * ```
  */
-function getMillisecondsUntilMidnight(): number {
+function getMillisecondsUntilMidnight(
+  timezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone
+): number {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow.getTime() - now.getTime();
+
+  // Get current time in the target timezone
+  const zonedNow = toZonedTime(now, timezone);
+  
+  // Calculate time until midnight in the target timezone
+  const hoursUntilMidnight = 24 - zonedNow.getHours();
+  const minutesUntilMidnight = 60 - zonedNow.getMinutes();
+  const secondsUntilMidnight = 60 - zonedNow.getSeconds();
+  const msUntilMidnight = 1000 - zonedNow.getMilliseconds();
+  
+  // Total milliseconds until midnight in timezone
+  const msInTz = 
+    (hoursUntilMidnight - 1) * 3600000 +
+    (minutesUntilMidnight - 1) * 60000 +
+    (secondsUntilMidnight - 1) * 1000 +
+    msUntilMidnight;
+  
+  // We need to convert this to UTC time for setTimeout
+  // Calculate what UTC time corresponds to midnight in the timezone
+  const tomorrowZoned = addDays(zonedNow, 1);
+  tomorrowZoned.setHours(0, 0, 0, 0);
+  
+  // Get tomorrow's date string to calculate the offset for that date
+  const tomorrowDateStr = formatInTimeZone(tomorrowZoned, timezone, 'yyyy-MM-dd');
+  const [year, month, day] = tomorrowDateStr.split('-').map(Number);
+  
+  // Create a test UTC time for tomorrow noon to get accurate offset
+  const testUtc = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+  const testZoned = toZonedTime(testUtc, timezone);
+  const offsetForTomorrow = testUtc.getTime() - testZoned.getTime();
+  
+  // Create a UTC date representing midnight in the timezone
+  // by taking midnight UTC and adjusting by the offset
+  const midnightUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  const midnightUtcForTz = new Date(midnightUtc.getTime() - offsetForTomorrow);
+  
+  return Math.max(1000, midnightUtcForTz.getTime() - now.getTime());
 }
 
 // =============================================================================
@@ -95,14 +137,20 @@ export function useDaysSober(userId?: string): DaysSoberResult {
   // Ref to track the active midnight refresh timer
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Set up midnight refresh timer
+  // Get the timezone to use (from profile or device default)
+  const timezone = useMemo(() => {
+    return targetProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }, [targetProfile?.timezone]);
+
+  // Set up midnight refresh timer - reschedules when timezone changes
   useEffect(() => {
     /**
-     * Schedules a state update at midnight to trigger day count recalculation.
-     * Reschedules itself for the following midnight after each update.
+     * Schedules a state update at midnight in the user's profile timezone
+     * to trigger day count recalculation. Reschedules itself for the following
+     * midnight after each update.
      */
     function scheduleMidnightRefresh(): void {
-      const msUntilMidnight = getMillisecondsUntilMidnight();
+      const msUntilMidnight = getMillisecondsUntilMidnight(timezone);
 
       timerRef.current = setTimeout(() => {
         setCurrentDate(new Date().toDateString());
@@ -119,7 +167,7 @@ export function useDaysSober(userId?: string): DaysSoberResult {
         timerRef.current = null;
       }
     };
-  }, []);
+  }, [timezone]);
 
   // Fetch slip-up and profile data
   useEffect(() => {
@@ -183,16 +231,20 @@ export function useDaysSober(userId?: string): DaysSoberResult {
       streakStartDate = sobrietyDate;
     }
 
+    // Get timezone for calculations (use profile timezone or device default)
+    const calcTimezone = targetProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
     // Calculate days in current streak
+    // Pass date strings directly so they're parsed as midnight in the user's timezone
     let daysSober = 0;
     if (streakStartDate) {
-      daysSober = getDateDiffInDays(new Date(streakStartDate));
+      daysSober = getDateDiffInDays(streakStartDate, new Date(), calcTimezone);
     }
 
     // Calculate total journey days from original sobriety date
     let journeyDays = 0;
     if (sobrietyDate) {
-      journeyDays = getDateDiffInDays(new Date(sobrietyDate));
+      journeyDays = getDateDiffInDays(sobrietyDate, new Date(), calcTimezone);
     }
 
     return {

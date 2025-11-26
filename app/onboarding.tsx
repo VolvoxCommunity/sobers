@@ -19,12 +19,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import ProgressBar from '@/components/onboarding/ProgressBar';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-
-// =============================================================================
-// Constants
-// =============================================================================
-/** Number of milliseconds in one day (24 hours) */
-const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+import { getDateDiffInDays } from '@/lib/date';
 
 /**
  * OnboardingScreen handles the initial user setup flow after authentication.
@@ -262,9 +257,10 @@ export default function OnboardingScreen() {
 
         <View style={styles.statsContainer}>
           <Text style={styles.statsCount}>
-            {Math.max(
-              0,
-              Math.floor((new Date().getTime() - sobrietyDate.getTime()) / MILLISECONDS_PER_DAY)
+            {getDateDiffInDays(
+              sobrietyDate,
+              new Date(),
+              profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
             )}
           </Text>
           <Text style={styles.statsLabel}>Days Sober</Text>
