@@ -1,3 +1,6 @@
+// =============================================================================
+// Imports
+// =============================================================================
 import React from 'react';
 import {
   View,
@@ -23,12 +26,47 @@ import {
   Github,
 } from 'lucide-react-native';
 import packageJson from '../package.json';
+import { logger, LogCategory } from '@/lib/logger';
 
+// =============================================================================
+// Constants
+// =============================================================================
+const EXTERNAL_LINKS = {
+  PRIVACY_POLICY: 'https://www.volvoxdev.com/privacy',
+  TERMS_OF_SERVICE: 'https://sobrietywaypoint.com/terms',
+  SOURCE_CODE: 'https://github.com/VolvoxCommunity/Sobriety-Waypoint',
+  DEVELOPER: 'https://billchirico.dev',
+} as const;
+
+// =============================================================================
+// Component
+// =============================================================================
+/**
+ * Settings screen for managing app preferences and user account.
+ *
+ * Provides the following functionality:
+ * - Theme mode selection (light/dark/system)
+ * - Access to legal documents (privacy policy, terms of service)
+ * - Link to source code repository
+ * - Sign out functionality
+ *
+ * @returns Settings screen component with navigation header
+ *
+ * @example
+ * ```tsx
+ * // Navigated to via router.push('/settings')
+ * <SettingsScreen />
+ * ```
+ */
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
 
+  /**
+   * Handles user sign out with platform-specific confirmations.
+   * Shows a confirmation dialog before signing out and navigating to login.
+   */
   const handleSignOut = async () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('Are you sure you want to sign out?');
@@ -36,8 +74,12 @@ export default function SettingsScreen() {
         try {
           await signOut();
           router.replace('/login');
-        } catch (error: any) {
-          window.alert('Error signing out: ' + error.message);
+        } catch (error) {
+          logger.error('Sign out failed', error as Error, {
+            category: LogCategory.AUTH,
+          });
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          window.alert('Error signing out: ' + message);
         }
       }
     } else {
@@ -50,8 +92,12 @@ export default function SettingsScreen() {
             try {
               await signOut();
               router.replace('/login');
-            } catch (error: any) {
-              Alert.alert('Error', 'Failed to sign out: ' + error.message);
+            } catch (error) {
+              logger.error('Sign out failed', error as Error, {
+                category: LogCategory.AUTH,
+              });
+              const message = error instanceof Error ? error.message : 'Unknown error';
+              Alert.alert('Error', 'Failed to sign out: ' + message);
             }
           },
         },
@@ -65,7 +111,12 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
           <ChevronLeft size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
@@ -80,6 +131,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
                 onPress={() => setThemeMode('light')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'light' }}
+                accessibilityLabel="Light theme"
               >
                 <Sun
                   size={24}
@@ -98,6 +152,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
                 onPress={() => setThemeMode('dark')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'dark' }}
+                accessibilityLabel="Dark theme"
               >
                 <Moon
                   size={24}
@@ -116,6 +173,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
                 onPress={() => setThemeMode('system')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'system' }}
+                accessibilityLabel="System theme"
               >
                 <Monitor
                   size={24}
@@ -139,7 +199,9 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => Linking.openURL('https://www.volvoxdev.com/privacy')}
+              onPress={() => Linking.openURL(EXTERNAL_LINKS.PRIVACY_POLICY)}
+              accessibilityRole="link"
+              accessibilityLabel="View Privacy Policy"
             >
               <View style={styles.menuItemLeft}>
                 <Shield size={20} color={theme.textSecondary} />
@@ -154,7 +216,9 @@ export default function SettingsScreen() {
             <View style={styles.separator} />
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => Linking.openURL('https://sobrietywaypoint.com/terms')}
+              onPress={() => Linking.openURL(EXTERNAL_LINKS.TERMS_OF_SERVICE)}
+              accessibilityRole="link"
+              accessibilityLabel="View Terms of Service"
             >
               <View style={styles.menuItemLeft}>
                 <FileText size={20} color={theme.textSecondary} />
@@ -169,9 +233,9 @@ export default function SettingsScreen() {
             <View style={styles.separator} />
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() =>
-                Linking.openURL('https://github.com/VolvoxCommunity/Sobriety-Waypoint')
-              }
+              onPress={() => Linking.openURL(EXTERNAL_LINKS.SOURCE_CODE)}
+              accessibilityRole="link"
+              accessibilityLabel="View source code on GitHub"
             >
               <View style={styles.menuItemLeft}>
                 <Github size={20} color={theme.textSecondary} />
@@ -187,8 +251,13 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-            <LogOut size={20} color="#ef4444" />
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out of your account"
+          >
+            <LogOut size={20} color={theme.danger} />
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -196,7 +265,11 @@ export default function SettingsScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>Sobriety Waypoint v{packageJson.version}</Text>
           <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
-          <TouchableOpacity onPress={() => Linking.openURL('https://billchirico.dev')}>
+          <TouchableOpacity
+            onPress={() => Linking.openURL(EXTERNAL_LINKS.DEVELOPER)}
+            accessibilityRole="link"
+            accessibilityLabel="Visit developer website"
+          >
             <Text style={styles.footerCredit}>By Bill Chirico</Text>
           </TouchableOpacity>
         </View>
@@ -205,6 +278,15 @@ export default function SettingsScreen() {
   );
 }
 
+// =============================================================================
+// Styles
+// =============================================================================
+/**
+ * Creates StyleSheet for the Settings screen based on current theme.
+ *
+ * @param theme - Theme colors from ThemeContext
+ * @returns StyleSheet object with all component styles
+ */
 const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
   StyleSheet.create({
     container: {
@@ -315,17 +397,17 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#fef2f2',
+      backgroundColor: theme.dangerLight || '#fef2f2',
       padding: 16,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: '#fee2e2',
+      borderColor: theme.dangerBorder || '#fee2e2',
     },
     signOutText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ef4444',
+      color: theme.danger || '#ef4444',
       marginLeft: 8,
     },
     footer: {
