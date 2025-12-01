@@ -161,7 +161,7 @@ export default function JourneyScreen() {
       timelineEvents.push({
         id: `slip-up-${slipUp.id}`,
         type: 'slip_up',
-        date: new Date(slipUp.slip_up_date),
+        date: parseDateAsLocal(slipUp.slip_up_date),
         title: 'Slip Up',
         description: slipUp.notes || 'Recovery journey restarted',
         icon: 'refresh',

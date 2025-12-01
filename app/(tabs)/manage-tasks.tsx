@@ -17,6 +17,7 @@ import { Plus, CheckCircle, Clock, Calendar, Trash2 } from 'lucide-react-native'
 import TaskCreationModal from '@/components/TaskCreationModal';
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
+import { parseDateAsLocal } from '@/lib/date';
 
 export default function ManageTasksScreen() {
   const { profile } = useAuth();
@@ -379,7 +380,7 @@ export default function ManageTasksScreen() {
                             isOverdue(task, now) && styles.taskMetaTextOverdue,
                           ]}
                         >
-                          Due {new Date(task.due_date).toLocaleDateString()}
+                          Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
                         </Text>
                       </View>
                     )}

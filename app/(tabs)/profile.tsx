@@ -769,7 +769,7 @@ export default function ProfileScreen() {
           {journeyStartDate && (
             <Text style={styles.journeyStartDate}>
               Journey started:{' '}
-              {new Date(journeyStartDate).toLocaleDateString('en-US', {
+              {parseDateAsLocal(journeyStartDate).toLocaleDateString('en-US', {
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
@@ -783,7 +783,7 @@ export default function ProfileScreen() {
         {hasSlipUps && currentStreakStartDate && (
           <Text style={styles.currentStreakDate}>
             Current streak since{' '}
-            {new Date(currentStreakStartDate).toLocaleDateString('en-US', {
+            {parseDateAsLocal(currentStreakStartDate).toLocaleDateString('en-US', {
               month: 'long',
               day: 'numeric',
               year: 'numeric',
