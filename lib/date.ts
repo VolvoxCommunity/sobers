@@ -2,8 +2,7 @@
  * Shared date utility functions
  */
 
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { differenceInCalendarDays } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 // =============================================================================
 // Constants
@@ -20,39 +19,52 @@ export const DEVICE_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 // =============================================================================
 
 /**
- * Parses a date string (YYYY-MM-DD) as midnight in a specific timezone.
+ * Extracts the date portion (YYYY-MM-DD) from a Date object in a specific timezone.
  *
- * When users set a sobriety date like "January 1st", they mean midnight
- * in their timezone, not UTC. This function creates a UTC Date that
- * represents midnight in the specified timezone.
- *
- * Uses fromZonedTime to correctly handle all timezones, including UTC+12/+13
- * where the date can change when converting from UTC.
- *
- * @param dateString - Date string in YYYY-MM-DD format
- * @param timezone - IANA timezone string
- * @returns Date object (in UTC) that represents midnight in the specified timezone
+ * @param date - The Date object to extract from
+ * @param timezone - IANA timezone string (e.g., 'America/Los_Angeles')
+ * @returns Date string in YYYY-MM-DD format
  */
-function parseDateInTimezone(dateString: string, timezone: string): Date {
-  // Pass the date string directly to fromZonedTime as an ISO string
-  // This avoids the Date constructor's system timezone interpretation
-  // The string is treated as a timezone-agnostic datetime to be interpreted in the target timezone
-  const midnightIsoString = `${dateString}T00:00:00`;
+function getDateStringInTimezone(date: Date, timezone: string): string {
+  return formatInTimeZone(date, timezone, 'yyyy-MM-dd');
+}
 
-  // Convert from the "zoned" representation (midnight in the timezone) to UTC
-  // This correctly handles all timezones including UTC+12/+13
-  return fromZonedTime(midnightIsoString, timezone);
+/**
+ * Calculates the day difference between two YYYY-MM-DD date strings.
+ *
+ * Uses UTC dates to avoid any system timezone interference. This ensures
+ * consistent results regardless of where the code is running.
+ *
+ * @param startDateStr - Start date in YYYY-MM-DD format
+ * @param endDateStr - End date in YYYY-MM-DD format
+ * @returns Number of days between the two dates
+ */
+function daysBetweenDateStrings(startDateStr: string, endDateStr: string): number {
+  // Parse date parts directly to avoid Date constructor timezone interpretation
+  const [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
+  const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
+
+  // Create UTC timestamps - this avoids any timezone issues
+  const startUtc = Date.UTC(startYear, startMonth - 1, startDay);
+  const endUtc = Date.UTC(endYear, endMonth - 1, endDay);
+
+  // Calculate difference in days (using Math.round to handle any DST edge cases)
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.round((endUtc - startUtc) / msPerDay);
 }
 
 /**
  * Calculates the difference in calendar days between two dates in a specific timezone.
  *
- * Uses calendar day comparison rather than timestamp math to ensure day counts
- * increment at midnight in the user's timezone, not UTC. This is critical for
- * sobriety tracking where users expect day counts to change at their local midnight.
+ * This function extracts the date portion (YYYY-MM-DD) for both dates in the target
+ * timezone, then calculates the difference. This approach avoids system timezone
+ * interference that can occur when using date-fns functions with shifted Date objects.
  *
- * @param startDate - The earlier date (Date object or YYYY-MM-DD string, interpreted in timezone)
- * @param endDate - The later date (defaults to now, interpreted in timezone)
+ * Day counts increment at midnight in the user's timezone, not UTC. This is critical
+ * for sobriety tracking where users expect day counts to change at their local midnight.
+ *
+ * @param startDate - The earlier date (Date object or YYYY-MM-DD string)
+ * @param endDate - The later date (defaults to now)
  * @param timezone - IANA timezone string (e.g., 'America/Los_Angeles'). Defaults to device timezone
  * @returns Number of calendar days between dates in the specified timezone, minimum 0
  *
@@ -68,21 +80,18 @@ export function getDateDiffInDays(
   endDate: Date = new Date(),
   timezone: string = DEVICE_TIMEZONE
 ): number {
-  // If startDate is a string (YYYY-MM-DD), parse it as midnight in the timezone
-  let start: Date;
-  if (typeof startDate === 'string') {
-    start = parseDateInTimezone(startDate, timezone);
-  } else {
-    start = startDate;
-  }
+  // Get the date string for the start date
+  // If it's already a string (YYYY-MM-DD), use it directly
+  // If it's a Date, extract the date portion in the target timezone
+  const startDateStr =
+    typeof startDate === 'string' ? startDate : getDateStringInTimezone(startDate, timezone);
 
-  // Convert both dates to the user's timezone for calendar day comparison
-  const zonedStart = toZonedTime(start, timezone);
-  const zonedEnd = toZonedTime(endDate, timezone);
+  // Get the date string for the end date in the target timezone
+  const endDateStr = getDateStringInTimezone(endDate, timezone);
 
-  // Calculate calendar day difference (not timestamp-based)
-  // This counts full calendar days, so Jan 1 23:59 to Jan 2 00:01 = 1 day
-  const diffDays = differenceInCalendarDays(zonedEnd, zonedStart);
+  // Calculate the difference using pure date string comparison
+  // This avoids any system timezone interference
+  const diffDays = daysBetweenDateStrings(startDateStr, endDateStr);
 
   return Math.max(0, diffDays);
 }
