@@ -1,0 +1,24 @@
+# Project Architecture Rules (Non-Obvious Only)
+
+- Authentication flow is centralized in root layout - all routing decisions happen there based on profile completeness
+- Supabase client uses Proxy pattern for lazy initialization to prevent SSR issues
+- No role-based access control - users can be sponsors and sponsees simultaneously through different relationships
+- Task assignment is unidirectional: sponsors assign to sponsees, never reverse
+- Database types in `types/database.ts` are canonical source of truth (not Supabase dashboard)
+- Platform-aware storage abstraction: SecureStore native, localStorage web (handled in Supabase client)
+- All logging routes through universal logger to Sentry with categorized breadcrumbs
+- Error handling is centralized through ErrorBoundary and Sentry wrapping
+- Auth state changes must go through AuthContext, not direct Supabase calls
+- Authentication routing is centralized in root layout - all auth state decisions happen there
+- Supabase client uses Proxy pattern for lazy initialization to prevent SSR issues
+- No role-based access control - users can be sponsors and sponsees simultaneously through different relationships
+- Task assignment is unidirectional: sponsors assign to sponsees, never reverse
+- Database types in `types/database.ts` are canonical source of truth (not Supabase dashboard)
+- Platform-aware storage abstraction: SecureStore native, localStorage web (handled in Supabase client)
+- All logging routes through universal logger to Sentry with categorized breadcrumbs
+- Error handling is centralized through ErrorBoundary and Sentry wrapping
+- Auth state changes must go through AuthContext, not direct Supabase calls
+- File organization requires section comments and strict import ordering
+- OAuth flow uses WebBrowser for native, direct redirect for web
+- Invite code system allows sponsor-sponsee connections without email exchange
+- File organization requires section comments and strict import ordering

@@ -18,12 +18,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signUp: (
-    email: string,
-    password: string,
-    firstName: string,
-    lastInitial: string
-  ) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -321,22 +316,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Signs up a new user with email/password and creates their profile.
-   * Captures the device timezone for accurate date calculations.
+   * Signs up a new user with email/password.
+   * Creates a basic profile with email and timezone.
+   * Name collection is handled during onboarding.
    * Checks if a profile already exists before attempting to create one.
    *
    * @param email - User's email address
    * @param password - User's password
-   * @param firstName - User's first name
-   * @param lastInitial - User's last initial
    * @throws Error if signup or profile creation fails
    */
-  const signUp = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastInitial: string
-  ) => {
+  const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -360,12 +349,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Create new profile with timezone
+      // Create new profile with email and timezone (name collected during onboarding)
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email: email,
-        first_name: firstName,
-        last_initial: lastInitial.toUpperCase(),
         timezone: DEVICE_TIMEZONE,
       });
 

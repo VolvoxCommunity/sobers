@@ -34,7 +34,7 @@ import type { Profile } from '@/types/database';
  * - Step 1: Collects user's first name and last initial for personalization
  * - Step 2: Collects the user's sobriety date to track their recovery journey
  *
- * Users who already have a name set will skip directly to step 2.
+ * All users complete both steps to ensure complete profile setup.
  * Upon completion, the user's profile is updated and they are redirected to the main app.
  *
  * @returns The onboarding screen component with step-based navigation
@@ -51,19 +51,9 @@ export default function OnboardingScreen() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const router = useRouter();
 
-  const needsName =
-    profile?.first_name === 'User' ||
-    !profile?.first_name ||
-    !profile?.last_initial ||
-    profile?.last_initial === 'U';
-
-  const [step, setStep] = useState(needsName ? 1 : 2);
-  const [firstName, setFirstName] = useState(
-    profile?.first_name !== 'User' ? profile?.first_name || '' : ''
-  );
-  const [lastInitial, setLastInitial] = useState(
-    profile?.last_initial !== 'U' ? profile?.last_initial || '' : ''
-  );
+  const [step, setStep] = useState(1);
+  const [firstName, setFirstName] = useState('');
+  const [lastInitial, setLastInitial] = useState('');
   const [sobrietyDate, setSobrietyDate] = useState(
     profile?.sobriety_date ? parseDateAsLocal(profile.sobriety_date) : new Date()
   );
@@ -117,7 +107,7 @@ export default function OnboardingScreen() {
         sobriety_date: formatDateWithTimezone(sobrietyDate, userTimezone),
       };
 
-      if (needsName && firstName && lastInitial) {
+      if (firstName && lastInitial) {
         updateData.first_name = firstName;
         updateData.last_initial = lastInitial.toUpperCase();
       }
@@ -286,7 +276,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <View style={styles.buttonGroup}>
-          {needsName && (
+          {step === 2 && (
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => setStep(1)}
