@@ -31,7 +31,6 @@ export interface Profile {
   avatar_url?: string;
   sobriety_date?: string;
   bio?: string;
-  timezone: string;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;

@@ -34,7 +34,7 @@
     "@react-navigation/native": "^7.1.8",
     "@sentry/cli": "^2.58.2",
     "@sentry/react-native": "7.2.0",
-    "@supabase/supabase-js": "^2.85.0",
+    "@supabase/supabase-js": "^2.86.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "expo": "~54.0.25",
