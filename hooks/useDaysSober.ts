@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getDateDiffInDays } from '@/lib/date';
+import { getDateDiffInDays, DEVICE_TIMEZONE } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SlipUp, Profile } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -49,26 +49,19 @@ export interface DaysSoberResult {
  * setTimeout(refresh, ms);
  * ```
  */
-function getMillisecondsUntilMidnight(
-  timezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone
-): number {
+function getMillisecondsUntilMidnight(timezone: string = DEVICE_TIMEZONE): number {
   const now = new Date();
 
   // Get current time in the target timezone
   const zonedNow = toZonedTime(now, timezone);
 
-  // Calculate tomorrow at midnight in the target timezone
-  const tomorrowZoned = addDays(zonedNow, 1);
-  tomorrowZoned.setHours(0, 0, 0, 0);
+  // Calculate tomorrow's date string in the target timezone (immutable approach)
+  const tomorrowDateStr = formatInTimeZone(addDays(zonedNow, 1), timezone, 'yyyy-MM-dd');
 
-  // Get tomorrow's date string in the timezone
-  const tomorrowDateStr = formatInTimeZone(tomorrowZoned, timezone, 'yyyy-MM-dd');
-  const [year, month, day] = tomorrowDateStr.split('-').map(Number);
-
-  // Create midnight in the timezone, then convert to UTC
-  // This correctly handles all timezones including UTC+12/+13
-  const midnightInTz = new Date(year, month - 1, day, 0, 0, 0, 0);
-  const midnightUtc = fromZonedTime(midnightInTz, timezone);
+  // Create midnight in the timezone as an ISO string, then convert to UTC
+  // This avoids the Date constructor's system timezone interpretation
+  const midnightIsoString = `${tomorrowDateStr}T00:00:00`;
+  const midnightUtc = fromZonedTime(midnightIsoString, timezone);
 
   return Math.max(1000, midnightUtc.getTime() - now.getTime());
 }
@@ -117,9 +110,10 @@ export function useDaysSober(userId?: string): DaysSoberResult {
   // Ref to track the active midnight refresh timer
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Always use device timezone for day calculations
+  // Use the cached device timezone constant for day calculations
   // This ensures day counts roll over at the user's local midnight
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Using the module-level constant is more efficient than useMemo
+  const timezone = DEVICE_TIMEZONE;
 
   // Set up midnight refresh timer
   useEffect(() => {
