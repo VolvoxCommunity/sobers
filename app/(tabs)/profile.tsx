@@ -547,7 +547,9 @@ export default function ProfileScreen() {
 
   const handleEditSobrietyDate = () => {
     if (profile?.sobriety_date) {
-      setSelectedSobrietyDate(parseDateAsLocal(profile.sobriety_date));
+      // Parse using the user's stored timezone to maintain consistency
+      // with how dates are saved (line 939 uses userTimezone)
+      setSelectedSobrietyDate(parseDateAsLocal(profile.sobriety_date, userTimezone));
     }
     setShowSobrietyDatePicker(true);
   };
