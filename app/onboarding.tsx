@@ -54,12 +54,22 @@ export default function OnboardingScreen() {
   // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
   const [firstName, setFirstName] = useState(profile?.first_name ?? '');
   const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
-  const [sobrietyDate, setSobrietyDate] = useState(
+
+  // Stable maximum date for DateTimePicker to prevent iOS crash when value > maximumDate.
+  // Using useMemo ensures we don't create a new Date on every render, which could cause
+  // the maximumDate to be slightly before the stored sobrietyDate due to timing.
+  const maximumDate = useMemo(() => new Date(), []);
+
+  const [sobrietyDate, setSobrietyDate] = useState(() => {
     // Parse stored date in user's timezone (or device timezone as fallback)
-    profile?.sobriety_date
-      ? parseDateAsLocal(profile.sobriety_date, getUserTimezone(profile))
-      : new Date()
-  );
+    if (profile?.sobriety_date) {
+      const parsedDate = parseDateAsLocal(profile.sobriety_date, getUserTimezone(profile));
+      // Clamp to maximumDate to prevent iOS DateTimePicker crash
+      // (iOS throws 'Start date cannot be later in time than end date!' if value > maximumDate)
+      return parsedDate > maximumDate ? maximumDate : parsedDate;
+    }
+    return maximumDate;
+  });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -250,7 +260,7 @@ export default function OnboardingScreen() {
             mode="date"
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={onDateChange}
-            maximumDate={new Date()}
+            maximumDate={maximumDate}
           />
         )}
 

@@ -65,6 +65,7 @@ export default function JourneyScreen() {
     daysSober,
     journeyDays,
     hasSlipUps,
+    currentStreakStartDate,
     // mostRecentSlipUp available for future use (e.g., slip-up details modal)
     loading: loadingDaysSober,
   } = useDaysSober();
@@ -231,9 +232,10 @@ export default function JourneyScreen() {
     }
 
     // 6. Sobriety milestones
-    // Use the daysSober from the hook which updates at midnight
-    if (profile.sobriety_date) {
-      const sobrietyDate = parseDateAsLocal(profile.sobriety_date);
+    // Use currentStreakStartDate which accounts for slip-ups (recovery restart date)
+    // Milestones are calculated from the current streak, not the original sobriety date
+    if (currentStreakStartDate) {
+      const streakStartDate = parseDateAsLocal(currentStreakStartDate);
 
       const milestones = [
         { days: 30, label: '30 Days Sober' },
@@ -247,7 +249,7 @@ export default function JourneyScreen() {
 
       milestones.forEach(({ days, label }) => {
         if (daysSober >= days) {
-          const milestoneDate = new Date(sobrietyDate);
+          const milestoneDate = new Date(streakStartDate);
           milestoneDate.setDate(milestoneDate.getDate() + days);
 
           timelineEvents.push({
@@ -267,7 +269,7 @@ export default function JourneyScreen() {
     timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
 
     setEvents(timelineEvents);
-  }, [profile, theme, timelineData, daysSober]); // Re-run when raw data, display prefs, or sobriety calculation changes
+  }, [profile, theme, timelineData, daysSober, currentStreakStartDate]); // Re-run when raw data, display prefs, or sobriety calculation changes
 
   useFocusEffect(
     useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -158,6 +158,10 @@ export default function ProfileScreen() {
 
   // User's timezone (stored in profile) with device timezone as fallback
   const userTimezone = getUserTimezone(profile);
+
+  // Stable maximum date for DateTimePicker to prevent iOS crash when value > maximumDate.
+  // iOS throws 'Start date cannot be later in time than end date!' if value > maximumDate.
+  const maximumDate = useMemo(() => new Date(), []);
 
   const fetchRelationships = useCallback(async () => {
     if (!profile) return;
@@ -549,7 +553,9 @@ export default function ProfileScreen() {
     if (profile?.sobriety_date) {
       // Parse using the user's stored timezone to maintain consistency
       // with how dates are saved (line 939 uses userTimezone)
-      setSelectedSobrietyDate(parseDateAsLocal(profile.sobriety_date, userTimezone));
+      const parsedDate = parseDateAsLocal(profile.sobriety_date, userTimezone);
+      // Clamp to maximumDate to prevent iOS DateTimePicker crash
+      setSelectedSobrietyDate(parsedDate > maximumDate ? maximumDate : parsedDate);
     }
     setShowSobrietyDatePicker(true);
   };
@@ -986,7 +992,7 @@ export default function ProfileScreen() {
                 onChange={(event, date) => {
                   if (date) setSelectedSobrietyDate(date);
                 }}
-                maximumDate={new Date()}
+                maximumDate={maximumDate}
               />
               <View style={styles.modalButtons}>
                 <TouchableOpacity
