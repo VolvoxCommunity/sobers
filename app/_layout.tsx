@@ -4,7 +4,6 @@ import { initializeSentry, navigationIntegration, wrapRootComponent } from '@/li
 // Initialize Sentry once with centralized configuration from lib/sentry.ts
 // This handles environment detection, privacy hooks, and all integrations
 initializeSentry();
-
 /* eslint-disable import/first -- Sentry must initialize before React components load */
 import { useEffect } from 'react';
 import {
