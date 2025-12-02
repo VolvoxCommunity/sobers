@@ -228,7 +228,7 @@ export default function SettingsScreen() {
             accessibilityLabel="Close settings"
             accessibilityRole="button"
           >
-            <X size={24} color={theme.text} />
+            <X size={24} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -463,11 +463,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       borderBottomColor: theme.borderLight,
     },
     closeButton: {
-      padding: 10,
-      borderRadius: 20,
-      backgroundColor: theme.background,
-      borderWidth: 1,
-      borderColor: theme.borderLight,
+      padding: 4,
     },
     headerTitle: {
       fontSize: 18,

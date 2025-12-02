@@ -186,8 +186,8 @@ export default function StepsScreen() {
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderContent}>
               <Text style={styles.modalStepNumber}>Step {selectedStep?.step_number}</Text>
-              <TouchableOpacity onPress={() => setSelectedStep(null)}>
-                <X size={24} color={theme.text} />
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedStep(null)}>
+                <X size={24} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -336,6 +336,9 @@ const createStyles = (theme: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+    },
+    closeButton: {
+      padding: 4,
     },
     modalStepNumber: {
       fontSize: 20,
