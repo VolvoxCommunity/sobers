@@ -98,14 +98,20 @@ export function parseDateAsLocal(dateStr: string, timezone: string = DEVICE_TIME
 }
 
 /**
- * Calculates the day difference between two YYYY-MM-DD date strings.
+ * Calculates the number of days between two YYYY-MM-DD date strings.
  *
  * Uses UTC dates to avoid any system timezone interference. This ensures
  * consistent results regardless of where the code is running.
  *
  * @param startDateStr - Start date in YYYY-MM-DD format
  * @param endDateStr - End date in YYYY-MM-DD format
- * @returns Number of days between the two dates
+ * @returns Number of calendar days between the dates (can be negative if end is before start)
+ *
+ * @example
+ * ```ts
+ * const days = daysBetweenDateStrings('2024-01-01', '2024-01-10');
+ * // Returns: 9 (exactly 9 days between Jan 1 and Jan 10)
+ * ```
  */
 function daysBetweenDateStrings(startDateStr: string, endDateStr: string): number {
   // Parse date parts directly to avoid Date constructor timezone interpretation
