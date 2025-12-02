@@ -49,14 +49,11 @@ interface TimelineEvent {
 }
 
 /**
- * Displays the user's recovery journey timeline with milestones.
+ * Render the user's recovery journey screen containing sobriety metrics and a chronological timeline.
  *
- * @remarks
- * This component fetches timeline events from Supabase and displays
- * them in chronological order with visual indicators. Day counts
- * automatically update at midnight via the useDaysSober hook.
+ * Shows the sobriety start, slip-ups, step completions, task completions, and milestone events alongside summary statistics and a visual timeline.
  *
- * @see {@link useDaysSober} for sobriety calculation logic
+ * @returns The React element for the Journey screen
  */
 export default function JourneyScreen() {
   const { profile } = useAuth();

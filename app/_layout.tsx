@@ -49,6 +49,15 @@ initializeSentry();
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
+/**
+ * Controls app routing and renders the root navigation UI based on authentication and profile state.
+ *
+ * Observes authentication, profile completeness, and current route segments to perform routing guards
+ * (redirecting to `/login`, `/onboarding`, or `/(tabs)` as appropriate). While auth state is loading,
+ * displays a centered loading indicator. When not loading, renders the app's Stack navigator and StatusBar.
+ *
+ * @returns The root navigation JSX element containing the app's Stack and StatusBar
+ */
 function RootLayoutNav() {
   const { user, profile, loading } = useAuth();
   const { isDark } = useTheme();

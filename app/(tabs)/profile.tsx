@@ -129,6 +129,17 @@ function SponsorDaysDisplay({
   );
 }
 
+/**
+ * Screen displaying the authenticated user's profile, sobriety journey, and sponsor/sponsee management UI.
+ *
+ * Shows the user's avatar, name, email, current days sober, journey start and current streak information,
+ * and provides actions to edit the sobriety date, log a slip-up, generate or join invite codes, and
+ * disconnect sponsor/sponsee relationships. Manages relationship and task statistics fetching, timezone-aware
+ * date handling for sobriety and slip-up flows, and creates relevant notifications when connections change
+ * or slip-ups are logged.
+ *
+ * @returns A React element that renders the profile screen UI.
+ */
 export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();

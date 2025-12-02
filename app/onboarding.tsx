@@ -27,23 +27,12 @@ import {
 } from '@/lib/date';
 
 /**
- * OnboardingScreen handles the initial user setup flow after authentication.
+ * Render the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
  *
- * The onboarding consists of two steps:
- * - Step 1: Collects user's first name and last initial for personalization
- * - Step 2: Collects the user's sobriety date to track their recovery journey
+ * The component updates the user's profile with the provided first name, last initial, and sobriety date,
+ * refreshes profile state, and navigates to the main app once the profile is complete.
  *
- * All users complete both steps to ensure complete profile setup.
- * Upon completion, the user's profile is updated and they are redirected to the main app.
- *
- * @returns The onboarding screen component with step-based navigation
- *
- * @example
- * ```tsx
- * // Used as a route in Expo Router - navigated to automatically
- * // when user is authenticated but profile is incomplete
- * <OnboardingScreen />
- * ```
+ * @returns A React element that renders the onboarding screen
  */
 export default function OnboardingScreen() {
   const { theme } = useTheme();
