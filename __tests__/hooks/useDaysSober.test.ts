@@ -242,21 +242,18 @@ describe('useDaysSober', () => {
   });
 
   describe('timezone handling', () => {
-    it('uses profile timezone when available', async () => {
-      // Test with a specific timezone in profile
-      const mockProfileWithTimezone = {
-        id: 'user-123',
-        sobriety_date: '2024-01-01',
-        timezone: 'America/Los_Angeles',
-      };
+    // NOTE: The following tests verify timezone behavior using the mockProfile
+    // defined at the top of this file (America/New_York timezone).
+    //
+    // Due to Jest's hoisting behavior, jest.mock() calls inside test functions
+    // don't override the module-level mocks. To test different timezones, you would
+    // need to create separate test files or use a different mocking strategy.
+    //
+    // The current mockProfile (America/New_York) provides adequate coverage for
+    // timezone-aware calculations, as the core logic in lib/date.ts is tested
+    // separately with different timezone inputs.
 
-      jest.mock('@/contexts/AuthContext', () => ({
-        useAuth: () => ({
-          user: { id: 'user-123' },
-          profile: mockProfileWithTimezone,
-        }),
-      }));
-
+    it('uses profile timezone for calculations (currently America/New_York)', async () => {
       // Set current date to test timezone-specific behavior
       jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
 
@@ -266,56 +263,17 @@ describe('useDaysSober', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Should use the profile's timezone for calculations
-      expect(result.current.daysSober).toBeGreaterThanOrEqual(0);
-      expect(result.current.journeyDays).toBeGreaterThanOrEqual(0);
+      // With America/New_York timezone in mockProfile, calculations use that timezone
+      // April 10 12:00 UTC = April 10 08:00 EDT (UTC-4 during DST)
+      // Days from Jan 1 to April 10 = 100 days
+      expect(result.current.daysSober).toBe(100);
+      expect(result.current.journeyDays).toBe(100);
     });
 
-    it('falls back to device timezone when profile timezone is undefined', async () => {
-      // Test with no timezone in profile (should fall back to device timezone)
-      const mockProfileWithoutTimezone = {
-        id: 'user-123',
-        sobriety_date: '2024-01-01',
-        // timezone field is undefined
-      };
-
-      jest.mock('@/contexts/AuthContext', () => ({
-        useAuth: () => ({
-          user: { id: 'user-123' },
-          profile: mockProfileWithoutTimezone,
-        }),
-      }));
-
-      jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
-
-      const { result } = renderHook(() => useDaysSober());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      // Should still work with device timezone fallback
-      expect(result.current.daysSober).toBeGreaterThanOrEqual(0);
-      expect(result.current.journeyDays).toBeGreaterThanOrEqual(0);
-    });
-
-    it('handles different timezones correctly for midnight refresh', async () => {
-      // Test that midnight refresh works correctly with different timezones
-      const mockProfileWithTimezone = {
-        id: 'user-123',
-        sobriety_date: '2024-01-01',
-        timezone: 'Europe/London', // UTC+0 or UTC+1 depending on DST
-      };
-
-      jest.mock('@/contexts/AuthContext', () => ({
-        useAuth: () => ({
-          user: { id: 'user-123' },
-          profile: mockProfileWithTimezone,
-        }),
-      }));
-
-      // Set time near midnight in London timezone
-      jest.setSystemTime(new Date('2024-04-10T23:30:00Z'));
+    it('handles timezone-aware midnight refresh', async () => {
+      // Set time to late evening in America/New_York timezone
+      // April 10 23:00 EDT = April 11 03:00 UTC
+      jest.setSystemTime(new Date('2024-04-11T03:00:00Z'));
 
       const { result } = renderHook(() => useDaysSober());
 
@@ -325,44 +283,14 @@ describe('useDaysSober', () => {
 
       const initialDaysSober = result.current.daysSober;
 
-      // Fast-forward past midnight in London timezone
+      // Fast-forward 2 hours - should cross midnight in America/New_York
       act(() => {
-        jest.advanceTimersByTime(45 * 60 * 1000); // 45 minutes
+        jest.advanceTimersByTime(2 * 60 * 60 * 1000);
       });
 
-      // Should have triggered recalculation at midnight
+      // Should have triggered recalculation at local midnight
       expect(result.current.daysSober).toBeDefined();
-    });
-
-    it('calculates days correctly across timezone boundaries', async () => {
-      // Test day calculation when user is in different timezone than UTC
-      const mockProfileWithTimezone = {
-        id: 'user-123',
-        sobriety_date: '2024-01-01',
-        timezone: 'Asia/Tokyo', // UTC+9
-      };
-
-      jest.mock('@/contexts/AuthContext', () => ({
-        useAuth: () => ({
-          user: { id: 'user-123' },
-          profile: mockProfileWithTimezone,
-        }),
-      }));
-
-      // Set time to test boundary conditions
-      // Use a time that's clearly past Jan 1 in Tokyo timezone
-      jest.setSystemTime(new Date('2024-01-02T12:00:00Z'));
-
-      const { result } = renderHook(() => useDaysSober());
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      // In Tokyo timezone (UTC+9), Jan 2 12:00 UTC is Jan 3 21:00 local time
-      // Since sobriety date is Jan 1, this should be 2 days sober
-      expect(result.current.daysSober).toBeGreaterThanOrEqual(1);
-      expect(result.current.journeyDays).toBeGreaterThanOrEqual(1);
+      expect(result.current.daysSober).toBeGreaterThanOrEqual(initialDaysSober);
     });
   });
 });
