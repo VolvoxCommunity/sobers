@@ -7,6 +7,13 @@ import { StepContent, UserStepProgress } from '@/types/database';
 import { X, CheckCircle, Circle } from 'lucide-react-native';
 import { logger, LogCategory } from '@/lib/logger';
 
+/**
+ * Screen that displays the 12 steps, the current user's completion progress, and a modal with step details and reflection prompts.
+ *
+ * Fetches steps content and the user's progress from the database, shows loading/error/empty states, lets the user open a step to view detailed content and reflection questions, and toggle completion for a step.
+ *
+ * @returns The component's rendered React element for the Steps screen.
+ */
 export default function StepsScreen() {
   const { theme } = useTheme();
   const { profile } = useAuth();
