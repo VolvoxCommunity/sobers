@@ -71,8 +71,13 @@ function RootLayoutNav() {
     const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup';
 
     // Profile is complete when user has provided their name and sobriety date during onboarding
+    // Exclude placeholder values that may have been set during OAuth signup
     const hasName =
-      profile !== null && profile.first_name !== null && profile.last_initial !== null;
+      profile !== null &&
+      profile.first_name !== null &&
+      profile.first_name !== 'User' &&
+      profile.last_initial !== null &&
+      profile.last_initial !== 'U';
     const hasSobrietyDate = !!profile?.sobriety_date;
     const isProfileComplete = hasName && hasSobrietyDate;
 
