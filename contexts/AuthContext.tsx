@@ -348,8 +348,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           try {
             await createOAuthProfileIfNeeded(session.user);
+            // Check mount status after async operation to avoid state updates on unmounted component
+            if (!isMountedRef.current) return;
+
             await fetchProfile(session.user.id);
           } catch (error) {
+            // Check mount status before logging to ensure we don't update state after unmount
+            if (!isMountedRef.current) return;
+
             logger.error('Auth state change handling failed', error as Error, {
               category: LogCategory.AUTH,
             });
