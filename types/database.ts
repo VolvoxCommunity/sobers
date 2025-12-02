@@ -25,8 +25,10 @@ export type NotificationType =
 export interface Profile {
   id: string;
   email: string;
-  first_name: string;
-  last_initial: string;
+  /** User's first name. Null until collected during onboarding. */
+  first_name: string | null;
+  /** User's last initial. Null until collected during onboarding. */
+  last_initial: string | null;
   phone?: string;
   avatar_url?: string;
   sobriety_date?: string;

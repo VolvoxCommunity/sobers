@@ -95,15 +95,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .maybeSingle();
 
     if (!existingProfile) {
-      const nameParts = user.user_metadata?.full_name?.split(' ') || ['User', 'U'];
-      const firstName = nameParts[0] || 'User';
-      const lastInitial = nameParts[nameParts.length - 1]?.[0] || 'U';
+      // Extract name from OAuth metadata if available, otherwise leave null for onboarding
+      const fullName = user.user_metadata?.full_name;
+      const nameParts = fullName?.split(' ');
+      const firstName = nameParts?.[0] || null;
+      const lastInitial = nameParts?.[nameParts.length - 1]?.[0]?.toUpperCase() || null;
 
       const { error: profileError } = await supabase.from('profiles').insert({
         id: user.id,
         email: user.email || '',
         first_name: firstName,
-        last_initial: lastInitial.toUpperCase(),
+        last_initial: lastInitial,
         timezone: DEVICE_TIMEZONE,
       });
 
@@ -349,13 +351,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Create new profile with defaults (name collected during onboarding)
-      // first_name and last_initial are required fields - use defaults matching OAuth path
+      // Create new profile with null name fields (collected during onboarding)
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email: email,
-        first_name: 'User',
-        last_initial: 'U',
+        first_name: null,
+        last_initial: null,
         timezone: DEVICE_TIMEZONE,
       });
 
