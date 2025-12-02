@@ -48,7 +48,6 @@ For Supabase configuration, you'll need:
 | Value         | Where to Find                                              |
 | ------------- | ---------------------------------------------------------- |
 | **Bundle ID** | Your iOS bundle ID: `com.volvox.sobrietywaypoint`          |
-| **Team ID**   | Top right of Apple Developer Console (10-character string) |
 
 > **Note**: For native iOS-only sign-in, you do NOT need:
 >
