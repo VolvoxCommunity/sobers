@@ -354,7 +354,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // to fully complete before we make any RLS-protected database queries.
         // Without this, Supabase client operations deadlock on iOS during OAuth.
         //
-        // queueMicrotask is preferred over setTimeout(..., 0) because:
+        // We use queueMicrotask here (rather than setTimeout(..., 0)) because:
         // - Microtasks execute after current sync code but before the next macrotask
         // - More semantically correct for breaking sync callback chains
         // - Slightly faster and more predictable timing
