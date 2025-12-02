@@ -187,12 +187,9 @@ describe('JourneyScreen', () => {
     expect(screen.getByText('Loading your journey...')).toBeTruthy();
   });
 
-  it('handles empty state', async () => {
+  it('shows "Your journey is just beginning" when there is no sobriety data', async () => {
     (useAuth as jest.Mock).mockReturnValue({ profile: { ...mockProfile, sobriety_date: null } });
     // Mock useDaysSober to return empty/null values for the empty state.
-    // When sobriety_date is null, the hook correctly returns currentStreakStartDate: null
-    // because there's no recovery journey to calculate from. This is the expected behavior -
-    // the journey screen shows "Your journey is just beginning" when there's no sobriety data.
     (useDaysSober as jest.Mock).mockReturnValue({
       daysSober: 0,
       journeyDays: 0,
