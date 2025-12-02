@@ -20,4 +20,20 @@ module.exports = defineConfig([
       'no-console': 'off',
     },
   },
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ]);
