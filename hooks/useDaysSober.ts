@@ -4,8 +4,8 @@ import { getDateDiffInDays, DEVICE_TIMEZONE } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SlipUp, Profile } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
-import { toZonedTime, formatInTimeZone, fromZonedTime } from 'date-fns-tz';
-import { addDays } from 'date-fns';
+import { TZDate } from '@date-fns/tz';
+import { addDays, format } from 'date-fns';
 
 // =============================================================================
 // Types & Interfaces
@@ -53,15 +53,15 @@ function getMillisecondsUntilMidnight(timezone: string = DEVICE_TIMEZONE): numbe
   const now = new Date();
 
   // Get current time in the target timezone
-  const zonedNow = toZonedTime(now, timezone);
+  const zonedNow = new TZDate(now, timezone);
 
   // Calculate tomorrow's date string in the target timezone (immutable approach)
-  const tomorrowDateStr = formatInTimeZone(addDays(zonedNow, 1), timezone, 'yyyy-MM-dd');
+  const tomorrowDateStr = format(addDays(zonedNow, 1), 'yyyy-MM-dd');
 
   // Create midnight in the timezone as an ISO string, then convert to UTC
   // This avoids the Date constructor's system timezone interpretation
   const midnightIsoString = `${tomorrowDateStr}T00:00:00`;
-  const midnightUtc = fromZonedTime(midnightIsoString, timezone);
+  const midnightUtc = new TZDate(midnightIsoString, timezone);
 
   return Math.max(1000, midnightUtc.getTime() - now.getTime());
 }

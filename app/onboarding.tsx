@@ -268,7 +268,7 @@ export default function OnboardingScreen() {
 
         <View style={styles.statsContainer}>
           <Text style={styles.statsCount}>
-            {getDateDiffInDays(formatLocalDate(sobrietyDate), new Date(), getUserTimezone(profile))}
+            {getDateDiffInDays(sobrietyDate, new Date(), getUserTimezone(profile))}
           </Text>
           <Text style={styles.statsLabel}>Days Sober</Text>
         </View>

@@ -98,4 +98,3 @@ pnpm start:clean      # Start with cleared Metro cache (when debugging import is
 - AuthContext provides: user, session, profile, loading, auth methods
 - ThemeContext provides: theme, isDark, setTheme (light/dark/system)
 - Mount status tracking with useRef prevents closure issues in async operations
-  `

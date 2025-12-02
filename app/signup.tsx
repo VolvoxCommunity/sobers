@@ -66,7 +66,7 @@ export default function SignupScreen() {
       router.replace('/onboarding');
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to create account');
-      logger.error('Sign up failed', err, { category: LogCategory.AUTH, email });
+      logger.error('Sign up failed', err, { category: LogCategory.AUTH });
       if (Platform.OS === 'web') {
         window.alert('Error: ' + err.message);
       } else {

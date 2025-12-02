@@ -2,7 +2,8 @@
  * Shared date utility functions
  */
 
-import { formatInTimeZone } from 'date-fns-tz';
+import { TZDate } from '@date-fns/tz';
+import { format } from 'date-fns';
 
 // =============================================================================
 // Constants
@@ -26,7 +27,7 @@ export const DEVICE_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
  * @returns Date string in YYYY-MM-DD format
  */
 function getDateStringInTimezone(date: Date, timezone: string): string {
-  return formatInTimeZone(date, timezone, 'yyyy-MM-dd');
+  return format(new TZDate(date, timezone), 'yyyy-MM-dd');
 }
 
 /**
