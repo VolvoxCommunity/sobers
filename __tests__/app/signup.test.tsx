@@ -26,6 +26,11 @@ jest.mock('@/components/auth/SocialLogos', () => ({
   GoogleLogo: () => null,
 }));
 
+// Mock AppleSignInButton component
+jest.mock('@/components/auth/AppleSignInButton', () => ({
+  AppleSignInButton: () => null,
+}));
+
 describe('SignupScreen', () => {
   describe('Back Button', () => {
     it('uses theme text color instead of hardcoded color', () => {
