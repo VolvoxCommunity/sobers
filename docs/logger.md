@@ -581,6 +581,7 @@ If you're migrating existing console calls:
    ```
 
 5. **Test the change:**
+
    ```bash
    pnpm format && pnpm lint && pnpm typecheck
    ```

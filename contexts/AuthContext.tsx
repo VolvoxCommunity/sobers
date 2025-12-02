@@ -7,6 +7,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import { Platform } from 'react-native';
 import { setSentryUser, clearSentryUser, setSentryContext } from '@/lib/sentry';
 import { logger, LogCategory } from '@/lib/logger';
+import { DEVICE_TIMEZONE } from '@/lib/date';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -17,12 +18,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signUp: (
-    email: string,
-    password: string,
-    firstName: string,
-    lastInitial: string
-  ) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -85,8 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Creates a profile for a new OAuth user if one doesn't exist
-   * Extracts first name and last initial from user metadata
+   * Creates a profile for a new OAuth user if one doesn't exist.
+   * Extracts first name and last initial from user metadata and captures the device timezone.
+   *
+   * @param user - The authenticated user object from OAuth provider
+   * @throws Error if profile creation fails
    */
   const createOAuthProfileIfNeeded = async (user: User): Promise<void> => {
     const { data: existingProfile } = await supabase
@@ -96,15 +95,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .maybeSingle();
 
     if (!existingProfile) {
-      const nameParts = user.user_metadata?.full_name?.split(' ') || ['User', 'U'];
-      const firstName = nameParts[0] || 'User';
-      const lastInitial = nameParts[nameParts.length - 1]?.[0] || 'U';
+      // Extract name from OAuth metadata if available, otherwise leave null for onboarding
+      const fullName = user.user_metadata?.full_name;
+      const nameParts = fullName?.split(' ').filter(Boolean);
+      const firstName = nameParts?.[0] || null;
+      // Determine last initial:
+      // - Multi-word names (e.g., "John Doe"): use first letter of last word → "D"
+      // - Single-word names (e.g., "Madonna"): use first letter of first name → "M"
+      // - No name: null (collected during onboarding)
+      const lastName = nameParts && nameParts.length > 1 ? nameParts[nameParts.length - 1] : null;
+      const lastInitial = lastName?.[0]?.toUpperCase() || firstName?.[0]?.toUpperCase() || null;
 
       const { error: profileError } = await supabase.from('profiles').insert({
         id: user.id,
         email: user.email || '',
         first_name: firstName,
-        last_initial: lastInitial.toUpperCase(),
+        last_initial: lastInitial,
+        timezone: DEVICE_TIMEZONE,
       });
 
       if (profileError) throw profileError;
@@ -316,20 +323,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Signs up a new user with email/password and creates their profile.
+   * Signs up a new user with email/password.
+   * Creates a basic profile with email and timezone.
+   * Name collection is handled during onboarding.
    * Checks if a profile already exists before attempting to create one.
    *
    * @param email - User's email address
    * @param password - User's password
-   * @param firstName - User's first name
-   * @param lastInitial - User's last initial
+   * @throws Error if signup or profile creation fails
    */
-  const signUp = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastInitial: string
-  ) => {
+  const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -353,12 +356,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Create new profile
+      // Create new profile with null name fields (collected during onboarding)
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email: email,
-        first_name: firstName,
-        last_initial: lastInitial.toUpperCase(),
+        first_name: null,
+        last_initial: null,
+        timezone: DEVICE_TIMEZONE,
       });
 
       if (profileError) {

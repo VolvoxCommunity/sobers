@@ -27,6 +27,7 @@ import {
 import { useRouter } from 'expo-router';
 import TaskCreationModal from '@/components/TaskCreationModal';
 import { logger, LogCategory } from '@/lib/logger';
+import { parseDateAsLocal } from '@/lib/date';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
@@ -200,7 +201,7 @@ export default function HomeScreen() {
             <Text style={styles.sobrietyDate}>
               Since{' '}
               {currentStreakStartDate
-                ? new Date(currentStreakStartDate).toLocaleDateString('en-US', {
+                ? parseDateAsLocal(currentStreakStartDate).toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric',

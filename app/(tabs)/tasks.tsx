@@ -24,6 +24,7 @@ import SegmentedControl from '@/components/SegmentedControl';
 import TaskCreationModal from '@/components/TaskCreationModal';
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
+import { parseDateAsLocal } from '@/lib/date';
 
 // =============================================================================
 // Types & Interfaces
@@ -382,7 +383,7 @@ export default function TasksScreen() {
                       <View style={styles.dueDateContainer}>
                         <Calendar size={14} color={theme.textSecondary} />
                         <Text style={styles.dueDateText}>
-                          Due {new Date(task.due_date).toLocaleDateString()}
+                          Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
                         </Text>
                       </View>
                     )}
@@ -748,7 +749,7 @@ export default function TasksScreen() {
                                 isOverdue(task) && styles.taskMetaTextOverdue,
                               ]}
                             >
-                              Due {new Date(task.due_date).toLocaleDateString()}
+                              Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
                             </Text>
                           </View>
                         )}

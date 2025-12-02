@@ -19,12 +19,12 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import ProgressBar from '@/components/onboarding/ProgressBar';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-
-// =============================================================================
-// Constants
-// =============================================================================
-/** Number of milliseconds in one day (24 hours) */
-const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+import {
+  getDateDiffInDays,
+  formatDateWithTimezone,
+  parseDateAsLocal,
+  getUserTimezone,
+} from '@/lib/date';
 
 /**
  * OnboardingScreen handles the initial user setup flow after authentication.
@@ -33,7 +33,7 @@ const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
  * - Step 1: Collects user's first name and last initial for personalization
  * - Step 2: Collects the user's sobriety date to track their recovery journey
  *
- * Users who already have a name set will skip directly to step 2.
+ * All users complete both steps to ensure complete profile setup.
  * Upon completion, the user's profile is updated and they are redirected to the main app.
  *
  * @returns The onboarding screen component with step-based navigation
@@ -50,21 +50,15 @@ export default function OnboardingScreen() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const router = useRouter();
 
-  const needsName =
-    profile?.first_name === 'User' ||
-    !profile?.first_name ||
-    !profile?.last_initial ||
-    profile?.last_initial === 'U';
-
-  const [step, setStep] = useState(needsName ? 1 : 2);
-  const [firstName, setFirstName] = useState(
-    profile?.first_name !== 'User' ? profile?.first_name || '' : ''
-  );
-  const [lastInitial, setLastInitial] = useState(
-    profile?.last_initial !== 'U' ? profile?.last_initial || '' : ''
-  );
+  const [step, setStep] = useState(1);
+  // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
+  const [firstName, setFirstName] = useState(profile?.first_name ?? '');
+  const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
   const [sobrietyDate, setSobrietyDate] = useState(
-    profile?.sobriety_date ? new Date(profile.sobriety_date) : new Date()
+    // Parse stored date in user's timezone (or device timezone as fallback)
+    profile?.sobriety_date
+      ? parseDateAsLocal(profile.sobriety_date, getUserTimezone(profile))
+      : new Date()
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -93,15 +87,18 @@ export default function OnboardingScreen() {
 
     setLoading(true);
     try {
+      const userTimezone = getUserTimezone(profile);
+
       const updateData: {
         sobriety_date: string;
         first_name?: string;
         last_initial?: string;
       } = {
-        sobriety_date: sobrietyDate.toISOString().split('T')[0],
+        // Format the sobriety date using the user's timezone
+        sobriety_date: formatDateWithTimezone(sobrietyDate, userTimezone),
       };
 
-      if (needsName && firstName && lastInitial) {
+      if (firstName && lastInitial) {
         updateData.first_name = firstName;
         updateData.last_initial = lastInitial.toUpperCase();
       }
@@ -241,10 +238,10 @@ export default function OnboardingScreen() {
           <View style={styles.webDatePicker}>
             <input
               type="date"
-              value={sobrietyDate.toISOString().split('T')[0]}
-              max={new Date().toISOString().split('T')[0]}
+              value={formatDateWithTimezone(sobrietyDate, getUserTimezone(profile))}
+              max={formatDateWithTimezone(new Date(), getUserTimezone(profile))}
               onChange={(e) => {
-                setSobrietyDate(new Date(e.target.value));
+                setSobrietyDate(parseDateAsLocal(e.target.value, getUserTimezone(profile)));
                 setShowDatePicker(false);
               }}
               style={{
@@ -262,10 +259,7 @@ export default function OnboardingScreen() {
 
         <View style={styles.statsContainer}>
           <Text style={styles.statsCount}>
-            {Math.max(
-              0,
-              Math.floor((new Date().getTime() - sobrietyDate.getTime()) / MILLISECONDS_PER_DAY)
-            )}
+            {getDateDiffInDays(sobrietyDate, new Date(), getUserTimezone(profile))}
           </Text>
           <Text style={styles.statsLabel}>Days Sober</Text>
         </View>
@@ -273,7 +267,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <View style={styles.buttonGroup}>
-          {needsName && (
+          {step === 2 && (
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => setStep(1)}

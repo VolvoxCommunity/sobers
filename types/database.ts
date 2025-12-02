@@ -25,12 +25,33 @@ export type NotificationType =
 export interface Profile {
   id: string;
   email: string;
-  first_name: string;
-  last_initial: string;
+  /** User's first name. Null until collected during onboarding. */
+  first_name: string | null;
+  /** User's last initial. Null until collected during onboarding. */
+  last_initial: string | null;
   phone?: string;
   avatar_url?: string;
+  /**
+   * The date when the user's recovery journey began (YYYY-MM-DD format).
+   *
+   * @remarks
+   * **IMPORTANT**: This field represents the original journey start date and is
+   * NEVER updated when a slip-up occurs. Slip-ups are tracked separately in the
+   * `slip_ups` table with their own `recovery_restart_date`. The `useDaysSober`
+   * hook uses both fields to calculate journey duration and current streak.
+   *
+   * - `sobriety_date`: Original journey start (immutable after onboarding)
+   * - `slip_ups.recovery_restart_date`: Current streak start (when slip-up exists)
+   */
   sobriety_date?: string;
   bio?: string;
+  /**
+   * User's timezone as an IANA timezone identifier (e.g., "America/New_York").
+   * Used for displaying dates and times in the user's local timezone.
+   * @remarks Optional for backward compatibility with existing profiles.
+   * Should be required for new profiles.
+   */
+  timezone?: string;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;

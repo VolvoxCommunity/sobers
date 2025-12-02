@@ -18,6 +18,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import { logger, LogCategory } from '@/lib/logger';
+import { parseDateAsLocal } from '@/lib/date';
 
 type TimelineEventType =
   | 'sobriety_start'
@@ -147,7 +148,7 @@ export default function JourneyScreen() {
       timelineEvents.push({
         id: 'sobriety-start',
         type: 'sobriety_start',
-        date: new Date(profile.sobriety_date),
+        date: parseDateAsLocal(profile.sobriety_date),
         title: 'Recovery Journey Began',
         description: `Started your path to recovery`,
         icon: 'calendar',
@@ -160,7 +161,7 @@ export default function JourneyScreen() {
       timelineEvents.push({
         id: `slip-up-${slipUp.id}`,
         type: 'slip_up',
-        date: new Date(slipUp.slip_up_date),
+        date: parseDateAsLocal(slipUp.slip_up_date),
         title: 'Slip Up',
         description: slipUp.notes || 'Recovery journey restarted',
         icon: 'refresh',
@@ -232,7 +233,7 @@ export default function JourneyScreen() {
     // 6. Sobriety milestones
     // Use the daysSober from the hook which updates at midnight
     if (profile.sobriety_date) {
-      const sobrietyDate = new Date(profile.sobriety_date);
+      const sobrietyDate = parseDateAsLocal(profile.sobriety_date);
 
       const milestones = [
         { days: 30, label: '30 Days Sober' },

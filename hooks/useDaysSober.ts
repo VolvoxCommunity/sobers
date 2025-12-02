@@ -1,9 +1,28 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getDateDiffInDays } from '@/lib/date';
+import { getDateDiffInDays, DEVICE_TIMEZONE } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SlipUp, Profile } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { TZDate } from '@date-fns/tz';
+import { addDays, format } from 'date-fns';
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * Minimum delay for midnight timer to prevent rapid re-firing.
+ * Even if the calculated time until midnight is 0 or negative (due to timing issues),
+ * we ensure at least 1 second delay before the timer fires again.
+ */
+const MINIMUM_TIMER_MS = 1000;
+
+/**
+ * Fallback delay (1 hour) when midnight calculation fails or produces unexpected results.
+ * This prevents rapid re-firing loops while allowing reasonable retry frequency.
+ */
+const FALLBACK_TIMER_MS = 60 * 60 * 1000;
 
 // =============================================================================
 // Types & Interfaces
@@ -33,22 +52,57 @@ export interface DaysSoberResult {
 // =============================================================================
 
 /**
- * Calculates the number of milliseconds until the next midnight.
+ * Calculates the number of milliseconds until the next midnight in the specified timezone.
  *
- * @returns Milliseconds until 00:00:00 of the next day
+ * This ensures the midnight refresh timer aligns with the user's local midnight,
+ * so day counts roll over when the user expects them to.
+ *
+ * Includes protection against clock skew, timezone changes, and DST transitions:
+ * - If calculated time is <= 0, recalculates with fresh timestamp
+ * - If still negative after recalculation, falls back to 1 hour delay
+ * - Always returns at least MINIMUM_TIMER_MS to prevent rapid re-firing
+ *
+ * @param timezone - IANA timezone string (e.g., 'America/Los_Angeles'). Defaults to device timezone
+ * @returns Milliseconds until 00:00:00 of the next day in specified timezone
  *
  * @example
  * ```ts
- * const ms = getMillisecondsUntilMidnight();
+ * const ms = getMillisecondsUntilMidnight('America/New_York');
  * setTimeout(refresh, ms);
  * ```
  */
-function getMillisecondsUntilMidnight(): number {
+function getMillisecondsUntilMidnight(timezone: string = DEVICE_TIMEZONE): number {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow.getTime() - now.getTime();
+
+  // Calculate tomorrow's date string in the target timezone directly
+  // Create TZDate first, then add days to ensure timezone-aware date arithmetic
+  const tomorrowDateStr = format(addDays(new TZDate(now, timezone), 1), 'yyyy-MM-dd');
+
+  // Create midnight in the timezone as an ISO string, then convert to UTC
+  // This avoids the Date constructor's system timezone interpretation
+  const midnightIsoString = `${tomorrowDateStr}T00:00:00`;
+  const midnightUtc = new TZDate(midnightIsoString, timezone);
+
+  let msUntilMidnight = midnightUtc.getTime() - now.getTime();
+
+  // Handle clock skew or timezone change: if negative or very small, recalculate
+  if (msUntilMidnight < MINIMUM_TIMER_MS) {
+    // Recalculate with fresh timestamp to handle potential clock/timezone drift
+    const freshNow = new Date();
+    const recalculatedTomorrowDateStr = format(
+      addDays(new TZDate(freshNow, timezone), 1),
+      'yyyy-MM-dd'
+    );
+    const recalculatedMidnightUtc = new TZDate(`${recalculatedTomorrowDateStr}T00:00:00`, timezone);
+    msUntilMidnight = recalculatedMidnightUtc.getTime() - freshNow.getTime();
+
+    // If still negative after recalculation, use fallback to prevent rapid re-firing
+    if (msUntilMidnight < MINIMUM_TIMER_MS) {
+      return FALLBACK_TIMER_MS;
+    }
+  }
+
+  return msUntilMidnight;
 }
 
 // =============================================================================
@@ -95,14 +149,21 @@ export function useDaysSober(userId?: string): DaysSoberResult {
   // Ref to track the active midnight refresh timer
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Get user's timezone with fallback to device timezone
+  // This ensures day calculations use the user's stored timezone when available
+  const userTimezone = useMemo(() => {
+    return targetProfile?.timezone || DEVICE_TIMEZONE;
+  }, [targetProfile?.timezone]);
+
   // Set up midnight refresh timer
   useEffect(() => {
     /**
-     * Schedules a state update at midnight to trigger day count recalculation.
-     * Reschedules itself for the following midnight after each update.
+     * Schedules a state update at midnight in the user's local timezone
+     * to trigger day count recalculation. Reschedules itself for the following
+     * midnight after each update.
      */
     function scheduleMidnightRefresh(): void {
-      const msUntilMidnight = getMillisecondsUntilMidnight();
+      const msUntilMidnight = getMillisecondsUntilMidnight(userTimezone);
 
       timerRef.current = setTimeout(() => {
         setCurrentDate(new Date().toDateString());
@@ -119,7 +180,7 @@ export function useDaysSober(userId?: string): DaysSoberResult {
         timerRef.current = null;
       }
     };
-  }, []);
+  }, [userTimezone]);
 
   // Fetch slip-up and profile data
   useEffect(() => {
@@ -184,15 +245,16 @@ export function useDaysSober(userId?: string): DaysSoberResult {
     }
 
     // Calculate days in current streak
+    // Pass date strings directly so they're parsed as midnight in the user's timezone
     let daysSober = 0;
     if (streakStartDate) {
-      daysSober = getDateDiffInDays(new Date(streakStartDate));
+      daysSober = getDateDiffInDays(streakStartDate, new Date(), userTimezone);
     }
 
     // Calculate total journey days from original sobriety date
     let journeyDays = 0;
     if (sobrietyDate) {
-      journeyDays = getDateDiffInDays(new Date(sobrietyDate));
+      journeyDays = getDateDiffInDays(sobrietyDate, new Date(), userTimezone);
     }
 
     return {
@@ -205,7 +267,7 @@ export function useDaysSober(userId?: string): DaysSoberResult {
       loading,
       error,
     };
-  }, [mostRecentSlipUp, targetProfile, loading, error, currentDate]);
+  }, [mostRecentSlipUp, targetProfile, loading, error, currentDate, userTimezone]);
 
   return result;
 }

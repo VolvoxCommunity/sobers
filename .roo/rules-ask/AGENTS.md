@@ -1,0 +1,22 @@
+# Project Documentation Rules (Non-Obvious Only)
+
+- Database schema source of truth: `types/database.ts` (not Supabase dashboard)
+- Auth flow is enforced in root layout - routing logic determines user journey based on profile completeness
+- No user roles in system - users can be both sponsors and sponsees through different relationships
+- Task flow is unidirectional: sponsors assign tasks to sponsees only
+- Supabase client uses custom storage adapter (SecureStore native, localStorage web)
+- All logs route through universal logger to Sentry breadcrumbs (see `lib/logger.ts`)
+- Privacy scrubbing configured in `lib/sentry-privacy.ts` for PII protection
+- Testing requires `renderWithProviders` wrapper for AuthContext/ThemeContext
+- File organization requires section comments: `// =============================================================================
+- Project uses pnpm package manager (not npm/yarn)
+- Expo Router v6 with typed routes (file-based routing in `app/`)
+- Sentry integration wraps entire app for crash reporting in all environments
+- Privacy scrubbing prevents PII exposure in error reports
+- Theme system supports light/dark/system modes with OS preference detection
+- Font loading (JetBrains Mono) is required before app initialization
+- Device timezone handling ensures consistent date display across platforms
+- Error boundaries provide graceful failure handling throughout app
+- Real-time subscriptions available via Supabase channels
+- Account deletion triggers cascading cleanup via RPC function
+- Path alias `@/` required for all local imports (configured in tsconfig.json)

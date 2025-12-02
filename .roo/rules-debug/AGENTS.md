@@ -1,0 +1,21 @@
+# Project Debug Rules (Non-Obvious Only)
+
+- Auth routing issues: Check profile completeness logic in `app/_layout.tsx` (requires both name and sobriety_date)
+- Metro bundler cache issues: Run `pnpm start:clean` to clear cache when imports break mysteriously
+- Supabase client uses Proxy pattern - debug with `console.log(supabase)` not actual client instance
+- OAuth redirect failures: Check scheme configuration in `app.config.ts` (sobrietywaypoint://)
+- Sentry breadcrumbs appear in dashboard with categorized metadata from logger calls
+- Platform-specific storage bugs: Verify `Platform.OS` checks for SecureStore vs localStorage
+- Test components: Use `renderWithProviders` from test-utils to wrap with AuthContext/ThemeContext
+- Silent auth failures: Check Sentry for auth state change errors (logged with LogCategory.AUTH)
+- Component mounting issues: Verify fonts loaded before rendering (JetBrains Mono)
+- Font loading issues: Check JetBrains Mono fonts in `app/_layout.tsx` - splash screen hidden after fonts load
+- Navigation state: Debug with `useSegments()` and `useRouter()` from expo-router
+- OAuth redirect failures: Check scheme in `app.config.ts` (sobrietywaypoint://) and WebBrowser handling
+- Storage bugs: Verify Platform.OS checks for SecureStore vs localStorage differences
+- Component mounting issues: Verify `useFrameworkReady()` hook and font loading state
+- Test failures: Check jest.setup.js mocks for AsyncStorage and SecureStore
+- Auth state issues: Look for Sentry breadcrumbs with LogCategory.AUTH
+- Metro bundler errors: Clear cache with `pnpm start:clean` when imports break
+- Supabase query issues: Verify typed client usage from `types/database.ts`
+- Navigation state: Debug with `useSegments()` and `useRouter()` from expo-router

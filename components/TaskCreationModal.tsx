@@ -16,6 +16,7 @@ import { ThemeColors } from '@/contexts/ThemeContext';
 import { X, ChevronDown, Calendar } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logger, LogCategory } from '@/lib/logger';
+import { formatLocalDate, parseDateAsLocal } from '@/lib/date';
 
 interface TaskCreationModalProps {
   visible: boolean;
@@ -117,7 +118,7 @@ export default function TaskCreationModal({
         step_number: selectedStepNumber || null,
         title: customTitle.trim(),
         description: customDescription.trim(),
-        due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
+        due_date: dueDate ? formatLocalDate(dueDate) : null,
         status: 'assigned',
       };
 
@@ -357,9 +358,11 @@ export default function TaskCreationModal({
               {Platform.OS === 'web' ? (
                 <input
                   type="date"
-                  value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : null)}
+                  value={dueDate ? formatLocalDate(dueDate) : ''}
+                  min={formatLocalDate(new Date())}
+                  onChange={(e) =>
+                    setDueDate(e.target.value ? parseDateAsLocal(e.target.value) : null)
+                  }
                   style={{
                     padding: 12,
                     fontSize: 16,

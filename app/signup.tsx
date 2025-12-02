@@ -19,8 +19,6 @@ import { logger, LogCategory } from '@/lib/logger';
 
 export default function SignupScreen() {
   const { theme } = useTheme();
-  const [firstName, setFirstName] = useState('');
-  const [lastInitial, setLastInitial] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,26 +28,16 @@ export default function SignupScreen() {
   const router = useRouter();
 
   // Refs for field navigation
-  const lastInitialRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
   const handleSignup = async () => {
-    if (!firstName || !lastInitial || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       if (Platform.OS === 'web') {
         window.alert('Please fill in all fields');
       } else {
         Alert.alert('Error', 'Please fill in all fields');
-      }
-      return;
-    }
-
-    if (lastInitial.length !== 1) {
-      if (Platform.OS === 'web') {
-        window.alert('Last initial must be a single letter');
-      } else {
-        Alert.alert('Error', 'Last initial must be a single letter');
       }
       return;
     }
@@ -74,11 +62,11 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      await signUp(email, password, firstName, lastInitial);
+      await signUp(email, password);
       router.replace('/onboarding');
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to create account');
-      logger.error('Sign up failed', err, { category: LogCategory.AUTH, email });
+      logger.error('Sign up failed', err, { category: LogCategory.AUTH });
       if (Platform.OS === 'web') {
         window.alert('Error: ' + err.message);
       } else {
@@ -127,37 +115,6 @@ export default function SignupScreen() {
         </View>
 
         <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>First Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="John"
-              value={firstName}
-              onChangeText={setFirstName}
-              editable={!loading}
-              returnKeyType="next"
-              onSubmitEditing={() => lastInitialRef.current?.focus()}
-              blurOnSubmit={false}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Last Initial</Text>
-            <TextInput
-              ref={lastInitialRef}
-              style={styles.input}
-              placeholder="D"
-              value={lastInitial}
-              onChangeText={(text) => setLastInitial(text.toUpperCase())}
-              maxLength={1}
-              autoCapitalize="characters"
-              editable={!loading}
-              returnKeyType="next"
-              onSubmitEditing={() => emailRef.current?.focus()}
-              blurOnSubmit={false}
-            />
-          </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
