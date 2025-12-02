@@ -185,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Extracts first name and last initial from user metadata and captures the device timezone.
    *
    * @param user - The authenticated user object from OAuth provider
-   * @throws Error if profile creation fails
+   * @throws Error if profile creation fails (but not if profile check fails - auth continues)
    */
   const createOAuthProfileIfNeeded = async (user: User): Promise<void> => {
     const { data: existingProfile, error: queryError } = await supabase
@@ -337,19 +337,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(true);
         }
 
-        // CRITICAL: Defer all async Supabase operations using setTimeout.
+        // CRITICAL: Defer all async Supabase operations using queueMicrotask.
         // This breaks the synchronous callback chain and allows setSession()
         // to fully complete before we make any RLS-protected database queries.
         // Without this, Supabase client operations deadlock on iOS during OAuth.
-        setTimeout(async () => {
+        //
+        // queueMicrotask is preferred over setTimeout(..., 0) because:
+        // - Microtasks execute after current sync code but before the next macrotask
+        // - More semantically correct for breaking sync callback chains
+        // - Slightly faster and more predictable timing
+        queueMicrotask(async () => {
           if (!isMountedRef.current) {
             return;
           }
 
           try {
-            await createOAuthProfileIfNeeded(session.user);
+            // Only create profile on sign-in events, not token refresh.
+            // createOAuthProfileIfNeeded is idempotent (checks existence first),
+            // but calling it on every TOKEN_REFRESHED event adds unnecessary DB queries.
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+              await createOAuthProfileIfNeeded(session.user);
+              // Check mount status after async operation to avoid state updates on unmounted component
+              if (!isMountedRef.current) return;
+            }
+
             await fetchProfile(session.user.id);
           } catch (error) {
+            // Check mount status before logging to ensure we don't update state after unmount
+            if (!isMountedRef.current) return;
+
             logger.error('Auth state change handling failed', error as Error, {
               category: LogCategory.AUTH,
             });
@@ -358,7 +374,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
             }
           }
-        }, 0);
+        });
       } else {
         setProfile(null);
         if (isMountedRef.current) {
@@ -433,17 +449,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (result.type === 'success' && result.url) {
-          const url = new URL(result.url);
-
-          let access_token = url.searchParams.get('access_token');
-          let refresh_token = url.searchParams.get('refresh_token');
-
-          // Fallback to hash fragment (Supabase's default for implicit grant)
-          if (!access_token || !refresh_token) {
-            const hashParams = new URLSearchParams(url.hash.substring(1));
-            access_token = hashParams.get('access_token');
-            refresh_token = hashParams.get('refresh_token');
-          }
+          // Use the helper function to extract tokens consistently
+          const { access_token, refresh_token } = extractTokensFromUrl(result.url);
 
           if (access_token && refresh_token) {
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
@@ -458,9 +465,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               throw sessionError;
             }
 
-            if (sessionData.user) {
-              await createOAuthProfileIfNeeded(sessionData.user);
-            }
+            // Profile creation is handled by onAuthStateChange listener (line 350).
+            // Calling it here would cause a race condition and potential deadlock
+            // since setSession() hasn't fully completed yet.
           } else {
             logger.warn('Google Auth tokens not found in redirect', {
               category: LogCategory.AUTH,

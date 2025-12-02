@@ -76,7 +76,11 @@ export default function OnboardingScreen() {
     ) {
       router.replace('/(tabs)');
     }
-  }, [awaitingProfileUpdate, profile, router]);
+    // Note: router is intentionally excluded from deps because:
+    // 1. It may not be referentially stable across renders
+    // 2. We only want to navigate when awaitingProfileUpdate or profile changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awaitingProfileUpdate, profile]);
 
   // Ref for field navigation
   const lastInitialRef = useRef<TextInput>(null);
@@ -122,11 +126,16 @@ export default function OnboardingScreen() {
       if (error) throw error;
 
       // Refresh the profile state in AuthContext
+      // refreshProfile() catches errors internally and returns null on failure,
+      // so we proceed to set awaitingProfileUpdate regardless since the database
+      // update has already succeeded. The useEffect will only navigate if the
+      // profile state contains the expected fields.
       await refreshProfile();
 
       // Signal that we're ready to navigate once React processes the profile update
       // The useEffect watching awaitingProfileUpdate will handle the actual navigation
-      // after React has propagated the new profile state through the component tree
+      // after React has propagated the new profile state through the component tree.
+      // Note: Navigation only occurs if profile has all required fields (checked in useEffect)
       setAwaitingProfileUpdate(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update profile';
