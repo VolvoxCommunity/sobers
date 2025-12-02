@@ -202,7 +202,7 @@ npx expo run:ios
 
 ### Testing Checklist
 
-1. **Install** the development build on a real iOS device (Simulator works but may have issues)
+1. **Install** the development build on a real iOS device (**Apple Sign In requires a real device and does not work reliably in the Simulator**)
 2. **Tap** "Sign in with Apple" button
 3. **Verify** Face ID/Touch ID/Password prompt appears
 4. **Authenticate** with your Apple ID
