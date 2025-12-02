@@ -199,10 +199,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         category: LogCategory.DATABASE,
         userId: user.id,
       });
-      // Don't throw - allow auth to continue even if profile check fails
-      return;
+      // Query failed - attempt upsert anyway to avoid leaving user without profile.
+      // If profile already exists, the conflict on 'id' primary key will be ignored.
+      // This prevents the "infinite onboarding loop" where users are authenticated
+      // but have no profile row, causing UPDATE operations to affect zero rows.
     }
 
+    // Create profile if we confirmed it doesn't exist, OR if the query failed
+    // (in which case we attempt insert and rely on conflict handling)
     if (!existingProfile) {
       // Extract name from OAuth metadata if available, otherwise leave null for onboarding
       const fullName = user.user_metadata?.full_name;
@@ -215,13 +219,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const lastName = nameParts && nameParts.length > 1 ? nameParts[nameParts.length - 1] : null;
       const lastInitial = lastName?.[0]?.toUpperCase() || firstName?.[0]?.toUpperCase() || null;
 
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: user.id,
-        email: user.email || '',
-        first_name: firstName,
-        last_initial: lastInitial,
-        timezone: DEVICE_TIMEZONE,
-      });
+      const { error: profileError } = await supabase.from('profiles').upsert(
+        {
+          id: user.id,
+          email: user.email || '',
+          first_name: firstName,
+          last_initial: lastInitial,
+          timezone: DEVICE_TIMEZONE,
+        },
+        {
+          // Only insert if row doesn't exist; don't update existing profiles
+          // This preserves any user-entered data from onboarding
+          onConflict: 'id',
+          ignoreDuplicates: true,
+        }
+      );
 
       if (profileError) {
         logger.error('Failed to create OAuth profile', profileError as Error, {
