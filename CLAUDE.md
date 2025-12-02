@@ -119,7 +119,7 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 - Supabase Auth with multiple providers:
   - Email/password (ready)
   - Google OAuth (configured)
-  - Apple Sign In (design phase, see `docs/plans/`)
+  - Apple Sign In (see `docs/APPLE_SIGNIN_SETUP.md`)
 - Session persistence via secure storage adapter
 - Auto-refresh tokens enabled
 - Root layout guards routes based on auth state
@@ -235,10 +235,9 @@ The root layout (`app/_layout.tsx`) orchestrates the auth flow:
 
 **Testing Patterns:**
 
-- Use `renderWithProviders` from `test-utils/` to wrap components with AuthContext, ThemeContext
-- MSW (Mock Service Worker) for API mocking in `mocks/`
-- Test fixtures in `test-utils/fixtures/`
-- Templates for new tests in `docs/templates/`
+- Use Jest with React Native Testing Library
+- MSW (Mock Service Worker) for API mocking
+- Wrap components with AuthContext, ThemeContext in tests
 
 ## Supabase Schema Overview
 

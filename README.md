@@ -154,15 +154,13 @@ pnpm build:web   # Static web build → dist/
   SENTRY_PROJECT=<project>
   SENTRY_AUTH_TOKEN=<token>
   ```
-- See `docs/SENTRY_SETUP.md` for full setup + CI integration
 
 ## Testing
 
 The project enforces **80% minimum coverage** across statements, branches, functions, and lines. Testing layers:
 
-- **Unit & Integration**: Jest + React Native Testing Library + custom `renderWithProviders`
-- **API mocking**: MSW handlers under `mocks/`
-- **Fixtures**: `test-utils/fixtures/`
+- **Unit & Integration**: Jest + React Native Testing Library
+- **API mocking**: MSW (Mock Service Worker)
 
 ### Test Commands
 
@@ -171,8 +169,6 @@ pnpm test          # Run all tests
 pnpm test:watch    # Watch mode
 pnpm test:ci       # Run with coverage report
 ```
-
-Templates live in `docs/templates/` for components, hooks, and integration tests.
 
 ## CI/CD & Release Flow
 
@@ -195,13 +191,9 @@ Templates live in `docs/templates/` for components, hooks, and integration tests
 ## Documentation & Helpful Links
 
 - `CLAUDE.md` – architecture guidance + MCP usage expectations
-- `docs/TESTING.md` – testing strategies, coverage targets, MSW patterns
 - `docs/logger.md` – universal logger API reference and best practices
 - `docs/GOOGLE_OAUTH_SETUP.md` – Google OAuth configuration guide
 - `docs/APPLE_SIGNIN_SETUP.md` – Apple Sign In configuration guide
-- `.github/CICD.md` – CI/CD deep dive + Claude review notes
-- `.github/GIT_HOOKS.md` – Husky/lint-staged troubleshooting
-- `supabase/migrations/` – schema + RLS source of truth
 
 ## License
 

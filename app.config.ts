@@ -13,6 +13,17 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   extra: {
+    /**
+     * EAS Build information captured at build time.
+     * These environment variables are only available during EAS Build,
+     * so they will be null/undefined in local development.
+     *
+     * @see {@link https://docs.expo.dev/eas/environment-variables/ EAS Environment Variables}
+     */
+    easBuildId: process.env.EAS_BUILD_ID ?? null,
+    easBuildProfile: process.env.EAS_BUILD_PROFILE ?? null,
+    easBuildGitCommitHash: process.env.EAS_BUILD_GIT_COMMIT_HASH ?? null,
+    easBuildRunner: process.env.EAS_BUILD_RUNNER ?? null,
     eas: {
       projectId: '8d64bbe4-27d4-41ac-9421-9c2758e4765a',
     },
