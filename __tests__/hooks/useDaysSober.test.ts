@@ -162,7 +162,7 @@ describe('useDaysSober', () => {
       });
 
       // Should be exactly 100 days (Jan 1 to Apr 10 = 100 calendar days)
-      // Jan: 31 days remaining after Jan 1 (30 days) + Feb: 29 (leap year) + Mar: 31 + Apr 1-10: 10 = 100
+      // Jan: 30 days remaining after Jan 1 (Jan 2–Jan 31) + Feb: 29 (leap year) + Mar: 31 + Apr 1-10: 10 = 100
       expect(result.current.daysSober).toBe(100);
       expect(result.current.journeyDays).toBe(100);
     });
