@@ -403,6 +403,9 @@ export default function SettingsScreen() {
                   style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]}
                   onPress={handleDeleteAccount}
                   disabled={isDeleting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete your account permanently"
+                  accessibilityState={{ disabled: isDeleting }}
                 >
                   {isDeleting ? (
                     <ActivityIndicator size="small" color={theme.white} />
