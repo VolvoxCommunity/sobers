@@ -132,7 +132,8 @@ describe('useDaysSober', () => {
     it('uses calendar days in device timezone, not UTC', async () => {
       // Test that the calculation uses calendar days in the device's local timezone
       // Sobriety date: Jan 1, 2024 (interpreted as Jan 1 00:00 in device timezone)
-      // The exact result depends on the test environment's timezone
+      // Current time: Jan 2, 2024 12:00 UTC
+      // Expected: 1 calendar day (Jan 1 → Jan 2)
       jest.setSystemTime(new Date('2024-01-02T12:00:00Z'));
 
       const { result } = renderHook(() => useDaysSober());
@@ -141,13 +142,17 @@ describe('useDaysSober', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Should be a positive number of days using calendar day calculation
-      expect(result.current.daysSober).toBeGreaterThanOrEqual(0);
+      // Should be exactly 1 day (Jan 1 to Jan 2 = 1 calendar day)
+      // Note: Test runs in UTC timezone in CI, so this assertion is valid
+      expect(result.current.daysSober).toBe(1);
+      expect(result.current.journeyDays).toBe(1);
     });
 
     it('uses device timezone for day calculations', async () => {
       // This test verifies that the device timezone is used for calculations
-      // The hook always uses Intl.DateTimeFormat().resolvedOptions().timeZone
+      // Sobriety date: Jan 1, 2024
+      // Current time: Apr 10, 2024 12:00 UTC
+      // Expected: 100 calendar days (Jan 1 → Apr 10)
       jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
 
       const { result } = renderHook(() => useDaysSober());
@@ -156,9 +161,10 @@ describe('useDaysSober', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Day calculation should work based on device timezone
-      expect(result.current.daysSober).toBeGreaterThanOrEqual(0);
-      expect(result.current.journeyDays).toBeGreaterThanOrEqual(0);
+      // Should be exactly 100 days (Jan 1 to Apr 10 = 100 calendar days)
+      // Jan: 31 days remaining after Jan 1 (30 days) + Feb: 29 (leap year) + Mar: 31 + Apr 1-10: 10 = 100
+      expect(result.current.daysSober).toBe(100);
+      expect(result.current.journeyDays).toBe(100);
     });
   });
 
