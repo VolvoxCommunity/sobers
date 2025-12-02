@@ -157,4 +157,3 @@ export function getDateDiffInDays(
 
   return Math.max(0, diffDays);
 }
-
