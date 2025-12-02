@@ -337,11 +337,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(true);
         }
 
-        // CRITICAL: Defer all async Supabase operations using setTimeout.
+        // CRITICAL: Defer all async Supabase operations using queueMicrotask.
         // This breaks the synchronous callback chain and allows setSession()
         // to fully complete before we make any RLS-protected database queries.
         // Without this, Supabase client operations deadlock on iOS during OAuth.
-        setTimeout(async () => {
+        //
+        // queueMicrotask is preferred over setTimeout(..., 0) because:
+        // - Microtasks execute after current sync code but before the next macrotask
+        // - More semantically correct for breaking sync callback chains
+        // - Slightly faster and more predictable timing
+        queueMicrotask(async () => {
           if (!isMountedRef.current) {
             return;
           }
@@ -364,7 +369,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
             }
           }
-        }, 0);
+        });
       } else {
         setProfile(null);
         if (isMountedRef.current) {
