@@ -27,7 +27,7 @@ import {
 } from '@/lib/date';
 
 /**
- * Render the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
+ * Renders the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
  *
  * The component updates the user's profile with the provided first name, last initial, and sobriety date,
  * refreshes profile state, and navigates to the main app once the profile is complete.
@@ -68,14 +68,29 @@ export default function OnboardingScreen() {
   // Navigate to main app when profile becomes complete after submission
   // This ensures we only navigate AFTER React has processed the profile state update
   useEffect(() => {
-    if (
-      awaitingProfileUpdate &&
-      profile?.sobriety_date &&
-      profile?.first_name &&
-      profile?.last_initial
-    ) {
+    if (!awaitingProfileUpdate) return;
+
+    // Profile is complete - navigate to main app
+    if (profile?.sobriety_date && profile?.first_name && profile?.last_initial) {
       router.replace('/(tabs)');
+      return;
     }
+
+    // Add timeout protection to prevent user getting stuck indefinitely
+    // if profile refresh fails silently or profile never becomes complete
+    const timeout = setTimeout(() => {
+      if (awaitingProfileUpdate) {
+        setAwaitingProfileUpdate(false);
+        setLoading(false);
+        Alert.alert(
+          'Profile Update Timeout',
+          'Your profile update is taking longer than expected. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
     // Note: router is intentionally excluded from deps because:
     // We only want navigation to trigger when awaitingProfileUpdate or profile changes,
     // not when the router object changes (which is referentially stable in Expo Router).

@@ -49,7 +49,7 @@ interface TimelineEvent {
 }
 
 /**
- * Render the user's recovery journey screen containing sobriety metrics and a chronological timeline.
+ * Renders the user's recovery journey screen containing sobriety metrics and a chronological timeline.
  *
  * Shows the sobriety start, slip-ups, step completions, task completions, and milestone events alongside summary statistics and a visual timeline.
  *
@@ -229,8 +229,12 @@ export default function JourneyScreen() {
     }
 
     // 6. Sobriety milestones
-    // Use currentStreakStartDate which accounts for slip-ups (recovery restart date)
-    // Milestones are calculated from the current streak, not the original sobriety date
+    // IMPORTANT: Milestones are calculated from currentStreakStartDate (recovery restart date),
+    // NOT from the original profile.sobriety_date. This is intentional:
+    // - If user has slip-ups, milestones reset to their most recent recovery restart
+    // - If no slip-ups, currentStreakStartDate equals sobriety_date
+    // This behavior matches recovery program conventions where milestones celebrate
+    // continuous sobriety from the most recent restart, not total time in program.
     if (currentStreakStartDate) {
       const streakStartDate = parseDateAsLocal(currentStreakStartDate);
 
