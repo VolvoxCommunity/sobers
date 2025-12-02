@@ -30,12 +30,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
-import {
-  formatLocalDate,
-  formatDateWithTimezone,
-  parseDateAsLocal,
-  DEVICE_TIMEZONE,
-} from '@/lib/date';
+import { formatDateWithTimezone, parseDateAsLocal, DEVICE_TIMEZONE } from '@/lib/date';
 import { useRouter } from 'expo-router';
 
 // Component for displaying sponsee days sober using the hook
@@ -160,6 +155,9 @@ export default function ProfileScreen() {
   const [sponseeTaskStats, setSponseeTaskStats] = useState<{
     [key: string]: { total: number; completed: number };
   }>({});
+
+  // User's timezone (stored in profile) with device timezone as fallback
+  const userTimezone = profile?.timezone ?? DEVICE_TIMEZONE;
 
   const fetchRelationships = useCallback(async () => {
     if (!profile) return;
@@ -659,7 +657,7 @@ export default function ProfileScreen() {
     }
 
     const confirmMessage =
-      'This will log your slip up and restart your current streak. Your sponsor will be notified. Continue?';
+      'This will log your slip-up and restart your current streak. Your sponsor will be notified. Continue?';
 
     const confirmed =
       Platform.OS === 'web'
@@ -938,9 +936,11 @@ export default function ProfileScreen() {
               <Text style={styles.modalTitle}>Edit Sobriety Date</Text>
               <input
                 type="date"
-                value={formatDateWithTimezone(selectedSobrietyDate, profile?.timezone)}
-                max={formatDateWithTimezone(new Date(), profile?.timezone)}
-                onChange={(e) => setSelectedSobrietyDate(parseDateAsLocal(e.target.value))}
+                value={formatDateWithTimezone(selectedSobrietyDate, userTimezone)}
+                max={formatDateWithTimezone(new Date(), userTimezone)}
+                onChange={(e) =>
+                  setSelectedSobrietyDate(parseDateAsLocal(e.target.value, userTimezone))
+                }
                 style={{
                   padding: 12,
                   fontSize: 16,
@@ -1023,9 +1023,9 @@ export default function ProfileScreen() {
               {Platform.OS === 'web' ? (
                 <input
                   type="date"
-                  value={formatLocalDate(slipUpDate)}
-                  max={formatLocalDate(new Date())}
-                  onChange={(e) => setSlipUpDate(parseDateAsLocal(e.target.value))}
+                  value={formatDateWithTimezone(slipUpDate, userTimezone)}
+                  max={formatDateWithTimezone(new Date(), userTimezone)}
+                  onChange={(e) => setSlipUpDate(parseDateAsLocal(e.target.value, userTimezone))}
                   style={{
                     padding: 12,
                     fontSize: 16,
@@ -1070,9 +1070,9 @@ export default function ProfileScreen() {
               {Platform.OS === 'web' ? (
                 <input
                   type="date"
-                  value={formatLocalDate(recoveryDate)}
-                  min={formatLocalDate(slipUpDate)}
-                  onChange={(e) => setRecoveryDate(parseDateAsLocal(e.target.value))}
+                  value={formatDateWithTimezone(recoveryDate, userTimezone)}
+                  min={formatDateWithTimezone(slipUpDate, userTimezone)}
+                  onChange={(e) => setRecoveryDate(parseDateAsLocal(e.target.value, userTimezone))}
                   style={{
                     padding: 12,
                     fontSize: 16,

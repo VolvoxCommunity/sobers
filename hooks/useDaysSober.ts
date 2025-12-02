@@ -8,6 +8,17 @@ import { TZDate } from '@date-fns/tz';
 import { addDays, format } from 'date-fns';
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * Minimum delay for midnight timer to prevent rapid re-firing.
+ * Even if the calculated time until midnight is 0 or negative (due to timing issues),
+ * we ensure at least 1 second delay before the timer fires again.
+ */
+const MINIMUM_TIMER_MS = 1000;
+
+// =============================================================================
 // Types & Interfaces
 // =============================================================================
 
@@ -61,7 +72,7 @@ function getMillisecondsUntilMidnight(timezone: string = DEVICE_TIMEZONE): numbe
   const midnightIsoString = `${tomorrowDateStr}T00:00:00`;
   const midnightUtc = new TZDate(midnightIsoString, timezone);
 
-  return Math.max(1000, midnightUtc.getTime() - now.getTime());
+  return Math.max(MINIMUM_TIMER_MS, midnightUtc.getTime() - now.getTime());
 }
 
 // =============================================================================

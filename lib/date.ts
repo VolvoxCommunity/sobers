@@ -10,8 +10,15 @@ import { format } from 'date-fns';
 // =============================================================================
 
 /**
- * Device timezone, cached at module load time.
+ * Device timezone, cached at module load time for performance.
+ *
  * This avoids creating a new DateTimeFormat instance on every function call.
+ *
+ * @remarks
+ * **Limitation**: This value is cached when the module loads and will not update
+ * if the user changes their device timezone during the session. This is acceptable
+ * for most use cases since timezone changes during app usage are rare.
+ * The app will use the updated timezone after a restart.
  */
 export const DEVICE_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -69,26 +76,25 @@ export function formatDateWithTimezone(date: Date, timezone: string = DEVICE_TIM
 }
 
 /**
- * Parses a YYYY-MM-DD date string as LOCAL midnight (not UTC).
+ * Parses a YYYY-MM-DD date string as midnight in a specific timezone.
  *
- * IMPORTANT: Use this instead of `new Date(dateString)` which interprets
- * date-only strings as UTC midnight, causing the wrong date to display
- * in timezones behind UTC.
+ * When a user sets a sobriety date like "2024-01-01", they mean midnight
+ * in their timezone. This function creates a Date object that represents
+ * that moment in time.
  *
  * @param dateStr - Date string in YYYY-MM-DD format
- * @returns Date object set to local midnight on that date
+ * @param timezone - IANA timezone string (e.g., 'America/Los_Angeles'). Defaults to device timezone
+ * @returns Date object representing midnight on that date in the specified timezone
  *
  * @example
  * ```ts
- * // User in EST (UTC-5):
- * // new Date("2025-11-01") → Nov 1 00:00 UTC → Oct 31 19:00 EST - WRONG!
- * // parseDateAsLocal("2025-11-01") → Nov 1 00:00 EST - CORRECT!
- * const date = parseDateAsLocal(profile.sobriety_date);
+ * // Parse date in user's stored timezone
+ * const date = parseDateAsLocal("2025-01-01", userProfile.timezone);
  * ```
  */
-export function parseDateAsLocal(dateStr: string): Date {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
+export function parseDateAsLocal(dateStr: string, timezone: string = DEVICE_TIMEZONE): Date {
+  // Create a TZDate at midnight in the specified timezone, then convert to regular Date
+  return new TZDate(`${dateStr}T00:00:00`, timezone);
 }
 
 /**
@@ -110,7 +116,8 @@ function daysBetweenDateStrings(startDateStr: string, endDateStr: string): numbe
   const startUtc = Date.UTC(startYear, startMonth - 1, startDay);
   const endUtc = Date.UTC(endYear, endMonth - 1, endDay);
 
-  // Calculate difference in days (using Math.round to handle any DST edge cases)
+  // Calculate difference in days
+  // Math.round handles potential floating-point precision issues in division
   const msPerDay = 1000 * 60 * 60 * 24;
   return Math.round((endUtc - startUtc) / msPerDay);
 }

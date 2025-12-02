@@ -53,10 +53,14 @@ export default function OnboardingScreen() {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
-  const [firstName, setFirstName] = useState('');
-  const [lastInitial, setLastInitial] = useState('');
+  // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
+  const [firstName, setFirstName] = useState(profile?.first_name ?? '');
+  const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
   const [sobrietyDate, setSobrietyDate] = useState(
-    profile?.sobriety_date ? parseDateAsLocal(profile.sobriety_date) : new Date()
+    // Parse stored date in user's timezone (or device timezone as fallback)
+    profile?.sobriety_date
+      ? parseDateAsLocal(profile.sobriety_date, profile?.timezone ?? DEVICE_TIMEZONE)
+      : new Date()
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);

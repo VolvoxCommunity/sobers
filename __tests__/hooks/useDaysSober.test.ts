@@ -162,16 +162,18 @@ describe('useDaysSober', () => {
       });
 
       // Should be exactly 100 days (Jan 1 to Apr 10 = 100 calendar days)
-      // Jan: 30 days remaining after Jan 1 (Jan 2–Jan 31) + Feb: 29 (leap year) + Mar: 31 + Apr 1-10: 10 = 100
+      // Jan 2-31: 30 days + Feb: 29 days (leap year) + Mar: 31 days + Apr 1-10: 10 days = 100
       expect(result.current.daysSober).toBe(100);
       expect(result.current.journeyDays).toBe(100);
     });
   });
 
   describe('midnight refresh', () => {
-    it('schedules timer for midnight refresh in device timezone', async () => {
-      // Start near end of day to test midnight timer scheduling
-      jest.setSystemTime(new Date('2024-04-11T07:00:00Z'));
+    it('schedules timer for midnight refresh in user timezone', async () => {
+      // mockProfile uses America/New_York timezone (EDT = UTC-4)
+      // Set time to 23:59 EDT (03:59 UTC on April 11) - just before midnight in New York
+      // This is April 10 at 11:59 PM in New York
+      jest.setSystemTime(new Date('2024-04-11T03:59:00Z'));
 
       const { result } = renderHook(() => useDaysSober());
 
@@ -181,15 +183,14 @@ describe('useDaysSober', () => {
 
       const initialDaysSober = result.current.daysSober;
 
-      // Fast-forward 1 hour + 1 second (should be past midnight in the system/device timezone)
+      // Fast-forward 2 minutes (past midnight in America/New_York)
       act(() => {
-        jest.advanceTimersByTime(60 * 60 * 1000 + 1000);
+        jest.advanceTimersByTime(2 * 60 * 1000);
       });
 
-      // The hook should have triggered a recalculation
-      // Note: In a real scenario, the day count would increase by 1
-      // Here we're just verifying the timer mechanism works
-      expect(result.current.daysSober).toBeDefined();
+      // The hook should have triggered a recalculation and incremented the day count
+      // at local midnight (America/New_York), not UTC midnight
+      expect(result.current.daysSober).toBe(initialDaysSober + 1);
     });
 
     it('cleans up timer on unmount', async () => {
