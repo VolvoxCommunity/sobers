@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -63,6 +63,21 @@ export default function OnboardingScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  // Track when we're waiting for profile to update after form submission
+  const [awaitingProfileUpdate, setAwaitingProfileUpdate] = useState(false);
+
+  // Navigate to main app when profile becomes complete after submission
+  // This ensures we only navigate AFTER React has processed the profile state update
+  useEffect(() => {
+    if (
+      awaitingProfileUpdate &&
+      profile?.sobriety_date &&
+      profile?.first_name &&
+      profile?.last_initial
+    ) {
+      router.replace('/(tabs)');
+    }
+  }, [awaitingProfileUpdate, profile, router]);
 
   // Ref for field navigation
   const lastInitialRef = useRef<TextInput>(null);
@@ -107,8 +122,13 @@ export default function OnboardingScreen() {
 
       if (error) throw error;
 
+      // Refresh the profile state in AuthContext
       await refreshProfile();
-      router.replace('/(tabs)');
+
+      // Signal that we're ready to navigate once React processes the profile update
+      // The useEffect watching awaitingProfileUpdate will handle the actual navigation
+      // after React has propagated the new profile state through the component tree
+      setAwaitingProfileUpdate(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update profile';
       if (Platform.OS === 'web') {

@@ -526,10 +526,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  /**
+   * Signs out the current user and clears all local state.
+   * Uses 'local' scope to only terminate the current session (not other devices).
+   *
+   * Handles AuthSessionMissingError gracefully - if there's no session,
+   * the desired outcome (user signed out) is already achieved.
+   *
+   * @throws Error if sign out fails for reasons other than missing session
+   */
   const signOut = async () => {
     clearSentryUser();
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+
+    // AuthSessionMissingError means no session exists - which is the desired outcome.
+    // Only throw for unexpected errors, not "already signed out" state.
+    if (error && error.name !== 'AuthSessionMissingError') {
+      logger.error('Sign out failed', error, {
+        category: LogCategory.AUTH,
+      });
+      throw error;
+    }
+
+    // Always clear local state to ensure consistent UI
+    setSession(null);
+    setUser(null);
     setProfile(null);
   };
 
@@ -566,8 +588,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       category: LogCategory.AUTH,
     });
 
-    // Sign out first to clear session data and trigger auth state change
-    await supabase.auth.signOut();
+    // Sign out to clear session data - ignore AuthSessionMissingError since
+    // account deletion may have already invalidated the session
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+    if (signOutError && signOutError.name !== 'AuthSessionMissingError') {
+      logger.warn('Sign out after account deletion failed', {
+        category: LogCategory.AUTH,
+        error: signOutError.message,
+      });
+      // Don't throw - account is already deleted, just continue to clear local state
+    }
 
     // Clear local state and Sentry user
     // Order matters: clear user/session first so routing logic sees !user → login
