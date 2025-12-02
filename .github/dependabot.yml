@@ -8,6 +8,7 @@ updates:
   # Maintain dependencies for npm
   - package-ecosystem: 'npm'
     directory: '/'
+    target-branch: 'develop'
     schedule:
       interval: 'daily'
     versioning-strategy: increase
@@ -22,6 +23,7 @@ updates:
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: 'github-actions'
     directory: '/'
+    target-branch: 'develop'
     schedule:
       interval: 'daily'
     assignees:
