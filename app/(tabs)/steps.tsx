@@ -221,31 +221,31 @@ export default function StepsScreen() {
             )}
           </ScrollView>
 
-          {selectedStep && (
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[
-                  styles.completeButton,
-                  progress[selectedStep.step_number] && styles.completeButtonActive,
-                ]}
-                onPress={() => {
+          <View style={styles.modalFooter}>
+            <TouchableOpacity
+              style={[
+                styles.completeButton,
+                selectedStep && progress[selectedStep.step_number] && styles.completeButtonActive,
+              ]}
+              onPress={() => {
+                if (selectedStep) {
                   toggleStepCompletion(selectedStep.step_number);
-                }}
-              >
-                {progress[selectedStep.step_number] ? (
-                  <>
-                    <CheckCircle size={20} color="#ffffff" />
-                    <Text style={styles.completeButtonText}>Marked as Complete</Text>
-                  </>
-                ) : (
-                  <>
-                    <Circle size={20} color="#ffffff" />
-                    <Text style={styles.completeButtonText}>Mark as Complete</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
+                }
+              }}
+            >
+              {selectedStep && progress[selectedStep.step_number] ? (
+                <>
+                  <CheckCircle size={20} color="#ffffff" />
+                  <Text style={styles.completeButtonText}>Marked as Complete</Text>
+                </>
+              ) : (
+                <>
+                  <Circle size={20} color="#ffffff" />
+                  <Text style={styles.completeButtonText}>Mark as Complete</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
