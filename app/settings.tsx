@@ -31,7 +31,12 @@ import {
   Trash2,
   X,
   AlertTriangle,
+  RefreshCw,
+  CheckCircle,
+  Download,
+  AlertCircle,
 } from 'lucide-react-native';
+import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
 import packageJson from '../package.json';
 
@@ -78,6 +83,15 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
+  const {
+    status: updateStatus,
+    isChecking,
+    isDownloading,
+    errorMessage: updateError,
+    checkForUpdates,
+    applyUpdate,
+    isSupported: updatesSupported,
+  } = useAppUpdates();
 
   /**
    * Handles user sign out with platform-specific confirmations.
@@ -364,6 +378,87 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {updatesSupported && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>App Updates</Text>
+              <View style={styles.card}>
+                <View style={styles.updateContainer}>
+                  {updateStatus === 'idle' && (
+                    <TouchableOpacity
+                      style={styles.updateButton}
+                      onPress={checkForUpdates}
+                      accessibilityRole="button"
+                      accessibilityLabel="Check for app updates"
+                    >
+                      <RefreshCw size={20} color={theme.primary} />
+                      <Text style={styles.updateButtonText}>Check for Updates</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {(isChecking || isDownloading) && (
+                    <View style={styles.updateStatusContainer}>
+                      <ActivityIndicator size="small" color={theme.primary} />
+                      <Text style={styles.updateStatusText}>
+                        {isChecking ? 'Checking for updates...' : 'Downloading update...'}
+                      </Text>
+                    </View>
+                  )}
+
+                  {updateStatus === 'up-to-date' && (
+                    <View style={styles.updateStatusContainer}>
+                      <CheckCircle size={20} color={theme.success} />
+                      <Text style={[styles.updateStatusText, { color: theme.success }]}>
+                        App is up to date
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.checkAgainButton}
+                        onPress={checkForUpdates}
+                        accessibilityRole="button"
+                        accessibilityLabel="Check again for updates"
+                      >
+                        <Text style={styles.checkAgainText}>Check Again</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {updateStatus === 'ready' && (
+                    <View style={styles.updateReadyContainer}>
+                      <View style={styles.updateReadyInfo}>
+                        <Download size={20} color={theme.primary} />
+                        <Text style={styles.updateReadyText}>Update ready to install</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.applyUpdateButton}
+                        onPress={applyUpdate}
+                        accessibilityRole="button"
+                        accessibilityLabel="Restart app to apply update"
+                      >
+                        <Text style={styles.applyUpdateText}>Restart to Update</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {updateStatus === 'error' && (
+                    <View style={styles.updateStatusContainer}>
+                      <AlertCircle size={20} color={theme.error} />
+                      <Text style={[styles.updateStatusText, { color: theme.error }]}>
+                        {updateError || 'Failed to check for updates'}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.checkAgainButton}
+                        onPress={checkForUpdates}
+                        accessibilityRole="button"
+                        accessibilityLabel="Try again"
+                      >
+                        <Text style={styles.checkAgainText}>Try Again</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
 
           <View style={styles.section}>
             <TouchableOpacity
@@ -671,5 +766,73 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     buttonDisabled: {
       opacity: 0.6,
+    },
+    updateContainer: {
+      padding: 16,
+    },
+    updateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.primaryLight,
+      gap: 10,
+    },
+    updateButtonText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.primary,
+    },
+    updateStatusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      gap: 10,
+      padding: 8,
+    },
+    updateStatusText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+    },
+    checkAgainButton: {
+      marginLeft: 8,
+    },
+    checkAgainText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.primary,
+      textDecorationLine: 'underline',
+    },
+    updateReadyContainer: {
+      alignItems: 'center',
+      gap: 12,
+    },
+    updateReadyInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    updateReadyText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '500',
+      color: theme.text,
+    },
+    applyUpdateButton: {
+      backgroundColor: theme.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+    },
+    applyUpdateText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
     },
   });
