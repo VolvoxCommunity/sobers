@@ -45,6 +45,12 @@ const EXTERNAL_LINKS = {
   DEVELOPER: 'https://billchirico.dev',
 } as const;
 
+/**
+ * Width of header buttons (close button) used for layout symmetry.
+ * The spacer element uses this same width to balance the header.
+ */
+const HEADER_BUTTON_WIDTH = 44;
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -220,7 +226,7 @@ export default function SettingsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <View style={styles.headerSpacer} />
+          <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
           <Text style={styles.headerTitle}>Settings</Text>
           <TouchableOpacity
             style={styles.closeButton}
@@ -466,7 +472,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       borderBottomColor: theme.borderLight,
     },
     headerSpacer: {
-      width: 44,
+      width: HEADER_BUTTON_WIDTH,
     },
     closeButton: {
       padding: 4,
