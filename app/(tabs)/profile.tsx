@@ -30,7 +30,12 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
-import { formatLocalDate, formatDateWithTimezone, parseDateAsLocal } from '@/lib/date';
+import {
+  formatLocalDate,
+  formatDateWithTimezone,
+  parseDateAsLocal,
+  DEVICE_TIMEZONE,
+} from '@/lib/date';
 import { useRouter } from 'expo-router';
 
 // Component for displaying sponsee days sober using the hook
@@ -588,10 +593,7 @@ export default function ProfileScreen() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          sobriety_date: formatDateWithTimezone(
-            newDate,
-            profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
-          ),
+          sobriety_date: formatDateWithTimezone(newDate, profile.timezone || DEVICE_TIMEZONE),
         })
         .eq('id', profile.id);
 
@@ -633,7 +635,7 @@ export default function ProfileScreen() {
     if (!profile) return;
 
     // Get user's timezone with fallback to device timezone
-    const userTimezone = profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const userTimezone = profile.timezone || DEVICE_TIMEZONE;
 
     const today = new Date();
     today.setHours(23, 59, 59, 999);
