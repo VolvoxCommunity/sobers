@@ -107,6 +107,41 @@ describe('Logger', () => {
         timestamp: expect.any(Number),
       });
     });
+
+    it('captures error to Sentry when Error object is provided', () => {
+      const error = new Error('Test error');
+      logger.error('Operation failed', error);
+
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+        tags: {
+          category: 'error',
+        },
+        extra: {
+          message: 'Operation failed',
+        },
+      });
+    });
+
+    it('captures error to Sentry with custom category', () => {
+      const error = new Error('Auth failed');
+      logger.error('Login failed', error, { category: 'auth', userId: '123' });
+
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+        tags: {
+          category: 'auth',
+        },
+        extra: {
+          message: 'Login failed',
+          userId: '123',
+        },
+      });
+    });
+
+    it('does not capture to Sentry when no Error object is provided', () => {
+      logger.error('Error message without Error object');
+
+      expect(Sentry.captureException).not.toHaveBeenCalled();
+    });
   });
 
   describe('debug()', () => {

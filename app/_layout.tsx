@@ -1,6 +1,11 @@
-// Initialize Sentry before anything else
+// Initialize Sentry before anything else using centralized configuration
 import { initializeSentry, navigationIntegration, wrapRootComponent } from '@/lib/sentry';
 
+// Initialize Sentry once with centralized configuration from lib/sentry.ts
+// This handles environment detection, privacy hooks, and all integrations
+initializeSentry();
+
+/* eslint-disable import/first -- Sentry must initialize before React components load */
 import { useEffect } from 'react';
 import {
   Stack,
@@ -23,29 +28,7 @@ import {
   JetBrainsMono_600SemiBold,
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
-import * as Sentry from '@sentry/react-native';
-
-Sentry.init({
-  dsn: 'https://77ea621f12b48d67c919aa52f04460d7@o216503.ingest.us.sentry.io/4510371687890944',
-
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-
-  // Enable Logs
-  enableLogs: true,
-
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
-
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
-});
-
-// Initialize Sentry once with centralized configuration
-initializeSentry();
+/* eslint-enable import/first */
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -137,38 +120,36 @@ function RootLayoutNav() {
   );
 }
 
-export default Sentry.wrap(
-  wrapRootComponent(function RootLayout() {
-    useFrameworkReady();
+export default wrapRootComponent(function RootLayout() {
+  useFrameworkReady();
 
-    const [fontsLoaded, fontError] = useFonts({
-      'JetBrainsMono-Regular': JetBrainsMono_400Regular,
-      'JetBrainsMono-Medium': JetBrainsMono_500Medium,
-      'JetBrainsMono-SemiBold': JetBrainsMono_600SemiBold,
-      'JetBrainsMono-Bold': JetBrainsMono_700Bold,
-    });
+  const [fontsLoaded, fontError] = useFonts({
+    'JetBrainsMono-Regular': JetBrainsMono_400Regular,
+    'JetBrainsMono-Medium': JetBrainsMono_500Medium,
+    'JetBrainsMono-SemiBold': JetBrainsMono_600SemiBold,
+    'JetBrainsMono-Bold': JetBrainsMono_700Bold,
+  });
 
-    useEffect(() => {
-      if (fontsLoaded || fontError) {
-        SplashScreen.hideAsync();
-      }
-    }, [fontsLoaded, fontError]);
-
-    if (!fontsLoaded && !fontError) {
-      return null;
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
     }
+  }, [fontsLoaded, fontError]);
 
-    return (
-      <ErrorBoundary>
-        <ThemeProvider>
-          <AuthProvider>
-            <RootLayoutNav />
-          </AuthProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    );
-  })
-);
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  return (
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+});
 
 const styles = StyleSheet.create({
   loadingContainer: {

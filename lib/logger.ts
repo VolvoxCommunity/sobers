@@ -37,7 +37,7 @@ export enum LogCategory {
 // =============================================================================
 
 /**
- * Internal log function that handles Sentry breadcrumbs and console output.
+ * Internal log function that handles Sentry breadcrumbs, error capture, and console output.
  *
  * @param level - The severity level of the log
  * @param message - Human-readable log message
@@ -47,8 +47,40 @@ export enum LogCategory {
 function log(level: LogLevel, message: string, error?: Error, metadata?: LogMetadata): void {
   createBreadcrumb(level, message, error, metadata);
 
+  // For error-level logs with an Error object, capture to Sentry
+  // This sends the error to Sentry immediately (not just as a breadcrumb)
+  if (level === 'error' && error) {
+    captureErrorToSentry(message, error, metadata);
+  }
+
   if (__DEV__) {
     logToConsole(level, message, error, metadata);
+  }
+}
+
+/**
+ * Capture an error to Sentry with context.
+ * Silently fails if Sentry is not initialized.
+ *
+ * @param message - Human-readable error message
+ * @param error - The Error object to capture
+ * @param metadata - Optional additional context
+ */
+function captureErrorToSentry(message: string, error: Error, metadata?: LogMetadata): void {
+  try {
+    const { category, ...extraContext } = metadata ?? {};
+
+    Sentry.captureException(error, {
+      tags: {
+        category: typeof category === 'string' ? category : 'error',
+      },
+      extra: {
+        message,
+        ...extraContext,
+      },
+    });
+  } catch {
+    // Silently fail if Sentry not initialized
   }
 }
 
