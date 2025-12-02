@@ -21,7 +21,6 @@ import OnboardingStep from '@/components/onboarding/OnboardingStep';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
   getDateDiffInDays,
-  formatLocalDate,
   formatDateWithTimezone,
   parseDateAsLocal,
   DEVICE_TIMEZONE,
@@ -252,10 +251,10 @@ export default function OnboardingScreen() {
           <View style={styles.webDatePicker}>
             <input
               type="date"
-              value={formatLocalDate(sobrietyDate)}
-              max={formatLocalDate(new Date())}
+              value={formatDateWithTimezone(sobrietyDate, getUserTimezone(profile))}
+              max={formatDateWithTimezone(new Date(), getUserTimezone(profile))}
               onChange={(e) => {
-                setSobrietyDate(parseDateAsLocal(e.target.value));
+                setSobrietyDate(parseDateAsLocal(e.target.value, getUserTimezone(profile)));
                 setShowDatePicker(false);
               }}
               style={{
