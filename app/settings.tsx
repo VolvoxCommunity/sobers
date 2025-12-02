@@ -220,7 +220,7 @@ export default function SettingsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <View style={{ width: 44 }} />
+          <View style={styles.headerSpacer} />
           <Text style={styles.headerTitle}>Settings</Text>
           <TouchableOpacity
             style={styles.closeButton}
@@ -464,6 +464,9 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       backgroundColor: theme.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderLight,
+    },
+    headerSpacer: {
+      width: 44,
     },
     closeButton: {
       padding: 4,
