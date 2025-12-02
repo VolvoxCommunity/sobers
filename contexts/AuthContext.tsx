@@ -349,10 +349,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Create new profile with email and timezone (name collected during onboarding)
+      // Create new profile with defaults (name collected during onboarding)
+      // first_name and last_initial are required fields - use defaults matching OAuth path
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email: email,
+        first_name: 'User',
+        last_initial: 'U',
         timezone: DEVICE_TIMEZONE,
       });
 
