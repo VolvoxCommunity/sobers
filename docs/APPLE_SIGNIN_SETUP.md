@@ -41,15 +41,15 @@ We chose iOS-only support for simplicity:
 6. Scroll to **Capabilities** and enable **Sign in with Apple**
 7. Click **Continue** → **Register**
 
-### Required Information
+### What You Need
 
-For Supabase configuration, you'll need your iOS **Bundle ID**: `com.volvox.sobrietywaypoint`
+For native iOS sign-in, you only need your **Bundle ID**: `com.volvox.sobrietywaypoint`
 
-> **Note**: For native iOS-only sign-in, you do NOT need:
+> **Why so simple?** Native iOS sign-in uses Apple's built-in authentication APIs. Unlike web OAuth flows, you don't need:
 >
-> - A Services ID (only needed for web OAuth)
-> - A private key (only needed for web OAuth)
-> - Secret key rotation (only needed for web OAuth)
+> - A Services ID (web OAuth only)
+> - A private key (web OAuth only)
+> - Secret key rotation (web OAuth only—keys expire every 6 months)
 
 ## Step 2: Configure Supabase Provider
 
@@ -58,13 +58,15 @@ For Supabase configuration, you'll need your iOS **Bundle ID**: `com.volvox.sobr
 3. Toggle **Enable Sign in with Apple**
 4. Configure the fields:
 
-| Field                            | Value                         | Notes                                                  |
-| -------------------------------- | ----------------------------- | ------------------------------------------------------ |
-| **Client IDs**                   | `com.volvox.sobrietywaypoint` | Your iOS bundle ID                                     |
-| **Secret Key (for OAuth)**       | _(leave empty)_               | Not needed for native iOS flow                         |
-| **Allow users without an email** | Off                           | Toggle on only if you want to allow hidden email users |
+   | Field                            | Value                         | Notes                                                      |
+   | -------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+   | **Client IDs**                   | `com.volvox.sobrietywaypoint` | Your iOS bundle ID                                         |
+   | **Secret Key (for OAuth)**       | _(leave empty)_               | Not needed for native iOS flow                             |
+   | **Allow users without an email** | Off                           | Rarely needed; Apple always provides a real or relay email |
 
 5. Click **Save**
+
+> **Note**: The "Allow users without an email" toggle is for rare edge cases where email is genuinely absent. Apple **always** provides either the user's real email or a valid private relay address (e.g., `abc123@privaterelay.appleid.com`). Private relay addresses are real, routable emails that work normally—see [Private Email Relay](#private-email-relay) for details.
 
 ## Step 3: Configure Expo Project
 
