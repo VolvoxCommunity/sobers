@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { Heart } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
+import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
 
 export default function LoginScreen() {
@@ -144,6 +145,13 @@ export default function LoginScreen() {
               {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
             </Text>
           </TouchableOpacity>
+
+          {/* Apple Sign In - only renders on iOS */}
+          <AppleSignInButton
+            onError={(error) => {
+              Alert.alert('Error', error.message);
+            }}
+          />
 
           <TouchableOpacity
             style={styles.secondaryButton}

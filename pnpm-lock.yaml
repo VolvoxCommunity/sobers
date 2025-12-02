@@ -47,6 +47,9 @@ importers:
       expo:
         specifier: ~54.0.25
         version: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-apple-authentication:
+        specifier: ~8.0.7
+        version: 8.0.7(expo@54.0.25)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       expo-application:
         specifier: ^7.0.7
         version: 7.0.7(expo@54.0.25)
@@ -2661,6 +2664,12 @@ packages:
   expect@29.7.0:
     resolution: {integrity: sha512-2Zks0hf1VLFYI1kbh0I5jP3KHHyCHpkfyHBzsSXRFgl/Bg9mWYfMW8oD+PdMPlEwy5HNsR9JutYy6pMeOh61nw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+
+  expo-apple-authentication@8.0.7:
+    resolution: {integrity: sha512-KHLKecxwlPm42W/JYEefcFcXu5BW88wlgKSoikOFwRoWpzzryJxsNacMJRqrzAP3lFecPAK+ATgyJYvFkp10kw==}
+    peerDependencies:
+      expo: '*'
+      react-native: '*'
 
   expo-application@7.0.7:
     resolution: {integrity: sha512-Jt1/qqnoDUbZ+bK91+dHaZ1vrPDtRBOltRa681EeedkisqguuEeUx4UHqwVyDK2oHWsK6lO3ojetoA4h8OmNcg==}
@@ -8327,6 +8336,11 @@ snapshots:
       jest-matcher-utils: 29.7.0
       jest-message-util: 29.7.0
       jest-util: 29.7.0
+
+  expo-apple-authentication@8.0.7(expo@54.0.25)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)):
+    dependencies:
+      expo: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
 
   expo-application@7.0.7(expo@54.0.25):
     dependencies:

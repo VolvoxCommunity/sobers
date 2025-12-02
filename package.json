@@ -38,6 +38,7 @@
     "@supabase/supabase-js": "^2.86.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.25",
+    "expo-apple-authentication": "~8.0.7",
     "expo-application": "^7.0.7",
     "expo-auth-session": "^7.0.8",
     "expo-clipboard": "^8.0.7",

@@ -53,6 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'com.volvox.sobrietywaypoint',
     icon: './assets/images/logo.png',
     supportsTablet: true,
+    usesAppleSignIn: true, // Enable Sign in with Apple capability
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -75,6 +76,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'expo-apple-authentication', // Native Sign in with Apple support
     [
       'expo-splash-screen',
       {
