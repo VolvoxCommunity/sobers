@@ -367,6 +367,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (!isMountedRef.current) return;
             }
 
+            // fetchProfile runs for ALL events (SIGNED_IN, INITIAL_SESSION, USER_UPDATED, TOKEN_REFRESHED)
+            // This ensures profile stays in sync even after email/metadata updates (USER_UPDATED event)
             await fetchProfile(session.user.id);
           } catch (error) {
             // Check mount status before logging to ensure we don't update state after unmount
