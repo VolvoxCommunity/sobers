@@ -103,7 +103,7 @@ The package is already installed:
 pnpm list expo-apple-authentication
 ```
 
-## Step 4: Implementation Details
+## Implementation Details
 
 ### Component Architecture
 
