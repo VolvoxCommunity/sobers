@@ -23,26 +23,11 @@ interface AppleSignInButtonProps {
 // =============================================================================
 
 /**
- * Native Apple Sign In button for iOS.
- * Returns null on non-iOS platforms (Android, web).
+ * Renders a native Sign in with Apple button on iOS.
  *
- * @remarks
- * Uses expo-apple-authentication for native Sign in with Apple flow.
- * Button style automatically adapts to current theme (black in light mode, white in dark mode).
- * Profile creation is handled by AuthContext's onAuthStateChange listener.
- *
- * This component is self-contained and handles the entire authentication flow:
- * 1. Shows Apple's native Sign in with Apple UI
- * 2. Gets identity token from Apple
- * 3. Exchanges token with Supabase via signInWithIdToken
- * 4. AuthContext listener handles profile creation and navigation
- *
- * @example
- * ```tsx
- * <AppleSignInButton
- *   onError={(error) => Alert.alert('Error', error.message)}
- * />
- * ```
+ * @param onSuccess - Called after a successful sign-in exchange with the backend
+ * @param onError - Called when sign-in fails; not invoked if the user cancels the Apple prompt
+ * @returns A React element rendering the Apple sign-in button on iOS, or `null` on other platforms
  */
 export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps) {
   const { isDark } = useTheme();
