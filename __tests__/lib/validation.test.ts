@@ -2,7 +2,7 @@
  * Tests for validation utility functions
  */
 
-import { isValidEmail } from './validation';
+import { isValidEmail } from '@/lib/validation';
 
 describe('validation utilities', () => {
   // =============================================================================

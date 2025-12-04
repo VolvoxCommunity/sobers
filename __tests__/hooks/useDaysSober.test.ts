@@ -321,4 +321,135 @@ describe('useDaysSober', () => {
       expect(result.current.daysSober).toBeGreaterThanOrEqual(initialDaysSober);
     });
   });
+
+  describe('edge cases', () => {
+    it('handles null targetUserId gracefully', async () => {
+      // Mock to simulate no user logged in
+      jest.doMock('@/contexts/AuthContext', () => ({
+        useAuth: () => ({
+          user: null,
+          profile: null,
+        }),
+      }));
+
+      jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
+
+      const { result } = renderHook(() => useDaysSober());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // With no user, should return default values
+      expect(result.current.mostRecentSlipUp).toBeNull();
+      expect(result.current.error).toBeNull();
+    });
+
+    it('handles error when fetching slip-ups', async () => {
+      jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
+
+      // Mock supabase to return an error for slip_ups table
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'slip_ups') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: 'Database error', code: '500', details: '', hint: '' },
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        };
+      });
+
+      const { result } = renderHook(() => useDaysSober());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toBeTruthy();
+    });
+
+    it('fetches profile for non-current user', async () => {
+      jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
+
+      const otherUserProfile = {
+        id: 'other-user-456',
+        sobriety_date: '2024-02-15',
+        timezone: 'America/Chicago',
+      };
+
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({ data: otherUserProfile, error: null }),
+          };
+        }
+        if (table === 'slip_ups') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      // Pass a different userId to trigger the non-current-user path
+      const { result } = renderHook(() => useDaysSober('other-user-456'));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should use the fetched profile's sobriety date
+      // Feb 15 to Apr 10 = 55 days
+      expect(result.current.daysSober).toBe(55);
+      expect(result.current.hasSlipUps).toBe(false);
+    });
+
+    it('handles profile fetch error for non-current user', async () => {
+      jest.setSystemTime(new Date('2024-04-10T12:00:00Z'));
+
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: 'Profile not found', code: '404', details: '', hint: '' },
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+
+      const { result } = renderHook(() => useDaysSober('non-existent-user'));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.error).toBeTruthy();
+    });
+  });
 });

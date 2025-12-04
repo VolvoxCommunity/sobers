@@ -104,7 +104,7 @@ function RootLayoutNav() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#10b981" />
+        <ActivityIndicator testID="loading-indicator" size="large" color="#10b981" />
       </View>
     );
   }

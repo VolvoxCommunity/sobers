@@ -1,14 +1,8 @@
-// =============================================================================
-// Imports
-// =============================================================================
+
 import React from 'react';
 import { Platform, Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import Index from '../../app/index';
-
-// =============================================================================
-// Mocks
-// =============================================================================
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -54,5 +48,6 @@ describe('Index Route', () => {
     const { getByText } = render(<Index />);
 
     expect(getByText('Landing Page')).toBeTruthy();
+
   });
 });

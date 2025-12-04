@@ -58,13 +58,14 @@ pnpm test -- -t "test name pattern"             # Run tests matching pattern
 
 **MANDATORY**: After changing or editing any files, you MUST follow this workflow:
 
-1. **Formatting**: Run `pnpm format` to ensure consistent code formatting
-2. **Linting**: Run `pnpm lint` to check for code quality issues
-3. **Type Checking**: Run `pnpm typecheck` to verify TypeScript types
-4. **Build**: Run `pnpm build:web` to verify compilation passes
-5. **Testing**: Run `pnpm test` to verify all tests pass
+1. **Add/Update Tests**: Write tests for any new or modified code (see Testing Strategy section)
+2. **Formatting**: Run `pnpm format` to ensure consistent code formatting
+3. **Linting**: Run `pnpm lint` to check for code quality issues
+4. **Type Checking**: Run `pnpm typecheck` to verify TypeScript types
+5. **Build**: Run `pnpm build:web` to verify compilation passes
+6. **Testing**: Run `pnpm test` to verify all tests pass and coverage stays above 80%
 
-These checks are not optional. All five validation steps must pass before the user commits. If any check fails, fix the issues and re-run all checks before proceeding.
+These checks are not optional. All six validation steps must pass before the user commits. If any check fails, fix the issues and re-run all checks before proceeding.
 
 **Complete Workflow:**
 
@@ -227,6 +228,25 @@ The root layout (`app/_layout.tsx`) orchestrates the auth flow:
 - 80% minimum across statements, branches, functions, and lines
 - Enforced in CI/CD pipeline
 
+**MANDATORY: Tests Required for All Code Changes:**
+
+Every code change MUST include corresponding tests. This applies to:
+
+- **New features** - Add tests covering the happy path, edge cases, and error handling
+- **Bug fixes** - Add a regression test that would have caught the bug
+- **Modifications** - Update existing tests to reflect changes, add new tests for new behavior
+- **Refactoring** - Ensure existing tests still pass; add tests if coverage gaps are discovered
+- **New components** - Test rendering, user interactions, props, and state changes
+- **New hooks** - Test return values, state updates, and side effects
+- **New utilities/helpers** - Test all code paths, edge cases, and error conditions
+- **API integrations** - Mock external calls and test success/error scenarios
+
+**Test File Location:**
+
+- Tests go in `__tests__/` directory mirroring the source structure
+- Example: `app/(tabs)/profile.tsx` → `__tests__/app/profile.test.tsx`
+- Example: `hooks/useDaysSober.ts` → `__tests__/hooks/useDaysSober.test.ts`
+
 **Testing Layers:**
 
 1. Unit tests: Pure functions, utilities, hooks
@@ -238,6 +258,16 @@ The root layout (`app/_layout.tsx`) orchestrates the auth flow:
 - Use Jest with React Native Testing Library
 - MSW (Mock Service Worker) for API mocking
 - Wrap components with AuthContext, ThemeContext in tests
+- Mock Supabase client for database operations
+- Mock navigation with expo-router mocks
+
+**Test Quality Standards:**
+
+- Tests should be independent and not rely on execution order
+- Use descriptive test names: `it('shows error message when email is invalid')`
+- Group related tests with `describe()` blocks
+- Clean up mocks in `beforeEach()` or `afterEach()`
+- Avoid testing implementation details; test behavior instead
 
 ## Supabase Schema Overview
 

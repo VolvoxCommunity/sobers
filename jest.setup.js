@@ -10,6 +10,52 @@ jest.mock('react-native', () => {
   const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children);
   const KeyboardAvoidingView = ({ children, ...props }) =>
     React.createElement('KeyboardAvoidingView', props, children);
+  const Modal = ({ children, visible, ...props }) =>
+    visible ? React.createElement('Modal', props, children) : null;
+
+  // Mock Animated for AnimatedBottomNav and other animated components
+  class MockAnimatedValue {
+    constructor(value) {
+      this._value = value;
+    }
+    setValue(value) {
+      this._value = value;
+    }
+  }
+
+  const Animated = {
+    View: ({ children, style, ...props }) =>
+      React.createElement('View', { ...props, style }, children),
+    Text: ({ children, style, ...props }) =>
+      React.createElement('Text', { ...props, style }, children),
+    Value: MockAnimatedValue,
+    timing: (value, config) => ({
+      start: (callback) => {
+        if (value && value._value !== undefined) {
+          value._value = config.toValue;
+        }
+        callback && callback();
+      },
+    }),
+    sequence: (animations) => ({
+      start: (callback) => {
+        animations.forEach((anim) => anim.start && anim.start());
+        callback && callback();
+      },
+    }),
+    parallel: (animations) => ({
+      start: (callback) => {
+        animations.forEach((anim) => anim.start && anim.start());
+        callback && callback();
+      },
+    }),
+    spring: (value, config) => ({
+      start: (callback) => {
+        callback && callback();
+      },
+    }),
+    event: () => jest.fn(),
+  };
 
   return {
     Platform: {
@@ -27,10 +73,18 @@ jest.mock('react-native', () => {
     TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
+    Modal,
+    Animated,
     ActivityIndicator: ({ size, color, ...props }) =>
       React.createElement('ActivityIndicator', { size, color, ...props }),
     Alert: {
       alert: jest.fn(),
+    },
+    Linking: {
+      openURL: jest.fn().mockResolvedValue(true),
+      canOpenURL: jest.fn().mockResolvedValue(true),
+      getInitialURL: jest.fn().mockResolvedValue(null),
+      addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
     },
     Dimensions: {
       get: jest.fn(() => ({ width: 375, height: 812 })),
@@ -38,6 +92,30 @@ jest.mock('react-native', () => {
       removeEventListener: jest.fn(),
     },
     useColorScheme: jest.fn(() => 'light'),
+    useWindowDimensions: jest.fn(() => ({ width: 375, height: 812 })),
+    LayoutAnimation: {
+      configureNext: jest.fn(),
+      Presets: {
+        easeInEaseOut: {},
+        linear: {},
+        spring: {},
+      },
+      Types: {
+        spring: 'spring',
+        linear: 'linear',
+        easeInEaseOut: 'easeInEaseOut',
+        easeIn: 'easeIn',
+        easeOut: 'easeOut',
+        keyboard: 'keyboard',
+      },
+      Properties: {
+        opacity: 'opacity',
+        scaleX: 'scaleX',
+        scaleY: 'scaleY',
+        scaleXY: 'scaleXY',
+      },
+      create: jest.fn(),
+    },
   };
 });
 
@@ -121,6 +199,23 @@ const mockAsyncStorage = {
 };
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
+// Mock expo core module
+jest.mock('expo', () => ({
+  isRunningInExpoGo: jest.fn(() => false),
+}));
+
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  expoConfig: {
+    version: '1.0.0',
+    extra: {
+      eas: {
+        buildNumber: '123',
+      },
+    },
+  },
+}));
+
 // Mock @sentry/react-native
 jest.mock('@sentry/react-native', () => ({
   addBreadcrumb: jest.fn(),
@@ -130,6 +225,9 @@ jest.mock('@sentry/react-native', () => ({
   setContext: jest.fn(),
   init: jest.fn(),
   wrap: jest.fn((component) => component),
+  reactNavigationIntegration: jest.fn(() => ({})),
+  mobileReplayIntegration: jest.fn(() => ({})),
+  feedbackIntegration: jest.fn(() => ({})),
 }));
 
 // Mock @supabase/supabase-js with chainable query builder
