@@ -141,14 +141,14 @@ jest.mock('@/contexts/ThemeContext', () => ({
 
 // Mock useDaysSober hook
 let mockDaysSober = 180;
-let mockLoadingDaysSober = false;
+let isLoadingDaysSoberMock = false;
 jest.mock('@/hooks/useDaysSober', () => ({
   useDaysSober: jest.fn(() => ({
     daysSober: mockDaysSober,
     currentStreakStartDate: '2024-01-01',
     journeyStartDate: new Date('2024-01-01'),
     hasSlipUps: false,
-    loading: mockLoadingDaysSober,
+    loading: isLoadingDaysSoberMock,
     error: null,
   })),
 }));
@@ -261,7 +261,7 @@ describe('HomeScreen', () => {
     mockRelationshipsAsSponsee = [];
     mockTasks = [];
     mockDaysSober = 180;
-    mockLoadingDaysSober = false;
+    isLoadingDaysSoberMock = false;
   });
 
   describe('Header', () => {
@@ -295,7 +295,7 @@ describe('HomeScreen', () => {
     });
 
     it('shows loading indicator when loading', async () => {
-      mockLoadingDaysSober = true;
+      isLoadingDaysSoberMock = true;
 
       render(<HomeScreen />);
 
@@ -917,7 +917,7 @@ describe('HomeScreen', () => {
         (
           _title: string,
           _message: string,
-          buttons?: Array<{ text: string; onPress?: () => void }>
+          buttons?: { text: string; onPress?: () => void }[]
         ) => {
           if (!buttons) return;
           const disconnectButton = buttons.find((b) => b.text === 'Disconnect');
@@ -949,7 +949,7 @@ describe('HomeScreen', () => {
         (
           _title: string,
           _message: string,
-          buttons?: Array<{ text: string; onPress?: () => void }>
+          buttons?: { text: string; onPress?: () => void }[]
         ) => {
           if (!buttons) return;
           const cancelButton = buttons.find((b) => b.text === 'Cancel');
@@ -1035,7 +1035,7 @@ describe('HomeScreen', () => {
         (
           _title: string,
           _message: string,
-          buttons?: Array<{ text: string; onPress?: () => void }>
+          buttons?: { text: string; onPress?: () => void }[]
         ) => {
           if (buttons) {
             const disconnectButton = buttons.find((b) => b.text === 'Disconnect');
