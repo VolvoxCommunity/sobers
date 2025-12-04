@@ -10,7 +10,6 @@
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
-import { View, Text } from 'react-native';
 
 // =============================================================================
 // Mocks
@@ -92,6 +91,21 @@ jest.mock('@/hooks/useFrameworkReady', () => ({
   useFrameworkReady: jest.fn(),
 }));
 
+// Mock Platform module for consistent cross-environment behavior
+// This ensures tests run with the same platform assumption (iOS by default)
+// regardless of the actual test runner environment
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios',
+  select: jest.fn((options: Record<string, unknown>) => options.ios ?? options.default),
+  Version: 17,
+  isPad: false,
+  isTVOS: false,
+  isTV: false,
+  constants: {
+    reactNativeVersion: { major: 0, minor: 76, patch: 0 },
+  },
+}));
+
 // Mock AuthContext
 let mockUser: { id: string } | null = null;
 let mockProfile: { first_name: string; last_initial: string; sobriety_date: string | null } | null =
@@ -143,7 +157,6 @@ describe('RootLayout', () => {
     mockFontError = null;
     mockSegments = [];
     mockRootNavigationState = { key: 'test-key' };
-    mockReplace.mockClear();
   });
 
   describe('font loading', () => {
@@ -183,12 +196,11 @@ describe('RootLayout', () => {
       mockLoading = true;
 
       const RootLayout = getLayout();
-      const { UNSAFE_queryAllByType } = render(<RootLayout />);
+      render(<RootLayout />);
 
       // When loading, the ActivityIndicator is shown instead of the Stack navigator
-      const { ActivityIndicator } = require('react-native');
-      const indicators = UNSAFE_queryAllByType(ActivityIndicator);
-      expect(indicators.length).toBeGreaterThan(0);
+      expect(screen.getByTestId('loading-indicator')).toBeTruthy();
+      expect(screen.queryByTestId('stack-navigator')).toBeNull();
     });
   });
 
