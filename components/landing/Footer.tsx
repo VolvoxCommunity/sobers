@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Heart, Mail, Github } from 'lucide-react-native';
+import { Mail, MessageCircle } from 'lucide-react-native';
+import Logo from './Logo';
 
 // =============================================================================
 // Component
@@ -37,8 +38,8 @@ export default function Footer() {
     Linking.openURL('mailto:support@sobrietywaypoint.com');
   };
 
-  const handleGithubPress = () => {
-    Linking.openURL('https://github.com/yourusername/sobriety-waypoint');
+  const handleMessagePress = () => {
+    Linking.openURL('mailto:support@sobrietywaypoint.com');
   };
 
   const styles = createStyles(theme, width);
@@ -52,9 +53,9 @@ export default function Footer() {
           {/* Brand */}
           <View style={styles.brandSection}>
             <View style={styles.logoContainer}>
-              <Heart size={32} color="#007AFF" fill="#007AFF" />
+              <Logo size={32} color={theme.primary} />
+              <Text style={styles.brandName}>Sobriety Waypoint</Text>
             </View>
-            <Text style={styles.brandName}>Sobriety Waypoint</Text>
             <Text style={styles.brandTagline}>
               Supporting your recovery journey, one day at a time.
             </Text>
@@ -131,10 +132,10 @@ export default function Footer() {
 
           <View style={styles.socialLinks}>
             <TouchableOpacity style={styles.socialButton} onPress={handleEmailPress}>
-              <Mail size={20} color={theme.textSecondary} />
+              <Mail size={16} color={theme.textSecondary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} onPress={handleGithubPress}>
-              <Github size={20} color={theme.textSecondary} />
+            <TouchableOpacity style={styles.socialButton} onPress={handleMessagePress}>
+              <MessageCircle size={16} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -142,8 +143,9 @@ export default function Footer() {
         {/* Recovery Resources Notice */}
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>
-            If you or someone you know is struggling with substance abuse, please reach out to
-            SAMHSA National Helpline: 1-800-662-4357 (24/7 confidential support)
+            If you or someone you know is struggling with substance abuse, please reach out to{' '}
+            <Text style={styles.noticeBold}>SAMHSA National Helpline: 1-800-662-4357</Text> (24/7
+            confidential support)
           </Text>
         </View>
       </View>
@@ -161,11 +163,11 @@ const createStyles = (theme: any, width: number) => {
 
   return StyleSheet.create({
     container: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.background,
       borderTopWidth: 1,
       borderTopColor: theme.border,
       paddingHorizontal: isMobile ? 24 : isTablet ? 48 : 80,
-      paddingVertical: isMobile ? 40 : 60,
+      paddingVertical: isMobile ? 64 : 80,
     },
     content: {
       maxWidth: 1200,
@@ -175,20 +177,22 @@ const createStyles = (theme: any, width: number) => {
     topSection: {
       flexDirection: isMobile ? 'column' : 'row',
       justifyContent: 'space-between',
-      marginBottom: isMobile ? 32 : 40,
+      marginBottom: isMobile ? 32 : 48,
       gap: isMobile ? 32 : 0,
     },
     brandSection: {
       maxWidth: isMobile ? '100%' : 300,
     },
     logoContainer: {
-      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
     },
     brandName: {
-      fontSize: isMobile ? 20 : 22,
-      fontFamily: theme.fontBold,
+      fontSize: 20,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: theme.text,
-      marginBottom: 8,
     },
     brandTagline: {
       fontSize: 14,
@@ -272,18 +276,24 @@ const createStyles = (theme: any, width: number) => {
       }),
     },
     noticeContainer: {
-      backgroundColor: theme.background,
+      backgroundColor: Platform.select({
+        web: 'rgba(210, 30%, 96%, 0.5)', // bg-secondary/50
+        default: theme.surface,
+      }),
       borderRadius: 8,
       padding: isMobile ? 16 : 20,
-      borderWidth: 1,
-      borderColor: theme.border,
+      marginTop: 16,
     },
     noticeText: {
-      fontSize: 12,
+      fontSize: 14,
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       textAlign: 'center',
-      lineHeight: 18,
+      lineHeight: 20,
+    },
+    noticeBold: {
+      fontFamily: theme.fontSemiBold,
+      color: theme.text,
     },
   });
 };

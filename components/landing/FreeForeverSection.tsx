@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Shield, Zap, Heart, ArrowRight } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
+import { Shield, Zap, Target, ArrowRight } from 'lucide-react-native';
+import Logo from './Logo';
 
 // =============================================================================
 // Component
@@ -38,28 +33,18 @@ export default function FreeForeverSection() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
-
-  useEffect(() => {
-    opacity.value = withDelay(200, withSpring(1, { damping: 15 }));
-    translateY.value = withDelay(200, withSpring(0, { damping: 15 }));
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const styles = createStyles(theme, width);
   const isMobile = width < 768;
-  const iconSize = isMobile ? 28 : 32;
+  const iconSize = 20; // Match landing-page-refresh: w-5 h-5 = 20px
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.content, animatedStyle]}>
+      {/* Gradient background */}
+      {Platform.OS === 'web' && <View style={styles.gradientBackground} />}
+
+      <View style={styles.content}>
         <View style={styles.header}>
-          <Heart size={isMobile ? 40 : 48} color="#10b981" fill="#10b981" />
+          <Logo size={isMobile ? 48 : 48} color="#007AFF" />
           <Text style={styles.title}>Free Forever. No Catch.</Text>
           <Text style={styles.subtitle}>
             Recovery support should be accessible to everyone. That is why Sobriety Waypoint will
@@ -70,7 +55,7 @@ export default function FreeForeverSection() {
         <View style={styles.benefitsContainer}>
           <View style={styles.benefit}>
             <View style={styles.benefitIcon}>
-              <Shield size={iconSize} color="#10b981" />
+              <Shield size={iconSize} color="#007AFF" />
             </View>
             <View style={styles.benefitContent}>
               <Text style={styles.benefitTitle}>No Ads, Ever</Text>
@@ -82,7 +67,7 @@ export default function FreeForeverSection() {
 
           <View style={styles.benefit}>
             <View style={styles.benefitIcon}>
-              <Zap size={iconSize} color="#10b981" />
+              <Zap size={iconSize} color="#007AFF" />
             </View>
             <View style={styles.benefitContent}>
               <Text style={styles.benefitTitle}>All Features Unlocked</Text>
@@ -94,7 +79,7 @@ export default function FreeForeverSection() {
 
           <View style={styles.benefit}>
             <View style={styles.benefitIcon}>
-              <Heart size={iconSize} color="#10b981" />
+              <Target size={iconSize} color="#007AFF" />
             </View>
             <View style={styles.benefitContent}>
               <Text style={styles.benefitTitle}>Built for Recovery</Text>
@@ -114,8 +99,8 @@ export default function FreeForeverSection() {
           <ArrowRight size={20} color="#ffffff" style={styles.buttonIcon} />
         </TouchableOpacity>
 
-        <Text style={styles.footnote}>No credit card required • No trial period • Just free</Text>
-      </Animated.View>
+        <Text style={styles.footnote}>No credit card required · No trial period · Just free</Text>
+      </View>
     </View>
   );
 }
@@ -130,10 +115,25 @@ const createStyles = (theme: any, width: number) => {
 
   return StyleSheet.create({
     container: {
-      backgroundColor: '#10b98108',
+      backgroundColor: theme.background,
       paddingHorizontal: isMobile ? 24 : isTablet ? 48 : 80,
-      paddingVertical: isMobile ? 60 : 80,
+      paddingVertical: isMobile ? 96 : 120,
       alignItems: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    gradientBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      ...Platform.select({
+        web: {
+          backgroundImage:
+            'linear-gradient(to bottom, hsl(var(--background)), rgba(0, 122, 255, 0.05), hsl(var(--background)))',
+        },
+      }),
     },
     content: {
       maxWidth: 800,
@@ -146,10 +146,10 @@ const createStyles = (theme: any, width: number) => {
     },
     title: {
       fontSize: isMobile ? 32 : isTablet ? 40 : 48,
-      fontFamily: theme.fontBold,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: theme.text,
       textAlign: 'center',
-      marginTop: 20,
+      marginTop: 32,
       marginBottom: 16,
       lineHeight: isMobile ? 40 : isTablet ? 48 : 56,
     },
@@ -170,31 +170,40 @@ const createStyles = (theme: any, width: number) => {
       flexDirection: 'row',
       alignItems: 'flex-start',
       backgroundColor: theme.card,
-      padding: isMobile ? 20 : 24,
+      padding: isMobile ? 20 : 20,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: 'rgba(0, 0, 0, 0.05)',
       gap: 16,
       ...Platform.select({
         web: {
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+          backgroundImage: 'linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 30% 98%) 100%)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
         },
         default: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 6,
-          elevation: 2,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 3,
         },
       }),
     },
     benefitIcon: {
-      width: isMobile ? 48 : 56,
-      height: isMobile ? 48 : 56,
-      borderRadius: isMobile ? 24 : 28,
-      backgroundColor: '#10b98115',
+      width: 48,
+      height: 48,
+      borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
+      ...Platform.select({
+        web: {
+          backgroundImage:
+            'linear-gradient(135deg, hsl(217 91% 50% / 0.1) 0%, hsl(217 91% 50% / 0.05) 100%)',
+        },
+        default: {
+          backgroundColor: theme.primaryLight,
+        },
+      }),
     },
     benefitContent: {
       flex: 1,
@@ -213,22 +222,22 @@ const createStyles = (theme: any, width: number) => {
       lineHeight: isMobile ? 20 : 22,
     },
     ctaButton: {
-      backgroundColor: '#10b981',
+      backgroundColor: '#007AFF', // accent color
       borderRadius: 12,
-      paddingVertical: 18,
-      paddingHorizontal: isMobile ? 48 : 56,
+      paddingVertical: isMobile ? 16 : 18,
+      paddingHorizontal: isMobile ? 32 : 40,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 16,
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
         },
         default: {
-          shadowColor: '#10b981',
+          shadowColor: '#007AFF',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
           shadowRadius: 12,

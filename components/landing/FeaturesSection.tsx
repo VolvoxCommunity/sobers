@@ -1,16 +1,10 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Calendar, Users, CheckSquare, Award } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
 
 // =============================================================================
 // Types
@@ -39,8 +33,7 @@ interface Feature {
 export default function FeaturesSection() {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
-  const isMobile = width < 768;
-  const iconSize = isMobile ? 32 : 40;
+  const iconSize = 24; // Match landing-page-refresh: w-6 h-6 = 24px
 
   const features: Feature[] = [
     {
@@ -51,25 +44,25 @@ export default function FeaturesSection() {
       color: '#007AFF',
     },
     {
-      icon: <Users size={iconSize} color="#10b981" />,
+      icon: <Users size={iconSize} color="#007AFF" />,
       title: 'Sponsor Connections',
       description:
         'Connect and communicate with your support network. Share tasks, check-ins, and stay accountable together.',
-      color: '#10b981',
+      color: '#007AFF',
     },
     {
-      icon: <CheckSquare size={iconSize} color="#8b5cf6" />,
+      icon: <CheckSquare size={iconSize} color="#007AFF" />,
       title: 'Task Management',
       description:
         'Stay on top of your recovery goals with structured task management. Complete steps and track your commitments.',
-      color: '#8b5cf6',
+      color: '#007AFF',
     },
     {
-      icon: <Award size={iconSize} color="#f59e0b" />,
+      icon: <Award size={iconSize} color="#007AFF" />,
       title: 'Milestone Celebrations',
       description:
         'Acknowledge every achievement along your journey. From your first day to years of sobriety, every milestone matters.',
-      color: '#f59e0b',
+      color: '#007AFF',
     },
   ];
 
@@ -105,34 +98,16 @@ interface FeatureCardProps {
 }
 
 function FeatureCard({ feature, index, theme, width }: FeatureCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (!hasAnimated.current) {
-      opacity.value = withDelay(index * 150, withSpring(1, { damping: 15 }));
-      translateY.value = withDelay(index * 150, withSpring(0, { damping: 15 }));
-      hasAnimated.current = true;
-    }
-  }, [index]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const isMobile = width < 768;
   const styles = createCardStyles(theme, width);
 
   return (
-    <Animated.View style={[styles.card, animatedStyle]}>
+    <View style={styles.card}>
       <View style={[styles.iconContainer, { backgroundColor: feature.color + '15' }]}>
         {feature.icon}
       </View>
       <Text style={styles.cardTitle}>{feature.title}</Text>
       <Text style={styles.cardDescription}>{feature.description}</Text>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -146,9 +121,12 @@ const createStyles = (theme: any, width: number) => {
 
   return StyleSheet.create({
     container: {
-      backgroundColor: theme.background,
+      backgroundColor: Platform.select({
+        web: 'rgba(210, 30%, 96%, 0.3)', // bg-secondary/30
+        default: theme.surface,
+      }),
       paddingHorizontal: isMobile ? 24 : isTablet ? 48 : 80,
-      paddingVertical: isMobile ? 60 : 80,
+      paddingVertical: isMobile ? 96 : 120,
       alignItems: 'center',
     },
     content: {
@@ -187,15 +165,15 @@ const createCardStyles = (theme: any, width: number) => {
     card: {
       backgroundColor: theme.card,
       borderRadius: 16,
-      padding: isMobile ? 24 : 32,
+      padding: isMobile ? 32 : 32,
       width: isMobile ? '100%' : '48%',
       minWidth: isMobile ? undefined : 280,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: 'rgba(0, 0, 0, 0.05)',
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          transition: 'all 0.3s ease',
+          backgroundImage: 'linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 30% 98%) 100%)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
         },
         default: {
           shadowColor: '#000',
@@ -207,19 +185,28 @@ const createCardStyles = (theme: any, width: number) => {
       }),
     },
     iconContainer: {
-      width: isMobile ? 56 : 64,
-      height: isMobile ? 56 : 64,
-      borderRadius: isMobile ? 28 : 32,
+      width: 48,
+      height: 48,
+      borderRadius: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 24,
+      ...Platform.select({
+        web: {
+          backgroundImage:
+            'linear-gradient(135deg, hsl(217 91% 60% / 0.1) 0%, hsl(217 91% 60% / 0.05) 100%)',
+        },
+        default: {
+          backgroundColor: theme.primaryLight,
+        },
+      }),
     },
     cardTitle: {
-      fontSize: isMobile ? 20 : 22,
-      fontFamily: theme.fontSemiBold,
+      fontSize: isMobile ? 20 : 20,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: theme.text,
       marginBottom: 12,
-      lineHeight: isMobile ? 28 : 30,
+      lineHeight: isMobile ? 28 : 28,
     },
     cardDescription: {
       fontSize: isMobile ? 14 : 15,

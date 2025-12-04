@@ -1,16 +1,9 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Quote } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
 
 // =============================================================================
 // Types
@@ -109,30 +102,11 @@ interface TestimonialCardProps {
 }
 
 function TestimonialCard({ testimonial, index, theme, width }: TestimonialCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (!hasAnimated.current) {
-      opacity.value = withDelay(index * 150, withSpring(1, { damping: 15 }));
-      translateY.value = withDelay(index * 150, withSpring(0, { damping: 15 }));
-      hasAnimated.current = true;
-    }
-  }, [index]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const styles = createCardStyles(theme, width);
 
   return (
-    <Animated.View style={[styles.card, animatedStyle]}>
-      <View style={styles.quoteIconContainer}>
-        <Quote size={24} color="#007AFF" />
-      </View>
+    <View style={styles.card}>
+      <Text style={styles.quoteMark}>&ldquo;</Text>
       <Text style={styles.quote}>{testimonial.quote}</Text>
       <View style={styles.authorContainer}>
         <Text style={styles.authorName}>{testimonial.author}</Text>
@@ -141,7 +115,7 @@ function TestimonialCard({ testimonial, index, theme, width }: TestimonialCardPr
           <Text style={styles.badgeText}>{testimonial.daysSober}</Text>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -161,11 +135,11 @@ function StatItem({ value, label, theme, width }: StatItemProps) {
       flex: 1,
     },
     statValue: {
-      fontSize: isMobile ? 32 : 40,
-      fontFamily: theme.fontBold,
+      fontSize: isMobile ? 40 : 48,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: '#007AFF',
       marginBottom: 8,
-      lineHeight: isMobile ? 40 : 48,
+      lineHeight: isMobile ? 48 : 56,
     },
     statLabel: {
       fontSize: isMobile ? 14 : 16,
@@ -194,9 +168,12 @@ const createStyles = (theme: any, width: number) => {
 
   return StyleSheet.create({
     container: {
-      backgroundColor: theme.background,
+      backgroundColor: Platform.select({
+        web: 'rgba(210, 30%, 96%, 0.3)', // bg-secondary/30
+        default: theme.surface,
+      }),
       paddingHorizontal: isMobile ? 24 : isTablet ? 48 : 80,
-      paddingVertical: isMobile ? 60 : 80,
+      paddingVertical: isMobile ? 96 : 120,
       alignItems: 'center',
     },
     content: {
@@ -221,8 +198,8 @@ const createStyles = (theme: any, width: number) => {
     },
     testimonialsGrid: {
       flexDirection: isMobile ? 'column' : 'row',
-      gap: isMobile ? 20 : 24,
-      marginBottom: isMobile ? 40 : 64,
+      gap: 24,
+      marginBottom: isMobile ? 40 : 80,
     },
     statsContainer: {
       flexDirection: isMobile ? 'column' : 'row',
@@ -242,13 +219,14 @@ const createCardStyles = (theme: any, width: number) => {
       flex: 1,
       backgroundColor: theme.card,
       borderRadius: 16,
-      padding: isMobile ? 24 : 28,
+      padding: isMobile ? 32 : 32,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: 'rgba(0, 0, 0, 0.05)',
       minWidth: isMobile ? undefined : 280,
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          backgroundImage: 'linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 30% 98%) 100%)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
         },
         default: {
           shadowColor: '#000',
@@ -259,44 +237,62 @@ const createCardStyles = (theme: any, width: number) => {
         },
       }),
     },
-    quoteIconContainer: {
+    quoteMark: {
+      fontSize: 40,
+      fontFamily: theme.fontBold, // font-serif equivalent
+      color: 'rgba(0, 122, 255, 0.2)', // text-primary/20
+      lineHeight: 40,
       marginBottom: 16,
     },
     quote: {
       fontSize: isMobile ? 15 : 16,
       fontFamily: theme.fontRegular,
-      color: theme.text,
-      lineHeight: isMobile ? 24 : 26,
-      marginBottom: 20,
+      color: theme.textSecondary,
+      lineHeight: 24,
+      marginBottom: 24,
     },
     authorContainer: {
       borderTopWidth: 1,
       borderTopColor: theme.border,
-      paddingTop: 16,
+      paddingTop: 24,
     },
     authorName: {
       fontSize: isMobile ? 16 : 17,
-      fontFamily: theme.fontSemiBold,
+      fontFamily: theme.fontMedium,
       color: theme.text,
       marginBottom: 4,
     },
     authorRole: {
-      fontSize: isMobile ? 14 : 15,
+      fontSize: 14,
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       marginBottom: 12,
     },
     badge: {
-      backgroundColor: '#10b98115',
-      borderRadius: 16,
-      paddingVertical: 6,
+      ...Platform.select({
+        web: {
+          backgroundColor: 'rgba(0, 122, 255, 0.1)',
+        },
+        default: {
+          backgroundColor: '#10b98115',
+        },
+      }),
+      borderRadius: 9999,
+      paddingVertical: 4,
       paddingHorizontal: 12,
       alignSelf: 'flex-start',
     },
     badgeText: {
-      fontSize: 13,
+      fontSize: 14,
       fontFamily: theme.fontMedium,
-      color: '#10b981',
+      ...Platform.select({
+        web: {
+          color: 'hsl(217 91% 45%)',
+        },
+        default: {
+          color: '#10b981',
+        },
+      }),
     },
   });
 };

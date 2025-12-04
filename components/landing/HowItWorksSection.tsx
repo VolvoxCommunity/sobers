@@ -1,16 +1,10 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { UserPlus, CalendarCheck, Users2, TrendingUp } from 'lucide-react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
+import { UserPlus, CalendarCheck, Link2, TrendingUp } from 'lucide-react-native';
 
 // =============================================================================
 // Types
@@ -40,8 +34,7 @@ export default function HowItWorksSection() {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
 
-  const isMobile = width < 768;
-  const iconSize = isMobile ? 28 : 32;
+  const iconSize = 24; // Match landing-page-refresh: w-6 h-6 = 24px
 
   const steps: Step[] = [
     {
@@ -60,7 +53,7 @@ export default function HowItWorksSection() {
     },
     {
       number: '03',
-      icon: <Users2 size={iconSize} color="#ffffff" />,
+      icon: <Link2 size={iconSize} color="#ffffff" />,
       title: 'Connect With Your Sponsor',
       description:
         'Use invite codes to connect with your sponsor or sponsee. Build your support network.',
@@ -86,18 +79,18 @@ export default function HowItWorksSection() {
 
         <View style={styles.stepsContainer}>
           {steps.map((step, index) => (
-            <React.Fragment key={index}>
-              <StepCard step={step} index={index} theme={theme} width={width} />
-              {index < steps.length - 1 && <View style={styles.divider} />}
-            </React.Fragment>
+            <StepCard key={index} step={step} index={index} theme={theme} width={width} />
           ))}
         </View>
 
-        {/* Encouraging message */}
+        {/* Encouraging message with quote-border styling */}
         <View style={styles.encouragementBox}>
-          <Text style={styles.encouragementText}>
-            One day at a time. You have got this, and you are not alone.
-          </Text>
+          <View style={styles.quoteBorder}>
+            <View style={styles.quoteBorderLine} />
+            <Text style={styles.encouragementText}>
+              &ldquo;One day at a time. You&apos;ve got this, and you&apos;re not alone.&rdquo;
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -116,34 +109,17 @@ interface StepCardProps {
 }
 
 function StepCard({ step, index, theme, width }: StepCardProps) {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (!hasAnimated.current) {
-      opacity.value = withDelay(index * 200, withSpring(1, { damping: 15 }));
-      translateY.value = withDelay(index * 200, withSpring(0, { damping: 15 }));
-      hasAnimated.current = true;
-    }
-  }, [index]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
   const styles = createCardStyles(theme, width);
 
   return (
-    <Animated.View style={[styles.stepCard, animatedStyle]}>
+    <View style={styles.stepCard}>
       <View style={styles.stepHeader}>
         <Text style={styles.stepNumber}>{step.number}</Text>
         <View style={styles.iconCircle}>{step.icon}</View>
       </View>
       <Text style={styles.stepTitle}>{step.title}</Text>
       <Text style={styles.stepDescription}>{step.description}</Text>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -157,9 +133,9 @@ const createStyles = (theme: any, width: number) => {
 
   return StyleSheet.create({
     container: {
-      backgroundColor: theme.surface,
+      backgroundColor: theme.background,
       paddingHorizontal: isMobile ? 24 : isTablet ? 48 : 80,
-      paddingVertical: isMobile ? 60 : 80,
+      paddingVertical: isMobile ? 72 : 96,
       alignItems: 'center',
     },
     content: {
@@ -184,42 +160,59 @@ const createStyles = (theme: any, width: number) => {
     },
     stepsContainer: {
       flexDirection: isMobile ? 'column' : 'row',
-      gap: isMobile ? 24 : 0,
-      marginBottom: isMobile ? 40 : 56,
+      gap: isMobile ? 24 : 32,
+      marginBottom: isMobile ? 40 : 64,
     },
     divider: {
-      width: isMobile ? '100%' : 1,
-      height: isMobile ? 1 : 'auto',
-      backgroundColor: theme.border,
-      marginHorizontal: isMobile ? 0 : 16,
-      marginVertical: isMobile ? 0 : 0,
+      display: 'none', // No dividers in web version
     },
     encouragementBox: {
+      width: '100%',
+      maxWidth: 1200,
+      alignItems: 'center',
       backgroundColor: theme.card,
       borderRadius: 16,
       padding: isMobile ? 24 : 32,
-      borderLeftWidth: 4,
-      borderLeftColor: '#007AFF',
-      alignItems: 'center',
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
         },
         default: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          elevation: 4,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 6,
+        },
+      }),
+    },
+    quoteBorder: {
+      paddingLeft: 24,
+      position: 'relative',
+      width: '100%',
+    },
+    quoteBorderLine: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      borderRadius: 2,
+      ...Platform.select({
+        web: {
+          backgroundImage: 'linear-gradient(to bottom, #007AFF, #3b82f6)',
+        },
+        default: {
+          backgroundColor: '#007AFF',
         },
       }),
     },
     encouragementText: {
-      fontSize: isMobile ? 18 : 20,
-      fontFamily: theme.fontMedium,
+      fontSize: isMobile ? 20 : 24,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: theme.text,
-      textAlign: 'center',
-      lineHeight: isMobile ? 26 : 30,
+      textAlign: 'left',
+      lineHeight: isMobile ? 30 : 36,
       fontStyle: 'italic',
     },
   });
@@ -231,31 +224,32 @@ const createCardStyles = (theme: any, width: number) => {
   return StyleSheet.create({
     stepCard: {
       flex: 1,
-      alignItems: isMobile ? 'flex-start' : 'center',
-      paddingHorizontal: isMobile ? 0 : 16,
+      alignItems: 'center',
+      paddingHorizontal: isMobile ? 0 : 0,
     },
     stepHeader: {
-      flexDirection: isMobile ? 'row' : 'column',
+      flexDirection: 'column',
       alignItems: 'center',
       marginBottom: 16,
-      gap: isMobile ? 16 : 12,
+      gap: 16,
     },
     stepNumber: {
-      fontSize: isMobile ? 48 : 56,
-      fontFamily: theme.fontBold,
-      color: theme.border,
-      lineHeight: isMobile ? 48 : 56,
+      fontSize: 50,
+      fontFamily: theme.fontBold, // font-serif equivalent
+      color: 'rgba(0, 122, 255, 0.12)', // text-primary/12
+      lineHeight: 50,
+      marginBottom: 16,
     },
     iconCircle: {
-      width: isMobile ? 56 : 64,
-      height: isMobile ? 56 : 64,
-      borderRadius: isMobile ? 28 : 32,
+      width: 48,
+      height: 48,
+      borderRadius: 12,
       backgroundColor: '#007AFF',
       justifyContent: 'center',
       alignItems: 'center',
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
+          backgroundImage: 'linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%)',
         },
         default: {
           shadowColor: '#007AFF',
@@ -268,18 +262,18 @@ const createCardStyles = (theme: any, width: number) => {
     },
     stepTitle: {
       fontSize: isMobile ? 18 : 20,
-      fontFamily: theme.fontSemiBold,
+      fontFamily: theme.fontBold, // font-serif equivalent
       color: theme.text,
       marginBottom: 8,
-      textAlign: isMobile ? 'left' : 'center',
+      textAlign: 'center',
       lineHeight: isMobile ? 26 : 28,
     },
     stepDescription: {
-      fontSize: isMobile ? 14 : 15,
+      fontSize: 14,
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
-      textAlign: isMobile ? 'left' : 'center',
-      lineHeight: isMobile ? 22 : 24,
+      textAlign: 'center',
+      lineHeight: 22,
     },
   });
 };
