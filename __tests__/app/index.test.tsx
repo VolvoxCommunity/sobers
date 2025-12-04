@@ -5,7 +5,7 @@ import Index from '../../app/index';
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
-  Redirect: ({ href }: { href: string }) => `Redirected to ${href}`,
+  Redirect: ({ href }: { href: string }) => <Text>Redirected to {href}</Text>,
   useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),
@@ -37,10 +37,9 @@ describe('Index Route', () => {
     // Mock native platform
     Platform.OS = 'ios';
 
-    const { toJSON } = render(<Index />);
-    const tree = toJSON();
+    const { getByText } = render(<Index />);
 
-    expect(tree).toContain('Redirected to /login');
+    expect(getByText('Redirected to /login')).toBeTruthy();
   });
 
   it('shows landing page on web platform', () => {

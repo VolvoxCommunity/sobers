@@ -12,6 +12,9 @@ jest.mock('react-native', () => {
     React.createElement('KeyboardAvoidingView', props, children);
   const Modal = ({ children, visible, ...props }) =>
     visible ? React.createElement('Modal', props, children) : null;
+  const Image = ({ source, ...props }) => React.createElement('Image', { source, ...props });
+  const ImageBackground = ({ children, source, ...props }) =>
+    React.createElement('ImageBackground', { source, ...props }, children);
 
   // Mock Animated for AnimatedBottomNav and other animated components
   class MockAnimatedValue {
@@ -74,6 +77,8 @@ jest.mock('react-native', () => {
     ScrollView,
     KeyboardAvoidingView,
     Modal,
+    Image,
+    ImageBackground,
     Animated,
     ActivityIndicator: ({ size, color, ...props }) =>
       React.createElement('ActivityIndicator', { size, color, ...props }),
@@ -229,6 +234,66 @@ jest.mock('@sentry/react-native', () => ({
   mobileReplayIntegration: jest.fn(() => ({})),
   feedbackIntegration: jest.fn(() => ({})),
 }));
+
+// Mock lucide-react-native icons
+jest.mock('lucide-react-native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  // Create a generic icon component with display name
+  const createIcon = (name) => {
+    const IconComponent = (props) =>
+      React.createElement(View, { testID: `icon-${name}`, ...props });
+    IconComponent.displayName = name;
+    return IconComponent;
+  };
+
+  return {
+    ArrowRight: createIcon('ArrowRight'),
+    Calendar: createIcon('Calendar'),
+    Users: createIcon('Users'),
+    CheckSquare: createIcon('CheckSquare'),
+    Award: createIcon('Award'),
+    UserPlus: createIcon('UserPlus'),
+    CalendarCheck: createIcon('CalendarCheck'),
+    Link2: createIcon('Link2'),
+    TrendingUp: createIcon('TrendingUp'),
+    Shield: createIcon('Shield'),
+    Zap: createIcon('Zap'),
+    Target: createIcon('Target'),
+  };
+});
+
+// Mock react-native-svg
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  const Svg = ({ children, ...props }) =>
+    React.createElement(View, { testID: 'svg', ...props }, children);
+  Svg.displayName = 'Svg';
+
+  const Circle = (props) => React.createElement(View, { testID: 'svg-circle', ...props });
+  Circle.displayName = 'Circle';
+
+  const Path = (props) => React.createElement(View, { testID: 'svg-path', ...props });
+  Path.displayName = 'Path';
+
+  const Rect = (props) => React.createElement(View, { testID: 'svg-rect', ...props });
+  Rect.displayName = 'Rect';
+
+  const G = ({ children, ...props }) =>
+    React.createElement(View, { testID: 'svg-g', ...props }, children);
+  G.displayName = 'G';
+
+  return {
+    Svg,
+    Circle,
+    Path,
+    Rect,
+    G,
+  };
+});
 
 // Mock @supabase/supabase-js with chainable query builder
 jest.mock('@supabase/supabase-js', () => {
