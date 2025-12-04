@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from '@/lib/logger';
 import * as Sentry from '@sentry/react-native';
 
 describe('Logger', () => {
