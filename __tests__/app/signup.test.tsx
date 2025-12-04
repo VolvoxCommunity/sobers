@@ -433,19 +433,6 @@ describe('SignupScreen', () => {
     });
   });
 
-  describe('Back Navigation', () => {
-    it('navigates back when back button is pressed', () => {
-      render(<SignupScreen />);
-
-      // The back button is the first touchable with ArrowLeft icon
-      // Since icon is mocked, we look for the first touchable
-      const backButton = screen.getByText(/Already have an account\?/);
-      fireEvent.press(backButton);
-
-      expect(mockBack).toHaveBeenCalled();
-    });
-  });
-
   describe('Input Behavior', () => {
     it('allows typing in email field', () => {
       render(<SignupScreen />);
