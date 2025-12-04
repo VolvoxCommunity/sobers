@@ -211,6 +211,10 @@ describe('OnboardingScreen', () => {
 
       const continueButton = screen.getByText('Continue');
       expect(continueButton).toBeTruthy();
+      // Verify button is disabled by checking the parent TouchableOpacity's opacity
+      // When disabled, the button has opacity: 0.5
+      const parentOpacity = continueButton.parent?.parent?.props?.style?.opacity;
+      expect(parentOpacity).toBe(0.5);
     });
 
     it('enables continue button when name fields are filled', () => {
@@ -677,6 +681,11 @@ describe('OnboardingScreen', () => {
       // Wait for profile refresh
       await waitFor(() => {
         expect(mockRefreshProfile).toHaveBeenCalled();
+      });
+
+      // Verify navigation to main app
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
       });
     });
   });
