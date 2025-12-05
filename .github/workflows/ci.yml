@@ -48,6 +48,15 @@ jobs:
       - name: Setup Project
         uses: ./.github/actions/setup-project
 
+      - name: Verify test setup
+        run: |
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Checking if jest is available..."
+          pnpm jest --version || echo "Jest not found"
+          echo "Checking test files..."
+          find . -name "*.test.*" -o -name "*.spec.*" | head -5 || echo "No test files found"
+
       - name: Run tests with coverage
         run: pnpm test:ci
         timeout-minutes: 10
@@ -85,11 +94,22 @@ jobs:
       - name: Setup Project
         uses: ./.github/actions/setup-project
 
+      - name: Verify build setup
+        run: |
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Checking if expo CLI is available..."
+          pnpm expo --version || echo "Expo CLI not found"
+
       - name: Check required secrets
         run: |
           if [ -z "${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" ] || [ -z "${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
-            echo "⚠️ Warning: Missing Supabase secrets. Build may fail."
+            echo "::error::Missing required Supabase secrets. Build will fail."
             echo "Please ensure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are set in GitHub Secrets."
+            echo "Go to: Settings → Secrets and variables → Actions"
+            exit 1
+          else
+            echo "✓ Supabase secrets are configured"
           fi
 
       - name: Build web application
