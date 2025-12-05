@@ -58,11 +58,26 @@ jest.mock('expo-apple-authentication', () => ({
 
 // Mock supabase client
 const mockSignInWithIdToken = jest.fn();
+const mockUpdateUser = jest.fn();
+const mockGetUser = jest.fn();
+const mockProfileUpdate = jest.fn();
+const mockProfileUpdateEq = jest.fn();
+
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       signInWithIdToken: (...args: unknown[]) => mockSignInWithIdToken(...args),
+      updateUser: (...args: unknown[]) => mockUpdateUser(...args),
+      getUser: (...args: unknown[]) => mockGetUser(...args),
     },
+    from: () => ({
+      update: (...args: unknown[]) => {
+        mockProfileUpdate(...args);
+        return {
+          eq: (...eqArgs: unknown[]) => mockProfileUpdateEq(...eqArgs),
+        };
+      },
+    }),
   },
 }));
 
@@ -80,10 +95,12 @@ jest.mock('@/contexts/ThemeContext', () => ({
 
 // Mock logger
 const mockLoggerInfo = jest.fn();
+const mockLoggerWarn = jest.fn();
 const mockLoggerError = jest.fn();
 jest.mock('@/lib/logger', () => ({
   logger: {
     info: (...args: unknown[]) => mockLoggerInfo(...args),
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
     error: (...args: unknown[]) => mockLoggerError(...args),
   },
   LogCategory: {
@@ -112,6 +129,10 @@ function resetMocks() {
   jest.clearAllMocks();
   mockIsDark.mockReturnValue(false);
   setPlatformOS('ios');
+  // Default mock implementations for new auth flows
+  mockUpdateUser.mockResolvedValue({ error: null });
+  mockGetUser.mockResolvedValue({ data: { user: { id: 'mock-user-id' } } });
+  mockProfileUpdateEq.mockResolvedValue({ error: null });
 }
 
 // =============================================================================
@@ -474,6 +495,238 @@ describe('AppleSignInButton', () => {
       // Should not throw
       await waitFor(() => {
         expect(mockLoggerError).toHaveBeenCalled();
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Name Extraction Tests
+  // ---------------------------------------------------------------------------
+
+  describe('Name extraction from Apple credential', () => {
+    it('updates user metadata with full name when Apple provides it', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'John',
+          familyName: 'Doe',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockUpdateUser).toHaveBeenCalledWith({
+          data: {
+            full_name: 'John Doe',
+            given_name: 'John',
+            family_name: 'Doe',
+          },
+        });
+      });
+    });
+
+    it('updates profile with first name and last initial', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'Jane',
+          familyName: 'Smith',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockProfileUpdate).toHaveBeenCalledWith({
+          first_name: 'Jane',
+          last_initial: 'S',
+        });
+      });
+    });
+
+    it('uses first name initial when no family name provided', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'Madonna',
+          familyName: null,
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockProfileUpdate).toHaveBeenCalledWith({
+          first_name: 'Madonna',
+          last_initial: 'M',
+        });
+      });
+    });
+
+    it('handles only family name provided', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: null,
+          familyName: 'Smith',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockProfileUpdate).toHaveBeenCalledWith({
+          first_name: null,
+          last_initial: 'S',
+        });
+      });
+    });
+
+    it('does not update name when fullName is not provided (subsequent sign-ins)', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: null, // Apple only provides name on first sign-in
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Apple Sign In successful', {
+          category: 'auth',
+        });
+      });
+
+      // Should not attempt to update user metadata or profile
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(mockProfileUpdate).not.toHaveBeenCalled();
+    });
+
+    it('does not update name when fullName has no givenName or familyName', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: null,
+          familyName: null,
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Apple Sign In successful', {
+          category: 'auth',
+        });
+      });
+
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(mockProfileUpdate).not.toHaveBeenCalled();
+    });
+
+    it('logs success after updating profile with name', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'Test',
+          familyName: 'User',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Profile updated with Apple name data', {
+          category: 'auth',
+          firstName: 'Test',
+          lastInitial: 'U',
+        });
+      });
+    });
+
+    it('logs warning but continues when updateUser fails', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'John',
+          familyName: 'Doe',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+      mockUpdateUser.mockResolvedValueOnce({ error: { message: 'Update failed' } });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          'Failed to update Apple user metadata with name',
+          expect.objectContaining({
+            category: 'auth',
+            error: 'Update failed',
+          })
+        );
+      });
+
+      // Should still call onSuccess
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Apple Sign In successful', {
+          category: 'auth',
+        });
+      });
+    });
+
+    it('logs warning but continues when profile update fails', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'John',
+          familyName: 'Doe',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+      mockProfileUpdateEq.mockResolvedValueOnce({ error: { message: 'Profile update failed' } });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          'Failed to update profile with Apple name data',
+          expect.objectContaining({
+            category: 'auth',
+            error: 'Profile update failed',
+          })
+        );
+      });
+
+      // Should still call onSuccess
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Apple Sign In successful', {
+          category: 'auth',
+        });
       });
     });
   });
