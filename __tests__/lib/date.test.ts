@@ -8,6 +8,7 @@
  * - Edge cases and error handling
  */
 
+// Unmock the date module to test the actual implementation
 import {
   parseDateAsLocal,
   formatLocalDate,
@@ -16,6 +17,8 @@ import {
   getUserTimezone,
   DEVICE_TIMEZONE,
 } from '@/lib/date';
+
+jest.unmock('@/lib/date');
 
 // =============================================================================
 // Tests

@@ -45,10 +45,9 @@ describe('Index Route', () => {
     // Test iOS
     setPlatformOS('ios');
 
-    const { getByText, unmount } = renderWithProviders(<Index />);
+    const { getByText } = renderWithProviders(<Index />);
 
     expect(getByText('Redirected to /login')).toBeTruthy();
-    unmount();
   });
 
   it('redirects to login on Android', () => {
