@@ -39,6 +39,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -49,6 +50,7 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm test:ci
+        timeout-minutes: 12
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -68,6 +70,7 @@ jobs:
     name: Build for Web
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck]
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -78,6 +81,7 @@ jobs:
 
       - name: Build web application
         run: pnpm build:web
+        timeout-minutes: 8
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
@@ -89,3 +93,4 @@ jobs:
           name: web-build
           path: dist/
           retention-days: 7
+          if-no-files-found: warn

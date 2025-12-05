@@ -32,17 +32,36 @@ jest.mock('@/components/landing/LandingPage', () => {
 // Tests
 // =============================================================================
 
+/**
+ * Helper to set Platform.OS for testing platform-specific behavior.
+ */
+function setPlatformOS(os: 'ios' | 'android' | 'web') {
+  Object.defineProperty(Platform, 'OS', {
+    value: os,
+    writable: true,
+    configurable: true,
+  });
+}
+
 describe('Index Route', () => {
   const originalPlatform = Platform.OS;
 
-  afterEach(() => {
+  beforeEach(() => {
     jest.clearAllMocks();
-    Platform.OS = originalPlatform;
+  });
+
+  afterEach(() => {
+    // Restore original platform
+    Object.defineProperty(Platform, 'OS', {
+      value: originalPlatform,
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('redirects to login on native platforms', () => {
     // Mock native platform
-    Platform.OS = 'ios';
+    setPlatformOS('ios');
 
     const { getByText } = renderWithProviders(<Index />);
 
@@ -51,7 +70,7 @@ describe('Index Route', () => {
 
   it('shows landing page on web platform', () => {
     // Mock web platform
-    Platform.OS = 'web';
+    setPlatformOS('web');
 
     const { getByText } = renderWithProviders(<Index />);
 
