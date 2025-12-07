@@ -76,7 +76,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
-    'expo-apple-authentication', // Native Sign in with Apple support
+    'expo-apple-authentication',
+    'expo-font',
+    'expo-secure-store',
+    'expo-web-browser',
     [
       'expo-splash-screen',
       {
