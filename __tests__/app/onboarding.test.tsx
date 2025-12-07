@@ -423,16 +423,17 @@ describe('OnboardingScreen', () => {
   });
 
   describe('Pre-filled Values', () => {
-    it('pre-fills name from OAuth profile', () => {
-      const profileWithName = {
+    it('pre-fills name from OAuth profile when incomplete', () => {
+      // Incomplete name (only first_name) so component starts at Step 1
+      const profileWithPartialName = {
         id: 'user-123',
         first_name: 'Jane',
-        last_initial: 'S',
+        last_initial: null, // Missing last initial, so starts at Step 1
       };
 
       mockUseAuth.mockReturnValue({
         user: mockUser,
-        profile: profileWithName,
+        profile: profileWithPartialName,
         signOut: mockSignOut,
         refreshProfile: mockRefreshProfile,
       });
@@ -442,8 +443,10 @@ describe('OnboardingScreen', () => {
       const firstNameInput = screen.getByPlaceholderText('e.g. John');
       const lastInitialInput = screen.getByPlaceholderText('e.g. D');
 
+      // First name should be pre-filled from OAuth
       expect(firstNameInput.props.value).toBe('Jane');
-      expect(lastInitialInput.props.value).toBe('S');
+      // Last initial should be empty (not provided by OAuth)
+      expect(lastInitialInput.props.value).toBe('');
     });
   });
 
@@ -535,9 +538,7 @@ describe('OnboardingScreen', () => {
 
       render(<OnboardingScreen />);
 
-      // Navigate to step 2
-      fireEvent.press(screen.getByText('Continue'));
-
+      // With complete name, starts at Step 2 automatically
       // The days sober count should be shown
       expect(screen.getByText('Days Sober')).toBeTruthy();
     });
@@ -560,9 +561,7 @@ describe('OnboardingScreen', () => {
 
       render(<OnboardingScreen />);
 
-      // Navigate to step 2
-      fireEvent.press(screen.getByText('Continue'));
-
+      // With complete name, starts at Step 2 automatically
       // Should render without crashing
       expect(screen.getByText('Days Sober')).toBeTruthy();
     });
@@ -680,19 +679,33 @@ describe('OnboardingScreen', () => {
 
   describe('Profile Completion Navigation', () => {
     it('navigates to main app when profile becomes complete after submission', async () => {
-      // Set up mock to update profile after submission
-      mockProfile = {
+      // Start with incomplete name so component starts at Step 1
+      const incompleteProfile = {
         id: 'user-123',
-        first_name: 'John',
-        last_initial: 'D',
-        sobriety_date: '2024-01-01',
+        first_name: null,
+        last_initial: null,
+        sobriety_date: null,
       };
 
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
+
       mockRefreshProfile.mockImplementation(async () => {
-        // Simulate profile update
+        // Simulate profile update - after submission, profile is complete
+        incompleteProfile.first_name = 'John';
+        incompleteProfile.last_initial = 'D';
+        incompleteProfile.sobriety_date = '2024-01-01';
       });
 
       render(<OnboardingScreen />);
+
+      // Fill in name fields at Step 1
+      fireEvent.changeText(screen.getByPlaceholderText('e.g. John'), 'John');
+      fireEvent.changeText(screen.getByPlaceholderText('e.g. D'), 'D');
 
       // Navigate to step 2
       fireEvent.press(screen.getByText('Continue'));
