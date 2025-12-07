@@ -862,4 +862,126 @@ describe('OnboardingScreen', () => {
       });
     });
   });
+
+    it('handles empty string name values (different from null)', async () => {
+      const emptyStringProfile = {
+        id: 'user-123',
+        first_name: '',
+        last_initial: '',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: emptyStringProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Empty strings should be treated as incomplete (start at Step 1)
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('does not auto-advance when name is whitespace only', async () => {
+      const whitespaceProfile = {
+        id: 'user-123',
+        first_name: '   ',
+        last_initial: ' ',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: whitespaceProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Should start at Step 1 (whitespace considered incomplete)
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('maintains Step 2 when profile already complete on mount', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText, getByText } = render(<OnboardingScreen />);
+
+      // Should be on Step 2 from the start
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+      });
+
+      // Verify Step 1 content is not present
+      expect(queryByText("Let's get to know you better.")).toBeNull();
+      expect(queryByText('e.g. John')).toBeNull(); // First name placeholder
+    });
+
+    it('handles undefined profile gracefully', async () => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: undefined,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Should start at Step 1 when profile is undefined
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('does not regress to Step 1 when on Step 2 with complete name', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText, rerender } = render(<OnboardingScreen />);
+
+      // Should be on Step 2
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+      });
+
+      // Rerender with same profile
+      rerender(<OnboardingScreen />);
+
+      // Should still be on Step 2, not regress to Step 1
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+  });
 });
