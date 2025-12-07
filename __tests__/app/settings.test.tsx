@@ -176,6 +176,15 @@ jest.mock('@/lib/logger', () => ({
   LogCategory: {
     AUTH: 'auth',
     UI: 'ui',
+    DATABASE: 'database',
+  },
+}));
+
+// Mock Supabase
+const mockSupabaseFrom = jest.fn();
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: (...args: unknown[]) => mockSupabaseFrom(...args),
   },
 }));
 
@@ -187,6 +196,7 @@ describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSignOut.mockResolvedValue(undefined);
+    mockSupabaseFrom.mockReset();
   });
 
   describe('Header', () => {
@@ -954,6 +964,80 @@ describe('SettingsScreen', () => {
 
       await waitFor(() => {
         expect(queryByText('Edit Name')).toBeNull();
+      });
+    });
+
+    it('calls Supabase update and refreshProfile on save', async () => {
+      const mockEq = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Change name
+      fireEvent.changeText(getByTestId('edit-first-name-input'), 'NewName');
+      fireEvent.changeText(getByTestId('edit-last-initial-input'), 'X');
+
+      // Save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      await waitFor(() => {
+        expect(mockSupabaseFrom).toHaveBeenCalledWith('profiles');
+        expect(mockUpdate).toHaveBeenCalledWith({
+          first_name: 'NewName',
+          last_initial: 'X',
+        });
+        expect(mockRefreshProfile).toHaveBeenCalled();
+        expect(queryByText('Edit Name')).toBeNull(); // Modal closed
+      });
+    });
+
+    it('shows error alert on save failure', async () => {
+      const { Alert } = jest.requireMock('react-native');
+      const mockEq = jest.fn().mockResolvedValue({ error: { message: 'Database error' } });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Save without changing anything (profile has valid data)
+      fireEvent.press(getByTestId('save-name-button'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Database error');
+      });
+    });
+
+    it('keeps modal open on error', async () => {
+      const mockEq = jest.fn().mockResolvedValue({ error: { message: 'Database error' } });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Modal should still be open after error
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
       });
     });
   });

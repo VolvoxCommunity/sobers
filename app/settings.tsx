@@ -50,6 +50,7 @@ import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 import packageJson from '../package.json';
 
 // Enable LayoutAnimation on Android
@@ -247,6 +248,7 @@ export default function SettingsScreen() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastInitial, setEditLastInitial] = useState('');
   const [nameValidationError, setNameValidationError] = useState<string | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
   const buildInfo = getBuildInfo();
   const {
     status: updateStatus,
@@ -432,6 +434,64 @@ export default function SettingsScreen() {
         category: LogCategory.UI,
         url,
       });
+    }
+  };
+
+  /**
+   * Saves the updated name to Supabase and refreshes the profile.
+   * Validates input before saving and handles errors with user feedback.
+   */
+  const handleSaveName = async () => {
+    // Validation
+    if (!editFirstName.trim()) {
+      setNameValidationError('First name is required');
+      return;
+    }
+    if (editLastInitial.length !== 1) {
+      setNameValidationError('Last initial must be exactly 1 character');
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editFirstName.trim(),
+          last_initial: editLastInitial.toUpperCase(),
+        })
+        .eq('id', profile?.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      setIsEditNameModalVisible(false);
+      setNameValidationError(null);
+
+      if (Platform.OS === 'web') {
+        window.alert('Name updated successfully');
+      } else {
+        Alert.alert('Success', 'Name updated successfully');
+      }
+    } catch (error: unknown) {
+      // Handle both Error objects and Supabase error objects with message property
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : 'Failed to update name';
+      const err = error instanceof Error ? error : new Error(errorMessage);
+      logger.error('Name update failed', err, {
+        category: LogCategory.DATABASE,
+      });
+      if (Platform.OS === 'web') {
+        window.alert('Error: ' + errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setIsSavingName(false);
     }
   };
 
@@ -1046,21 +1106,15 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   testID="save-name-button"
-                  style={styles.modalSaveButton}
-                  onPress={() => {
-                    // Validation
-                    if (!editFirstName.trim()) {
-                      setNameValidationError('First name is required');
-                      return;
-                    }
-                    if (editLastInitial.length !== 1) {
-                      setNameValidationError('Last initial must be exactly 1 character');
-                      return;
-                    }
-                    // TODO: Save to Supabase (Task 5)
-                  }}
+                  style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
+                  onPress={handleSaveName}
+                  disabled={isSavingName}
                 >
-                  <Text style={styles.modalSaveText}>Save</Text>
+                  {isSavingName ? (
+                    <ActivityIndicator size="small" color={theme.white} />
+                  ) : (
+                    <Text style={styles.modalSaveText}>Save</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
