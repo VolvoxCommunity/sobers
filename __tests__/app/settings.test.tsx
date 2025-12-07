@@ -883,5 +883,78 @@ describe('SettingsScreen', () => {
         expect(getByText('Edit Name')).toBeTruthy();
       });
     });
+
+    it('pre-fills modal inputs with current name values', async () => {
+      const { getByTestId, getByDisplayValue } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        fireEvent.press(getByTestId('account-name-row'));
+      });
+
+      await waitFor(() => {
+        expect(getByDisplayValue('Test')).toBeTruthy(); // First name
+        expect(getByDisplayValue('D')).toBeTruthy(); // Last initial
+      });
+    });
+
+    it('validates first name is required', async () => {
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Clear first name
+      const firstNameInput = getByTestId('edit-first-name-input');
+      fireEvent.changeText(firstNameInput, '');
+
+      // Try to save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Should show validation error
+      await waitFor(() => {
+        expect(getByText('First name is required')).toBeTruthy();
+      });
+    });
+
+    it('validates last initial is exactly 1 character', async () => {
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Clear last initial (empty)
+      const lastInitialInput = getByTestId('edit-last-initial-input');
+      fireEvent.changeText(lastInitialInput, '');
+
+      // Try to save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Should show validation error
+      await waitFor(() => {
+        expect(getByText('Last initial must be exactly 1 character')).toBeTruthy();
+      });
+    });
+
+    it('closes modal on cancel', async () => {
+      const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      fireEvent.press(getByTestId('cancel-name-button'));
+
+      await waitFor(() => {
+        expect(queryByText('Edit Name')).toBeNull();
+      });
+    });
   });
 });
