@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   LayoutAnimation,
   UIManager,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
@@ -39,6 +40,7 @@ import {
   AlertCircle,
   Info,
   Copy,
+  User,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -233,13 +235,16 @@ const HEADER_BUTTON_WIDTH = 44;
  * ```
  */
 export default function SettingsScreen() {
-  const { signOut, deleteAccount } = useAuth();
+  const { signOut, deleteAccount, profile, refreshProfile } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
   const [isBuildInfoExpanded, setIsBuildInfoExpanded] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isEditNameModalVisible, setIsEditNameModalVisible] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastInitial, setEditLastInitial] = useState('');
   const buildInfo = getBuildInfo();
   const {
     status: updateStatus,
@@ -458,6 +463,38 @@ export default function SettingsScreen() {
             scrollPositionRef.current = e.nativeEvent.contentOffset.y;
           }}
         >
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                testID="account-name-row"
+                onPress={() => {
+                  setEditFirstName(profile?.first_name ?? '');
+                  setEditLastInitial(profile?.last_initial ?? '');
+                  setIsEditNameModalVisible(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Edit your name"
+              >
+                <View style={styles.menuItemLeft}>
+                  <User size={20} color={theme.textSecondary} />
+                  <View>
+                    <Text style={styles.menuItemText}>Name</Text>
+                    <Text style={styles.menuItemSubtext}>
+                      {profile?.first_name} {profile?.last_initial}.
+                    </Text>
+                  </View>
+                </View>
+                <ChevronLeft
+                  size={20}
+                  color={theme.textTertiary}
+                  style={{ transform: [{ rotate: '180deg' }] }}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Appearance</Text>
             <View style={styles.card}>
@@ -942,6 +979,26 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Edit Name Modal - Placeholder for Task 4 */}
+        <Modal
+          visible={isEditNameModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setIsEditNameModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Name</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setIsEditNameModalVisible(false)}
+              >
+                <Text>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -1063,6 +1120,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+    },
+    menuItemSubtext: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginTop: 2,
     },
     separator: {
       height: 1,
@@ -1337,5 +1400,31 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.primary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: theme.background,
+      borderRadius: 12,
+      padding: 20,
+      width: '80%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontFamily: theme.fontSemiBold,
+      color: theme.text,
+      marginBottom: 16,
+    },
+    modalCloseButton: {
+      marginTop: 16,
+      padding: 12,
+      backgroundColor: theme.primaryLight,
+      borderRadius: 8,
+      alignItems: 'center',
     },
   });

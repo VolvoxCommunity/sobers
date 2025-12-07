@@ -38,10 +38,19 @@ jest.mock('react-native-safe-area-context', () => ({
 // Mock AuthContext
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();
+const mockRefreshProfile = jest.fn();
+const mockProfile = {
+  id: 'test-user-id',
+  first_name: 'Test',
+  last_initial: 'D',
+  sobriety_date: '2024-01-01',
+};
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     signOut: mockSignOut,
     deleteAccount: mockDeleteAccount,
+    profile: mockProfile,
+    refreshProfile: mockRefreshProfile,
   }),
 }));
 
@@ -107,6 +116,7 @@ jest.mock('lucide-react-native', () => ({
   AlertCircle: () => null,
   Info: () => null,
   Copy: () => null,
+  User: () => null,
 }));
 
 // Mock expo-clipboard
@@ -845,6 +855,33 @@ describe('SettingsScreen', () => {
       render(<SettingsScreen />);
 
       expect(screen.getByText('Supporting recovery, one day at a time')).toBeTruthy();
+    });
+  });
+
+  describe('Account Section', () => {
+    it('renders Account section with current name displayed', async () => {
+      const { getByText } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        expect(getByText('Account')).toBeTruthy();
+        expect(getByText('Name')).toBeTruthy();
+        expect(getByText('Test D.')).toBeTruthy(); // mockProfile has first_name: 'Test', last_initial: 'D'
+      });
+    });
+
+    it('opens edit modal when tapping the name row', async () => {
+      const { getByText, getByTestId } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        expect(getByText('Test D.')).toBeTruthy();
+      });
+
+      // Tap the account row
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
     });
   });
 });
