@@ -43,22 +43,20 @@ jest.mock('@/lib/supabase', () => ({
 // Mock AuthContext
 const mockSignOut = jest.fn();
 const mockRefreshProfile = jest.fn();
+const mockUser = { id: 'user-123' };
 let mockProfile: {
   id: string;
-  first_name?: string;
-  last_initial?: string;
-  sobriety_date?: string;
+  first_name?: string | null;
+  last_initial?: string | null;
+  sobriety_date?: string | null;
 } | null = {
   id: 'user-123',
 };
 
+const mockUseAuth = jest.fn();
+
 jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'user-123' },
-    profile: mockProfile,
-    signOut: mockSignOut,
-    refreshProfile: mockRefreshProfile,
-  }),
+  useAuth: () => mockUseAuth(),
 }));
 
 // Mock ThemeContext
@@ -187,6 +185,12 @@ describe('OnboardingScreen', () => {
     mockProfile = { id: 'user-123' };
     mockUpdate.mockResolvedValue({ error: null });
     mockRefreshProfile.mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({
+      user: mockUser,
+      profile: mockProfile,
+      signOut: mockSignOut,
+      refreshProfile: mockRefreshProfile,
+    });
   });
 
   describe('Step 1 - Name Collection', () => {
@@ -420,11 +424,18 @@ describe('OnboardingScreen', () => {
 
   describe('Pre-filled Values', () => {
     it('pre-fills name from OAuth profile', () => {
-      mockProfile = {
+      const profileWithName = {
         id: 'user-123',
         first_name: 'Jane',
         last_initial: 'S',
       };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithName,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
 
       render(<OnboardingScreen />);
 
@@ -508,12 +519,19 @@ describe('OnboardingScreen', () => {
 
   describe('Pre-filled Sobriety Date', () => {
     it('uses existing sobriety date from profile', () => {
-      mockProfile = {
+      const profileWithDate = {
         id: 'user-123',
         first_name: 'John',
         last_initial: 'D',
         sobriety_date: '2024-01-01',
       };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithDate,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
 
       render(<OnboardingScreen />);
 
@@ -526,12 +544,19 @@ describe('OnboardingScreen', () => {
 
     it('clamps future sobriety date to maximum date', () => {
       // Set a future date that would be clamped
-      mockProfile = {
+      const profileWithFutureDate = {
         id: 'user-123',
         first_name: 'John',
         last_initial: 'D',
         sobriety_date: '2099-01-01', // Far future date
       };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithFutureDate,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
 
       render(<OnboardingScreen />);
 
@@ -684,6 +709,95 @@ describe('OnboardingScreen', () => {
       // Verify navigation to main app
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
+      });
+    });
+  });
+
+  describe('Smart Step Selection', () => {
+    it('starts at Step 2 when profile has both first_name and last_initial', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null, // Still needs sobriety date
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText } = render(<OnboardingScreen />);
+
+      // Should show Step 2 content (sobriety date), not Step 1 (name entry)
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+
+    it('starts at Step 1 when first_name is null', async () => {
+      const incompleteProfile = {
+        id: 'user-123',
+        first_name: null,
+        last_initial: 'D',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when last_initial is null', async () => {
+      const incompleteProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when name has placeholder values', async () => {
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'U',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
       });
     });
   });
