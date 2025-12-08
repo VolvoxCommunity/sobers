@@ -355,11 +355,8 @@ export default function JourneyScreen() {
             {!hasSlipUps ? (
               // Single metric display - no slip-ups
               <View style={styles.statMain}>
-                <TrendingUp size={32} color={theme.primary} />
-                <View style={styles.statMainContent}>
-                  <Text style={styles.statMainNumber}>{loadingDaysSober ? '...' : daysSober}</Text>
-                  <Text style={styles.statMainLabel}>Days Sober</Text>
-                </View>
+                <Text style={styles.statMainNumber}>{loadingDaysSober ? '...' : daysSober}</Text>
+                <Text style={styles.statMainLabel}>Days Sober</Text>
               </View>
             ) : (
               // Dual metric display - has slip-ups
@@ -509,17 +506,12 @@ const createStyles = (theme: ThemeColors) =>
       elevation: 3,
     },
     statMain: {
-      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 16,
       marginBottom: 20,
       paddingBottom: 20,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
-    },
-    statMainContent: {
-      alignItems: 'center',
     },
     statMainNumber: {
       fontSize: 40,
