@@ -16,6 +16,7 @@ import {
   UIManager,
   Modal,
   TextInput,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -1049,8 +1050,15 @@ export default function SettingsScreen() {
           setNameValidationError(null);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.editNameModal}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => {
+            setIsEditNameModalVisible(false);
+            setNameValidationError(null);
+          }}
+        >
+          <Pressable style={styles.editNameModal} onPress={() => {}}>
+            {/* Empty onPress prevents tap propagation to backdrop */}
             <Text style={styles.modalTitle}>Edit Name</Text>
 
             <View style={styles.inputGroup}>
@@ -1119,8 +1127,8 @@ export default function SettingsScreen() {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );

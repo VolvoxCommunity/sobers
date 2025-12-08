@@ -1219,7 +1219,7 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('dismisses modal via onRequestClose (backdrop press)', async () => {
+  it('closes modal on cancel button press', async () => {
     const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
 
     fireEvent.press(getByTestId('account-name-row'));
@@ -1228,9 +1228,6 @@ describe('SettingsScreen', () => {
       expect(getByText('Edit Name')).toBeTruthy();
     });
 
-    // Simulate Modal's onRequestClose (called when backdrop is pressed or back button on Android)
-    const modal = getByTestId('account-name-row').parent?.parent?.parent; // Navigate to Modal
-    // Since we can't directly access the Modal component, we test the cancel button instead
     fireEvent.press(getByTestId('cancel-name-button'));
 
     await waitFor(() => {

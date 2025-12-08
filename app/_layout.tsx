@@ -69,15 +69,16 @@ function RootLayoutNav() {
     const inOnboarding = segments[0] === 'onboarding';
     const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup';
 
-    // Profile is complete when user has provided their name and sobriety date during onboarding
+    // Profile is complete when user has provided their name and sobriety date during onboarding.
     // Check for non-null values (null indicates user hasn't completed onboarding).
-    // Also validate against placeholder values ('User', 'U') to catch legacy data or edge cases.
+    // Only 'User' is treated as a placeholder for first_name - it's set by the auth trigger
+    // when OAuth doesn't provide name data. 'U' as last_initial is NOT a placeholder since
+    // it could be a legitimate initial (e.g., "Underwood", "Ulrich").
     const hasName =
       profile !== null &&
       profile.first_name !== null &&
       profile.last_initial !== null &&
-      profile.first_name !== 'User' &&
-      profile.last_initial !== 'U';
+      profile.first_name !== 'User';
     const hasSobrietyDate = !!profile?.sobriety_date;
     const isProfileComplete = hasName && hasSobrietyDate;
 

@@ -12,6 +12,8 @@ jest.mock('react-native', () => {
     React.createElement('KeyboardAvoidingView', props, children);
   const Modal = ({ children, visible, ...props }) =>
     visible ? React.createElement('Modal', props, children) : null;
+  const Pressable = ({ children, onPress, ...props }) =>
+    React.createElement('Pressable', { onPress, ...props }, children);
 
   // Mock Animated for AnimatedBottomNav and other animated components
   class MockAnimatedValue {
@@ -74,6 +76,7 @@ jest.mock('react-native', () => {
     ScrollView,
     KeyboardAvoidingView,
     Modal,
+    Pressable,
     Animated,
     ActivityIndicator: ({ size, color, ...props }) =>
       React.createElement('ActivityIndicator', { size, color, ...props }),
