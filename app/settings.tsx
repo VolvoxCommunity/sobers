@@ -1093,8 +1093,8 @@ export default function SettingsScreen() {
                 style={styles.textInput}
                 value={editLastInitial}
                 onChangeText={(text) => {
-                  setNameValidationError(null);
                   setEditLastInitial(text.toUpperCase());
+                  setNameValidationError(null);
                 }}
                 placeholder="Enter last initial"
                 placeholderTextColor={theme.textTertiary}
