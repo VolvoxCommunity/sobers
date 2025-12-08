@@ -45,15 +45,15 @@ describe('app.config.ts', () => {
       expect(Array.isArray(splashScreenPlugin)).toBe(true);
     });
 
-    it('does not include redundant plugins after cleanup', () => {
+    it('includes commonly used expo plugins', () => {
       const config = appConfig({ config: {} } as any);
 
-      // These plugins are now auto-linked and should not be explicitly listed
-      const redundantPlugins = ['expo-font', 'expo-secure-store', 'expo-web-browser'];
+      // These plugins are explicitly listed for configuration/native module setup
+      const expectedPlugins = ['expo-font', 'expo-secure-store', 'expo-web-browser'];
 
-      redundantPlugins.forEach((pluginName) => {
+      expectedPlugins.forEach((pluginName) => {
         const hasPlugin = config.plugins?.includes(pluginName);
-        expect(hasPlugin).toBe(false);
+        expect(hasPlugin).toBe(true);
       });
     });
   });
@@ -70,8 +70,8 @@ describe('app.config.ts', () => {
     it('uses correct bundle identifiers', () => {
       const config = appConfig({ config: {} } as any);
 
-      expect(config.ios?.bundleIdentifier).toBe('com.volvoxcommunity.sobrietywaypoint');
-      expect(config.android?.package).toBe('com.volvoxcommunity.sobrietywaypoint');
+      expect(config.ios?.bundleIdentifier).toBe('com.volvox.sobrietywaypoint');
+      expect(config.android?.package).toBe('com.volvox.sobrietywaypoint');
     });
   });
 
@@ -104,12 +104,17 @@ describe('app.config.ts', () => {
       expect(config.orientation).toBeDefined();
     });
 
-    it('configures splash screen', () => {
+    it('configures splash screen via plugin', () => {
       const config = appConfig({ config: {} } as any);
 
-      expect(config.splash).toBeDefined();
-      expect(config.splash?.image).toBeDefined();
-      expect(config.splash?.resizeMode).toBeDefined();
+      // Splash screen is configured via expo-splash-screen plugin, not top-level splash property
+      const splashScreenPlugin = config.plugins?.find(
+        (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen'
+      ) as [string, { image?: string; resizeMode?: string }] | undefined;
+
+      expect(splashScreenPlugin).toBeDefined();
+      expect(splashScreenPlugin?.[1]?.image).toBeDefined();
+      expect(splashScreenPlugin?.[1]?.resizeMode).toBeDefined();
     });
 
     it('configures updates', () => {
