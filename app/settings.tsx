@@ -442,6 +442,11 @@ export default function SettingsScreen() {
    * Validates input before saving and handles errors with user feedback.
    */
   const handleSaveName = async () => {
+    // Guard: Prevent multiple simultaneous saves
+    if (isSavingName) {
+      return;
+    }
+
     // Guard: Ensure profile is loaded before attempting save
     if (!profile?.id) {
       const errorMessage = 'Unable to save - profile not loaded';
@@ -457,11 +462,14 @@ export default function SettingsScreen() {
     }
 
     // Validation
-    if (!editFirstName.trim()) {
+    const trimmedFirstName = editFirstName.trim();
+    const trimmedLastInitial = editLastInitial.trim();
+
+    if (!trimmedFirstName) {
       setNameValidationError('First name is required');
       return;
     }
-    if (editLastInitial.trim().length !== 1) {
+    if (trimmedLastInitial.length !== 1) {
       setNameValidationError('Last initial must be exactly 1 character');
       return;
     }
@@ -471,8 +479,8 @@ export default function SettingsScreen() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: editFirstName.trim(),
-          last_initial: editLastInitial.toUpperCase(),
+          first_name: trimmedFirstName,
+          last_initial: trimmedLastInitial.toUpperCase(),
         })
         .eq('id', profile.id);
 
@@ -514,7 +522,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.outerContainer}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
           <Text style={styles.headerTitle}>Settings</Text>
@@ -1164,7 +1172,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingTop: 16,
+      paddingBottom: 12,
       backgroundColor: theme.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderLight,
