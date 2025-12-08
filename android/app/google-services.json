@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "151109827760",
+    "project_id": "sobriety-waypoint",
+    "storage_bucket": "sobriety-waypoint.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151109827760:android:2a5eb7e330d5924c1ccf75",
+        "android_client_info": {
+          "package_name": "com.volvox.sobrietywaypoint"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6uHErEQwCZyaxKUtXLJjh47u0mlCK6MM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
