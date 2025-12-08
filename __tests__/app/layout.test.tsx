@@ -155,9 +155,14 @@ jest.mock('@/components/ErrorBoundary', () => ({
 }));
 
 // Mock lucide-react-native
-jest.mock('lucide-react-native', () => ({
-  X: () => null,
-}));
+jest.mock('lucide-react-native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    X: (props: Record<string, unknown>) =>
+      React.createElement(View, { testID: 'x-icon', ...props }),
+  };
+});
 
 // =============================================================================
 // Test Suite

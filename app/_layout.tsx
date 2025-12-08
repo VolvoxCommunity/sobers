@@ -19,7 +19,7 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { X } from 'lucide-react-native';
 import { useFonts } from 'expo-font';
 import {
@@ -113,54 +113,27 @@ function RootLayoutNav() {
         <Stack.Screen
           name="settings"
           options={{
-            presentation: 'modal',
+            presentation: 'formSheet',
             gestureEnabled: true,
             headerShown: true,
-            headerTitle: 'Settings',
-            headerStyle: {
-              backgroundColor: theme.surface,
-            },
+            title: 'Settings',
+            headerStyle: { backgroundColor: theme.surface },
+            headerTintColor: theme.text,
             headerTitleStyle: {
               fontFamily: 'JetBrainsMono-SemiBold',
-              fontSize: 17,
-              color: theme.text,
+              fontSize: 18,
             },
-            headerShadowVisible: false,
-            headerTintColor: theme.primary,
             headerLeft: () => null,
-            headerRight: () => {
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              const router = useRouter();
-              // Use dismiss() for modals - it's the recommended way to close modal screens
-              // dismiss() targets the closest stack, which is correct for modal presentation
-              const handleClose = () => {
-                if (router.canDismiss()) {
-                  router.dismiss();
-                } else {
-                  router.back();
-                }
-              };
-              // Use SF Symbol-style close icon without custom background
-              // The native header provides its own styling
-              return (
-                <TouchableOpacity
-                  onPress={handleClose}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  accessibilityLabel="Close settings"
-                  accessibilityRole="button"
-                  style={{
-                    padding: 8,
-                    marginRight: Platform.select({ web: 8, default: 0 }),
-                  }}
-                >
-                  <X
-                    size={22}
-                    color={isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(60, 60, 67, 0.6)'}
-                    strokeWidth={2}
-                  />
-                </TouchableOpacity>
-              );
-            },
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                accessibilityLabel="Close settings"
+                accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={22} color={theme.textSecondary} strokeWidth={2} />
+              </TouchableOpacity>
+            ),
             contentStyle: { backgroundColor: theme.background },
           }}
         />

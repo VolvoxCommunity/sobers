@@ -16,6 +16,7 @@ import {
   UIManager,
   Modal,
   TextInput,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -26,7 +27,7 @@ import {
   Moon,
   Sun,
   Monitor,
-  ChevronRight,
+  ChevronLeft,
   ChevronDown,
   ChevronUp,
   Shield,
@@ -41,7 +42,6 @@ import {
   Info,
   Copy,
   User,
-  X,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -83,7 +83,7 @@ interface BuildInfo {
   updateId: string | null;
   /** Runtime version for update compatibility */
   runtimeVersion: string | null;
-  /** Whether running embedded bundle (not an OTA update) */
+  /** Whether running the embedded bundle (not an OTA update) */
   isEmbeddedLaunch: boolean;
 
   // Device info (from expo-device)
@@ -321,7 +321,7 @@ export default function SettingsScreen() {
   };
 
   /**
-   * Handles account deletion flow with confirmation dialogs.
+   * Handles the account deletion flow with confirmation dialogs.
    * Shows a warning about permanent data loss and requires explicit confirmation.
    */
   const handleDeleteAccount = async () => {
@@ -445,12 +445,34 @@ export default function SettingsScreen() {
    * Validates input before saving and handles errors with user feedback.
    */
   const handleSaveName = async () => {
+    // Guard: Prevent multiple simultaneous saves
+    if (isSavingName) {
+      return;
+    }
+
+    // Guard: Ensure profile is loaded before attempting save
+    if (!profile?.id) {
+      const errorMessage = 'Unable to save - profile not loaded';
+      logger.error('Name save attempted with null profile', new Error(errorMessage), {
+        category: LogCategory.DATABASE,
+      });
+      if (Platform.OS === 'web') {
+        window.alert('Error: ' + errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+      return;
+    }
+
     // Validation
-    if (!editFirstName.trim()) {
+    const trimmedFirstName = editFirstName.trim();
+    const trimmedLastInitial = editLastInitial.trim();
+
+    if (!trimmedFirstName) {
       setNameValidationError('First name is required');
       return;
     }
-    if (editLastInitial.length !== 1) {
+    if (trimmedLastInitial.length !== 1) {
       setNameValidationError('Last initial must be exactly 1 character');
       return;
     }
@@ -460,10 +482,10 @@ export default function SettingsScreen() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: editFirstName.trim(),
-          last_initial: editLastInitial.toUpperCase(),
+          first_name: trimmedFirstName,
+          last_initial: trimmedLastInitial.toUpperCase(),
         })
-        .eq('id', profile?.id);
+        .eq('id', profile.id);
 
       if (error) throw error;
 
@@ -501,7 +523,7 @@ export default function SettingsScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <View style={styles.container}>
+    <>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -520,8 +542,12 @@ export default function SettingsScreen() {
               style={styles.menuItem}
               testID="account-name-row"
               onPress={() => {
-                setEditFirstName(profile?.first_name ?? '');
-                setEditLastInitial(profile?.last_initial ?? '');
+                // Guard: Prevent opening modal with empty fields when profile hasn't loaded
+                if (!profile?.first_name || !profile?.last_initial) {
+                  return;
+                }
+                setEditFirstName(profile.first_name);
+                setEditLastInitial(profile.last_initial);
                 setIsEditNameModalVisible(true);
               }}
               accessibilityRole="button"
@@ -532,11 +558,17 @@ export default function SettingsScreen() {
                 <View>
                   <Text style={styles.menuItemText}>Name</Text>
                   <Text style={styles.menuItemSubtext}>
-                    {profile?.first_name} {profile?.last_initial}.
+                    {profile?.first_name && profile?.last_initial
+                      ? `${profile.first_name} ${profile.last_initial}.`
+                      : 'Loading...'}
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={theme.textTertiary} />
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -624,7 +656,11 @@ export default function SettingsScreen() {
                 <Shield size={20} color={theme.textSecondary} />
                 <Text style={styles.menuItemText}>Privacy Policy</Text>
               </View>
-              <ChevronRight size={20} color={theme.textTertiary} />
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
             </TouchableOpacity>
             <View style={styles.separator} />
             <TouchableOpacity
@@ -637,7 +673,11 @@ export default function SettingsScreen() {
                 <FileText size={20} color={theme.textSecondary} />
                 <Text style={styles.menuItemText}>Terms of Service</Text>
               </View>
-              <ChevronRight size={20} color={theme.textTertiary} />
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
             </TouchableOpacity>
             <View style={styles.separator} />
             <TouchableOpacity
@@ -650,7 +690,11 @@ export default function SettingsScreen() {
                 <Github size={20} color={theme.textSecondary} />
                 <Text style={styles.menuItemText}>Source Code</Text>
               </View>
-              <ChevronRight size={20} color={theme.textTertiary} />
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -1019,20 +1063,16 @@ export default function SettingsScreen() {
           setNameValidationError(null);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.editNameModal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Name</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setIsEditNameModalVisible(false);
-                  setNameValidationError(null);
-                }}
-                style={styles.closeButton}
-              >
-                <X size={24} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => {
+            setIsEditNameModalVisible(false);
+            setNameValidationError(null);
+          }}
+        >
+          <Pressable style={styles.editNameModal} onPress={noop}>
+            {/* noop handler prevents tap propagation to backdrop */}
+            <Text style={styles.modalTitle}>Edit Name</Text>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>First Name</Text>
@@ -1057,7 +1097,7 @@ export default function SettingsScreen() {
                 style={styles.textInput}
                 value={editLastInitial}
                 onChangeText={(text) => {
-                  setEditLastInitial(text.toUpperCase().slice(0, 1));
+                  setEditLastInitial(text.toUpperCase());
                   setNameValidationError(null);
                 }}
                 placeholder="Enter last initial"
@@ -1095,10 +1135,10 @@ export default function SettingsScreen() {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
-    </View>
+    </>
   );
 }
 
@@ -1106,17 +1146,13 @@ export default function SettingsScreen() {
 // Styles
 // =============================================================================
 /**
- * Creates StyleSheet for the Settings screen based on the current theme.
+ * Creates StyleSheet for the Settings screen based on current theme.
  *
  * @param theme - Theme colors from ThemeContext
  * @returns StyleSheet object with all component styles
  */
 const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
     scrollView: {
       flex: 1,
       backgroundColor: theme.background,
@@ -1488,21 +1524,13 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       width: '100%',
       maxWidth: 400,
     },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
     modalTitle: {
       fontSize: 20,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
       color: theme.text,
-      flex: 1,
-    },
-    closeButton: {
-      padding: 4,
+      marginBottom: 20,
+      textAlign: 'center',
     },
     inputGroup: {
       marginBottom: 16,
@@ -1517,7 +1545,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     textInput: {
       backgroundColor: theme.card,
       borderWidth: 1,
-      borderColor: theme.borderLight,
+      borderColor: theme.border,
       borderRadius: 12,
       padding: 14,
       fontSize: 16,
@@ -1542,7 +1570,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       borderRadius: 12,
       backgroundColor: theme.card,
       borderWidth: 1,
-      borderColor: theme.borderLight,
+      borderColor: theme.border,
       alignItems: 'center',
     },
     modalCancelText: {
