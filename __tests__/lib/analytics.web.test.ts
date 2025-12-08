@@ -2,7 +2,8 @@
  * @jest-environment jsdom
  */
 
-// Mock firebase/app and firebase/analytics before imports
+// Define mock functions that will be accessible inside jest.mock factory
+// Import after mocks are set up
 import { initializeApp, getApps } from 'firebase/app';
 import {
   getAnalytics,
@@ -12,14 +13,38 @@ import {
   isSupported,
 } from 'firebase/analytics';
 
-// Import after mocks are set up
 import {
-  initializeWebAnalytics,
-  trackEventWeb,
-  setUserIdWeb,
-  setUserPropertiesWeb,
-  resetAnalyticsWeb,
-} from '@/lib/analytics.web';
+  initializePlatformAnalytics as initializeWebAnalytics,
+  trackEventPlatform as trackEventWeb,
+  setUserIdPlatform as setUserIdWeb,
+  setUserPropertiesPlatform as setUserPropertiesWeb,
+  trackScreenViewPlatform as trackScreenViewWeb,
+  resetAnalyticsPlatform as resetAnalyticsWeb,
+} from '@/lib/analytics/impl.web';
+
+const mockLoggerWarn = jest.fn();
+const mockLoggerInfo = jest.fn();
+const mockLoggerDebug = jest.fn();
+const mockLoggerError = jest.fn();
+const mockIsDebugMode = jest.fn(() => false);
+
+// Mock analytics-utils - must be before imports
+jest.mock('@/lib/analytics-utils', () => ({
+  isDebugMode: () => mockIsDebugMode(),
+}));
+
+// Mock logger - use wrapper functions to avoid hoisting issues
+jest.mock('@/lib/logger', () => ({
+  logger: {
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    info: (...args: unknown[]) => mockLoggerInfo(...args),
+    debug: (...args: unknown[]) => mockLoggerDebug(...args),
+    error: (...args: unknown[]) => mockLoggerError(...args),
+  },
+  LogCategory: {
+    ANALYTICS: 'ANALYTICS',
+  },
+}));
 
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(() => ({ name: 'test-app' })),
@@ -38,6 +63,8 @@ describe('Web Analytics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (getApps as jest.Mock).mockReturnValue([]);
+    (isSupported as jest.Mock).mockResolvedValue(true);
+    mockIsDebugMode.mockReturnValue(false);
   });
 
   describe('initializeWebAnalytics', () => {
@@ -67,6 +94,17 @@ describe('Web Analytics', () => {
       expect(getAnalytics).toHaveBeenCalled();
     });
 
+    it('logs success in debug mode', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      await initializeWebAnalytics(mockConfig);
+
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        'Firebase Analytics initialized for web',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
     it('does not reinitialize if app already exists', async () => {
       (getApps as jest.Mock).mockReturnValue([{ name: 'existing' }]);
 
@@ -75,14 +113,77 @@ describe('Web Analytics', () => {
       expect(initializeApp).not.toHaveBeenCalled();
     });
 
+    it('logs message when app already exists in debug mode', async () => {
+      (getApps as jest.Mock).mockReturnValue([{ name: 'existing' }]);
+      mockIsDebugMode.mockReturnValue(true);
+
+      await initializeWebAnalytics(mockConfig);
+
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        'Firebase app already initialized',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
     it('handles unsupported browsers gracefully', async () => {
       (isSupported as jest.Mock).mockResolvedValue(false);
 
       await expect(initializeWebAnalytics(mockConfig)).resolves.not.toThrow();
+      expect(initializeApp).not.toHaveBeenCalled();
+    });
+
+    it('logs warning for unsupported browsers in debug mode', async () => {
+      (isSupported as jest.Mock).mockResolvedValue(false);
+      mockIsDebugMode.mockReturnValue(true);
+
+      await initializeWebAnalytics(mockConfig);
+
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        'Firebase Analytics not supported in this browser',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('handles initialization errors gracefully', async () => {
+      const error = new Error('Init failed');
+      (initializeApp as jest.Mock).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      await expect(initializeWebAnalytics(mockConfig)).resolves.not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to initialize Firebase Analytics',
+        error,
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('handles non-Error initialization errors', async () => {
+      (initializeApp as jest.Mock).mockImplementationOnce(() => {
+        throw 'string error';
+      });
+
+      await expect(initializeWebAnalytics(mockConfig)).resolves.not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to initialize Firebase Analytics',
+        expect.any(Error),
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
     });
   });
 
   describe('trackEventWeb', () => {
+    beforeEach(async () => {
+      // Initialize analytics first
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
     it('calls logEvent with event name and params', () => {
       trackEventWeb('test_event', { param1: 'value1' });
 
@@ -94,9 +195,30 @@ describe('Web Analytics', () => {
 
       expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'test_event', undefined);
     });
+
+    it('logs event in debug mode', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      trackEventWeb('test_event', { param1: 'value1' });
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Event: test_event',
+        expect.objectContaining({ category: 'ANALYTICS', param1: 'value1' })
+      );
+    });
   });
 
   describe('setUserIdWeb', () => {
+    beforeEach(async () => {
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
     it('sets user ID', () => {
       setUserIdWeb('user-123');
 
@@ -108,22 +230,106 @@ describe('Web Analytics', () => {
 
       expect(setUserId).toHaveBeenCalledWith(expect.anything(), null);
     });
+
+    it('logs in debug mode', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      setUserIdWeb('user-123');
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'setUserId: user-123',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
   });
 
   describe('setUserPropertiesWeb', () => {
+    beforeEach(async () => {
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
     it('sets user properties', () => {
       const props = { theme_preference: 'dark' as const };
       setUserPropertiesWeb(props);
 
       expect(setUserProperties).toHaveBeenCalledWith(expect.anything(), props);
     });
+
+    it('logs in debug mode', () => {
+      mockIsDebugMode.mockReturnValue(true);
+      const props = { theme_preference: 'dark' as const };
+
+      setUserPropertiesWeb(props);
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'setUserProperties',
+        expect.objectContaining({ category: 'ANALYTICS', theme_preference: 'dark' })
+      );
+    });
+  });
+
+  describe('trackScreenViewWeb', () => {
+    beforeEach(async () => {
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
+    it('tracks screen view with name and class', () => {
+      trackScreenViewWeb('HomeScreen', 'TabScreen');
+
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'screen_view', {
+        screen_name: 'HomeScreen',
+        screen_class: 'TabScreen',
+      });
+    });
+
+    it('uses screen name as class when class not provided', () => {
+      trackScreenViewWeb('HomeScreen');
+
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'screen_view', {
+        screen_name: 'HomeScreen',
+        screen_class: 'HomeScreen',
+      });
+    });
   });
 
   describe('resetAnalyticsWeb', () => {
+    beforeEach(async () => {
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
     it('clears user ID', async () => {
       await resetAnalyticsWeb();
 
       expect(setUserId).toHaveBeenCalledWith(expect.anything(), null);
+    });
+
+    it('logs in debug mode', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      await resetAnalyticsWeb();
+
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        'Resetting analytics state',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
     });
   });
 });

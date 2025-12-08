@@ -54,6 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     icon: './assets/images/logo.png',
     supportsTablet: true,
     usesAppleSignIn: true, // Enable Sign in with Apple capability
+    googleServicesFile: './GoogleService-Info.plist', // Firebase config for iOS
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -61,6 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.volvox.sobrietywaypoint',
     icon: './assets/images/logo.png',
+    googleServicesFile: './google-services.json', // Firebase config for Android
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
       foregroundImage: './assets/images/logo.png',
@@ -80,6 +82,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-secure-store',
     'expo-web-browser',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          // Note: Firebase requires modular headers, configured via withModularHeaders plugin below
+        },
+      },
+    ],
+    './plugins/withModularHeaders', // Required for Firebase/GoogleUtilities Swift compatibility
     [
       'expo-splash-screen',
       {
@@ -103,8 +114,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       '@react-native-firebase/app',
       {
-        // iOS uses GoogleService-Info.plist automatically from ios/ directory
-        // Android uses google-services.json automatically from android/app/ directory
+        // iOS uses GoogleService-Info.plist from project root (configured via ios.googleServicesFile)
+        // Android uses google-services.json from project root (configured via android.googleServicesFile)
       },
     ],
   ],

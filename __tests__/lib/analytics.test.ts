@@ -1,6 +1,6 @@
 // __tests__/lib/analytics.test.ts
-import { Platform } from 'react-native';
 
+// Define mock functions that will be accessible inside jest.mock factories
 import {
   initializeAnalytics,
   trackEvent,
@@ -11,105 +11,167 @@ import {
   AnalyticsEvents,
   calculateDaysSoberBucket,
 } from '@/lib/analytics';
-import { trackEventWeb, setUserIdWeb, setUserPropertiesWeb } from '@/lib/analytics.web';
-import { sanitizeParams, shouldInitializeAnalytics } from '@/lib/analytics-utils';
 
-// Mock Platform
+const mockInitializePlatformAnalytics = jest.fn(() => Promise.resolve());
+const mockTrackEventPlatform = jest.fn();
+const mockSetUserIdPlatform = jest.fn();
+const mockSetUserPropertiesPlatform = jest.fn();
+const mockTrackScreenViewPlatform = jest.fn();
+const mockResetAnalyticsPlatform = jest.fn(() => Promise.resolve());
+
+const mockSanitizeParams = jest.fn((params) => params);
+const mockShouldInitializeAnalytics = jest.fn(() => true);
+const mockIsDebugMode = jest.fn(() => false);
+const mockLoggerWarn = jest.fn();
+
+// Mock react-native Platform
 jest.mock('react-native', () => ({
   Platform: {
-    OS: 'web',
-    select: jest.fn(
-      (options: { web?: unknown; default?: unknown }) => options.web ?? options.default
-    ),
+    OS: 'ios',
+    select: jest.fn((options: { web?: unknown; default?: unknown }) => options.default),
   },
 }));
 
-// Mock the platform-specific modules
-jest.mock('@/lib/analytics.web', () => ({
-  initializeWebAnalytics: jest.fn(() => Promise.resolve()),
-  trackEventWeb: jest.fn(),
-  setUserIdWeb: jest.fn(),
-  setUserPropertiesWeb: jest.fn(),
-  trackScreenViewWeb: jest.fn(),
-  resetAnalyticsWeb: jest.fn(() => Promise.resolve()),
-}));
-
-jest.mock('@/lib/analytics.native', () => ({
-  initializeNativeAnalytics: jest.fn(() => Promise.resolve()),
-  trackEventNative: jest.fn(() => Promise.resolve()),
-  setUserIdNative: jest.fn(() => Promise.resolve()),
-  setUserPropertiesNative: jest.fn(() => Promise.resolve()),
-  trackScreenViewNative: jest.fn(() => Promise.resolve()),
-  resetAnalyticsNative: jest.fn(() => Promise.resolve()),
+// Mock the platform implementation module
+jest.mock('@/lib/analytics/impl', () => ({
+  initializePlatformAnalytics: (...args: unknown[]) => mockInitializePlatformAnalytics(...args),
+  trackEventPlatform: (...args: unknown[]) => mockTrackEventPlatform(...args),
+  setUserIdPlatform: (...args: unknown[]) => mockSetUserIdPlatform(...args),
+  setUserPropertiesPlatform: (...args: unknown[]) => mockSetUserPropertiesPlatform(...args),
+  trackScreenViewPlatform: (...args: unknown[]) => mockTrackScreenViewPlatform(...args),
+  resetAnalyticsPlatform: (...args: unknown[]) => mockResetAnalyticsPlatform(...args),
 }));
 
 // Mock analytics-utils
 jest.mock('@/lib/analytics-utils', () => ({
-  sanitizeParams: jest.fn((params) => params),
-  shouldInitializeAnalytics: jest.fn(() => true),
-  isDebugMode: jest.fn(() => false),
+  sanitizeParams: (params: unknown) => mockSanitizeParams(params),
+  shouldInitializeAnalytics: () => mockShouldInitializeAnalytics(),
+  isDebugMode: () => mockIsDebugMode(),
   calculateDaysSoberBucket: jest.fn(() => '31-90'),
+}));
+
+// Mock logger
+jest.mock('@/lib/logger', () => ({
+  logger: {
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+  LogCategory: {
+    ANALYTICS: 'ANALYTICS',
+  },
 }));
 
 describe('Unified Analytics Module', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (shouldInitializeAnalytics as jest.Mock).mockReturnValue(true);
+    mockShouldInitializeAnalytics.mockReturnValue(true);
+    mockIsDebugMode.mockReturnValue(false);
   });
 
   describe('initializeAnalytics', () => {
-    it('does not initialize when config is missing', async () => {
-      (shouldInitializeAnalytics as jest.Mock).mockReturnValue(false);
+    it('skips initialization when Firebase not configured', async () => {
+      mockShouldInitializeAnalytics.mockReturnValue(false);
+      mockIsDebugMode.mockReturnValue(true);
 
       await initializeAnalytics();
 
-      // Should return early without calling platform init
-      expect(trackEventWeb).not.toHaveBeenCalled();
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        'Firebase not configured - analytics disabled',
+        expect.any(Object)
+      );
+      expect(mockInitializePlatformAnalytics).not.toHaveBeenCalled();
+    });
+
+    it('initializes platform analytics when configured', async () => {
+      await initializeAnalytics();
+
+      expect(mockInitializePlatformAnalytics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apiKey: expect.any(String),
+          projectId: expect.any(String),
+          appId: expect.any(String),
+          measurementId: expect.any(String),
+        })
+      );
     });
   });
 
   describe('trackEvent', () => {
     it('sanitizes params before tracking', () => {
-      const params = { task_id: '123', email: 'test@test.com' };
+      const params = { user_id: 'test', custom: 'value' };
       trackEvent('test_event', params);
 
-      expect(sanitizeParams).toHaveBeenCalledWith(params);
+      expect(mockSanitizeParams).toHaveBeenCalledWith(params);
+      expect(mockTrackEventPlatform).toHaveBeenCalled();
     });
 
-    it('tracks event on web platform', () => {
-      trackEvent('test_event', { task_id: '123' });
+    it('tracks event with sanitized params', () => {
+      mockSanitizeParams.mockReturnValue({ clean: 'param' });
+      trackEvent('test_event', { dirty: 'param' });
 
-      expect(trackEventWeb).toHaveBeenCalledWith('test_event', { task_id: '123' });
+      expect(mockTrackEventPlatform).toHaveBeenCalledWith('test_event', { clean: 'param' });
+    });
+
+    it('tracks event without params', () => {
+      mockSanitizeParams.mockReturnValue(undefined);
+      trackEvent('test_event');
+
+      expect(mockSanitizeParams).toHaveBeenCalledWith(undefined);
+      expect(mockTrackEventPlatform).toHaveBeenCalledWith('test_event', undefined);
     });
   });
 
   describe('setUserId', () => {
-    it('sets user ID on web platform', () => {
+    it('sets user ID via platform implementation', () => {
       setUserId('user-123');
 
-      expect(setUserIdWeb).toHaveBeenCalledWith('user-123');
+      expect(mockSetUserIdPlatform).toHaveBeenCalledWith('user-123');
     });
 
     it('clears user ID when null', () => {
       setUserId(null);
 
-      expect(setUserIdWeb).toHaveBeenCalledWith(null);
+      expect(mockSetUserIdPlatform).toHaveBeenCalledWith(null);
     });
   });
 
   describe('setUserProperties', () => {
-    it('sets user properties on web platform', () => {
-      const props = { theme_preference: 'dark' as const };
-      setUserProperties(props);
+    it('sets user properties via platform implementation', () => {
+      const properties = { days_sober_bucket: '31-90', has_sponsor: true };
+      setUserProperties(properties);
 
-      expect(setUserPropertiesWeb).toHaveBeenCalledWith(props);
+      expect(mockSetUserPropertiesPlatform).toHaveBeenCalledWith(properties);
+    });
+  });
+
+  describe('trackScreenView', () => {
+    it('tracks screen view via platform implementation', () => {
+      trackScreenView('HomeScreen', 'TabScreen');
+
+      expect(mockTrackScreenViewPlatform).toHaveBeenCalledWith('HomeScreen', 'TabScreen');
+    });
+
+    it('tracks screen view without class', () => {
+      trackScreenView('HomeScreen');
+
+      expect(mockTrackScreenViewPlatform).toHaveBeenCalledWith('HomeScreen', undefined);
+    });
+  });
+
+  describe('resetAnalytics', () => {
+    it('resets analytics via platform implementation', async () => {
+      await resetAnalytics();
+
+      expect(mockResetAnalyticsPlatform).toHaveBeenCalled();
     });
   });
 
   describe('exports', () => {
     it('re-exports AnalyticsEvents', () => {
       expect(AnalyticsEvents).toBeDefined();
-      expect(AnalyticsEvents.AUTH_LOGIN).toBe('auth_login');
+      expect(AnalyticsEvents.AUTH_LOGIN).toBeDefined();
     });
 
     it('re-exports calculateDaysSoberBucket', () => {

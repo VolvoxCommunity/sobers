@@ -2,8 +2,9 @@
  * Unified Firebase Analytics module for Sobriety Waypoint.
  *
  * This is the ONLY module that app code should import for analytics.
- * It provides a platform-agnostic API that delegates to the appropriate
- * implementation (web or native) based on the current platform.
+ * Metro automatically selects the correct platform implementation:
+ * - impl.web.ts for web
+ * - impl.native.ts for iOS/Android
  *
  * @module lib/analytics
  *
@@ -22,36 +23,23 @@
  * ```
  */
 
-import { Platform } from 'react-native';
-
 import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';
 import { sanitizeParams, shouldInitializeAnalytics, isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
 
-// Platform-specific imports
+// Platform-specific implementation - Metro resolves to correct file
 import {
-  initializeWebAnalytics,
-  trackEventWeb,
-  setUserIdWeb,
-  setUserPropertiesWeb,
-  trackScreenViewWeb,
-  resetAnalyticsWeb,
-} from '@/lib/analytics.web';
-
-import {
-  initializeNativeAnalytics,
-  trackEventNative,
-  setUserIdNative,
-  setUserPropertiesNative,
-  trackScreenViewNative,
-  resetAnalyticsNative,
-} from '@/lib/analytics.native';
+  initializePlatformAnalytics,
+  trackEventPlatform,
+  setUserIdPlatform,
+  setUserPropertiesPlatform,
+  trackScreenViewPlatform,
+  resetAnalyticsPlatform,
+} from './impl';
 
 // Re-export types and constants for convenience
 export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';
 export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
-
-const isWeb = Platform.OS === 'web';
 
 /**
  * Initializes Firebase Analytics.
@@ -62,7 +50,7 @@ const isWeb = Platform.OS === 'web';
  *
  * @example
  * ```ts
- * // In app/_layout.tsx, at the top before React imports
+ * // In app/_layout.tsx
  * import { initializeAnalytics } from '@/lib/analytics';
  * initializeAnalytics();
  * ```
@@ -77,17 +65,14 @@ export async function initializeAnalytics(): Promise<void> {
     return;
   }
 
-  if (isWeb) {
-    const config: AnalyticsConfig = {
-      apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-      projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-      appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
-      measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
-    };
-    await initializeWebAnalytics(config);
-  } else {
-    await initializeNativeAnalytics();
-  }
+  const config: AnalyticsConfig = {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
+  };
+
+  await initializePlatformAnalytics(config);
 }
 
 /**
@@ -110,13 +95,7 @@ export async function initializeAnalytics(): Promise<void> {
  */
 export function trackEvent(eventName: string, params?: EventParams): void {
   const sanitized = sanitizeParams(params);
-
-  if (isWeb) {
-    trackEventWeb(eventName, sanitized);
-  } else {
-    // Fire and forget for native - don't await
-    trackEventNative(eventName, sanitized);
-  }
+  trackEventPlatform(eventName, sanitized);
 }
 
 /**
@@ -137,11 +116,7 @@ export function trackEvent(eventName: string, params?: EventParams): void {
  * ```
  */
 export function setUserId(userId: string | null): void {
-  if (isWeb) {
-    setUserIdWeb(userId);
-  } else {
-    setUserIdNative(userId);
-  }
+  setUserIdPlatform(userId);
 }
 
 /**
@@ -162,11 +137,7 @@ export function setUserId(userId: string | null): void {
  * ```
  */
 export function setUserProperties(properties: UserProperties): void {
-  if (isWeb) {
-    setUserPropertiesWeb(properties);
-  } else {
-    setUserPropertiesNative(properties);
-  }
+  setUserPropertiesPlatform(properties);
 }
 
 /**
@@ -184,11 +155,7 @@ export function setUserProperties(properties: UserProperties): void {
  * ```
  */
 export function trackScreenView(screenName: string, screenClass?: string): void {
-  if (isWeb) {
-    trackScreenViewWeb(screenName, screenClass);
-  } else {
-    trackScreenViewNative(screenName, screenClass);
-  }
+  trackScreenViewPlatform(screenName, screenClass);
 }
 
 /**
@@ -204,9 +171,5 @@ export function trackScreenView(screenName: string, screenClass?: string): void 
  * ```
  */
 export async function resetAnalytics(): Promise<void> {
-  if (isWeb) {
-    await resetAnalyticsWeb();
-  } else {
-    await resetAnalyticsNative();
-  }
+  await resetAnalyticsPlatform();
 }
