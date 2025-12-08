@@ -66,8 +66,8 @@ export default function OnboardingScreen() {
       profile?.last_initial !== null &&
       profile?.last_initial !== undefined &&
       profile?.last_initial.trim() !== '' &&
-      profile?.first_name !== 'User' &&
-      profile?.last_initial !== 'U',
+      profile?.first_name.trim() !== 'User' &&
+      profile?.last_initial.trim() !== 'U',
     [profile?.first_name, profile?.last_initial]
   );
 
@@ -292,6 +292,7 @@ export default function OnboardingScreen() {
             autoCapitalize="characters"
             returnKeyType="done"
             onSubmitEditing={() => {
+              if (!firstName || !lastInitial || lastInitial.length !== 1) return;
               setUserWentBackToStep1(false);
               setStep(2);
             }}
