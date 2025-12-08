@@ -30,6 +30,7 @@ export enum LogCategory {
   NOTIFICATION = 'notification',
   SYNC = 'sync',
   ERROR = 'error',
+  ANALYTICS = 'analytics',
 }
 
 // =============================================================================
