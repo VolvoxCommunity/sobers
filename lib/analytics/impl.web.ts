@@ -1,10 +1,9 @@
 /**
  * Firebase Analytics implementation for web platform.
  *
- * This module uses the Firebase JS SDK to track analytics events
- * in web browsers. It should only be imported on web platform.
+ * This file is automatically selected by Metro bundler on web.
  *
- * @module lib/analytics.web
+ * @module lib/analytics/impl.web
  */
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
@@ -26,12 +25,9 @@ let app: FirebaseApp | null = null;
 
 /**
  * Initializes Firebase Analytics for web.
- *
- * @param config - Firebase configuration from environment variables
  */
-export async function initializeWebAnalytics(config: AnalyticsConfig): Promise<void> {
+export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   try {
-    // Check if analytics is supported in this browser
     const supported = await isSupported();
     if (!supported) {
       if (isDebugMode()) {
@@ -42,7 +38,6 @@ export async function initializeWebAnalytics(config: AnalyticsConfig): Promise<v
       return;
     }
 
-    // Don't reinitialize if already set up
     if (getApps().length > 0) {
       if (isDebugMode()) {
         logger.info('Firebase app already initialized', { category: LogCategory.ANALYTICS });
@@ -50,7 +45,6 @@ export async function initializeWebAnalytics(config: AnalyticsConfig): Promise<v
       return;
     }
 
-    // Initialize Firebase app
     app = initializeApp({
       apiKey: config.apiKey,
       projectId: config.projectId,
@@ -58,7 +52,6 @@ export async function initializeWebAnalytics(config: AnalyticsConfig): Promise<v
       measurementId: config.measurementId,
     });
 
-    // Initialize Analytics
     analytics = getAnalytics(app);
 
     if (isDebugMode()) {
@@ -74,12 +67,9 @@ export async function initializeWebAnalytics(config: AnalyticsConfig): Promise<v
 }
 
 /**
- * Tracks an analytics event on web.
- *
- * @param eventName - The name of the event
- * @param params - Optional event parameters
+ * Tracks an analytics event.
  */
-export function trackEventWeb(eventName: string, params?: EventParams): void {
+export function trackEventPlatform(eventName: string, params?: EventParams): void {
   if (!analytics) {
     if (isDebugMode()) {
       logger.debug(`Event (not sent - not initialized): ${eventName}`, {
@@ -99,10 +89,8 @@ export function trackEventWeb(eventName: string, params?: EventParams): void {
 
 /**
  * Sets the user ID for analytics.
- *
- * @param userId - The user ID or null to clear
  */
-export function setUserIdWeb(userId: string | null): void {
+export function setUserIdPlatform(userId: string | null): void {
   if (!analytics) {
     if (isDebugMode()) {
       logger.debug(`setUserId (not sent - not initialized): ${userId}`, {
@@ -121,10 +109,8 @@ export function setUserIdWeb(userId: string | null): void {
 
 /**
  * Sets user properties for analytics.
- *
- * @param properties - The user properties to set
  */
-export function setUserPropertiesWeb(properties: UserProperties): void {
+export function setUserPropertiesPlatform(properties: UserProperties): void {
   if (!analytics) {
     if (isDebugMode()) {
       logger.debug('setUserProperties (not sent - not initialized)', {
@@ -139,18 +125,14 @@ export function setUserPropertiesWeb(properties: UserProperties): void {
     logger.debug('setUserProperties', { category: LogCategory.ANALYTICS, ...properties });
   }
 
-  // Firebase expects CustomParams type which requires index signature
   firebaseSetUserProperties(analytics, properties as Record<string, string | boolean>);
 }
 
 /**
- * Tracks a screen view event on web.
- *
- * @param screenName - The name of the screen
- * @param screenClass - Optional screen class name
+ * Tracks a screen view event.
  */
-export function trackScreenViewWeb(screenName: string, screenClass?: string): void {
-  trackEventWeb('screen_view', {
+export function trackScreenViewPlatform(screenName: string, screenClass?: string): void {
+  trackEventPlatform('screen_view', {
     screen_name: screenName,
     screen_class: screenClass || screenName,
   });
@@ -158,12 +140,11 @@ export function trackScreenViewWeb(screenName: string, screenClass?: string): vo
 
 /**
  * Resets analytics for logout.
- * Clears user ID and any user-specific data.
  */
-export async function resetAnalyticsWeb(): Promise<void> {
+export async function resetAnalyticsPlatform(): Promise<void> {
   if (isDebugMode()) {
     logger.info('Resetting analytics state', { category: LogCategory.ANALYTICS });
   }
 
-  setUserIdWeb(null);
+  setUserIdPlatform(null);
 }

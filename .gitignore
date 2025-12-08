@@ -35,6 +35,10 @@ yarn.lock
 .env*.local
 .env
 
+# Firebase config files (root level - copied by Expo prebuild)
+GoogleService-Info.plist
+google-services.json
+
 # TypeScript
 *.tsbuildinfo
 
