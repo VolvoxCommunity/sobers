@@ -1307,7 +1307,7 @@ describe('SettingsScreen', () => {
     expect(lastInitialInput.props.value).toBe('');
   });
 
-  it('enforces maxLength on last initial input', async () => {
+  it('enforces maxLength on last initial input and shows truncation feedback', async () => {
     const { getByTestId, getByText } = render(<SettingsScreen />);
 
     fireEvent.press(getByTestId('account-name-row'));
@@ -1318,11 +1318,37 @@ describe('SettingsScreen', () => {
 
     const lastInitialInput = getByTestId('edit-last-initial-input');
 
-    // Try to enter multiple characters
+    // Try to enter multiple characters (e.g., paste)
     fireEvent.changeText(lastInitialInput, 'ABCD');
 
     // Should only accept first character
     expect(lastInitialInput.props.value).toBe('A');
+
+    // Should show truncation feedback to inform user
+    await waitFor(() => {
+      expect(getByText('Only the first character was kept')).toBeTruthy();
+    });
+  });
+
+  it('does not show truncation feedback for single character input', async () => {
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    const lastInitialInput = getByTestId('edit-last-initial-input');
+
+    // Enter single character
+    fireEvent.changeText(lastInitialInput, 'X');
+
+    // Should accept the character
+    expect(lastInitialInput.props.value).toBe('X');
+
+    // Should NOT show truncation feedback
+    expect(queryByText('Only the first character was kept')).toBeNull();
   });
 
   it('shows ActivityIndicator while saving', async () => {
