@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
   LayoutAnimation,
   UIManager,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
@@ -39,6 +41,7 @@ import {
   AlertCircle,
   Info,
   Copy,
+  User,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -47,6 +50,7 @@ import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 import packageJson from '../package.json';
 
 // Enable LayoutAnimation on Android
@@ -233,13 +237,18 @@ const HEADER_BUTTON_WIDTH = 44;
  * ```
  */
 export default function SettingsScreen() {
-  const { signOut, deleteAccount } = useAuth();
+  const { signOut, deleteAccount, profile, refreshProfile } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
   const [isBuildInfoExpanded, setIsBuildInfoExpanded] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isEditNameModalVisible, setIsEditNameModalVisible] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastInitial, setEditLastInitial] = useState('');
+  const [nameValidationError, setNameValidationError] = useState<string | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
   const buildInfo = getBuildInfo();
   const {
     status: updateStatus,
@@ -428,6 +437,64 @@ export default function SettingsScreen() {
     }
   };
 
+  /**
+   * Saves the updated name to Supabase and refreshes the profile.
+   * Validates input before saving and handles errors with user feedback.
+   */
+  const handleSaveName = async () => {
+    // Validation
+    if (!editFirstName.trim()) {
+      setNameValidationError('First name is required');
+      return;
+    }
+    if (editLastInitial.length !== 1) {
+      setNameValidationError('Last initial must be exactly 1 character');
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editFirstName.trim(),
+          last_initial: editLastInitial.toUpperCase(),
+        })
+        .eq('id', profile?.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      setIsEditNameModalVisible(false);
+      setNameValidationError(null);
+
+      if (Platform.OS === 'web') {
+        window.alert('Name updated successfully');
+      } else {
+        Alert.alert('Success', 'Name updated successfully');
+      }
+    } catch (error: unknown) {
+      // Handle both Error objects and Supabase error objects with message property
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : 'Failed to update name';
+      const err = error instanceof Error ? error : new Error(errorMessage);
+      logger.error('Name update failed', err, {
+        category: LogCategory.DATABASE,
+      });
+      if (Platform.OS === 'web') {
+        window.alert('Error: ' + errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
@@ -458,6 +525,38 @@ export default function SettingsScreen() {
             scrollPositionRef.current = e.nativeEvent.contentOffset.y;
           }}
         >
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                testID="account-name-row"
+                onPress={() => {
+                  setEditFirstName(profile?.first_name ?? '');
+                  setEditLastInitial(profile?.last_initial ?? '');
+                  setIsEditNameModalVisible(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Edit your name"
+              >
+                <View style={styles.menuItemLeft}>
+                  <User size={20} color={theme.textSecondary} />
+                  <View>
+                    <Text style={styles.menuItemText}>Name</Text>
+                    <Text style={styles.menuItemSubtext}>
+                      {profile?.first_name} {profile?.last_initial}.
+                    </Text>
+                  </View>
+                </View>
+                <ChevronLeft
+                  size={20}
+                  color={theme.textTertiary}
+                  style={{ transform: [{ rotate: '180deg' }] }}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Appearance</Text>
             <View style={styles.card}>
@@ -942,6 +1041,85 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Edit Name Modal */}
+        <Modal
+          visible={isEditNameModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setIsEditNameModalVisible(false);
+            setNameValidationError(null);
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.editNameModal}>
+              <Text style={styles.modalTitle}>Edit Name</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <TextInput
+                  testID="edit-first-name-input"
+                  style={styles.textInput}
+                  value={editFirstName}
+                  onChangeText={(text) => {
+                    setEditFirstName(text);
+                    setNameValidationError(null);
+                  }}
+                  placeholder="Enter first name"
+                  placeholderTextColor={theme.textTertiary}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Last Initial</Text>
+                <TextInput
+                  testID="edit-last-initial-input"
+                  style={styles.textInput}
+                  value={editLastInitial}
+                  onChangeText={(text) => {
+                    setEditLastInitial(text.toUpperCase().slice(0, 1));
+                    setNameValidationError(null);
+                  }}
+                  placeholder="Enter last initial"
+                  placeholderTextColor={theme.textTertiary}
+                  maxLength={1}
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              {nameValidationError && (
+                <Text style={styles.validationError}>{nameValidationError}</Text>
+              )}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  testID="cancel-name-button"
+                  style={styles.modalCancelButton}
+                  onPress={() => {
+                    setIsEditNameModalVisible(false);
+                    setNameValidationError(null);
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="save-name-button"
+                  style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
+                  onPress={handleSaveName}
+                  disabled={isSavingName}
+                >
+                  {isSavingName ? (
+                    <ActivityIndicator size="small" color={theme.white} />
+                  ) : (
+                    <Text style={styles.modalSaveText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -1063,6 +1241,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+    },
+    menuItemSubtext: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginTop: 2,
     },
     separator: {
       height: 1,
@@ -1337,5 +1521,87 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.primary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    editNameModal: {
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontFamily: theme.fontRegular,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 8,
+    },
+    textInput: {
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.text,
+    },
+    validationError: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.danger,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 8,
+    },
+    modalCancelButton: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.borderLight,
+      alignItems: 'center',
+    },
+    modalCancelText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    modalSaveButton: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.primary,
+      alignItems: 'center',
+    },
+    modalSaveText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
     },
   });
