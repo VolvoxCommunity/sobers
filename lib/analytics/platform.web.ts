@@ -24,7 +24,11 @@ let analytics: Analytics | null = null;
 let app: FirebaseApp | null = null;
 
 /**
- * Initializes Firebase Analytics for web.
+ * Initialize Firebase Analytics for the current web platform when supported and no Firebase app exists.
+ *
+ * If analytics is not supported or a Firebase app is already initialized, the function exits without side effects.
+ *
+ * @param config - Configuration containing `apiKey`, `projectId`, `appId`, and `measurementId` used to initialize the Firebase app and analytics
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   try {
@@ -67,7 +71,12 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
 }
 
 /**
- * Tracks an analytics event.
+ * Record an analytics event with optional parameters.
+ *
+ * If analytics has not been initialized, the call is a no-op.
+ *
+ * @param eventName - The name of the event to record
+ * @param params - Optional parameters to include with the event
  */
 export function trackEventPlatform(eventName: string, params?: EventParams): void {
   if (!analytics) {
@@ -88,7 +97,11 @@ export function trackEventPlatform(eventName: string, params?: EventParams): voi
 }
 
 /**
- * Sets the user ID for analytics.
+ * Set the analytics user identifier used for subsequent events.
+ *
+ * If analytics is not initialized this function is a no-op. Passing `null` clears the currently set user id.
+ *
+ * @param userId - The user identifier to set, or `null` to clear it
  */
 export function setUserIdPlatform(userId: string | null): void {
   if (!analytics) {
@@ -108,7 +121,12 @@ export function setUserIdPlatform(userId: string | null): void {
 }
 
 /**
- * Sets user properties for analytics.
+ * Set user-level properties on the analytics instance.
+ *
+ * Applies the provided properties to the current analytics user. If the analytics
+ * instance is not initialized, this function does nothing.
+ *
+ * @param properties - Key-value pairs of user properties; values must be strings or booleans
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   if (!analytics) {
@@ -129,7 +147,10 @@ export function setUserPropertiesPlatform(properties: UserProperties): void {
 }
 
 /**
- * Tracks a screen view event.
+ * Record a screen view as a `screen_view` analytics event.
+ *
+ * @param screenName - The name of the screen being viewed
+ * @param screenClass - Optional screen class or identifier; when omitted, `screenName` is used
  */
 export function trackScreenViewPlatform(screenName: string, screenClass?: string): void {
   trackEventPlatform('screen_view', {
@@ -139,7 +160,7 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
 }
 
 /**
- * Resets analytics for logout.
+ * Reset analytics state for the current session, clearing the analytics user identifier.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   if (isDebugMode()) {

@@ -13,11 +13,12 @@ import { isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
 
 /**
- * Initializes Firebase Analytics for native platforms.
+ * Initialize Firebase Analytics for native platforms.
  *
- * On native, Firebase is configured via GoogleService-Info.plist (iOS)
- * and google-services.json (Android), so minimal setup is needed here.
- * The config parameter is ignored on native.
+ * On iOS and Android the native Firebase configuration files are used; the
+ * optional `config` argument is ignored by the native implementation.
+ *
+ * @param _config - Optional analytics configuration; ignored on native platforms
  */
 export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   try {
@@ -37,7 +38,10 @@ export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Pr
 }
 
 /**
- * Tracks an analytics event.
+ * Log an analytics event with the specified name and optional parameters.
+ *
+ * @param eventName - The analytics event name to record
+ * @param params - Optional event parameters as key/value pairs to include with the event
  */
 export async function trackEventPlatform(eventName: string, params?: EventParams): Promise<void> {
   try {
@@ -56,7 +60,9 @@ export async function trackEventPlatform(eventName: string, params?: EventParams
 }
 
 /**
- * Sets the user ID for analytics.
+ * Set the analytics user identifier for the current user.
+ *
+ * @param userId - The user ID to set, or `null` to clear the currently set user ID.
  */
 export async function setUserIdPlatform(userId: string | null): Promise<void> {
   try {
@@ -75,7 +81,9 @@ export async function setUserIdPlatform(userId: string | null): Promise<void> {
 }
 
 /**
- * Sets user properties for analytics.
+ * Set multiple user properties for analytics reporting.
+ *
+ * @param properties - Object mapping property names to string values; use `null` to clear a property
  */
 export async function setUserPropertiesPlatform(properties: UserProperties): Promise<void> {
   try {
@@ -94,7 +102,10 @@ export async function setUserPropertiesPlatform(properties: UserProperties): Pro
 }
 
 /**
- * Tracks a screen view event.
+ * Record a screen view in the native analytics backend.
+ *
+ * @param screenName - The displayed name of the screen to record
+ * @param screenClass - Optional screen class or identifier; defaults to `screenName` when omitted
  */
 export async function trackScreenViewPlatform(
   screenName: string,
@@ -119,7 +130,7 @@ export async function trackScreenViewPlatform(
 }
 
 /**
- * Resets analytics for logout.
+ * Clear analytics state and stored analytics data (commonly used on user logout).
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   try {
