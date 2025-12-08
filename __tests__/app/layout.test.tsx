@@ -32,6 +32,7 @@ const mockBack = jest.fn();
 // These need to be prefixed with "mock" to be accessible in jest.mock
 let mockSegments: string[] = [];
 let mockRootNavigationState: { key: string } | null = { key: 'test-key' };
+let mockPathname = '/';
 
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -43,6 +44,7 @@ jest.mock('expo-router', () => {
       back: mockBack,
     }),
     useSegments: () => mockSegments,
+    usePathname: () => mockPathname,
     useNavigationContainerRef: () => ({ current: null }),
     useRootNavigationState: () => mockRootNavigationState,
     SplashScreen: {
@@ -164,6 +166,16 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
+// Mock analytics module
+jest.mock('@/lib/analytics', () => ({
+  initializeAnalytics: jest.fn().mockResolvedValue(undefined),
+  trackScreenView: jest.fn(),
+  trackEvent: jest.fn(),
+  setUserId: jest.fn(),
+  setUserProperties: jest.fn(),
+  resetAnalytics: jest.fn(),
+}));
+
 // =============================================================================
 // Test Suite
 // =============================================================================
@@ -181,6 +193,7 @@ describe('RootLayout', () => {
     mockFontsLoaded = true;
     mockFontError = null;
     mockSegments = [];
+    mockPathname = '/';
     mockRootNavigationState = { key: 'test-key' };
   });
 
@@ -389,6 +402,60 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('screen-(tabs)')).toBeTruthy();
       expect(screen.getByTestId('screen-settings')).toBeTruthy();
       expect(screen.getByTestId('screen-+not-found')).toBeTruthy();
+    });
+  });
+
+  describe('screen view tracking', () => {
+    it('tracks screen view on initial render', () => {
+      const { trackScreenView } = require('@/lib/analytics');
+      mockPathname = '/';
+
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      expect(trackScreenView).toHaveBeenCalledWith('Home');
+    });
+
+    it('tracks screen view when pathname changes', () => {
+      const { trackScreenView } = require('@/lib/analytics');
+      mockPathname = '/login';
+
+      const RootLayout = getLayout();
+      const { rerender } = render(<RootLayout />);
+
+      expect(trackScreenView).toHaveBeenCalledWith('login');
+
+      // Change pathname
+      mockPathname = '/signup';
+      rerender(<RootLayout />);
+
+      expect(trackScreenView).toHaveBeenCalledWith('signup');
+    });
+
+    it('converts pathname with hyphens to readable screen name', () => {
+      const { trackScreenView } = require('@/lib/analytics');
+      mockPathname = '/manage-tasks';
+
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      expect(trackScreenView).toHaveBeenCalledWith('manage tasks');
+    });
+
+    it('does not track duplicate screen views for same pathname', () => {
+      const { trackScreenView } = require('@/lib/analytics');
+      mockPathname = '/login';
+
+      const RootLayout = getLayout();
+      const { rerender } = render(<RootLayout />);
+
+      const callCount = trackScreenView.mock.calls.length;
+
+      // Rerender with same pathname
+      rerender(<RootLayout />);
+
+      // Should not call trackScreenView again
+      expect(trackScreenView).toHaveBeenCalledTimes(callCount);
     });
   });
 });

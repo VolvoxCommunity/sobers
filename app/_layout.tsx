@@ -18,11 +18,12 @@ if (typeof window !== 'undefined') {
       console.error('[Analytics] Failed to initialize:', error);
     });
 }
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Stack,
   useRouter,
   useSegments,
+  usePathname,
   SplashScreen,
   useNavigationContainerRef,
   useRootNavigationState,
@@ -41,6 +42,7 @@ import {
   JetBrainsMono_600SemiBold,
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
+import { trackScreenView } from '@/lib/analytics';
 /* eslint-enable import/first */
 
 // Prevent splash screen from auto-hiding
@@ -62,6 +64,8 @@ function RootLayoutNav() {
   const router = useRouter();
   const navigationRef = useNavigationContainerRef();
   const rootNavigationState = useRootNavigationState();
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
 
   // Check if the navigator is ready before attempting navigation
   // This prevents "action was not handled by any navigator" warnings
@@ -73,6 +77,17 @@ function RootLayoutNav() {
       navigationIntegration.registerNavigationContainer(navigationRef);
     }
   }, [navigationRef]);
+
+  // Track screen views on navigation
+  useEffect(() => {
+    if (pathname && pathname !== previousPathname.current) {
+      // Convert pathname to readable screen name
+      // Examples: '/' → 'Home', '/login' → 'Login', '/manage-tasks' → 'Manage Tasks'
+      const screenName = pathname === '/' ? 'Home' : pathname.replace(/^\//, '').replace(/-/g, ' ');
+      trackScreenView(screenName);
+      previousPathname.current = pathname;
+    }
+  }, [pathname]);
 
   useEffect(() => {
     // Wait for both auth loading to complete AND navigator to be ready
