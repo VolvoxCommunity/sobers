@@ -35,6 +35,19 @@ import {
   getUserTimezone,
 } from '@/lib/date';
 
+// =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * Default placeholder values used when OAuth doesn't provide name data.
+ * These are set during initial profile creation in the auth trigger.
+ * We check for BOTH values together to detect placeholder data, because
+ * legitimate users may have surnames starting with 'U' (e.g., "Underwood").
+ */
+const PLACEHOLDER_FIRST_NAME = 'User';
+const PLACEHOLDER_LAST_INITIAL = 'U';
+
 /**
  * Renders the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
  *
@@ -54,28 +67,43 @@ export default function OnboardingScreen() {
    * Checks for:
    * - Non-null/undefined values (profile might be loading)
    * - Non-empty/whitespace-only values (must contain actual content)
-   * - Non-placeholder values ('User'/'U' are default placeholders used when OAuth doesn't provide names)
+   * - Not the default placeholder combination ('User' + 'U')
+   *
+   * Important: We check both placeholder values together because legitimate users
+   * may have surnames starting with 'U' (e.g., "John U." for "John Underwood").
+   * Only when BOTH values match the defaults do we consider it a placeholder.
    *
    * When true, we can skip the name entry step in onboarding since OAuth already provided valid data.
    */
-  const hasCompleteName = useMemo(
-    () =>
-      profile?.first_name !== null &&
-      profile?.first_name !== undefined &&
-      profile?.first_name.trim() !== '' &&
-      profile?.last_initial !== null &&
-      profile?.last_initial !== undefined &&
-      profile?.last_initial.trim() !== '' &&
-      profile?.first_name.trim() !== 'User' &&
-      profile?.last_initial.trim() !== 'U',
-    [profile?.first_name, profile?.last_initial]
-  );
+  const hasCompleteName = useMemo(() => {
+    const trimmedFirstName = profile?.first_name?.trim() ?? '';
+    const trimmedLastInitial = profile?.last_initial?.trim() ?? '';
+
+    // Must have non-empty values
+    if (!trimmedFirstName || !trimmedLastInitial) {
+      return false;
+    }
+
+    // Check for placeholder combination - only flag if BOTH match defaults
+    // This allows legitimate 'U' surnames (e.g., "Underwood") to pass through
+    const isPlaceholder =
+      trimmedFirstName === PLACEHOLDER_FIRST_NAME &&
+      trimmedLastInitial === PLACEHOLDER_LAST_INITIAL;
+
+    return !isPlaceholder;
+  }, [profile?.first_name, profile?.last_initial]);
 
   // Skip Step 1 (name entry) if OAuth already provided complete name
   const [step, setStep] = useState(hasCompleteName ? 2 : 1);
   // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
   const [firstName, setFirstName] = useState(profile?.first_name ?? '');
   const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
+
+  /**
+   * Validates that Step 1 form fields contain valid data for advancing.
+   * Requires non-empty firstName and exactly one character for lastInitial.
+   */
+  const isStep1Valid = firstName.trim() !== '' && lastInitial.trim().length === 1;
 
   // Stable maximum date for DateTimePicker to prevent iOS crash when value > maximumDate.
   // Using useMemo ensures we don't create a new Date on every render, which could cause
@@ -108,13 +136,18 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (userWentBackToStep1) return;
 
-    if (profile?.first_name && !firstName) {
-      setFirstName(profile.first_name);
+    // Only sync if profile has trimmed non-empty values and local state is empty
+    // Using functional updates to avoid needing firstName/lastInitial in deps
+    const trimmedFirst = profile?.first_name?.trim();
+    const trimmedLast = profile?.last_initial?.trim();
+
+    if (trimmedFirst) {
+      setFirstName((prev) => (prev ? prev : trimmedFirst));
     }
-    if (profile?.last_initial && !lastInitial) {
-      setLastInitial(profile.last_initial);
+    if (trimmedLast) {
+      setLastInitial((prev) => (prev ? prev : trimmedLast));
     }
-  }, [profile?.first_name, profile?.last_initial, firstName, lastInitial, userWentBackToStep1]);
+  }, [profile?.first_name, profile?.last_initial, userWentBackToStep1]);
 
   // Auto-advance to Step 2 if profile updates with complete name while on Step 1
   // This handles: page refresh, navigation quirks, async profile data arrival
@@ -292,7 +325,7 @@ export default function OnboardingScreen() {
             autoCapitalize="characters"
             returnKeyType="done"
             onSubmitEditing={() => {
-              if (!firstName || !lastInitial || lastInitial.length !== 1) return;
+              if (!isStep1Valid) return;
               setUserWentBackToStep1(false);
               setStep(2);
             }}
@@ -316,15 +349,12 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[
-            styles.button,
-            (!firstName || !lastInitial || lastInitial.length !== 1) && styles.buttonDisabled,
-          ]}
+          style={[styles.button, !isStep1Valid && styles.buttonDisabled]}
           onPress={() => {
             setUserWentBackToStep1(false);
             setStep(2);
           }}
-          disabled={!firstName || !lastInitial || lastInitial.length !== 1}
+          disabled={!isStep1Valid}
         >
           <Text style={styles.buttonText}>Continue</Text>
           <ChevronRight size={20} color={theme.textOnPrimary} />

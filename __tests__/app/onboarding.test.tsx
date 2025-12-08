@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import OnboardingScreen from '@/app/onboarding';
 
@@ -423,7 +423,7 @@ describe('OnboardingScreen', () => {
   });
 
   describe('Pre-filled Values', () => {
-    it('pre-fills name from OAuth profile when incomplete', () => {
+    it('pre-fills first name when last initial is missing', () => {
       // Incomplete name (only first_name) so component starts at Step 1
       const profileWithPartialName = {
         id: 'user-123',
@@ -449,7 +449,7 @@ describe('OnboardingScreen', () => {
       expect(lastInitialInput.props.value).toBe('');
     });
 
-    it('syncs name fields when profile loads asynchronously (partial data only)', async () => {
+    it('syncs name fields when profile loads asynchronously with incomplete data', async () => {
       // Start with null profile (data hasn't loaded yet)
       let currentProfile: {
         id: string;
@@ -481,9 +481,7 @@ describe('OnboardingScreen', () => {
       };
 
       // Rerender to trigger useEffect with updated profile
-      act(() => {
-        rerender(<OnboardingScreen />);
-      });
+      rerender(<OnboardingScreen />);
 
       // First name should be synced, last initial stays empty
       await waitFor(() => {
@@ -528,9 +526,7 @@ describe('OnboardingScreen', () => {
       };
 
       // Rerender to trigger useEffect
-      act(() => {
-        rerender(<OnboardingScreen />);
-      });
+      rerender(<OnboardingScreen />);
 
       // User's edits should be preserved (useEffect only syncs when fields are empty)
       await waitFor(() => {
@@ -941,9 +937,7 @@ describe('OnboardingScreen', () => {
       };
 
       // Rerender to trigger useEffect with updated profile
-      act(() => {
-        rerender(<OnboardingScreen />);
-      });
+      rerender(<OnboardingScreen />);
 
       // Verify auto-advance to Step 2
       await waitFor(() => {
