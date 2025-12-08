@@ -15,6 +15,13 @@ module.exports = defineConfig([
     },
   },
   {
+    // Ignore import/no-unresolved for packages with pnpm symlink resolution issues
+    files: ['components/GlassView.tsx'],
+    rules: {
+      'import/no-unresolved': ['error', { ignore: ['expo-glass-effect'] }],
+    },
+  },
+  {
     files: ['lib/logger.ts', 'lib/sentry.ts', 'jest.setup.js'],
     rules: {
       'no-console': 'off',
