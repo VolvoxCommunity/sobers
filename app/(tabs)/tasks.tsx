@@ -25,6 +25,7 @@ import TaskCreationModal from '@/components/TaskCreationModal';
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
 // =============================================================================
 // Types & Interfaces
@@ -149,6 +150,8 @@ export default function TasksScreen() {
     setSelectedTask(task);
     setCompletionNotes('');
     setShowCompleteModal(true);
+    // Track task viewed event
+    trackEvent(AnalyticsEvents.TASK_VIEWED, { task_id: task.id });
   };
 
   const submitTaskCompletion = async () => {
@@ -157,11 +160,17 @@ export default function TasksScreen() {
     setIsSubmitting(true);
 
     try {
+      const completedAt = new Date();
+      const createdAt = new Date(selectedTask.created_at);
+      const daysToComplete = Math.floor(
+        (completedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
       const { error } = await supabase
         .from('tasks')
         .update({
           status: 'completed',
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt.toISOString(),
           completion_notes: completionNotes.trim() || null,
         })
         .eq('id', selectedTask.id);
@@ -177,6 +186,12 @@ export default function TasksScreen() {
           task_id: selectedTask.id,
           step_number: selectedTask.step_number,
         },
+      });
+
+      // Track task completed event
+      trackEvent(AnalyticsEvents.TASK_COMPLETED, {
+        task_id: selectedTask.id,
+        days_to_complete: daysToComplete,
       });
 
       setShowCompleteModal(false);

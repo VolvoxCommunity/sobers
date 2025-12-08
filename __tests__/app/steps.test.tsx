@@ -121,6 +121,14 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
+// Mock analytics
+jest.mock('@/lib/analytics', () => ({
+  trackEvent: jest.fn(),
+  AnalyticsEvents: {
+    STEP_VIEWED: 'step_viewed',
+  },
+}));
+
 // =============================================================================
 // Test Data
 // =============================================================================

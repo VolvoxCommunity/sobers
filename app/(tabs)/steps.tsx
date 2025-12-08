@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { StepContent, UserStepProgress } from '@/types/database';
 import { X, CheckCircle, Circle } from 'lucide-react-native';
 import { logger, LogCategory } from '@/lib/logger';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
 /**
  * Screen that displays the 12 steps, the current user's completion progress, and a modal with step details and reflection prompts.
@@ -86,6 +87,18 @@ export default function StepsScreen() {
     fetchProgress();
   }, [fetchProgress]);
 
+  /**
+   * Handler for when a step is selected/viewed.
+   * Tracks analytics and opens the step detail modal.
+   *
+   * @param step - The step that was selected
+   */
+  const handleStepPress = (step: StepContent) => {
+    setSelectedStep(step);
+    // Track step viewed event
+    trackEvent(AnalyticsEvents.STEP_VIEWED, { step_number: step.step_number });
+  };
+
   const toggleStepCompletion = async (stepNumber: number) => {
     if (!profile) return;
 
@@ -162,7 +175,7 @@ export default function StepsScreen() {
               <TouchableOpacity
                 key={step.id}
                 style={[styles.stepCard, isCompleted && styles.stepCardCompleted]}
-                onPress={() => setSelectedStep(step)}
+                onPress={() => handleStepPress(step)}
               >
                 <View style={[styles.stepNumber, isCompleted && styles.stepNumberCompleted]}>
                   <Text style={styles.stepNumberText}>{step.step_number}</Text>

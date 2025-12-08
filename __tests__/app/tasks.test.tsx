@@ -189,6 +189,16 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
+// Mock analytics
+jest.mock('@/lib/analytics', () => ({
+  trackEvent: jest.fn(),
+  AnalyticsEvents: {
+    TASK_VIEWED: 'task_viewed',
+    TASK_STARTED: 'task_started',
+    TASK_COMPLETED: 'task_completed',
+  },
+}));
+
 // Mock date and format libs
 jest.mock('@/lib/date', () => ({
   parseDateAsLocal: jest.fn((str: string) => new Date(str)),
