@@ -31,13 +31,6 @@ export interface GlassViewProps {
 }
 
 // =============================================================================
-// Constants
-// =============================================================================
-
-/** Check glass availability once at module level for performance */
-const supportsGlass = isLiquidGlassAvailable();
-
-// =============================================================================
 // Component
 // =============================================================================
 
@@ -71,6 +64,9 @@ export function GlassView({
   testID,
 }: GlassViewProps): JSX.Element {
   const { theme } = useTheme();
+
+  // Check glass availability during render for better testability
+  const supportsGlass = isLiquidGlassAvailable();
 
   const fallbackStyles = useMemo(
     () =>

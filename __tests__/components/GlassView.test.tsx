@@ -1,10 +1,10 @@
-// Mock expo-glass-effect - default to unavailable (fallback mode)
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { GlassView } from '@/components/GlassView';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
+// Mock expo-glass-effect - default to unavailable (fallback mode)
 jest.mock('expo-glass-effect', () => ({
   GlassView: jest.fn(({ children }) => children),
   isLiquidGlassAvailable: jest.fn(() => false),
@@ -115,6 +115,89 @@ describe('GlassView', () => {
       );
 
       expect(screen.getByTestId('tinted-glass')).toBeTruthy();
+    });
+  });
+
+  describe('native glass behavior (iOS 26+)', () => {
+    beforeEach(() => {
+      const { isLiquidGlassAvailable, GlassView: MockGlassView } = require('expo-glass-effect');
+      isLiquidGlassAvailable.mockReturnValue(true);
+      // Reset the mock to track calls
+      MockGlassView.mockClear();
+    });
+
+    it('uses ExpoGlassView when glass is available', () => {
+      const { GlassView: MockGlassView } = require('expo-glass-effect');
+
+      render(
+        <GlassView testID="native-glass">
+          <Text>Native Content</Text>
+        </GlassView>,
+        { wrapper }
+      );
+
+      expect(MockGlassView).toHaveBeenCalled();
+    });
+
+    it('passes effectStyle to ExpoGlassView', () => {
+      const { GlassView: MockGlassView } = require('expo-glass-effect');
+
+      render(
+        <GlassView effectStyle="clear">
+          <Text>Clear</Text>
+        </GlassView>,
+        { wrapper }
+      );
+
+      expect(MockGlassView).toHaveBeenCalled();
+      const callArgs = MockGlassView.mock.calls[0][0];
+      expect(callArgs.glassEffectStyle).toBe('clear');
+    });
+
+    it('passes isInteractive=true to ExpoGlassView', () => {
+      const { GlassView: MockGlassView } = require('expo-glass-effect');
+
+      render(
+        <GlassView>
+          <Text>Interactive</Text>
+        </GlassView>,
+        { wrapper }
+      );
+
+      expect(MockGlassView).toHaveBeenCalled();
+      const callArgs = MockGlassView.mock.calls[0][0];
+      expect(callArgs.isInteractive).toBe(true);
+    });
+
+    it('uses theme glassTint by default', () => {
+      const { GlassView: MockGlassView } = require('expo-glass-effect');
+
+      render(
+        <GlassView>
+          <Text>Themed</Text>
+        </GlassView>,
+        { wrapper }
+      );
+
+      expect(MockGlassView).toHaveBeenCalled();
+      const callArgs = MockGlassView.mock.calls[0][0];
+      expect(callArgs.tintColor).toMatch(/rgba/);
+    });
+
+    it('uses custom tintColor when provided', () => {
+      const { GlassView: MockGlassView } = require('expo-glass-effect');
+      const customTint = 'rgba(99, 102, 241, 0.2)';
+
+      render(
+        <GlassView tintColor={customTint}>
+          <Text>Custom Tint</Text>
+        </GlassView>,
+        { wrapper }
+      );
+
+      expect(MockGlassView).toHaveBeenCalled();
+      const callArgs = MockGlassView.mock.calls[0][0];
+      expect(callArgs.tintColor).toBe(customTint);
     });
   });
 });
