@@ -113,16 +113,6 @@ function RootLayoutNav() {
           options={{
             presentation: 'formSheet',
             gestureEnabled: true,
-            headerShown: true,
-            headerTitle: 'Settings',
-            headerStyle: { backgroundColor: theme.surface },
-            headerTintColor: theme.primary,
-            headerTitleStyle: {
-              fontFamily: 'JetBrainsMono-Regular',
-              fontWeight: '600',
-              color: theme.text,
-            },
-            headerShadowVisible: false,
             contentStyle: { backgroundColor: theme.background },
           }}
         />
