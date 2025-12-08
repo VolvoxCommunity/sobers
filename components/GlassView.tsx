@@ -62,7 +62,7 @@ export function GlassView({
   tintColor,
   style,
   testID,
-}: GlassViewProps): JSX.Element {
+}: GlassViewProps) {
   const { theme } = useTheme();
 
   // Check glass availability during render for better testability
