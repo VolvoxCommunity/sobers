@@ -93,7 +93,11 @@ export default function OnboardingScreen() {
   // Skip Step 1 (name entry) if OAuth already provided complete name
   const [step, setStep] = useState(hasCompleteName ? 2 : 1);
   // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
-  const [firstName, setFirstName] = useState(profile?.first_name ?? '');
+  // Filter out placeholder 'User' to show empty field instead of confusing pre-fill
+  const [firstName, setFirstName] = useState(() => {
+    const profileFirstName = profile?.first_name ?? '';
+    return profileFirstName === PLACEHOLDER_FIRST_NAME ? '' : profileFirstName;
+  });
   const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
 
   /**
@@ -133,6 +137,7 @@ export default function OnboardingScreen() {
   // This handles the case where profile data arrives after initial render
   // (e.g., OAuth data or page refresh) - inputs should show the stored values
   // BUT: Don't sync if user manually went back to edit their name
+  // AND: Filter out placeholder 'User' value - show empty field instead
   useEffect(() => {
     if (userWentBackToStep1) return;
 
@@ -141,7 +146,8 @@ export default function OnboardingScreen() {
     const trimmedFirst = profile?.first_name?.trim();
     const trimmedLast = profile?.last_initial?.trim();
 
-    if (trimmedFirst) {
+    // Filter out placeholder value - user should see empty field, not 'User'
+    if (trimmedFirst && trimmedFirst !== PLACEHOLDER_FIRST_NAME) {
       setFirstName((prev) => (prev ? prev : trimmedFirst));
     }
     if (trimmedLast) {

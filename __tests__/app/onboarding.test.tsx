@@ -923,6 +923,30 @@ describe('OnboardingScreen', () => {
       });
     });
 
+    it('shows empty first name input when profile has placeholder "User"', async () => {
+      // Bug fix: 'User' placeholder should not be pre-filled in the input field
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'S',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByPlaceholderText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        // First name input should be empty, not pre-filled with 'User'
+        const firstNameInput = getByPlaceholderText('e.g. John');
+        expect(firstNameInput.props.value).toBe('');
+      });
+    });
+
     it('starts at Step 2 when last_initial is "U" but first_name is real', async () => {
       // 'U' as last_initial is legitimate (e.g., "Underwood", "Ulrich")
       const legitimateProfile = {
