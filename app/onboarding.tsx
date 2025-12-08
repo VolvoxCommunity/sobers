@@ -100,7 +100,10 @@ export default function OnboardingScreen() {
    * Validates that Step 1 form fields contain valid data for advancing.
    * Requires non-empty firstName and exactly one character for lastInitial.
    */
-  const isStep1Valid = firstName.trim() !== '' && lastInitial.trim().length === 1;
+  const isStep1Valid = useMemo(
+    () => firstName.trim() !== '' && lastInitial.trim().length === 1,
+    [firstName, lastInitial]
+  );
 
   // Stable maximum date for DateTimePicker to prevent iOS crash when value > maximumDate.
   // Using useMemo ensures we don't create a new Date on every render, which could cause
