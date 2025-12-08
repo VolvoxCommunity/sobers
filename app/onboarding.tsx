@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -193,6 +193,16 @@ export default function OnboardingScreen() {
   // Ref for field navigation
   const lastInitialRef = useRef<TextInput>(null);
 
+  /**
+   * Advances to step 2 if name validation passes.
+   * Shared by Continue button and keyboard submit on last initial field.
+   */
+  const advanceToStep2 = useCallback(() => {
+    if (!isStep1Valid) return;
+    setUserWentBackToStep1(false);
+    setStep(2);
+  }, [isStep1Valid]);
+
   const totalSteps = 2;
 
   const handleSignOut = async () => {
@@ -324,11 +334,7 @@ export default function OnboardingScreen() {
             maxLength={1}
             autoCapitalize="characters"
             returnKeyType="done"
-            onSubmitEditing={() => {
-              if (!isStep1Valid) return;
-              setUserWentBackToStep1(false);
-              setStep(2);
-            }}
+            onSubmitEditing={advanceToStep2}
           />
         </View>
 
@@ -350,10 +356,7 @@ export default function OnboardingScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.button, !isStep1Valid && styles.buttonDisabled]}
-          onPress={() => {
-            setUserWentBackToStep1(false);
-            setStep(2);
-          }}
+          onPress={advanceToStep2}
           disabled={!isStep1Valid}
         >
           <Text style={styles.buttonText}>Continue</Text>
