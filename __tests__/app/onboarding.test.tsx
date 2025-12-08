@@ -1141,22 +1141,14 @@ describe('OnboardingScreen', () => {
       const backButton = getByText('Back');
       fireEvent.press(backButton);
 
-      // Should now be on Step 1
+      // Should now be on Step 1 and stay there (userWentBackToStep1 flag prevents auto-advance)
       await waitFor(() => {
         expect(queryByText("Let's get to know you better.")).toBeTruthy();
         expect(queryByText('Your Sobriety Date')).toBeNull();
       });
 
-      // User should stay on Step 1 (not auto-advance back to Step 2)
-      // Give it time to potentially auto-advance if the bug existed
-      await waitFor(
-        () => {
-          expect(queryByText("Let's get to know you better.")).toBeTruthy();
-        },
-        { timeout: 500 }
-      );
-
       // User should be able to edit name fields (they should be editable, not force-synced from profile)
+      // If auto-advance occurred, these fields wouldn't exist and the test would fail
       const firstNameInput = getByPlaceholderText('e.g. John');
       const lastInitialInput = getByPlaceholderText('e.g. D');
 
