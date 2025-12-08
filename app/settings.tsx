@@ -18,7 +18,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
@@ -514,22 +514,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Settings',
-          headerStyle: {
-            backgroundColor: theme.surface,
-          },
-          headerTintColor: theme.primary,
-          headerTitleStyle: {
-            fontFamily: theme.fontRegular,
-            fontWeight: '600',
-            color: theme.text,
-          },
-          headerShadowVisible: false,
-        }}
-      />
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
