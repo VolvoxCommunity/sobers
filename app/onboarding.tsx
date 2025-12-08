@@ -101,6 +101,21 @@ export default function OnboardingScreen() {
   // Track if user manually navigated back to Step 1 to edit their name
   const [userWentBackToStep1, setUserWentBackToStep1] = useState(false);
 
+  // Sync name fields when profile loads/updates asynchronously
+  // This handles the case where profile data arrives after initial render
+  // (e.g., OAuth data or page refresh) - inputs should show the stored values
+  // BUT: Don't sync if user manually went back to edit their name
+  useEffect(() => {
+    if (userWentBackToStep1) return;
+
+    if (profile?.first_name && !firstName) {
+      setFirstName(profile.first_name);
+    }
+    if (profile?.last_initial && !lastInitial) {
+      setLastInitial(profile.last_initial);
+    }
+  }, [profile?.first_name, profile?.last_initial, firstName, lastInitial, userWentBackToStep1]);
+
   // Auto-advance to Step 2 if profile updates with complete name while on Step 1
   // This handles: page refresh, navigation quirks, async profile data arrival
   // BUT: Don't auto-advance if user manually clicked "Back" to edit their name

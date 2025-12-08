@@ -448,6 +448,96 @@ describe('OnboardingScreen', () => {
       // Last initial should be empty (not provided by OAuth)
       expect(lastInitialInput.props.value).toBe('');
     });
+
+    it('syncs name fields when profile loads asynchronously (partial data only)', async () => {
+      // Start with null profile (data hasn't loaded yet)
+      let currentProfile: {
+        id: string;
+        first_name: string | null;
+        last_initial: string | null;
+        sobriety_date: string | null;
+      } | null = null;
+
+      mockUseAuth.mockImplementation(() => ({
+        user: mockUser,
+        profile: currentProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      }));
+
+      const { getByPlaceholderText, rerender } = render(<OnboardingScreen />);
+
+      // Initially, inputs should be empty
+      expect(getByPlaceholderText('e.g. John').props.value).toBe('');
+      expect(getByPlaceholderText('e.g. D').props.value).toBe('');
+
+      // Simulate async profile load with PARTIAL data (only first_name, no last_initial)
+      // This keeps the user on Step 1 so we can verify the sync behavior
+      currentProfile = {
+        id: 'user-123',
+        first_name: 'Jane',
+        last_initial: null, // Still incomplete, will stay on Step 1
+        sobriety_date: null,
+      };
+
+      // Rerender to trigger useEffect with updated profile
+      act(() => {
+        rerender(<OnboardingScreen />);
+      });
+
+      // First name should be synced, last initial stays empty
+      await waitFor(() => {
+        expect(getByPlaceholderText('e.g. John').props.value).toBe('Jane');
+        expect(getByPlaceholderText('e.g. D').props.value).toBe('');
+      });
+    });
+
+    it('does not overwrite user edits when profile syncs', async () => {
+      // Start with incomplete profile (will stay on Step 1)
+      let currentProfile: {
+        id: string;
+        first_name: string | null;
+        last_initial: string | null;
+        sobriety_date: string | null;
+      } = {
+        id: 'user-123',
+        first_name: null,
+        last_initial: null,
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockImplementation(() => ({
+        user: mockUser,
+        profile: currentProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      }));
+
+      const { getByPlaceholderText, rerender } = render(<OnboardingScreen />);
+
+      // User types their own name
+      fireEvent.changeText(getByPlaceholderText('e.g. John'), 'UserTyped');
+      fireEvent.changeText(getByPlaceholderText('e.g. D'), 'X');
+
+      // Now profile loads with partial data (still stays on Step 1)
+      currentProfile = {
+        id: 'user-123',
+        first_name: 'ProfileValue',
+        last_initial: null, // Still incomplete, stays on Step 1
+        sobriety_date: null,
+      };
+
+      // Rerender to trigger useEffect
+      act(() => {
+        rerender(<OnboardingScreen />);
+      });
+
+      // User's edits should be preserved (useEffect only syncs when fields are empty)
+      await waitFor(() => {
+        expect(getByPlaceholderText('e.g. John').props.value).toBe('UserTyped');
+        expect(getByPlaceholderText('e.g. D').props.value).toBe('X');
+      });
+    });
   });
 
   describe('Progress Indicator', () => {
@@ -998,7 +1088,7 @@ describe('OnboardingScreen', () => {
         signOut: mockSignOut,
       });
 
-      const { queryByText, getByText } = render(<OnboardingScreen />);
+      const { queryByText, getByText, getByPlaceholderText } = render(<OnboardingScreen />);
 
       // Should start on Step 2 (complete name)
       await waitFor(() => {
@@ -1023,6 +1113,18 @@ describe('OnboardingScreen', () => {
         },
         { timeout: 500 }
       );
+
+      // User should be able to edit name fields (they should be editable, not force-synced from profile)
+      const firstNameInput = getByPlaceholderText('e.g. John');
+      const lastInitialInput = getByPlaceholderText('e.g. D');
+
+      // Clear and type new values
+      fireEvent.changeText(firstNameInput, 'NewName');
+      fireEvent.changeText(lastInitialInput, 'X');
+
+      // Values should stick (not be overwritten by profile sync)
+      expect(firstNameInput.props.value).toBe('NewName');
+      expect(lastInitialInput.props.value).toBe('X');
     });
   });
 });
