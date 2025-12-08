@@ -28,6 +28,10 @@ export interface ThemeColors {
   fontMedium: string;
   fontSemiBold: string;
   fontBold: string;
+  // Glass effect properties
+  glassTint: string;
+  glassFallback: string;
+  glassBorder: string;
 }
 
 interface ThemeContextType {
@@ -60,6 +64,10 @@ const lightTheme: ThemeColors = {
   fontMedium: 'JetBrainsMono-Medium',
   fontSemiBold: 'JetBrainsMono-SemiBold',
   fontBold: 'JetBrainsMono-Bold',
+  // Glass effect properties
+  glassTint: 'rgba(255, 255, 255, 0.1)',
+  glassFallback: 'rgba(255, 255, 255, 0.75)',
+  glassBorder: 'rgba(255, 255, 255, 0.3)',
 };
 
 const darkTheme: ThemeColors = {
@@ -85,6 +93,10 @@ const darkTheme: ThemeColors = {
   fontMedium: 'JetBrainsMono-Medium',
   fontSemiBold: 'JetBrainsMono-SemiBold',
   fontBold: 'JetBrainsMono-Bold',
+  // Glass effect properties
+  glassTint: 'rgba(255, 255, 255, 0.05)',
+  glassFallback: 'rgba(30, 30, 30, 0.85)',
+  glassBorder: 'rgba(255, 255, 255, 0.1)',
 };
 
 const ThemeContext = createContext<ThemeContextType>({
