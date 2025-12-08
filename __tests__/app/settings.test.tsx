@@ -200,6 +200,7 @@ describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSignOut.mockResolvedValue(undefined);
+    mockRefreshProfile.mockResolvedValue(undefined);
     mockSupabaseFrom.mockReset();
     // Reset profile to default for each test
     mockProfile = defaultMockProfile;
