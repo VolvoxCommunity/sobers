@@ -40,13 +40,11 @@ import {
 // =============================================================================
 
 /**
- * Default placeholder values used when OAuth doesn't provide name data.
- * These are set during initial profile creation in the auth trigger.
- * We check for BOTH values together to detect placeholder data, because
- * legitimate users may have surnames starting with 'U' (e.g., "Underwood").
+ * Default placeholder first name used when OAuth doesn't provide name data.
+ * This is set during initial profile creation in the auth trigger.
+ * 'User' is always treated as a placeholder since no real person has this name.
  */
 const PLACEHOLDER_FIRST_NAME = 'User';
-const PLACEHOLDER_LAST_INITIAL = 'U';
 
 /**
  * Renders the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
@@ -67,11 +65,11 @@ export default function OnboardingScreen() {
    * Checks for:
    * - Non-null/undefined values (profile might be loading)
    * - Non-empty/whitespace-only values (must contain actual content)
-   * - Not the default placeholder combination ('User' + 'U')
+   * - First name is not the placeholder value 'User'
    *
-   * Important: We check both placeholder values together because legitimate users
-   * may have surnames starting with 'U' (e.g., "John U." for "John Underwood").
-   * Only when BOTH values match the defaults do we consider it a placeholder.
+   * Note: We only check first_name for placeholder detection because:
+   * - 'User' is clearly not a real name, so it's always a placeholder
+   * - 'U' as last_initial could be legitimate (e.g., "Underwood", "Ulrich")
    *
    * When true, we can skip the name entry step in onboarding since OAuth already provided valid data.
    */
@@ -84,13 +82,12 @@ export default function OnboardingScreen() {
       return false;
     }
 
-    // Check for placeholder combination - only flag if BOTH match defaults
-    // This allows legitimate 'U' surnames (e.g., "Underwood") to pass through
-    const isPlaceholder =
-      trimmedFirstName === PLACEHOLDER_FIRST_NAME &&
-      trimmedLastInitial === PLACEHOLDER_LAST_INITIAL;
+    // 'User' is always a placeholder - no real person has this name
+    if (trimmedFirstName === PLACEHOLDER_FIRST_NAME) {
+      return false;
+    }
 
-    return !isPlaceholder;
+    return true;
   }, [profile?.first_name, profile?.last_initial]);
 
   // Skip Step 1 (name entry) if OAuth already provided complete name

@@ -879,7 +879,8 @@ describe('OnboardingScreen', () => {
       });
     });
 
-    it('starts at Step 1 when name has placeholder values', async () => {
+    it('starts at Step 1 when first_name is placeholder "User"', async () => {
+      // 'User' as first_name is always a placeholder, regardless of last_initial
       const placeholderProfile = {
         id: 'user-123',
         first_name: 'User',
@@ -897,6 +898,53 @@ describe('OnboardingScreen', () => {
 
       await waitFor(() => {
         expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when first_name is "User" even with non-U last_initial', async () => {
+      // Bug fix: 'User' should be treated as placeholder regardless of last_initial value
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'S', // Non-'U' last initial
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 2 when last_initial is "U" but first_name is real', async () => {
+      // 'U' as last_initial is legitimate (e.g., "Underwood", "Ulrich")
+      const legitimateProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'U',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: legitimateProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText } = render(<OnboardingScreen />);
+
+      // Should skip to Step 2 - 'U' is a valid last initial
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
       });
     });
 
