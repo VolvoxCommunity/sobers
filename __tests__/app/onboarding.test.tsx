@@ -582,6 +582,44 @@ describe('OnboardingScreen', () => {
       });
     });
 
+    it('trims whitespace from name fields before saving', async () => {
+      // Capture the data passed to update()
+      let capturedUpdateData: Record<string, unknown> | null = null;
+      const mockUpdateFn = jest.fn((data) => {
+        capturedUpdateData = data;
+        return { eq: mockUpdate };
+      });
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockReturnValue({
+        update: mockUpdateFn,
+      });
+
+      render(<OnboardingScreen />);
+
+      // Fill form with whitespace-padded names
+      const firstNameInput = screen.getByPlaceholderText('e.g. John');
+      const lastInitialInput = screen.getByPlaceholderText('e.g. D');
+
+      fireEvent.changeText(firstNameInput, '  John  '); // Whitespace padded
+      fireEvent.changeText(lastInitialInput, ' d '); // Whitespace padded, lowercase
+
+      fireEvent.press(screen.getByText('Continue'));
+
+      // Accept terms and submit
+      fireEvent.press(screen.getByText(/I agree to the/));
+      fireEvent.press(screen.getByText('Complete Setup'));
+
+      await waitFor(() => {
+        expect(mockUpdateFn).toHaveBeenCalled();
+      });
+
+      // Verify trimmed values were passed
+      expect(capturedUpdateData).not.toBeNull();
+      expect(capturedUpdateData!.first_name).toBe('John'); // Trimmed
+      expect(capturedUpdateData!.last_initial).toBe('D'); // Trimmed and uppercased
+    });
+
     it('shows error alert when profile update fails', async () => {
       mockUpdate.mockResolvedValue({ error: new Error('Update failed') });
 

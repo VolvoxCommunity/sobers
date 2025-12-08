@@ -243,9 +243,13 @@ export default function OnboardingScreen() {
         terms_accepted_at: new Date().toISOString(),
       };
 
-      if (firstName && lastInitial) {
-        updateData.first_name = firstName;
-        updateData.last_initial = lastInitial.toUpperCase();
+      // Trim whitespace before saving (consistent with settings.tsx)
+      const trimmedFirstName = firstName.trim();
+      const trimmedLastInitial = lastInitial.trim().toUpperCase();
+
+      if (trimmedFirstName && trimmedLastInitial) {
+        updateData.first_name = trimmedFirstName;
+        updateData.last_initial = trimmedLastInitial;
       }
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
