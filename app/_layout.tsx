@@ -19,7 +19,7 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   JetBrainsMono_400Regular,
@@ -121,6 +121,17 @@ function RootLayoutNav() {
               fontFamily: 'JetBrainsMono-SemiBold',
               fontSize: 18,
             },
+            headerLeft: () => null,
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                accessibilityLabel="Close settings"
+                accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={{ color: theme.primary, fontSize: 17, fontWeight: '600' }}>Done</Text>
+              </TouchableOpacity>
+            ),
             contentStyle: { backgroundColor: theme.background },
           }}
         />
