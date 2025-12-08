@@ -1084,13 +1084,8 @@ export default function SettingsScreen() {
                 style={styles.textInput}
                 value={editLastInitial}
                 onChangeText={(text) => {
-                  // Show feedback if user pasted multiple characters (truncation occurred)
-                  if (text.length > 1) {
-                    setNameValidationError('Only the first character was kept');
-                  } else {
-                    setNameValidationError(null);
-                  }
-                  setEditLastInitial(text.toUpperCase().slice(0, 1));
+                  setNameValidationError(null);
+                  setEditLastInitial(text.toUpperCase());
                 }}
                 placeholder="Enter last initial"
                 placeholderTextColor={theme.textTertiary}
