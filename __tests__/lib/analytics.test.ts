@@ -33,7 +33,7 @@ jest.mock('react-native', () => ({
 }));
 
 // Mock the platform implementation module
-jest.mock('@/lib/analytics/impl', () => ({
+jest.mock('@/lib/analytics/platform', () => ({
   initializePlatformAnalytics: (...args: unknown[]) => mockInitializePlatformAnalytics(...args),
   trackEventPlatform: (...args: unknown[]) => mockTrackEventPlatform(...args),
   setUserIdPlatform: (...args: unknown[]) => mockSetUserIdPlatform(...args),

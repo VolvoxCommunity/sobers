@@ -3,7 +3,7 @@
  *
  * This file is automatically selected by Metro bundler on iOS and Android.
  *
- * @module lib/analytics/impl.native
+ * @module lib/analytics/platform.native
  */
 
 import analytics from '@react-native-firebase/analytics';

@@ -20,7 +20,7 @@ import {
   setUserPropertiesPlatform as setUserPropertiesWeb,
   trackScreenViewPlatform as trackScreenViewWeb,
   resetAnalyticsPlatform as resetAnalyticsWeb,
-} from '@/lib/analytics/impl.web';
+} from '@/lib/analytics/platform.web';
 
 const mockLoggerWarn = jest.fn();
 const mockLoggerInfo = jest.fn();

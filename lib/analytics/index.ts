@@ -3,8 +3,8 @@
  *
  * This is the ONLY module that app code should import for analytics.
  * Metro automatically selects the correct platform implementation:
- * - impl.web.ts for web
- * - impl.native.ts for iOS/Android
+ * - platform.web.ts for web
+ * - platform.native.ts for iOS/Android
  *
  * @module lib/analytics
  *
@@ -35,7 +35,7 @@ import {
   setUserPropertiesPlatform,
   trackScreenViewPlatform,
   resetAnalyticsPlatform,
-} from './impl';
+} from './platform';
 
 // Re-export types and constants for convenience
 export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';

@@ -5,7 +5,7 @@
  * fallback for platforms where neither .web.ts nor .native.ts applies.
  * At runtime on web/iOS/Android, Metro loads the appropriate platform file.
  *
- * @module lib/analytics/impl
+ * @module lib/analytics/platform
  */
 
 import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';

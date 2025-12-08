@@ -3,7 +3,7 @@
  *
  * This file is automatically selected by Metro bundler on web.
  *
- * @module lib/analytics/impl.web
+ * @module lib/analytics/platform.web
  */
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';

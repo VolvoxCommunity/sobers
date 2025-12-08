@@ -6,7 +6,7 @@ import {
   setUserPropertiesPlatform as setUserPropertiesNative,
   trackScreenViewPlatform as trackScreenViewNative,
   resetAnalyticsPlatform as resetAnalyticsNative,
-} from '@/lib/analytics/impl.native';
+} from '@/lib/analytics/platform.native';
 
 const mockIsDebugMode = jest.fn(() => false);
 const mockLoggerInfo = jest.fn();
