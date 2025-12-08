@@ -102,6 +102,15 @@ interface BuildInfo {
 }
 
 // =============================================================================
+// Constants
+// =============================================================================
+/**
+ * No-op function to prevent event propagation on inner Pressable.
+ * Defined outside component to avoid creating new function on each render.
+ */
+const noop = () => {};
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 /**
@@ -1057,8 +1066,8 @@ export default function SettingsScreen() {
             setNameValidationError(null);
           }}
         >
-          <Pressable style={styles.editNameModal} onPress={() => {}}>
-            {/* Empty onPress prevents tap propagation to backdrop */}
+          <Pressable style={styles.editNameModal} onPress={noop}>
+            {/* noop handler prevents tap propagation to backdrop */}
             <Text style={styles.modalTitle}>Edit Name</Text>
 
             <View style={styles.inputGroup}>
