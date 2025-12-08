@@ -38,10 +38,23 @@ jest.mock('react-native-safe-area-context', () => ({
 // Mock AuthContext
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();
+const mockRefreshProfile = jest.fn();
+const defaultMockProfile = {
+  id: 'test-user-id',
+  first_name: 'Test',
+  last_initial: 'D',
+  sobriety_date: '2024-01-01',
+};
+// Use a mutable variable to allow per-test override
+let mockProfile: typeof defaultMockProfile | null = defaultMockProfile;
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     signOut: mockSignOut,
     deleteAccount: mockDeleteAccount,
+    get profile() {
+      return mockProfile;
+    },
+    refreshProfile: mockRefreshProfile,
   }),
 }));
 
@@ -107,6 +120,7 @@ jest.mock('lucide-react-native', () => ({
   AlertCircle: () => null,
   Info: () => null,
   Copy: () => null,
+  User: () => null,
 }));
 
 // Mock expo-clipboard
@@ -166,6 +180,15 @@ jest.mock('@/lib/logger', () => ({
   LogCategory: {
     AUTH: 'auth',
     UI: 'ui',
+    DATABASE: 'database',
+  },
+}));
+
+// Mock Supabase
+const mockSupabaseFrom = jest.fn();
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: (...args: unknown[]) => mockSupabaseFrom(...args),
   },
 }));
 
@@ -177,28 +200,10 @@ describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSignOut.mockResolvedValue(undefined);
-  });
-
-  describe('Header', () => {
-    it('renders settings header', () => {
-      render(<SettingsScreen />);
-
-      expect(screen.getByText('Settings')).toBeTruthy();
-    });
-
-    it('renders close button', () => {
-      render(<SettingsScreen />);
-
-      expect(screen.getByLabelText('Close settings')).toBeTruthy();
-    });
-
-    it('navigates back when close button is pressed', () => {
-      render(<SettingsScreen />);
-
-      fireEvent.press(screen.getByLabelText('Close settings'));
-
-      expect(mockBack).toHaveBeenCalled();
-    });
+    mockRefreshProfile.mockResolvedValue(undefined);
+    mockSupabaseFrom.mockReset();
+    // Reset profile to default for each test
+    mockProfile = defaultMockProfile;
   });
 
   describe('Theme Section', () => {
@@ -392,8 +397,7 @@ describe('SettingsScreen', () => {
     it('renders all UI elements', () => {
       render(<SettingsScreen />);
 
-      // Main sections should be rendered
-      expect(screen.getByText('Settings')).toBeTruthy();
+      // Main sections should be rendered (header is now native, not rendered in component)
       expect(screen.getByText('Appearance')).toBeTruthy();
       expect(screen.getByText('Sign Out')).toBeTruthy();
       expect(screen.getByText('DANGER ZONE')).toBeTruthy();
@@ -845,6 +849,464 @@ describe('SettingsScreen', () => {
       render(<SettingsScreen />);
 
       expect(screen.getByText('Supporting recovery, one day at a time')).toBeTruthy();
+    });
+  });
+
+  describe('Account Section', () => {
+    it('renders Account section with current name displayed', async () => {
+      const { getByText } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        expect(getByText('Account')).toBeTruthy();
+        expect(getByText('Name')).toBeTruthy();
+        expect(getByText('Test D.')).toBeTruthy(); // mockProfile has first_name: 'Test', last_initial: 'D'
+      });
+    });
+
+    it('opens edit modal when tapping the name row', async () => {
+      const { getByText, getByTestId } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        expect(getByText('Test D.')).toBeTruthy();
+      });
+
+      // Tap the account row
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+    });
+
+    it('pre-fills modal inputs with current name values', async () => {
+      const { getByTestId, getByDisplayValue } = render(<SettingsScreen />);
+
+      await waitFor(() => {
+        fireEvent.press(getByTestId('account-name-row'));
+      });
+
+      await waitFor(() => {
+        expect(getByDisplayValue('Test')).toBeTruthy(); // First name
+        expect(getByDisplayValue('D')).toBeTruthy(); // Last initial
+      });
+    });
+
+    it('validates first name is required', async () => {
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Clear first name
+      const firstNameInput = getByTestId('edit-first-name-input');
+      fireEvent.changeText(firstNameInput, '');
+
+      // Try to save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Should show validation error
+      await waitFor(() => {
+        expect(getByText('First name is required')).toBeTruthy();
+      });
+    });
+
+    it('validates last initial is exactly 1 character', async () => {
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Clear last initial (empty)
+      const lastInitialInput = getByTestId('edit-last-initial-input');
+      fireEvent.changeText(lastInitialInput, '');
+
+      // Try to save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Should show validation error
+      await waitFor(() => {
+        expect(getByText('Last initial must be exactly 1 character')).toBeTruthy();
+      });
+    });
+
+    it('closes modal on cancel', async () => {
+      const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      fireEvent.press(getByTestId('cancel-name-button'));
+
+      await waitFor(() => {
+        expect(queryByText('Edit Name')).toBeNull();
+      });
+    });
+
+    it('calls Supabase update and refreshProfile on save', async () => {
+      const mockEq = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Change name
+      fireEvent.changeText(getByTestId('edit-first-name-input'), 'NewName');
+      fireEvent.changeText(getByTestId('edit-last-initial-input'), 'X');
+
+      // Save
+      fireEvent.press(getByTestId('save-name-button'));
+
+      await waitFor(() => {
+        expect(mockSupabaseFrom).toHaveBeenCalledWith('profiles');
+        expect(mockUpdate).toHaveBeenCalledWith({
+          first_name: 'NewName',
+          last_initial: 'X',
+        });
+        expect(mockRefreshProfile).toHaveBeenCalled();
+        expect(queryByText('Edit Name')).toBeNull(); // Modal closed
+      });
+    });
+
+    it('shows error alert on save failure', async () => {
+      const { Alert } = jest.requireMock('react-native');
+      const mockEq = jest.fn().mockResolvedValue({ error: { message: 'Database error' } });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      // Save without changing anything (profile has valid data)
+      fireEvent.press(getByTestId('save-name-button'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Database error');
+      });
+    });
+
+    it('keeps modal open on error', async () => {
+      const mockEq = jest.fn().mockResolvedValue({ error: { message: 'Database error' } });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+      const { getByTestId, getByText } = render(<SettingsScreen />);
+
+      fireEvent.press(getByTestId('account-name-row'));
+
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+
+      fireEvent.press(getByTestId('save-name-button'));
+
+      // Modal should still be open after error
+      await waitFor(() => {
+        expect(getByText('Edit Name')).toBeTruthy();
+      });
+    });
+
+    it('does not open modal when profile is null', async () => {
+      // Set profile to null before rendering
+      mockProfile = null;
+
+      const { getByTestId, queryByText } = render(<SettingsScreen />);
+
+      // Try to open the modal - should be blocked by guard
+      fireEvent.press(getByTestId('account-name-row'));
+
+      // Modal should NOT open when profile is null
+      expect(queryByText('Edit Name')).toBeNull();
+    });
+  });
+
+  it('trims whitespace from first name on save', async () => {
+    const mockEq = jest.fn().mockResolvedValue({ error: null });
+    const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+    mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    // Enter name with leading/trailing whitespace
+    fireEvent.changeText(getByTestId('edit-first-name-input'), '  John  ');
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'D');
+
+    fireEvent.press(getByTestId('save-name-button'));
+
+    // First, verify the update was called with trimmed values
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith({
+        first_name: 'John', // Should be trimmed
+        last_initial: 'D',
+      });
+    });
+
+    // Then verify the modal closes after the async save completes
+    await waitFor(() => {
+      expect(queryByText('Edit Name')).toBeNull();
+    });
+  });
+
+  it('converts last initial to uppercase', async () => {
+    const mockEq = jest.fn().mockResolvedValue({ error: null });
+    const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+    mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    // Enter lowercase last initial
+    fireEvent.changeText(getByTestId('edit-first-name-input'), 'John');
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'd');
+
+    fireEvent.press(getByTestId('save-name-button'));
+
+    // First, verify the update was called with uppercase last initial
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith({
+        first_name: 'John',
+        last_initial: 'D', // Should be uppercase
+      });
+    });
+
+    // Then verify the modal closes after the async save completes
+    await waitFor(() => {
+      expect(queryByText('Edit Name')).toBeNull();
+    });
+  });
+
+  it('shows loading state and disables button during save', async () => {
+    let resolveUpdate: (value: { error: null }) => void;
+    const updatePromise = new Promise<{ error: null }>((resolve) => {
+      resolveUpdate = resolve;
+    });
+
+    const mockEq = jest.fn().mockReturnValue(updatePromise);
+    const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+    mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByTestId('edit-first-name-input'), 'NewName');
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'X');
+
+    // Save button should show "Save" text before saving
+    expect(getByText('Save')).toBeTruthy();
+
+    // First save
+    fireEvent.press(getByTestId('save-name-button'));
+
+    // Wait for save to start - "Save" text should disappear (replaced by spinner)
+    await waitFor(() => {
+      expect(queryByText('Save')).toBeNull();
+    });
+
+    // The save should have been initiated
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+
+    // Resolve the promise
+    resolveUpdate!({ error: null });
+
+    await waitFor(() => {
+      expect(mockRefreshProfile).toHaveBeenCalled();
+    });
+  });
+
+  it('clears validation error when editing first name', async () => {
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    // Clear first name to trigger validation error
+    fireEvent.changeText(getByTestId('edit-first-name-input'), '');
+    fireEvent.press(getByTestId('save-name-button'));
+
+    await waitFor(() => {
+      expect(getByText('First name is required')).toBeTruthy();
+    });
+
+    // Start typing - error should clear
+    fireEvent.changeText(getByTestId('edit-first-name-input'), 'J');
+
+    await waitFor(() => {
+      expect(queryByText('First name is required')).toBeNull();
+    });
+  });
+
+  it('clears validation error when editing last initial', async () => {
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    // Clear last initial to trigger validation error
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), '');
+    fireEvent.press(getByTestId('save-name-button'));
+
+    await waitFor(() => {
+      expect(getByText('Last initial must be exactly 1 character')).toBeTruthy();
+    });
+
+    // Start typing - error should clear
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'D');
+
+    await waitFor(() => {
+      expect(queryByText('Last initial must be exactly 1 character')).toBeNull();
+    });
+  });
+
+  it('closes modal on cancel button press', async () => {
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('cancel-name-button'));
+
+    await waitFor(() => {
+      expect(queryByText('Edit Name')).toBeNull();
+    });
+  });
+
+  it('validates first name is not just whitespace', async () => {
+    const { getByTestId, getByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    // Enter whitespace-only first name
+    fireEvent.changeText(getByTestId('edit-first-name-input'), '   ');
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'D');
+
+    fireEvent.press(getByTestId('save-name-button'));
+
+    // Should show validation error (trimmed string is empty)
+    await waitFor(() => {
+      expect(getByText('First name is required')).toBeTruthy();
+    });
+  });
+
+  it('does not open modal when profile has null first_name', async () => {
+    // Use the existing mock infrastructure by setting mockProfile before render
+    mockProfile = {
+      ...defaultMockProfile,
+      first_name: null,
+      last_initial: null,
+    } as typeof defaultMockProfile;
+
+    const { getByText, getByTestId, queryByText } = render(<SettingsScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Account')).toBeTruthy();
+    });
+
+    // Try to open the modal - should be blocked by guard
+    fireEvent.press(getByTestId('account-name-row'));
+
+    // Modal should NOT open when profile has null values
+    expect(queryByText('Edit Name')).toBeNull();
+  });
+
+  it('enforces maxLength on last initial input', async () => {
+    const { getByTestId, getByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    const lastInitialInput = getByTestId('edit-last-initial-input');
+
+    // Enter a character - maxLength={1} enforces single character
+    fireEvent.changeText(lastInitialInput, 'X');
+
+    // Should accept the character and convert to uppercase
+    expect(lastInitialInput.props.value).toBe('X');
+  });
+
+  it('shows ActivityIndicator while saving', async () => {
+    let resolveUpdate: (value: { error: null }) => void;
+    const updatePromise = new Promise<{ error: null }>((resolve) => {
+      resolveUpdate = resolve;
+    });
+
+    const mockEq = jest.fn().mockReturnValue(updatePromise);
+    const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+    mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
+
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.press(getByTestId('account-name-row'));
+
+    await waitFor(() => {
+      expect(getByText('Edit Name')).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByTestId('edit-first-name-input'), 'NewName');
+    fireEvent.changeText(getByTestId('edit-last-initial-input'), 'X');
+
+    fireEvent.press(getByTestId('save-name-button'));
+
+    // Should show ActivityIndicator (Save text is replaced with spinner)
+    await waitFor(() => {
+      expect(queryByText('Save')).toBeNull();
+    });
+
+    // Resolve to complete save
+    resolveUpdate({ error: null });
+
+    await waitFor(() => {
+      expect(mockRefreshProfile).toHaveBeenCalled();
     });
   });
 });

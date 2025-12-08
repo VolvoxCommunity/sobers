@@ -11,8 +11,9 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/__tests__/test-utils/',
-    '/worktrees/',
-    '/.worktrees/',
+    // Only ignore worktrees subdirectories under rootDir, not the worktree itself
+    '<rootDir>/worktrees/',
+    '<rootDir>/.worktrees/',
   ],
   modulePathIgnorePatterns: ['<rootDir>/worktrees/', '<rootDir>/.worktrees/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],

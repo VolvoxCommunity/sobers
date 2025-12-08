@@ -19,7 +19,8 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { X } from 'lucide-react-native';
 import { useFonts } from 'expo-font';
 import {
   JetBrainsMono_400Regular,
@@ -68,15 +69,16 @@ function RootLayoutNav() {
     const inOnboarding = segments[0] === 'onboarding';
     const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup';
 
-    // Profile is complete when user has provided their name and sobriety date during onboarding
+    // Profile is complete when user has provided their name and sobriety date during onboarding.
     // Check for non-null values (null indicates user hasn't completed onboarding).
-    // Also validate against placeholder values ('User', 'U') to catch legacy data or edge cases.
+    // Only 'User' is treated as a placeholder for first_name - it's set by the auth trigger
+    // when OAuth doesn't provide name data. 'U' as last_initial is NOT a placeholder since
+    // it could be a legitimate initial (e.g., "Underwood", "Ulrich").
     const hasName =
       profile !== null &&
       profile.first_name !== null &&
       profile.last_initial !== null &&
-      profile.first_name !== 'User' &&
-      profile.last_initial !== 'U';
+      profile.first_name !== 'User';
     const hasSobrietyDate = !!profile?.sobriety_date;
     const isProfileComplete = hasName && hasSobrietyDate;
 
@@ -113,6 +115,25 @@ function RootLayoutNav() {
           options={{
             presentation: 'formSheet',
             gestureEnabled: true,
+            headerShown: true,
+            title: 'Settings',
+            headerStyle: { backgroundColor: theme.surface },
+            headerTintColor: theme.text,
+            headerTitleStyle: {
+              fontFamily: 'JetBrainsMono-SemiBold',
+              fontSize: 18,
+            },
+            headerLeft: () => null,
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                accessibilityLabel="Close settings"
+                accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={22} color={theme.textSecondary} strokeWidth={2} />
+              </TouchableOpacity>
+            ),
             contentStyle: { backgroundColor: theme.background },
           }}
         />

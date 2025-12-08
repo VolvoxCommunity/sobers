@@ -43,22 +43,20 @@ jest.mock('@/lib/supabase', () => ({
 // Mock AuthContext
 const mockSignOut = jest.fn();
 const mockRefreshProfile = jest.fn();
+const mockUser = { id: 'user-123' };
 let mockProfile: {
   id: string;
-  first_name?: string;
-  last_initial?: string;
-  sobriety_date?: string;
+  first_name?: string | null;
+  last_initial?: string | null;
+  sobriety_date?: string | null;
 } | null = {
   id: 'user-123',
 };
 
+const mockUseAuth = jest.fn();
+
 jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'user-123' },
-    profile: mockProfile,
-    signOut: mockSignOut,
-    refreshProfile: mockRefreshProfile,
-  }),
+  useAuth: () => mockUseAuth(),
 }));
 
 // Mock ThemeContext
@@ -187,6 +185,12 @@ describe('OnboardingScreen', () => {
     mockProfile = { id: 'user-123' };
     mockUpdate.mockResolvedValue({ error: null });
     mockRefreshProfile.mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({
+      user: mockUser,
+      profile: mockProfile,
+      signOut: mockSignOut,
+      refreshProfile: mockRefreshProfile,
+    });
   });
 
   describe('Step 1 - Name Collection', () => {
@@ -419,20 +423,116 @@ describe('OnboardingScreen', () => {
   });
 
   describe('Pre-filled Values', () => {
-    it('pre-fills name from OAuth profile', () => {
-      mockProfile = {
+    it('pre-fills first name when last initial is missing', () => {
+      // Incomplete name (only first_name) so component starts at Step 1
+      const profileWithPartialName = {
         id: 'user-123',
         first_name: 'Jane',
-        last_initial: 'S',
+        last_initial: null, // Missing last initial, so starts at Step 1
       };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithPartialName,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
 
       render(<OnboardingScreen />);
 
       const firstNameInput = screen.getByPlaceholderText('e.g. John');
       const lastInitialInput = screen.getByPlaceholderText('e.g. D');
 
+      // First name should be pre-filled from OAuth
       expect(firstNameInput.props.value).toBe('Jane');
-      expect(lastInitialInput.props.value).toBe('S');
+      // Last initial should be empty (not provided by OAuth)
+      expect(lastInitialInput.props.value).toBe('');
+    });
+
+    it('syncs name fields when profile loads asynchronously with incomplete data', async () => {
+      // Start with null profile (data hasn't loaded yet)
+      let currentProfile: {
+        id: string;
+        first_name: string | null;
+        last_initial: string | null;
+        sobriety_date: string | null;
+      } | null = null;
+
+      mockUseAuth.mockImplementation(() => ({
+        user: mockUser,
+        profile: currentProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      }));
+
+      const { getByPlaceholderText, rerender } = render(<OnboardingScreen />);
+
+      // Initially, inputs should be empty
+      expect(getByPlaceholderText('e.g. John').props.value).toBe('');
+      expect(getByPlaceholderText('e.g. D').props.value).toBe('');
+
+      // Simulate async profile load with PARTIAL data (only first_name, no last_initial)
+      // This keeps the user on Step 1 so we can verify the sync behavior
+      currentProfile = {
+        id: 'user-123',
+        first_name: 'Jane',
+        last_initial: null, // Still incomplete, will stay on Step 1
+        sobriety_date: null,
+      };
+
+      // Rerender to trigger useEffect with updated profile
+      rerender(<OnboardingScreen />);
+
+      // First name should be synced, last initial stays empty
+      await waitFor(() => {
+        expect(getByPlaceholderText('e.g. John').props.value).toBe('Jane');
+        expect(getByPlaceholderText('e.g. D').props.value).toBe('');
+      });
+    });
+
+    it('does not overwrite user edits when profile syncs', async () => {
+      // Start with incomplete profile (will stay on Step 1)
+      let currentProfile: {
+        id: string;
+        first_name: string | null;
+        last_initial: string | null;
+        sobriety_date: string | null;
+      } = {
+        id: 'user-123',
+        first_name: null,
+        last_initial: null,
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockImplementation(() => ({
+        user: mockUser,
+        profile: currentProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      }));
+
+      const { getByPlaceholderText, rerender } = render(<OnboardingScreen />);
+
+      // User types their own name
+      fireEvent.changeText(getByPlaceholderText('e.g. John'), 'UserTyped');
+      fireEvent.changeText(getByPlaceholderText('e.g. D'), 'X');
+
+      // Now profile loads with partial data (still stays on Step 1)
+      currentProfile = {
+        id: 'user-123',
+        first_name: 'ProfileValue',
+        last_initial: null, // Still incomplete, stays on Step 1
+        sobriety_date: null,
+      };
+
+      // Rerender to trigger useEffect
+      rerender(<OnboardingScreen />);
+
+      // User's edits should be preserved (useEffect only syncs when fields are empty)
+      await waitFor(() => {
+        expect(getByPlaceholderText('e.g. John').props.value).toBe('UserTyped');
+        expect(getByPlaceholderText('e.g. D').props.value).toBe('X');
+      });
     });
   });
 
@@ -482,6 +582,44 @@ describe('OnboardingScreen', () => {
       });
     });
 
+    it('trims whitespace from name fields before saving', async () => {
+      // Capture the data passed to update()
+      let capturedUpdateData: Record<string, unknown> | null = null;
+      const mockUpdateFn = jest.fn((data) => {
+        capturedUpdateData = data;
+        return { eq: mockUpdate };
+      });
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockReturnValue({
+        update: mockUpdateFn,
+      });
+
+      render(<OnboardingScreen />);
+
+      // Fill form with whitespace-padded names
+      const firstNameInput = screen.getByPlaceholderText('e.g. John');
+      const lastInitialInput = screen.getByPlaceholderText('e.g. D');
+
+      fireEvent.changeText(firstNameInput, '  John  '); // Whitespace padded
+      fireEvent.changeText(lastInitialInput, ' d '); // Whitespace padded, lowercase
+
+      fireEvent.press(screen.getByText('Continue'));
+
+      // Accept terms and submit
+      fireEvent.press(screen.getByText(/I agree to the/));
+      fireEvent.press(screen.getByText('Complete Setup'));
+
+      await waitFor(() => {
+        expect(mockUpdateFn).toHaveBeenCalled();
+      });
+
+      // Verify trimmed values were passed
+      expect(capturedUpdateData).not.toBeNull();
+      expect(capturedUpdateData!.first_name).toBe('John'); // Trimmed
+      expect(capturedUpdateData!.last_initial).toBe('D'); // Trimmed and uppercased
+    });
+
     it('shows error alert when profile update fails', async () => {
       mockUpdate.mockResolvedValue({ error: new Error('Update failed') });
 
@@ -508,36 +646,46 @@ describe('OnboardingScreen', () => {
 
   describe('Pre-filled Sobriety Date', () => {
     it('uses existing sobriety date from profile', () => {
-      mockProfile = {
+      const profileWithDate = {
         id: 'user-123',
         first_name: 'John',
         last_initial: 'D',
         sobriety_date: '2024-01-01',
       };
 
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithDate,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
+
       render(<OnboardingScreen />);
 
-      // Navigate to step 2
-      fireEvent.press(screen.getByText('Continue'));
-
+      // With complete name, starts at Step 2 automatically
       // The days sober count should be shown
       expect(screen.getByText('Days Sober')).toBeTruthy();
     });
 
     it('clamps future sobriety date to maximum date', () => {
       // Set a future date that would be clamped
-      mockProfile = {
+      const profileWithFutureDate = {
         id: 'user-123',
         first_name: 'John',
         last_initial: 'D',
         sobriety_date: '2099-01-01', // Far future date
       };
 
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: profileWithFutureDate,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
+
       render(<OnboardingScreen />);
 
-      // Navigate to step 2
-      fireEvent.press(screen.getByText('Continue'));
-
+      // With complete name, starts at Step 2 automatically
       // Should render without crashing
       expect(screen.getByText('Days Sober')).toBeTruthy();
     });
@@ -655,19 +803,33 @@ describe('OnboardingScreen', () => {
 
   describe('Profile Completion Navigation', () => {
     it('navigates to main app when profile becomes complete after submission', async () => {
-      // Set up mock to update profile after submission
-      mockProfile = {
+      // Start with incomplete name so component starts at Step 1
+      const incompleteProfile = {
         id: 'user-123',
-        first_name: 'John',
-        last_initial: 'D',
-        sobriety_date: '2024-01-01',
+        first_name: null,
+        last_initial: null,
+        sobriety_date: null,
       };
 
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
+
       mockRefreshProfile.mockImplementation(async () => {
-        // Simulate profile update
+        // Simulate profile update - after submission, profile is complete
+        incompleteProfile.first_name = 'John';
+        incompleteProfile.last_initial = 'D';
+        incompleteProfile.sobriety_date = '2024-01-01';
       });
 
       render(<OnboardingScreen />);
+
+      // Fill in name fields at Step 1
+      fireEvent.changeText(screen.getByPlaceholderText('e.g. John'), 'John');
+      fireEvent.changeText(screen.getByPlaceholderText('e.g. D'), 'D');
 
       // Navigate to step 2
       fireEvent.press(screen.getByText('Continue'));
@@ -685,6 +847,380 @@ describe('OnboardingScreen', () => {
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
       });
+    });
+  });
+
+  describe('Smart Step Selection', () => {
+    it('starts at Step 2 when profile has both first_name and last_initial', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null, // Still needs sobriety date
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText } = render(<OnboardingScreen />);
+
+      // Should show Step 2 content (sobriety date), not Step 1 (name entry)
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+
+    it('starts at Step 1 when first_name is null', async () => {
+      const incompleteProfile = {
+        id: 'user-123',
+        first_name: null,
+        last_initial: 'D',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when last_initial is null', async () => {
+      const incompleteProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when first_name is placeholder "User"', async () => {
+      // 'User' as first_name is always a placeholder, regardless of last_initial
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'U',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('starts at Step 1 when first_name is "User" even with non-U last_initial', async () => {
+      // Bug fix: 'User' should be treated as placeholder regardless of last_initial value
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'S', // Non-'U' last initial
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('shows empty first name input when profile has placeholder "User"', async () => {
+      // Bug fix: 'User' placeholder should not be pre-filled in the input field
+      const placeholderProfile = {
+        id: 'user-123',
+        first_name: 'User',
+        last_initial: 'S',
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: placeholderProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByPlaceholderText } = render(<OnboardingScreen />);
+
+      await waitFor(() => {
+        // First name input should be empty, not pre-filled with 'User'
+        const firstNameInput = getByPlaceholderText('e.g. John');
+        expect(firstNameInput.props.value).toBe('');
+      });
+    });
+
+    it('starts at Step 2 when last_initial is "U" but first_name is real', async () => {
+      // 'U' as last_initial is legitimate (e.g., "Underwood", "Ulrich")
+      const legitimateProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'U',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: legitimateProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText } = render(<OnboardingScreen />);
+
+      // Should skip to Step 2 - 'U' is a valid last initial
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+
+    it('auto-advances from Step 1 to Step 2 when profile updates with complete name', async () => {
+      // Start with incomplete profile (null first_name)
+      let currentProfile: {
+        id: string;
+        first_name: string | null;
+        last_initial: string | null;
+        sobriety_date: string | null;
+      } = {
+        id: 'user-123',
+        first_name: null,
+        last_initial: null,
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockImplementation(() => ({
+        user: mockUser,
+        profile: currentProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      }));
+
+      const { getByText, queryByText, rerender } = render(<OnboardingScreen />);
+
+      // Verify Step 1 is shown initially
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+
+      // Simulate profile update (e.g., OAuth data arrives or async fetch completes)
+      currentProfile = {
+        id: 'user-123',
+        first_name: 'Jane',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      // Rerender to trigger useEffect with updated profile
+      rerender(<OnboardingScreen />);
+
+      // Verify auto-advance to Step 2
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+
+    it('handles empty string name values (different from null)', async () => {
+      const emptyStringProfile = {
+        id: 'user-123',
+        first_name: '',
+        last_initial: '',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: emptyStringProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Empty strings should be treated as incomplete (start at Step 1)
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('does not auto-advance when name is whitespace only', async () => {
+      const whitespaceProfile = {
+        id: 'user-123',
+        first_name: '   ',
+        last_initial: ' ',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: whitespaceProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Should start at Step 1 (whitespace considered incomplete)
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('maintains Step 2 when profile already complete on mount', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText, getByText } = render(<OnboardingScreen />);
+
+      // Should be on Step 2 from the start
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+      });
+
+      // Verify Step 1 content is not present
+      expect(queryByText("Let's get to know you better.")).toBeNull();
+      expect(queryByText('e.g. John')).toBeNull(); // First name placeholder
+    });
+
+    it('handles undefined profile gracefully', async () => {
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: undefined,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { getByText } = render(<OnboardingScreen />);
+
+      // Should start at Step 1 when profile is undefined
+      await waitFor(() => {
+        expect(getByText("Let's get to know you better.")).toBeTruthy();
+      });
+    });
+
+    it('does not regress to Step 1 when on Step 2 with complete name', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText, rerender } = render(<OnboardingScreen />);
+
+      // Should be on Step 2
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+      });
+
+      // Rerender with same profile
+      rerender(<OnboardingScreen />);
+
+      // Should still be on Step 2, not regress to Step 1
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+        expect(queryByText("Let's get to know you better.")).toBeNull();
+      });
+    });
+
+    it('allows user to go back to Step 1 to edit name without auto-advancing', async () => {
+      const completeProfile = {
+        id: 'user-123',
+        first_name: 'John',
+        last_initial: 'D',
+        sobriety_date: null,
+      };
+
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: completeProfile,
+        refreshProfile: mockRefreshProfile,
+        signOut: mockSignOut,
+      });
+
+      const { queryByText, getByText, getByPlaceholderText } = render(<OnboardingScreen />);
+
+      // Should start on Step 2 (complete name)
+      await waitFor(() => {
+        expect(queryByText('Your Sobriety Date')).toBeTruthy();
+      });
+
+      // Click Back button to go to Step 1
+      const backButton = getByText('Back');
+      fireEvent.press(backButton);
+
+      // Should now be on Step 1 and stay there (userWentBackToStep1 flag prevents auto-advance)
+      await waitFor(() => {
+        expect(queryByText("Let's get to know you better.")).toBeTruthy();
+        expect(queryByText('Your Sobriety Date')).toBeNull();
+      });
+
+      // User should be able to edit name fields (they should be editable, not force-synced from profile)
+      // If auto-advance occurred, these fields wouldn't exist and the test would fail
+      const firstNameInput = getByPlaceholderText('e.g. John');
+      const lastInitialInput = getByPlaceholderText('e.g. D');
+
+      // Clear and type new values
+      fireEvent.changeText(firstNameInput, 'NewName');
+      fireEvent.changeText(lastInitialInput, 'X');
+
+      // Values should stick (not be overwritten by profile sync)
+      expect(firstNameInput.props.value).toBe('NewName');
+      expect(lastInitialInput.props.value).toBe('X');
     });
   });
 });

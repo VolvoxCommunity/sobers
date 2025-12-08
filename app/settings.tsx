@@ -14,9 +14,12 @@ import {
   ActivityIndicator,
   LayoutAnimation,
   UIManager,
+  Modal,
+  TextInput,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
@@ -31,7 +34,6 @@ import {
   FileText,
   Github,
   Trash2,
-  X,
   AlertTriangle,
   RefreshCw,
   CheckCircle,
@@ -39,6 +41,7 @@ import {
   AlertCircle,
   Info,
   Copy,
+  User,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
@@ -47,6 +50,7 @@ import * as Device from 'expo-device';
 import * as Application from 'expo-application';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 import packageJson from '../package.json';
 
 // Enable LayoutAnimation on Android
@@ -96,6 +100,15 @@ interface BuildInfo {
   /** App version shown in app stores */
   nativeAppVersion: string | null;
 }
+
+// =============================================================================
+// Constants
+// =============================================================================
+/**
+ * No-op function to prevent event propagation on inner Pressable.
+ * Defined outside component to avoid creating new function on each render.
+ */
+const noop = () => {};
 
 // =============================================================================
 // Helper Functions
@@ -205,12 +218,6 @@ const EXTERNAL_LINKS = {
   DEVELOPER: 'https://billchirico.dev',
 } as const;
 
-/**
- * Width of header buttons (close button) used for layout symmetry.
- * The spacer element uses this same width to balance the header.
- */
-const HEADER_BUTTON_WIDTH = 44;
-
 // =============================================================================
 // Component
 // =============================================================================
@@ -233,13 +240,18 @@ const HEADER_BUTTON_WIDTH = 44;
  * ```
  */
 export default function SettingsScreen() {
-  const { signOut, deleteAccount } = useAuth();
+  const { signOut, deleteAccount, profile, refreshProfile } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
   const [isBuildInfoExpanded, setIsBuildInfoExpanded] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isEditNameModalVisible, setIsEditNameModalVisible] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastInitial, setEditLastInitial] = useState('');
+  const [nameValidationError, setNameValidationError] = useState<string | null>(null);
+  const [isSavingName, setIsSavingName] = useState(false);
   const buildInfo = getBuildInfo();
   const {
     status: updateStatus,
@@ -428,522 +440,705 @@ export default function SettingsScreen() {
     }
   };
 
+  /**
+   * Saves the updated name to Supabase and refreshes the profile.
+   * Validates input before saving and handles errors with user feedback.
+   */
+  const handleSaveName = async () => {
+    // Guard: Prevent multiple simultaneous saves
+    if (isSavingName) {
+      return;
+    }
+
+    // Guard: Ensure profile is loaded before attempting save
+    if (!profile?.id) {
+      const errorMessage = 'Unable to save - profile not loaded';
+      logger.error('Name save attempted with null profile', new Error(errorMessage), {
+        category: LogCategory.DATABASE,
+      });
+      if (Platform.OS === 'web') {
+        window.alert('Error: ' + errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+      return;
+    }
+
+    // Validation
+    const trimmedFirstName = editFirstName.trim();
+    const trimmedLastInitial = editLastInitial.trim();
+
+    if (!trimmedFirstName) {
+      setNameValidationError('First name is required');
+      return;
+    }
+    if (trimmedLastInitial.length !== 1) {
+      setNameValidationError('Last initial must be exactly 1 character');
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: trimmedFirstName,
+          last_initial: trimmedLastInitial.toUpperCase(),
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      setIsEditNameModalVisible(false);
+      setNameValidationError(null);
+
+      if (Platform.OS === 'web') {
+        window.alert('Name updated successfully');
+      } else {
+        Alert.alert('Success', 'Name updated successfully');
+      }
+    } catch (error: unknown) {
+      // Handle both Error objects and Supabase error objects with message property
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : 'Failed to update name';
+      const err = error instanceof Error ? error : new Error(errorMessage);
+      logger.error('Name update failed', err, {
+        category: LogCategory.DATABASE,
+      });
+      if (Platform.OS === 'web') {
+        window.alert('Error: ' + errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <View style={styles.outerContainer}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
-          <Text style={styles.headerTitle}>Settings</Text>
+    <>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 8 }]}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          scrollPositionRef.current = e.nativeEvent.contentOffset.y;
+        }}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              testID="account-name-row"
+              onPress={() => {
+                // Guard: Prevent opening modal with empty fields when profile hasn't loaded
+                if (!profile?.first_name || !profile?.last_initial) {
+                  return;
+                }
+                setEditFirstName(profile.first_name);
+                setEditLastInitial(profile.last_initial);
+                setIsEditNameModalVisible(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Edit your name"
+            >
+              <View style={styles.menuItemLeft}>
+                <User size={20} color={theme.textSecondary} />
+                <View>
+                  <Text style={styles.menuItemText}>Name</Text>
+                  <Text style={styles.menuItemSubtext}>
+                    {profile?.first_name && profile?.last_initial
+                      ? `${profile.first_name} ${profile.last_initial}.`
+                      : 'Loading...'}
+                  </Text>
+                </View>
+              </View>
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <View style={styles.card}>
+            <View style={styles.themeOptions}>
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
+                onPress={() => setThemeMode('light')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'light' }}
+                accessibilityLabel="Light theme"
+              >
+                <Sun
+                  size={24}
+                  color={themeMode === 'light' ? theme.primary : theme.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === 'light' && styles.themeOptionTextSelected,
+                  ]}
+                >
+                  Light
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
+                onPress={() => setThemeMode('dark')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'dark' }}
+                accessibilityLabel="Dark theme"
+              >
+                <Moon
+                  size={24}
+                  color={themeMode === 'dark' ? theme.primary : theme.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === 'dark' && styles.themeOptionTextSelected,
+                  ]}
+                >
+                  Dark
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
+                onPress={() => setThemeMode('system')}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: themeMode === 'system' }}
+                accessibilityLabel="System theme"
+              >
+                <Monitor
+                  size={24}
+                  color={themeMode === 'system' ? theme.primary : theme.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === 'system' && styles.themeOptionTextSelected,
+                  ]}
+                >
+                  System
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About</Text>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleOpenURL(EXTERNAL_LINKS.PRIVACY_POLICY)}
+              accessibilityRole="link"
+              accessibilityLabel="View Privacy Policy"
+            >
+              <View style={styles.menuItemLeft}>
+                <Shield size={20} color={theme.textSecondary} />
+                <Text style={styles.menuItemText}>Privacy Policy</Text>
+              </View>
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleOpenURL(EXTERNAL_LINKS.TERMS_OF_SERVICE)}
+              accessibilityRole="link"
+              accessibilityLabel="View Terms of Service"
+            >
+              <View style={styles.menuItemLeft}>
+                <FileText size={20} color={theme.textSecondary} />
+                <Text style={styles.menuItemText}>Terms of Service</Text>
+              </View>
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleOpenURL(EXTERNAL_LINKS.SOURCE_CODE)}
+              accessibilityRole="link"
+              accessibilityLabel="View source code on GitHub"
+            >
+              <View style={styles.menuItemLeft}>
+                <Github size={20} color={theme.textSecondary} />
+                <Text style={styles.menuItemText}>Source Code</Text>
+              </View>
+              <ChevronLeft
+                size={20}
+                color={theme.textTertiary}
+                style={{ transform: [{ rotate: '180deg' }] }}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {updatesSupported && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>App Updates</Text>
+            <View style={styles.card}>
+              <View style={styles.updateContainer}>
+                {updateStatus === 'idle' && (
+                  <TouchableOpacity
+                    style={styles.updateButton}
+                    onPress={checkForUpdates}
+                    accessibilityRole="button"
+                    accessibilityLabel="Check for app updates"
+                  >
+                    <RefreshCw size={20} color={theme.primary} />
+                    <Text style={styles.updateButtonText}>Check for Updates</Text>
+                  </TouchableOpacity>
+                )}
+
+                {(isChecking || isDownloading) && (
+                  <View style={styles.updateStatusContainer}>
+                    <ActivityIndicator size="small" color={theme.primary} />
+                    <Text style={styles.updateStatusText}>
+                      {isChecking ? 'Checking for updates...' : 'Downloading update...'}
+                    </Text>
+                  </View>
+                )}
+
+                {updateStatus === 'up-to-date' && (
+                  <View style={styles.updateStatusContainer}>
+                    <CheckCircle size={20} color={theme.success} />
+                    <Text style={[styles.updateStatusText, { color: theme.success }]}>
+                      App is up to date
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.checkAgainButton}
+                      onPress={checkForUpdates}
+                      accessibilityRole="button"
+                      accessibilityLabel="Check again for updates"
+                    >
+                      <Text style={styles.checkAgainText}>Check Again</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {updateStatus === 'ready' && (
+                  <View style={styles.updateReadyContainer}>
+                    <View style={styles.updateReadyInfo}>
+                      <Download size={20} color={theme.primary} />
+                      <Text style={styles.updateReadyText}>Update ready to install</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.applyUpdateButton}
+                      onPress={applyUpdate}
+                      accessibilityRole="button"
+                      accessibilityLabel="Restart app to apply update"
+                    >
+                      <Text style={styles.applyUpdateText}>Restart to Update</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {updateStatus === 'error' && (
+                  <View style={styles.updateStatusContainer}>
+                    <AlertCircle size={20} color={theme.error} />
+                    <Text style={[styles.updateStatusText, { color: theme.error }]}>
+                      {updateError || 'Failed to check for updates'}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.checkAgainButton}
+                      onPress={checkForUpdates}
+                      accessibilityRole="button"
+                      accessibilityLabel="Try again"
+                    >
+                      <Text style={styles.checkAgainText}>Try Again</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
           <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => router.back()}
-            accessibilityLabel="Close settings"
+            style={styles.signOutButton}
+            onPress={handleSignOut}
             accessibilityRole="button"
+            accessibilityLabel="Sign out of your account"
           >
-            <X size={24} color={theme.textSecondary} />
+            <LogOut size={20} color={theme.error} />
+            <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 8 }]}
-          keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={false}
-          scrollEventThrottle={16}
-          onScroll={(e) => {
-            scrollPositionRef.current = e.nativeEvent.contentOffset.y;
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[
+              styles.dangerZoneHeader,
+              isDangerZoneExpanded && styles.dangerZoneHeaderExpanded,
+            ]}
+            onPress={toggleDangerZone}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isDangerZoneExpanded }}
+            accessibilityLabel="Danger Zone section"
+            accessibilityHint="Double tap to expand or collapse"
+          >
+            <View style={styles.dangerZoneHeaderLeft}>
+              <AlertTriangle size={18} color={theme.danger} />
+              <Text style={styles.dangerSectionTitle}>DANGER ZONE</Text>
+            </View>
+            {isDangerZoneExpanded ? (
+              <ChevronUp size={20} color={theme.danger} />
+            ) : (
+              <ChevronDown size={20} color={theme.danger} />
+            )}
+          </TouchableOpacity>
+          <View style={{ maxHeight: isDangerZoneExpanded ? undefined : 0, overflow: 'hidden' }}>
+            <View style={styles.dangerCard}>
+              <Text style={styles.dangerDescription}>
+                Permanently delete your account and all associated data. This action cannot be
+                undone.
+              </Text>
+              <TouchableOpacity
+                style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]}
+                onPress={handleDeleteAccount}
+                disabled={isDeleting}
+                accessibilityRole="button"
+                accessibilityLabel="Delete your account permanently"
+                accessibilityState={{ disabled: isDeleting }}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color={theme.white} />
+                ) : (
+                  <>
+                    <Trash2 size={20} color={theme.white} />
+                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.buildInfoHeader, isBuildInfoExpanded && styles.buildInfoHeaderExpanded]}
+            onPress={toggleBuildInfo}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isBuildInfoExpanded }}
+            accessibilityLabel="Build Information section"
+            accessibilityHint="Double tap to expand or collapse"
+          >
+            <View style={styles.buildInfoHeaderLeft}>
+              <Info size={18} color={theme.primary} />
+              <Text style={styles.buildInfoSectionTitle}>BUILD INFO</Text>
+            </View>
+            {isBuildInfoExpanded ? (
+              <ChevronUp size={20} color={theme.primary} />
+            ) : (
+              <ChevronDown size={20} color={theme.primary} />
+            )}
+          </TouchableOpacity>
+          <View style={{ maxHeight: isBuildInfoExpanded ? undefined : 0, overflow: 'hidden' }}>
+            <View style={styles.buildInfoCard}>
+              {/* App Version & Build Number */}
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>App Version</Text>
+                <Text style={styles.buildInfoValue}>
+                  {buildInfo.nativeAppVersion ?? packageJson.version}
+                  {buildInfo.nativeBuildVersion ? ` (${buildInfo.nativeBuildVersion})` : ''}
+                </Text>
+              </View>
+              <View style={styles.buildInfoSeparator} />
+
+              {/* Device Info */}
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>Device</Text>
+                <Text style={styles.buildInfoValue}>{buildInfo.deviceModel ?? Platform.OS}</Text>
+              </View>
+              <View style={styles.buildInfoSeparator} />
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>OS</Text>
+                <Text style={styles.buildInfoValue}>
+                  {buildInfo.osName ?? Platform.OS} {buildInfo.osVersion ?? Platform.Version}
+                </Text>
+              </View>
+              <View style={styles.buildInfoSeparator} />
+
+              {/* Runtime Version */}
+              {buildInfo.runtimeVersion != null && (
+                <>
+                  <View style={styles.buildInfoRow}>
+                    <Text style={styles.buildInfoLabel}>Runtime</Text>
+                    <Text style={styles.buildInfoValue}>{buildInfo.runtimeVersion}</Text>
+                  </View>
+                  <View style={styles.buildInfoSeparator} />
+                </>
+              )}
+
+              {/* Update Channel & ID */}
+              {buildInfo.updateChannel != null && (
+                <>
+                  <View style={styles.buildInfoRow}>
+                    <Text style={styles.buildInfoLabel}>Channel</Text>
+                    <Text style={styles.buildInfoValue}>{buildInfo.updateChannel}</Text>
+                  </View>
+                  <View style={styles.buildInfoSeparator} />
+                </>
+              )}
+              {buildInfo.updateId != null && (
+                <>
+                  <TouchableOpacity
+                    style={styles.buildInfoRow}
+                    onPress={() => copyToClipboard(buildInfo.updateId ?? '', 'updateId')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy update ID"
+                  >
+                    <Text style={styles.buildInfoLabel}>Update ID</Text>
+                    <View style={styles.buildInfoCopyRow}>
+                      <Text style={styles.buildInfoValueMono}>
+                        {buildInfo.updateId.slice(0, 8)}...
+                      </Text>
+                      {copiedField === 'updateId' ? (
+                        <CheckCircle size={14} color={theme.success} />
+                      ) : (
+                        <Copy size={14} color={theme.textTertiary} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  <View style={styles.buildInfoSeparator} />
+                </>
+              )}
+
+              {/* Build Profile & Runner */}
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>Build Profile</Text>
+                <Text style={styles.buildInfoValue}>
+                  {buildInfo.easBuildProfile ?? 'Development'}
+                </Text>
+              </View>
+              <View style={styles.buildInfoSeparator} />
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>Build Runner</Text>
+                <Text style={styles.buildInfoValue}>
+                  {buildInfo.easBuildRunner === 'eas-build'
+                    ? 'EAS Cloud'
+                    : buildInfo.easBuildRunner === 'local-build-plugin'
+                      ? 'Local'
+                      : 'Development'}
+                </Text>
+              </View>
+
+              {/* Git Commit */}
+              {buildInfo.easBuildGitCommitHash != null && (
+                <>
+                  <View style={styles.buildInfoSeparator} />
+                  <TouchableOpacity
+                    style={styles.buildInfoRow}
+                    onPress={() => copyToClipboard(buildInfo.easBuildGitCommitHash ?? '', 'commit')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy commit hash"
+                  >
+                    <Text style={styles.buildInfoLabel}>Commit</Text>
+                    <View style={styles.buildInfoCopyRow}>
+                      <Text style={styles.buildInfoValueMono}>
+                        {buildInfo.easBuildGitCommitHash.slice(0, 7)}
+                      </Text>
+                      {copiedField === 'commit' ? (
+                        <CheckCircle size={14} color={theme.success} />
+                      ) : (
+                        <Copy size={14} color={theme.textTertiary} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* EAS Build ID */}
+              {buildInfo.easBuildId != null && (
+                <>
+                  <View style={styles.buildInfoSeparator} />
+                  <TouchableOpacity
+                    style={styles.buildInfoRow}
+                    onPress={() => copyToClipboard(buildInfo.easBuildId ?? '', 'buildId')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy build ID"
+                  >
+                    <Text style={styles.buildInfoLabel}>EAS Build ID</Text>
+                    <View style={styles.buildInfoCopyRow}>
+                      <Text style={styles.buildInfoValueMono}>
+                        {buildInfo.easBuildId.slice(0, 8)}...
+                      </Text>
+                      {copiedField === 'buildId' ? (
+                        <CheckCircle size={14} color={theme.success} />
+                      ) : (
+                        <Copy size={14} color={theme.textTertiary} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* OTA vs Embedded indicator */}
+              <View style={styles.buildInfoSeparator} />
+              <View style={styles.buildInfoRow}>
+                <Text style={styles.buildInfoLabel}>Bundle</Text>
+                <Text style={styles.buildInfoValue}>
+                  {buildInfo.isEmbeddedLaunch ? 'Embedded' : 'OTA Update'}
+                </Text>
+              </View>
+
+              {/* Development mode note */}
+              {!buildInfo.easBuildId && !buildInfo.easBuildProfile && (
+                <Text style={styles.buildInfoNote}>
+                  Running in development mode. Full build details available in production.
+                </Text>
+              )}
+
+              {/* Copy All Button */}
+              <View style={styles.buildInfoSeparator} />
+              <TouchableOpacity
+                style={styles.copyAllButton}
+                onPress={() => copyToClipboard(formatBuildInfoForCopy(buildInfo), 'all')}
+                accessibilityRole="button"
+                accessibilityLabel="Copy all build information to clipboard"
+              >
+                {copiedField === 'all' ? (
+                  <>
+                    <CheckCircle size={16} color={theme.success} />
+                    <Text style={[styles.copyAllText, { color: theme.success }]}>Copied!</Text>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} color={theme.primary} />
+                    <Text style={styles.copyAllText}>Copy All Build Info</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Sobriety Waypoint v{packageJson.version}</Text>
+          <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
+          <TouchableOpacity
+            onPress={() => handleOpenURL(EXTERNAL_LINKS.DEVELOPER)}
+            accessibilityRole="link"
+            accessibilityLabel="Visit developer website"
+          >
+            <Text style={styles.footerCredit}>By Bill Chirico</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Edit Name Modal */}
+      <Modal
+        visible={isEditNameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setIsEditNameModalVisible(false);
+          setNameValidationError(null);
+        }}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => {
+            setIsEditNameModalVisible(false);
+            setNameValidationError(null);
           }}
         >
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Appearance</Text>
-            <View style={styles.card}>
-              <View style={styles.themeOptions}>
-                <TouchableOpacity
-                  style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
-                  onPress={() => setThemeMode('light')}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: themeMode === 'light' }}
-                  accessibilityLabel="Light theme"
-                >
-                  <Sun
-                    size={24}
-                    color={themeMode === 'light' ? theme.primary : theme.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === 'light' && styles.themeOptionTextSelected,
-                    ]}
-                  >
-                    Light
-                  </Text>
-                </TouchableOpacity>
+          <Pressable style={styles.editNameModal} onPress={noop}>
+            {/* noop handler prevents tap propagation to backdrop */}
+            <Text style={styles.modalTitle}>Edit Name</Text>
 
-                <TouchableOpacity
-                  style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
-                  onPress={() => setThemeMode('dark')}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: themeMode === 'dark' }}
-                  accessibilityLabel="Dark theme"
-                >
-                  <Moon
-                    size={24}
-                    color={themeMode === 'dark' ? theme.primary : theme.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === 'dark' && styles.themeOptionTextSelected,
-                    ]}
-                  >
-                    Dark
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
-                  onPress={() => setThemeMode('system')}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: themeMode === 'system' }}
-                  accessibilityLabel="System theme"
-                >
-                  <Monitor
-                    size={24}
-                    color={themeMode === 'system' ? theme.primary : theme.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.themeOptionText,
-                      themeMode === 'system' && styles.themeOptionTextSelected,
-                    ]}
-                  >
-                    System
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>First Name</Text>
+              <TextInput
+                testID="edit-first-name-input"
+                style={styles.textInput}
+                value={editFirstName}
+                onChangeText={(text) => {
+                  setEditFirstName(text);
+                  setNameValidationError(null);
+                }}
+                placeholder="Enter first name"
+                placeholderTextColor={theme.textTertiary}
+                autoCapitalize="words"
+              />
             </View>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About</Text>
-            <View style={styles.card}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Last Initial</Text>
+              <TextInput
+                testID="edit-last-initial-input"
+                style={styles.textInput}
+                value={editLastInitial}
+                onChangeText={(text) => {
+                  setEditLastInitial(text.toUpperCase());
+                  setNameValidationError(null);
+                }}
+                placeholder="Enter last initial"
+                placeholderTextColor={theme.textTertiary}
+                maxLength={1}
+                autoCapitalize="characters"
+              />
+            </View>
+
+            {nameValidationError && (
+              <Text style={styles.validationError}>{nameValidationError}</Text>
+            )}
+
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleOpenURL(EXTERNAL_LINKS.PRIVACY_POLICY)}
-                accessibilityRole="link"
-                accessibilityLabel="View Privacy Policy"
+                testID="cancel-name-button"
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setIsEditNameModalVisible(false);
+                  setNameValidationError(null);
+                }}
               >
-                <View style={styles.menuItemLeft}>
-                  <Shield size={20} color={theme.textSecondary} />
-                  <Text style={styles.menuItemText}>Privacy Policy</Text>
-                </View>
-                <ChevronLeft
-                  size={20}
-                  color={theme.textTertiary}
-                  style={{ transform: [{ rotate: '180deg' }] }}
-                />
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <View style={styles.separator} />
               <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleOpenURL(EXTERNAL_LINKS.TERMS_OF_SERVICE)}
-                accessibilityRole="link"
-                accessibilityLabel="View Terms of Service"
+                testID="save-name-button"
+                style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
+                onPress={handleSaveName}
+                disabled={isSavingName}
               >
-                <View style={styles.menuItemLeft}>
-                  <FileText size={20} color={theme.textSecondary} />
-                  <Text style={styles.menuItemText}>Terms of Service</Text>
-                </View>
-                <ChevronLeft
-                  size={20}
-                  color={theme.textTertiary}
-                  style={{ transform: [{ rotate: '180deg' }] }}
-                />
-              </TouchableOpacity>
-              <View style={styles.separator} />
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleOpenURL(EXTERNAL_LINKS.SOURCE_CODE)}
-                accessibilityRole="link"
-                accessibilityLabel="View source code on GitHub"
-              >
-                <View style={styles.menuItemLeft}>
-                  <Github size={20} color={theme.textSecondary} />
-                  <Text style={styles.menuItemText}>Source Code</Text>
-                </View>
-                <ChevronLeft
-                  size={20}
-                  color={theme.textTertiary}
-                  style={{ transform: [{ rotate: '180deg' }] }}
-                />
+                {isSavingName ? (
+                  <ActivityIndicator size="small" color={theme.white} />
+                ) : (
+                  <Text style={styles.modalSaveText}>Save</Text>
+                )}
               </TouchableOpacity>
             </View>
-          </View>
-
-          {updatesSupported && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>App Updates</Text>
-              <View style={styles.card}>
-                <View style={styles.updateContainer}>
-                  {updateStatus === 'idle' && (
-                    <TouchableOpacity
-                      style={styles.updateButton}
-                      onPress={checkForUpdates}
-                      accessibilityRole="button"
-                      accessibilityLabel="Check for app updates"
-                    >
-                      <RefreshCw size={20} color={theme.primary} />
-                      <Text style={styles.updateButtonText}>Check for Updates</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {(isChecking || isDownloading) && (
-                    <View style={styles.updateStatusContainer}>
-                      <ActivityIndicator size="small" color={theme.primary} />
-                      <Text style={styles.updateStatusText}>
-                        {isChecking ? 'Checking for updates...' : 'Downloading update...'}
-                      </Text>
-                    </View>
-                  )}
-
-                  {updateStatus === 'up-to-date' && (
-                    <View style={styles.updateStatusContainer}>
-                      <CheckCircle size={20} color={theme.success} />
-                      <Text style={[styles.updateStatusText, { color: theme.success }]}>
-                        App is up to date
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.checkAgainButton}
-                        onPress={checkForUpdates}
-                        accessibilityRole="button"
-                        accessibilityLabel="Check again for updates"
-                      >
-                        <Text style={styles.checkAgainText}>Check Again</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {updateStatus === 'ready' && (
-                    <View style={styles.updateReadyContainer}>
-                      <View style={styles.updateReadyInfo}>
-                        <Download size={20} color={theme.primary} />
-                        <Text style={styles.updateReadyText}>Update ready to install</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.applyUpdateButton}
-                        onPress={applyUpdate}
-                        accessibilityRole="button"
-                        accessibilityLabel="Restart app to apply update"
-                      >
-                        <Text style={styles.applyUpdateText}>Restart to Update</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {updateStatus === 'error' && (
-                    <View style={styles.updateStatusContainer}>
-                      <AlertCircle size={20} color={theme.error} />
-                      <Text style={[styles.updateStatusText, { color: theme.error }]}>
-                        {updateError || 'Failed to check for updates'}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.checkAgainButton}
-                        onPress={checkForUpdates}
-                        accessibilityRole="button"
-                        accessibilityLabel="Try again"
-                      >
-                        <Text style={styles.checkAgainText}>Try Again</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-          )}
-
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={handleSignOut}
-              accessibilityRole="button"
-              accessibilityLabel="Sign out of your account"
-            >
-              <LogOut size={20} color={theme.error} />
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={[
-                styles.dangerZoneHeader,
-                isDangerZoneExpanded && styles.dangerZoneHeaderExpanded,
-              ]}
-              onPress={toggleDangerZone}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isDangerZoneExpanded }}
-              accessibilityLabel="Danger Zone section"
-              accessibilityHint="Double tap to expand or collapse"
-            >
-              <View style={styles.dangerZoneHeaderLeft}>
-                <AlertTriangle size={18} color={theme.danger} />
-                <Text style={styles.dangerSectionTitle}>DANGER ZONE</Text>
-              </View>
-              {isDangerZoneExpanded ? (
-                <ChevronUp size={20} color={theme.danger} />
-              ) : (
-                <ChevronDown size={20} color={theme.danger} />
-              )}
-            </TouchableOpacity>
-            <View style={{ maxHeight: isDangerZoneExpanded ? undefined : 0, overflow: 'hidden' }}>
-              <View style={styles.dangerCard}>
-                <Text style={styles.dangerDescription}>
-                  Permanently delete your account and all associated data. This action cannot be
-                  undone.
-                </Text>
-                <TouchableOpacity
-                  style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]}
-                  onPress={handleDeleteAccount}
-                  disabled={isDeleting}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete your account permanently"
-                  accessibilityState={{ disabled: isDeleting }}
-                >
-                  {isDeleting ? (
-                    <ActivityIndicator size="small" color={theme.white} />
-                  ) : (
-                    <>
-                      <Trash2 size={20} color={theme.white} />
-                      <Text style={styles.deleteAccountText}>Delete Account</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={[
-                styles.buildInfoHeader,
-                isBuildInfoExpanded && styles.buildInfoHeaderExpanded,
-              ]}
-              onPress={toggleBuildInfo}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isBuildInfoExpanded }}
-              accessibilityLabel="Build Information section"
-              accessibilityHint="Double tap to expand or collapse"
-            >
-              <View style={styles.buildInfoHeaderLeft}>
-                <Info size={18} color={theme.primary} />
-                <Text style={styles.buildInfoSectionTitle}>BUILD INFO</Text>
-              </View>
-              {isBuildInfoExpanded ? (
-                <ChevronUp size={20} color={theme.primary} />
-              ) : (
-                <ChevronDown size={20} color={theme.primary} />
-              )}
-            </TouchableOpacity>
-            <View style={{ maxHeight: isBuildInfoExpanded ? undefined : 0, overflow: 'hidden' }}>
-              <View style={styles.buildInfoCard}>
-                {/* App Version & Build Number */}
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>App Version</Text>
-                  <Text style={styles.buildInfoValue}>
-                    {buildInfo.nativeAppVersion ?? packageJson.version}
-                    {buildInfo.nativeBuildVersion ? ` (${buildInfo.nativeBuildVersion})` : ''}
-                  </Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-
-                {/* Device Info */}
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Device</Text>
-                  <Text style={styles.buildInfoValue}>{buildInfo.deviceModel ?? Platform.OS}</Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>OS</Text>
-                  <Text style={styles.buildInfoValue}>
-                    {buildInfo.osName ?? Platform.OS} {buildInfo.osVersion ?? Platform.Version}
-                  </Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-
-                {/* Runtime Version */}
-                {buildInfo.runtimeVersion != null && (
-                  <>
-                    <View style={styles.buildInfoRow}>
-                      <Text style={styles.buildInfoLabel}>Runtime</Text>
-                      <Text style={styles.buildInfoValue}>{buildInfo.runtimeVersion}</Text>
-                    </View>
-                    <View style={styles.buildInfoSeparator} />
-                  </>
-                )}
-
-                {/* Update Channel & ID */}
-                {buildInfo.updateChannel != null && (
-                  <>
-                    <View style={styles.buildInfoRow}>
-                      <Text style={styles.buildInfoLabel}>Channel</Text>
-                      <Text style={styles.buildInfoValue}>{buildInfo.updateChannel}</Text>
-                    </View>
-                    <View style={styles.buildInfoSeparator} />
-                  </>
-                )}
-                {buildInfo.updateId != null && (
-                  <>
-                    <TouchableOpacity
-                      style={styles.buildInfoRow}
-                      onPress={() => copyToClipboard(buildInfo.updateId ?? '', 'updateId')}
-                      accessibilityRole="button"
-                      accessibilityLabel="Copy update ID"
-                    >
-                      <Text style={styles.buildInfoLabel}>Update ID</Text>
-                      <View style={styles.buildInfoCopyRow}>
-                        <Text style={styles.buildInfoValueMono}>
-                          {buildInfo.updateId.slice(0, 8)}...
-                        </Text>
-                        {copiedField === 'updateId' ? (
-                          <CheckCircle size={14} color={theme.success} />
-                        ) : (
-                          <Copy size={14} color={theme.textTertiary} />
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                    <View style={styles.buildInfoSeparator} />
-                  </>
-                )}
-
-                {/* Build Profile & Runner */}
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Build Profile</Text>
-                  <Text style={styles.buildInfoValue}>
-                    {buildInfo.easBuildProfile ?? 'Development'}
-                  </Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Build Runner</Text>
-                  <Text style={styles.buildInfoValue}>
-                    {buildInfo.easBuildRunner === 'eas-build'
-                      ? 'EAS Cloud'
-                      : buildInfo.easBuildRunner === 'local-build-plugin'
-                        ? 'Local'
-                        : 'Development'}
-                  </Text>
-                </View>
-
-                {/* Git Commit */}
-                {buildInfo.easBuildGitCommitHash != null && (
-                  <>
-                    <View style={styles.buildInfoSeparator} />
-                    <TouchableOpacity
-                      style={styles.buildInfoRow}
-                      onPress={() =>
-                        copyToClipboard(buildInfo.easBuildGitCommitHash ?? '', 'commit')
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Copy commit hash"
-                    >
-                      <Text style={styles.buildInfoLabel}>Commit</Text>
-                      <View style={styles.buildInfoCopyRow}>
-                        <Text style={styles.buildInfoValueMono}>
-                          {buildInfo.easBuildGitCommitHash.slice(0, 7)}
-                        </Text>
-                        {copiedField === 'commit' ? (
-                          <CheckCircle size={14} color={theme.success} />
-                        ) : (
-                          <Copy size={14} color={theme.textTertiary} />
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  </>
-                )}
-
-                {/* EAS Build ID */}
-                {buildInfo.easBuildId != null && (
-                  <>
-                    <View style={styles.buildInfoSeparator} />
-                    <TouchableOpacity
-                      style={styles.buildInfoRow}
-                      onPress={() => copyToClipboard(buildInfo.easBuildId ?? '', 'buildId')}
-                      accessibilityRole="button"
-                      accessibilityLabel="Copy build ID"
-                    >
-                      <Text style={styles.buildInfoLabel}>EAS Build ID</Text>
-                      <View style={styles.buildInfoCopyRow}>
-                        <Text style={styles.buildInfoValueMono}>
-                          {buildInfo.easBuildId.slice(0, 8)}...
-                        </Text>
-                        {copiedField === 'buildId' ? (
-                          <CheckCircle size={14} color={theme.success} />
-                        ) : (
-                          <Copy size={14} color={theme.textTertiary} />
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  </>
-                )}
-
-                {/* OTA vs Embedded indicator */}
-                <View style={styles.buildInfoSeparator} />
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Bundle</Text>
-                  <Text style={styles.buildInfoValue}>
-                    {buildInfo.isEmbeddedLaunch ? 'Embedded' : 'OTA Update'}
-                  </Text>
-                </View>
-
-                {/* Development mode note */}
-                {!buildInfo.easBuildId && !buildInfo.easBuildProfile && (
-                  <Text style={styles.buildInfoNote}>
-                    Running in development mode. Full build details available in production.
-                  </Text>
-                )}
-
-                {/* Copy All Button */}
-                <View style={styles.buildInfoSeparator} />
-                <TouchableOpacity
-                  style={styles.copyAllButton}
-                  onPress={() => copyToClipboard(formatBuildInfoForCopy(buildInfo), 'all')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Copy all build information to clipboard"
-                >
-                  {copiedField === 'all' ? (
-                    <>
-                      <CheckCircle size={16} color={theme.success} />
-                      <Text style={[styles.copyAllText, { color: theme.success }]}>Copied!</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} color={theme.primary} />
-                      <Text style={styles.copyAllText}>Copy All Build Info</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Sobriety Waypoint v{packageJson.version}</Text>
-            <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
-            <TouchableOpacity
-              onPress={() => handleOpenURL(EXTERNAL_LINKS.DEVELOPER)}
-              accessibilityRole="link"
-              accessibilityLabel="Visit developer website"
-            >
-              <Text style={styles.footerCredit}>By Bill Chirico</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -958,35 +1153,6 @@ export default function SettingsScreen() {
  */
 const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
   StyleSheet.create({
-    outerContainer: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: theme.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderLight,
-    },
-    headerSpacer: {
-      width: HEADER_BUTTON_WIDTH,
-    },
-    closeButton: {
-      padding: 4,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-    },
     scrollView: {
       flex: 1,
       backgroundColor: theme.background,
@@ -1063,6 +1229,12 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+    },
+    menuItemSubtext: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginTop: 2,
     },
     separator: {
       height: 1,
@@ -1337,5 +1509,87 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.primary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    editNameModal: {
+      backgroundColor: theme.surface,
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontFamily: theme.fontRegular,
+      fontWeight: '700',
+      color: theme.text,
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 8,
+    },
+    textInput: {
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 12,
+      padding: 14,
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.text,
+    },
+    validationError: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.danger,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 8,
+    },
+    modalCancelButton: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+    },
+    modalCancelText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    modalSaveButton: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 12,
+      backgroundColor: theme.primary,
+      alignItems: 'center',
+    },
+    modalSaveText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
     },
   });

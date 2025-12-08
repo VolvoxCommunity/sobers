@@ -53,8 +53,23 @@ jest.mock('expo-router', () => {
       ({ children }: { children: React.ReactNode }) =>
         React.createElement(View, { testID: 'stack-navigator' }, children),
       {
-        Screen: ({ name }: { name: string }) =>
-          React.createElement(View, { testID: `screen-${name}` }),
+        Screen: ({
+          name,
+          options,
+        }: {
+          name: string;
+          options?: {
+            headerLeft?: () => React.ReactNode;
+            headerRight?: () => React.ReactNode;
+          };
+        }) =>
+          React.createElement(
+            View,
+            { testID: `screen-${name}` },
+            // Render headerLeft and headerRight if provided to ensure coverage
+            options?.headerLeft?.(),
+            options?.headerRight?.()
+          ),
       }
     ),
   };
@@ -138,6 +153,16 @@ jest.mock('@/contexts/ThemeContext', () => ({
 jest.mock('@/components/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+
+// Mock lucide-react-native
+jest.mock('lucide-react-native', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    X: (props: Record<string, unknown>) =>
+      React.createElement(View, { testID: 'x-icon', ...props }),
+  };
+});
 
 // =============================================================================
 // Test Suite
