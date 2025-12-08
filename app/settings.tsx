@@ -524,8 +524,6 @@ export default function SettingsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-          <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
-          <Text style={styles.headerTitle}>Settings</Text>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => router.back()}
@@ -534,6 +532,8 @@ export default function SettingsScreen() {
           >
             <X size={24} color={theme.text} />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Settings</Text>
+          <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
         </View>
 
         <ScrollView
