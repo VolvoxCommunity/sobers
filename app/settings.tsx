@@ -523,7 +523,7 @@ export default function SettingsScreen() {
     <View style={styles.outerContainer}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
           <View style={styles.headerSpacer} accessibilityElementsHidden={true} />
           <Text style={styles.headerTitle}>Settings</Text>
           <TouchableOpacity
