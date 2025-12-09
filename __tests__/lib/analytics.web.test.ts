@@ -120,7 +120,7 @@ describe('Web Analytics', () => {
       await initializeWebAnalytics(mockConfig);
 
       expect(mockLoggerInfo).toHaveBeenCalledWith(
-        'Firebase app already initialized',
+        'Firebase app already initialized, retrieved existing instance',
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
