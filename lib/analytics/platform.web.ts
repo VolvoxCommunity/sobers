@@ -228,11 +228,16 @@ async function hashUserId(input: string | null): Promise<string | null> {
  * 1. Removing reserved logger keys to prevent overwrites
  * 2. Redacting PII-prone keys to prevent data leaks
  * 3. Returning a sanitized object suitable for nested logging
+ * 4. Handling circular references gracefully
  *
  * @param params - The original event params to sanitize
+ * @param seen - WeakSet to track visited objects and detect circular references
  * @returns Sanitized params object with PII redacted and reserved keys removed
  */
-function sanitizeParamsForLogging(params?: EventParams): Record<string, unknown> {
+function sanitizeParamsForLogging(
+  params?: EventParams,
+  seen: WeakSet<object> = new WeakSet()
+): Record<string, unknown> {
   if (!params) {
     return {};
   }
@@ -251,9 +256,15 @@ function sanitizeParamsForLogging(params?: EventParams): Record<string, unknown>
       continue;
     }
 
-    // For nested objects, recursively sanitize
+    // For nested objects, recursively sanitize with circular reference detection
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      sanitized[key] = sanitizeParamsForLogging(value as EventParams);
+      // Detect circular references
+      if (seen.has(value)) {
+        sanitized[key] = '[Circular]';
+        continue;
+      }
+      seen.add(value);
+      sanitized[key] = sanitizeParamsForLogging(value as EventParams, seen);
     } else {
       sanitized[key] = value;
     }
