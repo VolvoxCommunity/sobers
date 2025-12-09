@@ -17,3 +17,4 @@ function Head({ children }) {
 
 module.exports = Head;
 module.exports.default = Head;
+module.exports.__esModule = true;
