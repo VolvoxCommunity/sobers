@@ -350,3 +350,469 @@ describe('Web Analytics', () => {
     });
   });
 });
+
+describe('Web Analytics - New Functionality', () => {
+  describe('Provider Configuration', () => {
+    const mockConfig = {
+      apiKey: 'test-key',
+      projectId: 'test-project',
+      appId: 'test-app-id',
+      measurementId: 'G-XXXXXXXX',
+    };
+
+    beforeEach(() => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      mockIsDebugMode.mockReturnValue(false);
+    });
+
+    it('initializes with Firebase provider by default', async () => {
+      await initializeWebAnalytics(mockConfig);
+
+      expect(initializeApp).toHaveBeenCalled();
+      expect(getAnalytics).toHaveBeenCalled();
+    });
+
+    it('logs completion with provider information in debug mode', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      await initializeWebAnalytics(mockConfig);
+
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        'Analytics initialization complete',
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          provider: expect.any(String),
+          firebaseEnabled: expect.any(Boolean),
+          vercelEnabled: expect.any(Boolean),
+        })
+      );
+    });
+  });
+
+  describe('Error Handling', () => {
+    const mockConfig = {
+      apiKey: 'test-key',
+      projectId: 'test-project',
+      appId: 'test-app-id',
+      measurementId: 'G-XXXXXXXX',
+    };
+
+    beforeEach(async () => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      await initializeWebAnalytics(mockConfig);
+      jest.clearAllMocks();
+    });
+
+    it('handles logEvent errors gracefully', () => {
+      const error = new Error('Firebase error');
+      (logEvent as jest.Mock).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      expect(() => trackEventWeb('test_event', { param1: 'value1' })).not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to track event test_event in Firebase',
+        error,
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('handles setUserId errors gracefully', () => {
+      const error = new Error('Set user ID failed');
+      (setUserId as jest.Mock).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      expect(() => setUserIdWeb('user-123')).not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to set user ID',
+        error,
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('handles setUserProperties errors gracefully', () => {
+      const error = new Error('Set properties failed');
+      (setUserProperties as jest.Mock).mockImplementationOnce(() => {
+        throw error;
+      });
+
+      expect(() => setUserPropertiesWeb({ theme_preference: 'dark' })).not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to set user properties',
+        error,
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('handles non-Error exceptions in logEvent', () => {
+      (logEvent as jest.Mock).mockImplementationOnce(() => {
+        throw 'string error';
+      });
+
+      expect(() => trackEventWeb('test_event')).not.toThrow();
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to track event test_event in Firebase',
+        expect.any(Error),
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+  });
+
+  describe('Idempotency and Re-initialization', () => {
+    const mockConfig = {
+      apiKey: 'test-key',
+      projectId: 'test-project',
+      appId: 'test-app-id',
+      measurementId: 'G-XXXXXXXX',
+    };
+
+    beforeEach(() => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      mockIsDebugMode.mockReturnValue(false);
+    });
+
+    it('prevents multiple initialization attempts', async () => {
+      await initializeWebAnalytics(mockConfig);
+      const firstCallCount = initializeApp.mock.calls.length;
+
+      // Try to initialize again
+      await initializeWebAnalytics(mockConfig);
+
+      // Should not call initializeApp again
+      expect(initializeApp).toHaveBeenCalledTimes(firstCallCount);
+    });
+
+    it('logs debug message when skipping re-initialization', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+      await initializeWebAnalytics(mockConfig);
+
+      jest.clearAllMocks();
+
+      await initializeWebAnalytics(mockConfig);
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Analytics already initialized, skipping re-initialization',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('allows re-initialization after __resetForTesting', async () => {
+      await initializeWebAnalytics(mockConfig);
+      const firstCallCount = initializeApp.mock.calls.length;
+
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+
+      await initializeWebAnalytics(mockConfig);
+
+      // Should call initializeApp again after reset
+      expect(initializeApp).toHaveBeenCalledTimes(1);
+      expect(initializeApp.mock.calls.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Analytics Not Initialized', () => {
+    beforeEach(() => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      mockIsDebugMode.mockReturnValue(false);
+    });
+
+    it('logs debug message when tracking event without initialization', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      trackEventWeb('test_event', { param1: 'value1' });
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        expect.stringContaining('Event (not sent - no provider initialized)'),
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          event_params: expect.any(Object),
+        })
+      );
+    });
+
+    it('logs debug message when setting user ID without initialization', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      setUserIdWeb('user-123');
+
+      // Wait for async hash operation
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          expect(mockLoggerDebug).toHaveBeenCalledWith(
+            expect.stringContaining('setUserId (not sent - Firebase not initialized)'),
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+          resolve(undefined);
+        }, 10);
+      });
+    });
+
+    it('logs debug message when setting user properties without initialization', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      setUserPropertiesWeb({ theme_preference: 'dark' });
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'setUserProperties (not sent - Firebase not initialized)',
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          user_properties: expect.any(Object),
+        })
+      );
+    });
+
+    it('does not call Firebase methods when not initialized', () => {
+      trackEventWeb('test_event');
+      setUserIdWeb('user-123');
+      setUserPropertiesWeb({ theme_preference: 'dark' });
+
+      expect(logEvent).not.toHaveBeenCalled();
+      expect(setUserId).not.toHaveBeenCalled();
+      expect(setUserProperties).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('User Properties Filtering', () => {
+    beforeEach(async () => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
+    it('filters out undefined values from user properties', () => {
+      const props = {
+        theme_preference: 'dark' as const,
+        has_sponsor: undefined,
+        days_sober_bucket: '31-90' as const,
+      };
+
+      setUserPropertiesWeb(props);
+
+      // Firebase should only receive defined values
+      expect(setUserProperties).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          theme_preference: 'dark',
+          days_sober_bucket: '31-90',
+        })
+      );
+
+      // Should not include undefined values
+      const callArgs = (setUserProperties as jest.Mock).mock.calls[0][1];
+      expect(callArgs).not.toHaveProperty('has_sponsor');
+    });
+
+    it('preserves boolean false values', () => {
+      const props = {
+        has_sponsor: false,
+        has_sponsees: false,
+      };
+
+      setUserPropertiesWeb(props);
+
+      expect(setUserProperties).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          has_sponsor: false,
+          has_sponsees: false,
+        })
+      );
+    });
+
+    it('handles empty properties object', () => {
+      setUserPropertiesWeb({});
+
+      expect(setUserProperties).toHaveBeenCalledWith(expect.anything(), {});
+    });
+
+    it('handles all undefined properties', () => {
+      const props = {
+        theme_preference: undefined,
+        has_sponsor: undefined,
+      };
+
+      setUserPropertiesWeb(props);
+
+      expect(setUserProperties).toHaveBeenCalledWith(expect.anything(), {});
+    });
+  });
+
+  describe('Parameter Sanitization for Logging', () => {
+    beforeEach(async () => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      mockIsDebugMode.mockReturnValue(true);
+      await initializeWebAnalytics({
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        appId: 'test-app-id',
+        measurementId: 'G-XXXXXXXX',
+      });
+      jest.clearAllMocks();
+    });
+
+    it('logs params without PII in debug mode', () => {
+      trackEventWeb('test_event', {
+        task_id: '123',
+        count: 5,
+      });
+
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Event: test_event',
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          event_params: expect.objectContaining({
+            task_id: '123',
+            count: 5,
+          }),
+        })
+      );
+    });
+
+    it('redacts PII-prone keys from logged params', () => {
+      trackEventWeb('test_event', {
+        email: 'user@example.com',
+        task_id: '123',
+      });
+
+      const debugCall = mockLoggerDebug.mock.calls.find((call) =>
+        call[0].includes('Event: test_event')
+      );
+      expect(debugCall).toBeDefined();
+      expect(debugCall[1].event_params.email).toBe('[Filtered]');
+      expect(debugCall[1].event_params.task_id).toBe('123');
+    });
+
+    it('recursively sanitizes nested objects', () => {
+      trackEventWeb('test_event', {
+        metadata: {
+          email: 'user@example.com',
+          task_id: '123',
+        },
+      });
+
+      const debugCall = mockLoggerDebug.mock.calls.find((call) =>
+        call[0].includes('Event: test_event')
+      );
+      expect(debugCall).toBeDefined();
+      expect(debugCall[1].event_params.metadata.email).toBe('[Filtered]');
+      expect(debugCall[1].event_params.metadata.task_id).toBe('123');
+    });
+
+    it('handles params with reserved logger keys', () => {
+      trackEventWeb('test_event', {
+        error_message: 'this should be filtered',
+        task_id: '123',
+      });
+
+      const debugCall = mockLoggerDebug.mock.calls.find((call) =>
+        call[0].includes('Event: test_event')
+      );
+      expect(debugCall).toBeDefined();
+      // error_message should be filtered to prevent overwriting logger metadata
+      expect(debugCall[1].event_params).not.toHaveProperty('error_message');
+      expect(debugCall[1].event_params.task_id).toBe('123');
+    });
+  });
+
+  describe('__resetForTesting', () => {
+    it('throws error when called outside test environment', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      expect(() => __resetForTesting()).toThrow(
+        '__resetForTesting should only be called in test environments'
+      );
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('successfully resets state in test environment', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
+
+      expect(() => __resetForTesting()).not.toThrow();
+
+      process.env.NODE_ENV = originalEnv;
+    });
+  });
+
+  describe('Edge Cases', () => {
+    const mockConfig = {
+      apiKey: 'test-key',
+      projectId: 'test-project',
+      appId: 'test-app-id',
+      measurementId: 'G-XXXXXXXX',
+    };
+
+    beforeEach(async () => {
+      __resetForTesting();
+      jest.clearAllMocks();
+      (getApps as jest.Mock).mockReturnValue([]);
+      (isSupported as jest.Mock).mockResolvedValue(true);
+      await initializeWebAnalytics(mockConfig);
+      jest.clearAllMocks();
+    });
+
+    it('handles trackEvent with null params', () => {
+      expect(() => trackEventWeb('test_event', null as any)).not.toThrow();
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'test_event', null);
+    });
+
+    it('handles trackEvent with empty object params', () => {
+      trackEventWeb('test_event', {});
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'test_event', {});
+    });
+
+    it('handles empty screen name in trackScreenView', () => {
+      trackScreenViewWeb('');
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), 'screen_view', {
+        screen_name: '',
+        screen_class: '',
+      });
+    });
+
+    it('handles very long event names', () => {
+      const longName = 'a'.repeat(1000);
+      trackEventWeb(longName);
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), longName, undefined);
+    });
+
+    it('handles special characters in event names', () => {
+      const specialName = 'event_with-special.chars!@#$%';
+      trackEventWeb(specialName);
+      expect(logEvent).toHaveBeenCalledWith(expect.anything(), specialName, undefined);
+    });
+
+    it('handles params with circular references gracefully', () => {
+      const circular: any = { prop: 'value' };
+      circular.self = circular;
+
+      // This should not crash, even if logging might fail internally
+      expect(() => trackEventWeb('test_event', circular)).not.toThrow();
+    });
+  });
+});
