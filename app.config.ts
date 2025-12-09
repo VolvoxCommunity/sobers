@@ -91,6 +91,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     './plugins/withModularHeaders', // Required for Firebase/GoogleUtilities Swift compatibility
+    './plugins/withFirebaseConfig', // Injects Firebase config from EAS secrets during builds
     [
       'expo-splash-screen',
       {
