@@ -54,7 +54,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     icon: './assets/images/logo.png',
     supportsTablet: true,
     usesAppleSignIn: true, // Enable Sign in with Apple capability
-    googleServicesFile: './GoogleService-Info.plist', // Firebase config for iOS
+    // Firebase config: EAS secret path takes precedence, falls back to local file for development
+    googleServicesFile: process.env.GOOGLE_SERVICE_INFO_PLIST || './GoogleService-Info.plist',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -62,7 +63,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: 'com.volvox.sobrietywaypoint',
     icon: './assets/images/logo.png',
-    googleServicesFile: './google-services.json', // Firebase config for Android
+    // Firebase config: EAS secret path takes precedence, falls back to local file for development
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './google-services.json',
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
       foregroundImage: './assets/images/logo.png',
@@ -91,7 +93,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     './plugins/withModularHeaders', // Required for Firebase/GoogleUtilities Swift compatibility
-    './plugins/withFirebaseConfig', // Injects Firebase config from EAS secrets during builds
+    // Note: Firebase config files are handled via googleServicesFile config + EAS secrets
     [
       'expo-splash-screen',
       {
