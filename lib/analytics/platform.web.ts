@@ -343,9 +343,14 @@ function dispatchEvent(eventName: string, params?: EventParams): void {
 /**
  * Initialize configured analytics providers for the web platform.
  *
- * This function is idempotent: once initialized, subsequent calls are no-ops. If Firebase analytics is enabled, `config` must contain the Firebase app settings.
+ * This function is idempotent: once initialized, subsequent calls are no-ops.
+ * If Firebase analytics is enabled, `config` must contain the Firebase app settings.
  *
- * @param config - Firebase configuration required when Firebase analytics is enabled
+ * @param config - Firebase configuration required when Firebase analytics is enabled.
+ *   If Firebase is enabled but config is missing or invalid (empty apiKey, projectId, or appId),
+ *   Firebase initialization will fail silently and be logged. Subsequent analytics calls
+ *   will be no-ops until the next successful initialization (requires page reload or
+ *   calling `__resetForTesting()` in tests).
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   // Guard against multiple initialization attempts (hot reload, React Strict Mode, etc.)
@@ -399,11 +404,14 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
         }
       }
     } catch (error) {
+      // Reset flag to allow retry on critical failures
+      isInitialized = false;
       logger.error(
         'Failed to initialize Firebase Analytics',
         error instanceof Error ? error : new Error(String(error)),
         { category: LogCategory.ANALYTICS }
       );
+      return;
     }
   }
 
