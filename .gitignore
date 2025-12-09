@@ -91,6 +91,7 @@ android/.gradle/
 android/local.properties
 *.hprof
 .cxx/
+play-store-key.json
 
 # Debugging
 .android/

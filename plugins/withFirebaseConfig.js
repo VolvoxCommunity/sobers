@@ -20,6 +20,55 @@ const path = require('path');
 const { Buffer } = require('buffer');
 
 /**
+ * Validates if a string is valid JSON.
+ *
+ * @param {string} content - The content to validate
+ * @returns {boolean} True if valid JSON
+ */
+function isValidJson(content) {
+  try {
+    JSON.parse(content);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates if a string is valid plist XML.
+ * Checks for proper plist structure with opening and closing tags.
+ *
+ * @param {string} content - The content to validate
+ * @returns {boolean} True if valid plist structure
+ */
+function isValidPlist(content) {
+  const trimmed = content.trim();
+  // Check for XML declaration or plist DOCTYPE, and proper plist tags
+  const hasXmlOrDoctype = trimmed.startsWith('<?xml') || trimmed.startsWith('<!DOCTYPE');
+  const hasPlistOpen = trimmed.includes('<plist');
+  const hasPlistClose = trimmed.includes('</plist>');
+
+  // Must have plist tags and either start with XML declaration/DOCTYPE or <plist directly
+  return hasPlistOpen && hasPlistClose && (hasXmlOrDoctype || trimmed.startsWith('<plist'));
+}
+
+/**
+ * Determines if content is valid Firebase config (JSON or plist).
+ *
+ * @param {string} content - The content to validate
+ * @returns {'json' | 'plist' | null} The detected format, or null if invalid
+ */
+function detectConfigFormat(content) {
+  if (isValidJson(content)) {
+    return 'json';
+  }
+  if (isValidPlist(content)) {
+    return 'plist';
+  }
+  return null;
+}
+
+/**
  * Writes content from an EAS secret to a target file.
  * EAS FILE_BASE64 secrets provide base64-encoded content directly in the env var.
  *
@@ -30,6 +79,8 @@ const { Buffer } = require('buffer');
 function writeFromSecret(secretValue, targetPath) {
   if (!secretValue) return false;
 
+  const fileName = path.basename(targetPath);
+
   // Ensure target directory exists
   const targetDir = path.dirname(targetPath);
   if (!fs.existsSync(targetDir)) {
@@ -37,26 +88,48 @@ function writeFromSecret(secretValue, targetPath) {
   }
 
   // Check if it's a file path (EAS may write to temp file in some cases)
-  if (secretValue.startsWith('/') && fs.existsSync(secretValue)) {
+  if (path.isAbsolute(secretValue) && fs.existsSync(secretValue)) {
     fs.copyFileSync(secretValue, targetPath);
     return true;
   }
 
-  // Otherwise, treat as base64-encoded content (FILE_BASE64 format)
-  try {
-    const content = Buffer.from(secretValue, 'base64').toString('utf8');
-    // Verify it's valid JSON/plist by checking first character
-    if (content.startsWith('{') || content.startsWith('<')) {
-      fs.writeFileSync(targetPath, content);
-      return true;
+  // Determine what content to write:
+  // 1. If secretValue is already valid JSON/plist, use it directly (raw content)
+  // 2. If secretValue is base64-encoded, decode it first (FILE_BASE64 format)
+  let contentToWrite = secretValue;
+  let contentFormat = detectConfigFormat(secretValue);
+
+  if (contentFormat) {
+    // Content is already valid, use as-is
+    contentToWrite = secretValue;
+  } else {
+    // Not valid raw content, try to decode as base64
+    try {
+      const decoded = Buffer.from(secretValue, 'base64').toString('utf8');
+      const decodedFormat = detectConfigFormat(decoded);
+
+      if (decodedFormat) {
+        contentToWrite = decoded;
+        contentFormat = decodedFormat;
+      } else {
+        console.warn(
+          `Warning: Content for ${fileName} is neither valid JSON/plist nor valid base64-encoded JSON/plist. Writing as-is.`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `Warning: Failed to decode base64 content for ${fileName}: ${error.message}. Writing as-is.`
+      );
     }
-    // If not valid decoded content, it might be raw content (for backward compat)
-    fs.writeFileSync(targetPath, secretValue);
+  }
+
+  // Write the determined content
+  try {
+    fs.writeFileSync(targetPath, contentToWrite);
     return true;
-  } catch {
-    // If base64 decode fails, write as-is
-    fs.writeFileSync(targetPath, secretValue);
-    return true;
+  } catch (writeError) {
+    console.error(`Error: Failed to write ${fileName}: ${writeError.message}`);
+    return false;
   }
 }
 

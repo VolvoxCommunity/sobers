@@ -5,11 +5,19 @@
  * - Plugin configuration
  * - Build settings
  * - Configuration structure
+ * - Firebase configuration via environment variables
  */
 
 import appConfig from '../../app.config';
 
 describe('app.config.ts', () => {
+  // Store original env vars to restore after tests
+  const originalEnv = { ...process.env };
+
+  afterEach(() => {
+    // Restore original environment after each test
+    process.env = { ...originalEnv };
+  });
   describe('Plugin Configuration', () => {
     it('includes essential plugins', () => {
       const config = appConfig({ config: {} } as any);
@@ -121,6 +129,78 @@ describe('app.config.ts', () => {
       const config = appConfig({ config: {} } as any);
 
       expect(config.updates).toBeDefined();
+    });
+  });
+
+  describe('Firebase Configuration', () => {
+    describe('iOS googleServicesFile', () => {
+      it('uses environment variable when GOOGLE_SERVICE_INFO_PLIST is set', () => {
+        process.env.GOOGLE_SERVICE_INFO_PLIST = '/tmp/eas-secret/GoogleService-Info.plist';
+
+        const config = appConfig({ config: {} } as any);
+
+        expect(config.ios?.googleServicesFile).toBe('/tmp/eas-secret/GoogleService-Info.plist');
+      });
+
+      it('falls back to local file when GOOGLE_SERVICE_INFO_PLIST is not set', () => {
+        delete process.env.GOOGLE_SERVICE_INFO_PLIST;
+
+        const config = appConfig({ config: {} } as any);
+
+        expect(config.ios?.googleServicesFile).toBe('./GoogleService-Info.plist');
+      });
+
+      it('falls back to local file when GOOGLE_SERVICE_INFO_PLIST is empty string', () => {
+        process.env.GOOGLE_SERVICE_INFO_PLIST = '';
+
+        const config = appConfig({ config: {} } as any);
+
+        // Empty string is falsy, so it should fall back to local file
+        expect(config.ios?.googleServicesFile).toBe('./GoogleService-Info.plist');
+      });
+    });
+
+    describe('Android googleServicesFile', () => {
+      it('uses environment variable when GOOGLE_SERVICES_JSON is set', () => {
+        process.env.GOOGLE_SERVICES_JSON = '/tmp/eas-secret/google-services.json';
+
+        const config = appConfig({ config: {} } as any);
+
+        expect(config.android?.googleServicesFile).toBe('/tmp/eas-secret/google-services.json');
+      });
+
+      it('falls back to local file when GOOGLE_SERVICES_JSON is not set', () => {
+        delete process.env.GOOGLE_SERVICES_JSON;
+
+        const config = appConfig({ config: {} } as any);
+
+        expect(config.android?.googleServicesFile).toBe('./google-services.json');
+      });
+
+      it('falls back to local file when GOOGLE_SERVICES_JSON is empty string', () => {
+        process.env.GOOGLE_SERVICES_JSON = '';
+
+        const config = appConfig({ config: {} } as any);
+
+        // Empty string is falsy, so it should fall back to local file
+        expect(config.android?.googleServicesFile).toBe('./google-services.json');
+      });
+    });
+
+    describe('Firebase plugin configuration', () => {
+      it('includes @react-native-firebase/app plugin', () => {
+        const config = appConfig({ config: {} } as any);
+
+        const hasFirebasePlugin = config.plugins?.includes('@react-native-firebase/app');
+        expect(hasFirebasePlugin).toBe(true);
+      });
+
+      it('includes withModularHeaders plugin for Firebase compatibility', () => {
+        const config = appConfig({ config: {} } as any);
+
+        const hasModularHeadersPlugin = config.plugins?.includes('./plugins/withModularHeaders');
+        expect(hasModularHeadersPlugin).toBe(true);
+      });
     });
   });
 });

@@ -31,66 +31,58 @@ jobs:
             REPO: ${{ github.repository }}
             ${{ github.event.pull_request && format('PR NUMBER: {0}', github.event.pull_request.number) || format('ISSUE NUMBER: {0}', github.event.issue.number) }}
 
-            **Task: Intelligent Auto-Labeling**
+            **Task: Minimal Auto-Labeling (1-3 labels)**
 
-            You are an intelligent labeling assistant. Analyze the ${{ github.event.pull_request && 'pull request' || 'issue' }} and apply appropriate labels based on the content, files changed, and description.
+            Apply the MINIMUM labels needed. Less is more. When in doubt, skip the label.
 
-            **Available Labels:**
-            - `bug` - Something isn't working
-            - `documentation` - Improvements or additions to documentation
-            - `enhancement` - Enhancement on existing feature
-            - `feature` - New feature
+            **Target: 1-3 labels. Rarely exceed 3.**
+
+            **Labels:**
+
+            *Type (pick exactly 1):*
+            - `bug` - Something is broken
+            - `feature` - New functionality
+            - `enhancement` - Improving existing feature
+            - `documentation` - Docs only
             - `dependencies` - Dependency updates
-            - `backend` - Backend/API related changes
-            - `frontend` - Frontend/UI related changes
-            - `security` - Security related issues or improvements
-            - `testing` - Testing related changes
-            - `accessibility` - Accessibility improvements
-            - `performance` - Performance improvements
-            - `android` - Android specific issues
-            - `ios` - iOS specific issues
-            - `web` - Web specific issues
-            - `supabase` - Supabase/database related
-            - `authentication` - Authentication related issues
-            - `ci/cd` - CI/CD pipeline related
-            - `refactor` - Code refactoring
+            - `refactor` - Code restructure, no behavior change
+            - `testing` - Test files only
+            - `ci/cd` - Workflow/pipeline changes
 
-            **Instructions:**
+            *Area (pick 0-2, only if clearly relevant):*
+            - `frontend` - UI components
+            - `backend` - Server/API logic
+            - `supabase` - Database changes
+            - `authentication` - Auth flow
+            - `android` - Android-only code
+            - `ios` - iOS-only code
+            - `web` - Web-only code
+            - `security` - Security fix
+            - `accessibility` - a11y fix
+            - `performance` - Optimization
 
-            1. **Analyze the Content:**
-               ${{ github.event.pull_request && '- Read the PR title, description, and changed files using `gh pr view`' || '- Read the issue title and description using `gh issue view`' }}
-               ${{ github.event.pull_request && '- Use `gh pr diff` to understand what code is being changed' || '' }}
-               - Identify the type of change (bug fix, feature, documentation, etc.)
-               - Determine which areas of the codebase are affected
+            **Decision Process:**
+            1. Read: `gh ${{ github.event.pull_request && 'pr' || 'issue' }} view ${{ github.event.pull_request && github.event.pull_request.number || github.event.issue.number }}`
+            ${{ github.event.pull_request && '2. Check diff: `gh pr diff`' || '' }}
+            ${{ github.event.pull_request && '3' || '2' }}. Ask: "What is the ONE main thing this does?"
+            ${{ github.event.pull_request && '4' || '3' }}. Pick 1 type label (required)
+            ${{ github.event.pull_request && '5' || '4' }}. Pick 0-2 area labels if clearly relevant
+            ${{ github.event.pull_request && '6' || '5' }}. Apply with: `gh ${{ github.event.pull_request && format('pr edit {0}', github.event.pull_request.number) || format('issue edit {0}', github.event.issue.number) }} --add-label "label1,label2"`
 
-            2. **Apply Labels:**
-               - Select labels that **strongly** apply to this ${{ github.event.pull_request && 'PR' || 'issue' }}
-               - Aim for 2-4 labels in most cases; only exceed this for genuinely cross-cutting changes
-               - When uncertain, prefer fewer labels over more
-               - Use the `gh` CLI to add labels:
-                 ${{ github.event.pull_request && format('`gh pr edit {0} --add-label "label1,label2,label3"`', github.event.pull_request.number) || format('`gh issue edit {0} --add-label "label1,label2,label3"`', github.event.issue.number) }}
+            **Examples (1-3 labels):**
+            - Login crashes → `bug`, `authentication`
+            - Add dark mode → `feature`, `frontend`
+            - Update README → `documentation`
+            - Bump dependencies → `dependencies`
+            - Fix iOS build → `bug`, `ios`
+            - Refactor auth context → `refactor`, `authentication`
+            - Add tests → `testing`
+            - Fix XSS vulnerability → `bug`, `security`
+            - New auth settings page → `feature`, `frontend`, `authentication`
+            - CI workflow update → `ci/cd`
 
-            3. **Labeling Guidelines:**
-               - **Type Labels** (pick 1, rarely 2): bug, feature, enhancement, documentation, refactor, testing, dependencies
-               - **Area Labels** (pick 1-2 primary areas): frontend, backend, supabase, authentication, ci/cd, android, ios, web
-               - **Special Labels** (only if directly relevant): security, accessibility, performance
+            **Keep it minimal. 3 labels is the practical max for most changes.**
 
-            4. **Examples:**
-               - Issue reporting login crash → `bug`, `authentication`, `frontend`
-               - Issue requesting new feature → `feature`, `frontend`
-               - Issue requesting docs update → `documentation`
-               - PR adding new authentication flow → `feature`, `authentication`, `frontend`
-               - PR updating dependencies → `dependencies`
-               - PR improving accessibility → `enhancement`, `accessibility`, `frontend`
-               - PR refactoring database queries → `refactor`, `supabase`, `backend`
+            Execute now.
 
-            **Important:**
-            - Do NOT create new labels; only use the labels listed above
-            - Be selective: only add labels that **clearly and directly** apply
-            - Avoid tangential labels (e.g., don't add `backend` just because a frontend change calls an API)
-            - For PRs, prioritize file changes over description
-            - For issues, prioritize the problem description and impact
-
-            **Execute the labeling now using the gh CLI.**
-
-          claude_args: '--allowed-tools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue edit:*)"'
+          claude_args: '--model claude-opus-4-5-20251101 --allowed-tools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh issue view:*),Bash(gh issue edit:*)"'
