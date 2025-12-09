@@ -124,36 +124,41 @@ function RootLayoutNav() {
     }
   }, [user, profile, segments, loading, router, navigatorReady]);
 
+  // SEO meta tags rendered unconditionally for search engine and social media crawlers
+  const seoHead = (
+    <Head>
+      <title>Sobriety Waypoint</title>
+      <meta name="description" content="Your companion on the journey to recovery" />
+
+      {/* Open Graph / Facebook */}
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content="Sobriety Waypoint" />
+      <meta property="og:description" content="Your companion on the journey to recovery" />
+      <meta property="og:site_name" content="Sobriety Waypoint" />
+      <meta property="og:image" content="https://sobrietywaypoint.com/assets/images/banner.png" />
+
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="Sobriety Waypoint" />
+      <meta name="twitter:description" content="Your companion on the journey to recovery" />
+      <meta name="twitter:image" content="https://sobrietywaypoint.com/assets/images/banner.png" />
+    </Head>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator testID="loading-indicator" size="large" color="#10b981" />
-      </View>
+      <>
+        {seoHead}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator testID="loading-indicator" size="large" color="#10b981" />
+        </View>
+      </>
     );
   }
 
   return (
     <>
-      <Head>
-        <title>Sobriety Waypoint</title>
-        <meta name="description" content="Your companion on the journey to recovery" />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Sobriety Waypoint" />
-        <meta property="og:description" content="Your companion on the journey to recovery" />
-        <meta property="og:site_name" content="Sobriety Waypoint" />
-        <meta property="og:image" content="https://sobrietywaypoint.com/assets/images/banner.png" />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Sobriety Waypoint" />
-        <meta name="twitter:description" content="Your companion on the journey to recovery" />
-        <meta
-          name="twitter:image"
-          content="https://sobrietywaypoint.com/assets/images/banner.png"
-        />
-      </Head>
+      {seoHead}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
