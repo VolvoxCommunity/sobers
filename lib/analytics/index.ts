@@ -109,7 +109,16 @@ export async function initializeAnalytics(): Promise<void> {
     });
   }
 
-  await initializePlatformAnalytics(config);
+  try {
+    await initializePlatformAnalytics(config);
+  } catch (error) {
+    // Reset flag to allow retry on critical failures
+    isInitialized = false;
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to initialize analytics platform', err, {
+      category: LogCategory.ANALYTICS,
+    });
+  }
 }
 
 /**
@@ -193,6 +202,9 @@ export function trackScreenView(screenName: string, screenClass?: string): void 
  * Resets analytics state for the current user.
  *
  * Clears the analytics user identifier and any user-specific analytics data.
+ *
+ * Note: This does NOT reset the analytics initialization state (`isInitialized` flag).
+ * Analytics initialization persists after reset.
  */
 export async function resetAnalytics(): Promise<void> {
   await resetAnalyticsPlatform();
