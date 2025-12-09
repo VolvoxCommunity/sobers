@@ -1,0 +1,133 @@
+name: Daily Codebase Review
+
+on:
+  schedule:
+    # Runs at 9 AM EST (14:00 UTC) every day
+    # Adjust the hour based on your timezone:
+    # - EST (UTC-5): 14:00 UTC = 9 AM EST
+    # - PST (UTC-8): 17:00 UTC = 9 AM PST
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      focus_area:
+        description: 'Specific area to focus the review on (optional)'
+        required: false
+        type: string
+      create_issues:
+        description: 'Create GitHub issues for findings'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  daily-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Full history for comprehensive analysis
+
+      - name: Run Claude Codebase Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            DATE: ${{ github.event.repository.updated_at || 'N/A' }}
+            FOCUS AREA: ${{ github.event.inputs.focus_area || 'Full codebase review' }}
+            CREATE ISSUES: ${{ github.event.inputs.create_issues || 'true' }}
+
+            You are performing a scheduled daily codebase review. This is NOT a PR review - you are reviewing the entire codebase health.
+
+            ## Review Objectives
+
+            Conduct a comprehensive review of the codebase focusing on:
+
+            ### 1. Code Health & Technical Debt
+            - Identify areas with high complexity or code smells
+            - Find deprecated patterns or outdated dependencies
+            - Detect duplicated code that could be refactored
+            - Look for TODO/FIXME comments that need attention
+
+            ### 2. Security Audit
+            - Check for hardcoded secrets or credentials
+            - Review authentication and authorization patterns
+            - Identify potential injection vulnerabilities
+            - Verify input validation and sanitization
+
+            ### 3. Test Coverage Gaps
+            - Identify critical paths without test coverage
+            - Find components or hooks missing tests
+            - Check for proper error case testing
+            - Review mock implementations for correctness
+
+            ### 4. Documentation Freshness
+            - Verify README.md accuracy
+            - Check JSDoc/TSDoc completeness for public APIs
+            - Identify undocumented complex logic
+            - Ensure CLAUDE.md reflects current architecture
+
+            ### 5. Dependency Health
+            - Check for outdated packages with security vulnerabilities
+            - Identify unused dependencies
+            - Review peer dependency warnings
+
+            ### 6. Performance Opportunities
+            - Find potential memory leaks
+            - Identify unnecessary re-renders in React components
+            - Look for unoptimized database queries or API calls
+            - Check for missing memoization opportunities
+
+            ### 7. Consistency Check
+            - Verify naming conventions are followed
+            - Check import organization
+            - Ensure code style consistency across files
+
+            ## Output Format
+
+            After your review, you MUST:
+
+            1. **Create a Summary Issue** (if create_issues is true):
+               Use `gh issue create` to create a "Daily Codebase Review" issue with:
+               - Title: "📋 Daily Codebase Review - [DATE]"
+               - Labels: `maintenance`, `automated-review`
+               - Body containing:
+                 - Executive summary (2-3 sentences)
+                 - Health score (A/B/C/D/F with brief justification)
+                 - Top 5 priority items to address
+                 - Detailed findings by category
+
+            2. **Create Individual Issues** (for critical findings):
+               For any HIGH or CRITICAL severity findings, create separate issues:
+               - Use appropriate labels (`bug`, `security`, `performance`, `tech-debt`)
+               - Reference the summary issue
+               - Include actionable remediation steps
+
+            3. **Skip Issue Creation** (if create_issues is false):
+               Just output the review summary to the workflow logs.
+
+            ## Important Notes
+
+            - Be constructive and specific - every finding should include a suggested fix
+            - Prioritize findings by impact and effort (quick wins first)
+            - Reference specific file paths and line numbers
+            - Consider the project context from CLAUDE.md
+            - Don't report issues that are already tracked in existing GitHub issues
+
+          claude_args: '--model claude-opus-4-5-20251101 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh search issues:*),Bash(npm audit:*),Bash(pnpm audit:*),Bash(grep:*),Bash(find:*),Bash(wc:*),Bash(ls:*),Bash(cat:*),Glob,Grep,Read"'
+
+      - name: Review Complete
+        run: |
+          echo "✅ Daily codebase review completed"
+          echo "Check the repository issues for any new findings"
