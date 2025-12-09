@@ -8,6 +8,8 @@
  * @module lib/analytics-utils
  */
 
+import { Platform } from 'react-native';
+
 import type { EventParams, DaysSoberBucket } from '@/types/analytics';
 
 /**
@@ -79,12 +81,23 @@ export function calculateDaysSoberBucket(days: number): DaysSoberBucket {
 /**
  * Checks if Firebase Analytics should be initialized.
  *
- * Analytics is only initialized when the Firebase measurement ID
- * environment variable is configured.
+ * On native platforms (iOS/Android), Firebase is configured via platform-specific
+ * config files (GoogleService-Info.plist / google-services.json), so we always
+ * attempt initialization - the native SDK validates its own config.
+ *
+ * On web, we check for the measurement ID environment variable since web
+ * requires explicit configuration via environment variables.
  *
  * @returns True if analytics should be initialized
  */
 export function shouldInitializeAnalytics(): boolean {
+  // Native platforms use config files, not env vars - always initialize
+  // The native Firebase SDK will handle missing config gracefully
+  if (Platform.OS !== 'web') {
+    return true;
+  }
+
+  // Web requires explicit configuration via environment variables
   const measurementId = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
   return Boolean(measurementId && measurementId.length > 0);
 }
