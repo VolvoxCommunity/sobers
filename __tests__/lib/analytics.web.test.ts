@@ -601,7 +601,6 @@ describe('Web Analytics - New Functionality', () => {
 
     it('allows re-initialization after __resetForTesting', async () => {
       await initializeWebAnalytics(mockConfig);
-      const firstCallCount = initializeApp.mock.calls.length;
 
       __resetForTesting();
       jest.clearAllMocks();
