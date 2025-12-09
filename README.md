@@ -3,6 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 [![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo&logoColor=white)](https://expo.dev/accounts/volvox-llc/projects/sobriety-waypoint)
 [![CI](https://github.com/VolvoxCommunity/Sobriety-Waypoint/actions/workflows/ci.yml/badge.svg)](https://github.com/VolvoxCommunity/Sobriety-Waypoint/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/VolvoxCommunity/Sobriety-Waypoint/graph/badge.svg?token=U4ILD582YD)](https://codecov.io/gh/VolvoxCommunity/Sobriety-Waypoint)
 
 A cross-platform companion app that helps sponsors and sponsees stay connected, complete recovery program work, and celebrate sobriety milestones together. Think of it as Jira for your sobriety!
 
