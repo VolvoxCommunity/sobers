@@ -78,7 +78,6 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
-    "@expo/config-plugins": "^54.0.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.7",

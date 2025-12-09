@@ -13,12 +13,12 @@
  * @see {@link https://github.com/invertase/react-native-firebase/issues/6332 RNFBApp modular headers issue}
  * @see {@link https://docs.expo.dev/config-plugins/introduction/ Expo Config Plugins}
  */
-const { withPodfile } = require('@expo/config-plugins');
+const { withPodfile } = require('expo/config-plugins');
 
 /**
  * Injects `use_modular_headers!` into the iOS Podfile immediately after the `platform :ios` line if it's not already present.
- * @param {import('@expo/config-plugins').ExpoConfig} config - Expo config whose `modResults.contents` holds the Podfile; `modResults.contents` will be updated when insertion occurs.
- * @returns {import('@expo/config-plugins').ExpoConfig} The same config object, potentially with `modResults.contents` modified to include `use_modular_headers!`.
+ * @param {import('expo/config-plugins').ExpoConfig} config - Expo config whose `modResults.contents` holds the Podfile; `modResults.contents` will be updated when insertion occurs.
+ * @returns {import('expo/config-plugins').ExpoConfig} The same config object, potentially with `modResults.contents` modified to include `use_modular_headers!`.
  */
 function withModularHeaders(config) {
   return withPodfile(config, (podfileConfig) => {
