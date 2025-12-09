@@ -43,6 +43,15 @@ import {
 export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';
 export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
 
+// =============================================================================
+// Module State
+// =============================================================================
+/**
+ * Guard flag to prevent multiple initialization attempts at the index level.
+ * This provides defense-in-depth against hot reload and React Strict Mode double-invocations.
+ */
+let isInitialized = false;
+
 /**
  * Initialize Firebase Analytics for the app.
  *
@@ -58,6 +67,16 @@ export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
  * ```
  */
 export async function initializeAnalytics(): Promise<void> {
+  // Defense-in-depth: prevent re-initialization at the public API level
+  if (isInitialized) {
+    if (isDebugMode()) {
+      logger.debug('Analytics already initialized, skipping', {
+        category: LogCategory.ANALYTICS,
+      });
+    }
+    return;
+  }
+
   if (!shouldInitializeAnalytics()) {
     if (isDebugMode()) {
       logger.warn('Firebase not configured - analytics disabled', {
@@ -66,6 +85,9 @@ export async function initializeAnalytics(): Promise<void> {
     }
     return;
   }
+
+  // Mark as initialized before async operations to prevent race conditions
+  isInitialized = true;
 
   // On native, Firebase reads config from GoogleService-Info.plist / google-services.json
   // On web, we need explicit configuration via environment variables

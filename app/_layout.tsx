@@ -28,6 +28,7 @@ import {
   useNavigationContainerRef,
   useRootNavigationState,
 } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -133,6 +134,23 @@ function RootLayoutNav() {
 
   return (
     <>
+      <Head>
+        <title>Sobriety Waypoint</title>
+        <meta name="description" content="Your companion on the journey to recovery" />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Sobriety Waypoint" />
+        <meta property="og:description" content="Your companion on the journey to recovery" />
+        <meta property="og:site_name" content="Sobriety Waypoint" />
+        <meta property="og:image" content="/assets/images/banner.png" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Sobriety Waypoint" />
+        <meta name="twitter:description" content="Your companion on the journey to recovery" />
+        <meta name="twitter:image" content="/assets/images/banner.png" />
+      </Head>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />

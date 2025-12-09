@@ -20,6 +20,7 @@ import {
   setUserPropertiesPlatform as setUserPropertiesWeb,
   trackScreenViewPlatform as trackScreenViewWeb,
   resetAnalyticsPlatform as resetAnalyticsWeb,
+  __resetForTesting,
 } from '@/lib/analytics/platform.web';
 
 const mockLoggerWarn = jest.fn();
@@ -62,6 +63,8 @@ jest.mock('firebase/analytics', () => ({
 
 describe('Web Analytics', () => {
   beforeEach(() => {
+    // Reset module state to allow re-initialization between tests
+    __resetForTesting();
     jest.clearAllMocks();
     (getApps as jest.Mock).mockReturnValue([]);
     (isSupported as jest.Mock).mockResolvedValue(true);

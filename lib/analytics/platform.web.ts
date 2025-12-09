@@ -73,6 +73,12 @@ let analytics: Analytics | null = null;
 let app: FirebaseApp | null = null;
 let vercelAnalytics: VercelAnalytics | null = null;
 
+/**
+ * Guard flag to prevent multiple initialization attempts.
+ * This prevents duplicate Firebase connections during hot reload or React Strict Mode.
+ */
+let isInitialized = false;
+
 // =============================================================================
 // Constants (continued)
 // =============================================================================
@@ -354,6 +360,19 @@ function dispatchEvent(eventName: string, params?: EventParams): void {
  * ```
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
+  // Guard against multiple initialization attempts (hot reload, React Strict Mode, etc.)
+  if (isInitialized) {
+    if (isDebugMode()) {
+      logger.debug('Analytics already initialized, skipping re-initialization', {
+        category: LogCategory.ANALYTICS,
+      });
+    }
+    return;
+  }
+
+  // Mark as initialized immediately to prevent race conditions
+  isInitialized = true;
+
   // Initialize Firebase if enabled
   if (IS_FIREBASE_ENABLED) {
     try {
@@ -565,6 +584,25 @@ export async function resetAnalyticsPlatform(): Promise<void> {
   }
 
   setUserIdPlatform(null);
+}
+
+// =============================================================================
+// Testing Utilities
+// =============================================================================
+/**
+ * Resets the initialization state for testing purposes.
+ * This function is only available in test environments and should never be used in production.
+ *
+ * @internal
+ */
+export function __resetForTesting(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('__resetForTesting should only be called in test environments');
+  }
+  isInitialized = false;
+  analytics = null;
+  app = null;
+  vercelAnalytics = null;
 }
 
 // =============================================================================
