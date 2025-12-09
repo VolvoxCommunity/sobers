@@ -66,8 +66,11 @@ export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Pr
       return;
     }
 
+    // Always enable analytics collection (on native, it's enabled by default,
+    // but we explicitly enable it to ensure consistent behavior)
+    await setAnalyticsCollectionEnabled(analytics, true);
+
     if (isDebugMode()) {
-      await setAnalyticsCollectionEnabled(analytics, true);
       logger.info('Firebase Analytics initialized for native', {
         category: LogCategory.ANALYTICS,
       });

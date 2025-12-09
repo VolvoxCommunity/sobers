@@ -70,8 +70,8 @@ describe('Native Analytics', () => {
       await expect(initializeNativeAnalytics()).resolves.not.toThrow();
     });
 
-    it('enables analytics collection in debug mode', async () => {
-      mockIsDebugMode.mockReturnValue(true);
+    it('always enables analytics collection', async () => {
+      mockIsDebugMode.mockReturnValue(false);
 
       await initializeNativeAnalytics();
 
@@ -89,18 +89,17 @@ describe('Native Analytics', () => {
       );
     });
 
-    it('does not enable collection when not in debug mode', async () => {
+    it('does not log success when not in debug mode', async () => {
       mockIsDebugMode.mockReturnValue(false);
 
       await initializeNativeAnalytics();
 
-      expect(mockSetAnalyticsCollectionEnabled).not.toHaveBeenCalled();
+      expect(mockLoggerInfo).not.toHaveBeenCalled();
     });
 
     it('handles initialization errors gracefully', async () => {
       const error = new Error('Init failed');
       mockSetAnalyticsCollectionEnabled.mockRejectedValueOnce(error);
-      mockIsDebugMode.mockReturnValue(true);
 
       await expect(initializeNativeAnalytics()).resolves.not.toThrow();
       expect(mockLoggerError).toHaveBeenCalledWith(
