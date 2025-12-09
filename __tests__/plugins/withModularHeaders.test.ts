@@ -8,10 +8,10 @@
  * - Error handling for invalid configs
  */
 
-// Mock @expo/config-plugins before importing
-import { withPodfile } from '@expo/config-plugins';
+// Mock expo/config-plugins before importing
+import { withPodfile } from 'expo/config-plugins';
 
-jest.mock('@expo/config-plugins', () => ({
+jest.mock('expo/config-plugins', () => ({
   withPodfile: jest.fn((config, callback) => {
     // Simulate what withPodfile does - call the callback with config
     return callback(config);

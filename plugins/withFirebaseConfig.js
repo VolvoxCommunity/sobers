@@ -14,7 +14,7 @@
  *
  * @see {@link https://docs.expo.dev/build-reference/variables/#using-secrets-in-environment-variables EAS Secrets}
  */
-const { withDangerousMod } = require('@expo/config-plugins');
+const { withDangerousMod } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 const { Buffer } = require('buffer');
@@ -156,8 +156,8 @@ function writeFromSecret(secretValue, targetPath) {
  * copying google-services.json from the project root if it exists. If neither source is available,
  * the function leaves the project unchanged.
  *
- * @param {import('@expo/config-plugins').ExpoConfig & { modRequest?: { projectRoot: string } }} config - Expo config passed to the plugin.
- * @returns {import('@expo/config-plugins').ExpoConfig} The config object after applying the Android Firebase config handler.
+ * @param {import('expo/config-plugins').ExpoConfig & { modRequest?: { projectRoot: string } }} config - Expo config passed to the plugin.
+ * @returns {import('expo/config-plugins').ExpoConfig} The config object after applying the Android Firebase config handler.
  */
 function withAndroidFirebaseConfig(config) {
   return withDangerousMod(config, [
@@ -200,8 +200,8 @@ function withAndroidFirebaseConfig(config) {
  * EAS secret `GOOGLE_SERVICE_INFO_PLIST`, falling back to copying a local
  * GoogleService-Info.plist from the project root if the secret is not provided.
  *
- * @param {import('@expo/config-plugins').ConfigPlugin} config - Expo config to modify.
- * @returns {import('@expo/config-plugins').ConfigPlugin} The updated Expo config.
+ * @param {import('expo/config-plugins').ConfigPlugin} config - Expo config to modify.
+ * @returns {import('expo/config-plugins').ConfigPlugin} The updated Expo config.
  */
 function withIosFirebaseConfig(config) {
   return withDangerousMod(config, [
