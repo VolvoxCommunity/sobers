@@ -50,11 +50,12 @@ function getAnalyticsInstance(): ReturnType<typeof getAnalytics> | null {
 }
 
 /**
- * Initializes Firebase Analytics for native platforms.
+ * Initialize Firebase Analytics for native platforms.
  *
- * On native, Firebase is configured via GoogleService-Info.plist (iOS)
- * and google-services.json (Android), so minimal setup is needed here.
- * The config parameter is ignored on native.
+ * On iOS and Android the native Firebase configuration files are used; the
+ * optional `config` argument is ignored by the native implementation.
+ *
+ * @param _config - Optional analytics configuration; ignored on native platforms
  */
 export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   try {
@@ -89,6 +90,9 @@ export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Pr
  *
  * This function is synchronous (fire-and-forget) to match the public API in index.ts.
  * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ *
+ * @param eventName - The analytics event name to record
+ * @param params - Optional event parameters as key/value pairs
  */
 export function trackEventPlatform(eventName: string, params?: EventParams): void {
   if (isDebugMode()) {
@@ -145,6 +149,8 @@ function hashUserIdForLogging(input: string | null): string | null {
  *
  * This function is synchronous (fire-and-forget) to match the public API in index.ts.
  * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ *
+ * @param userId - The user ID to set, or `null` to clear the current user ID
  */
 export function setUserIdPlatform(userId: string | null): void {
   if (isDebugMode()) {
@@ -214,6 +220,8 @@ function sanitizeUserPropertiesForLogging(
  *
  * Firebase requires user properties to be string or null. Boolean values are
  * converted to strings ('true'/'false') to preserve semantic meaning.
+ *
+ * @param properties - Object mapping property names to string values; use `null` to clear a property
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   if (isDebugMode()) {
@@ -254,6 +262,9 @@ export function setUserPropertiesPlatform(properties: UserProperties): void {
  *
  * This function is synchronous (fire-and-forget) to match the public API in index.ts.
  * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ *
+ * @param screenName - The displayed name of the screen to record
+ * @param screenClass - Optional screen class; defaults to `screenName` when omitted
  */
 export function trackScreenViewPlatform(screenName: string, screenClass?: string): void {
   if (isDebugMode()) {
@@ -284,7 +295,7 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
 }
 
 /**
- * Resets analytics for logout.
+ * Clear analytics state and stored analytics data (commonly used on user logout).
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   try {
