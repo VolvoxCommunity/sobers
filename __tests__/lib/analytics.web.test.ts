@@ -49,6 +49,7 @@ jest.mock('@/lib/logger', () => ({
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(() => ({ name: 'test-app' })),
   getApps: jest.fn(() => []),
+  getApp: jest.fn(() => ({ name: 'existing-app' })),
 }));
 
 jest.mock('firebase/analytics', () => ({
@@ -120,7 +121,7 @@ describe('Web Analytics', () => {
       await initializeWebAnalytics(mockConfig);
 
       expect(mockLoggerInfo).toHaveBeenCalledWith(
-        'Firebase app already initialized',
+        'Firebase app already initialized, retrieved existing instance',
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
@@ -201,9 +202,13 @@ describe('Web Analytics', () => {
 
       trackEventWeb('test_event', { param1: 'value1' });
 
+      // Implementation wraps params in event_params for structured logging
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'Event: test_event',
-        expect.objectContaining({ category: 'ANALYTICS', param1: 'value1' })
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          event_params: expect.objectContaining({ param1: 'value1' }),
+        })
       );
     });
   });
@@ -231,13 +236,18 @@ describe('Web Analytics', () => {
       expect(setUserId).toHaveBeenCalledWith(expect.anything(), null);
     });
 
-    it('logs in debug mode', () => {
+    it('logs in debug mode with hashed userId', async () => {
       mockIsDebugMode.mockReturnValue(true);
 
       setUserIdWeb('user-123');
 
+      // Wait for the async hash operation to complete (flush promises)
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Implementation hashes userId for privacy-safe logging
+      // In test environment crypto may not be available, so [hash-error] is also valid
       expect(mockLoggerDebug).toHaveBeenCalledWith(
-        'setUserId: user-123',
+        expect.stringMatching(/^setUserId: <hashed: ([a-f0-9]+|\[hash-error\])>$/),
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
@@ -267,9 +277,13 @@ describe('Web Analytics', () => {
 
       setUserPropertiesWeb(props);
 
+      // Implementation wraps properties in user_properties for structured logging
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'setUserProperties',
-        expect.objectContaining({ category: 'ANALYTICS', theme_preference: 'dark' })
+        expect.objectContaining({
+          category: 'ANALYTICS',
+          user_properties: expect.objectContaining({ theme_preference: 'dark' }),
+        })
       );
     });
   });

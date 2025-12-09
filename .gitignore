@@ -35,9 +35,10 @@ yarn.lock
 .env*.local
 .env
 
-# Firebase config files (root level - copied by Expo prebuild)
-GoogleService-Info.plist
+# Firebase configuration files (contain API keys)
+# These should be generated per-environment, not committed
 google-services.json
+GoogleService-Info.plist
 
 # TypeScript
 *.tsbuildinfo
@@ -78,14 +79,12 @@ build/
 
 # iOS
 ios/
-!ios/GoogleService-Info.plist
 ios/Pods/
 ios/build/
 ios/.xcode.env.local
 
 # Android
 android/
-!android/app/google-services.json
 android/build/
 android/app/build/
 android/.gradle/

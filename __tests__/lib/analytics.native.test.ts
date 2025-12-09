@@ -12,6 +12,7 @@ const mockIsDebugMode = jest.fn(() => false);
 const mockLoggerInfo = jest.fn();
 const mockLoggerDebug = jest.fn();
 const mockLoggerError = jest.fn();
+const mockLoggerWarn = jest.fn();
 
 // Mock analytics-utils - use wrapper to avoid hoisting issues
 jest.mock('@/lib/analytics-utils', () => ({
@@ -24,40 +25,44 @@ jest.mock('@/lib/logger', () => ({
     info: (...args: unknown[]) => mockLoggerInfo(...args),
     debug: (...args: unknown[]) => mockLoggerDebug(...args),
     error: (...args: unknown[]) => mockLoggerError(...args),
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
   },
   LogCategory: {
     ANALYTICS: 'ANALYTICS',
   },
 }));
 
-// Mock @react-native-firebase/analytics before imports
+// Mock @react-native-firebase/analytics modular API
 const mockLogEvent = jest.fn(() => Promise.resolve());
 const mockSetUserId = jest.fn(() => Promise.resolve());
 const mockSetUserProperties = jest.fn(() => Promise.resolve());
-const mockLogScreenView = jest.fn(() => Promise.resolve());
 const mockResetAnalyticsData = jest.fn(() => Promise.resolve());
 const mockSetAnalyticsCollectionEnabled = jest.fn(() => Promise.resolve());
+const mockGetAnalytics = jest.fn(() => ({ _instance: 'mock-analytics' }));
 
-// Use wrapper functions to avoid hoisting issues with mock variable references
+// Mock modular API - named exports instead of default export
 jest.mock('@react-native-firebase/analytics', () => {
   return {
     __esModule: true,
-    default: jest.fn(() => ({
-      logEvent: (...args: unknown[]) => mockLogEvent(...args),
-      setUserId: (...args: unknown[]) => mockSetUserId(...args),
-      setUserProperties: (...args: unknown[]) => mockSetUserProperties(...args),
-      logScreenView: (...args: unknown[]) => mockLogScreenView(...args),
-      resetAnalyticsData: (...args: unknown[]) => mockResetAnalyticsData(...args),
-      setAnalyticsCollectionEnabled: (...args: unknown[]) =>
-        mockSetAnalyticsCollectionEnabled(...args),
-    })),
+    getAnalytics: () => mockGetAnalytics(),
+    logEvent: (_analytics: unknown, ...args: unknown[]) => mockLogEvent(...args),
+    setUserId: (_analytics: unknown, ...args: unknown[]) => mockSetUserId(...args),
+    setUserProperties: (_analytics: unknown, ...args: unknown[]) => mockSetUserProperties(...args),
+    resetAnalyticsData: (_analytics: unknown, ...args: unknown[]) =>
+      mockResetAnalyticsData(...args),
+    setAnalyticsCollectionEnabled: (_analytics: unknown, ...args: unknown[]) =>
+      mockSetAnalyticsCollectionEnabled(...args),
   };
 });
+
+// Helper to flush promise queue for fire-and-forget error handling
+const flushPromises = () => new Promise((resolve) => setImmediate(resolve));
 
 describe('Native Analytics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsDebugMode.mockReturnValue(false);
+    mockGetAnalytics.mockReturnValue({ _instance: 'mock-analytics' });
   });
 
   describe('initializeNativeAnalytics', () => {
@@ -65,8 +70,8 @@ describe('Native Analytics', () => {
       await expect(initializeNativeAnalytics()).resolves.not.toThrow();
     });
 
-    it('enables analytics collection in debug mode', async () => {
-      mockIsDebugMode.mockReturnValue(true);
+    it('always enables analytics collection', async () => {
+      mockIsDebugMode.mockReturnValue(false);
 
       await initializeNativeAnalytics();
 
@@ -84,18 +89,17 @@ describe('Native Analytics', () => {
       );
     });
 
-    it('does not enable collection when not in debug mode', async () => {
+    it('does not log success when not in debug mode', async () => {
       mockIsDebugMode.mockReturnValue(false);
 
       await initializeNativeAnalytics();
 
-      expect(mockSetAnalyticsCollectionEnabled).not.toHaveBeenCalled();
+      expect(mockLoggerInfo).not.toHaveBeenCalled();
     });
 
     it('handles initialization errors gracefully', async () => {
       const error = new Error('Init failed');
       mockSetAnalyticsCollectionEnabled.mockRejectedValueOnce(error);
-      mockIsDebugMode.mockReturnValue(true);
 
       await expect(initializeNativeAnalytics()).resolves.not.toThrow();
       expect(mockLoggerError).toHaveBeenCalledWith(
@@ -119,22 +123,22 @@ describe('Native Analytics', () => {
   });
 
   describe('trackEventNative', () => {
-    it('calls logEvent with event name and params', async () => {
-      await trackEventNative('test_event', { param1: 'value1' });
+    it('calls logEvent with event name and params', () => {
+      trackEventNative('test_event', { param1: 'value1' });
 
       expect(mockLogEvent).toHaveBeenCalledWith('test_event', { param1: 'value1' });
     });
 
-    it('calls logEvent without params when none provided', async () => {
-      await trackEventNative('test_event');
+    it('calls logEvent without params when none provided', () => {
+      trackEventNative('test_event');
 
       expect(mockLogEvent).toHaveBeenCalledWith('test_event', undefined);
     });
 
-    it('logs event in debug mode', async () => {
+    it('logs event in debug mode', () => {
       mockIsDebugMode.mockReturnValue(true);
 
-      await trackEventNative('test_event', { param1: 'value1' });
+      trackEventNative('test_event', { param1: 'value1' });
 
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'Event: test_event',
@@ -146,7 +150,12 @@ describe('Native Analytics', () => {
       const error = new Error('Track failed');
       mockLogEvent.mockRejectedValueOnce(error);
 
-      await expect(trackEventNative('test_event')).resolves.not.toThrow();
+      // Function returns void (fire-and-forget), doesn't throw
+      expect(() => trackEventNative('test_event')).not.toThrow();
+
+      // Wait for the promise rejection to be caught and logged
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to track event test_event',
         error,
@@ -157,7 +166,10 @@ describe('Native Analytics', () => {
     it('handles non-Error tracking errors', async () => {
       mockLogEvent.mockRejectedValueOnce('string error');
 
-      await expect(trackEventNative('test_event')).resolves.not.toThrow();
+      expect(() => trackEventNative('test_event')).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to track event test_event',
         expect.any(Error),
@@ -167,25 +179,26 @@ describe('Native Analytics', () => {
   });
 
   describe('setUserIdNative', () => {
-    it('sets user ID', async () => {
-      await setUserIdNative('user-123');
+    it('sets user ID', () => {
+      setUserIdNative('user-123');
 
       expect(mockSetUserId).toHaveBeenCalledWith('user-123');
     });
 
-    it('clears user ID when null', async () => {
-      await setUserIdNative(null);
+    it('clears user ID when null', () => {
+      setUserIdNative(null);
 
       expect(mockSetUserId).toHaveBeenCalledWith(null);
     });
 
-    it('logs in debug mode', async () => {
+    it('logs hashed user ID in debug mode', () => {
       mockIsDebugMode.mockReturnValue(true);
 
-      await setUserIdNative('user-123');
+      setUserIdNative('user-123');
 
+      // User ID is hashed for privacy in logs
       expect(mockLoggerDebug).toHaveBeenCalledWith(
-        'setUserId: user-123',
+        expect.stringMatching(/^setUserId: <hashed: [0-9a-f]+>$/),
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
@@ -194,7 +207,10 @@ describe('Native Analytics', () => {
       const error = new Error('SetUserId failed');
       mockSetUserId.mockRejectedValueOnce(error);
 
-      await expect(setUserIdNative('user-123')).resolves.not.toThrow();
+      expect(() => setUserIdNative('user-123')).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to set user ID',
         error,
@@ -205,7 +221,10 @@ describe('Native Analytics', () => {
     it('handles non-Error setUserId errors', async () => {
       mockSetUserId.mockRejectedValueOnce('string error');
 
-      await expect(setUserIdNative('user-123')).resolves.not.toThrow();
+      expect(() => setUserIdNative('user-123')).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to set user ID',
         expect.any(Error),
@@ -215,18 +234,42 @@ describe('Native Analytics', () => {
   });
 
   describe('setUserPropertiesNative', () => {
-    it('sets user properties', async () => {
+    it('sets user properties with string values', () => {
       const props = { theme_preference: 'dark' };
-      await setUserPropertiesNative(props);
+      setUserPropertiesNative(props);
 
-      expect(mockSetUserProperties).toHaveBeenCalledWith(props);
+      expect(mockSetUserProperties).toHaveBeenCalledWith({ theme_preference: 'dark' });
     });
 
-    it('logs in debug mode', async () => {
+    it('converts boolean values to strings', () => {
+      const props = { has_sponsor: true, is_premium: false };
+      setUserPropertiesNative(props);
+
+      expect(mockSetUserProperties).toHaveBeenCalledWith({
+        has_sponsor: 'true',
+        is_premium: 'false',
+      });
+    });
+
+    it('handles null values', () => {
+      const props = { theme_preference: null };
+      setUserPropertiesNative(props);
+
+      expect(mockSetUserProperties).toHaveBeenCalledWith({ theme_preference: null });
+    });
+
+    it('skips undefined values', () => {
+      const props = { theme_preference: 'dark', other: undefined };
+      setUserPropertiesNative(props);
+
+      expect(mockSetUserProperties).toHaveBeenCalledWith({ theme_preference: 'dark' });
+    });
+
+    it('logs in debug mode', () => {
       mockIsDebugMode.mockReturnValue(true);
       const props = { theme_preference: 'dark' };
 
-      await setUserPropertiesNative(props);
+      setUserPropertiesNative(props);
 
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'setUserProperties',
@@ -238,7 +281,10 @@ describe('Native Analytics', () => {
       const error = new Error('SetUserProperties failed');
       mockSetUserProperties.mockRejectedValueOnce(error);
 
-      await expect(setUserPropertiesNative({ theme_preference: 'dark' })).resolves.not.toThrow();
+      expect(() => setUserPropertiesNative({ theme_preference: 'dark' })).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to set user properties',
         error,
@@ -249,7 +295,10 @@ describe('Native Analytics', () => {
     it('handles non-Error errors', async () => {
       mockSetUserProperties.mockRejectedValueOnce('string error');
 
-      await expect(setUserPropertiesNative({ theme_preference: 'dark' })).resolves.not.toThrow();
+      expect(() => setUserPropertiesNative({ theme_preference: 'dark' })).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to set user properties',
         expect.any(Error),
@@ -259,28 +308,29 @@ describe('Native Analytics', () => {
   });
 
   describe('trackScreenViewNative', () => {
-    it('logs screen view with name', async () => {
-      await trackScreenViewNative('HomeScreen');
+    it('logs screen view with name using logEvent', () => {
+      trackScreenViewNative('HomeScreen');
 
-      expect(mockLogScreenView).toHaveBeenCalledWith({
+      // Uses logEvent with 'screen_view' instead of deprecated logScreenView
+      expect(mockLogEvent).toHaveBeenCalledWith('screen_view', {
         screen_name: 'HomeScreen',
         screen_class: 'HomeScreen',
       });
     });
 
-    it('logs screen view with name and class', async () => {
-      await trackScreenViewNative('HomeScreen', 'TabScreen');
+    it('logs screen view with name and class using logEvent', () => {
+      trackScreenViewNative('HomeScreen', 'TabScreen');
 
-      expect(mockLogScreenView).toHaveBeenCalledWith({
+      expect(mockLogEvent).toHaveBeenCalledWith('screen_view', {
         screen_name: 'HomeScreen',
         screen_class: 'TabScreen',
       });
     });
 
-    it('logs in debug mode', async () => {
+    it('logs in debug mode', () => {
       mockIsDebugMode.mockReturnValue(true);
 
-      await trackScreenViewNative('HomeScreen');
+      trackScreenViewNative('HomeScreen');
 
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'Screen view: HomeScreen',
@@ -289,10 +339,13 @@ describe('Native Analytics', () => {
     });
 
     it('handles errors gracefully', async () => {
-      const error = new Error('LogScreenView failed');
-      mockLogScreenView.mockRejectedValueOnce(error);
+      const error = new Error('Screen view tracking failed');
+      mockLogEvent.mockRejectedValueOnce(error);
 
-      await expect(trackScreenViewNative('HomeScreen')).resolves.not.toThrow();
+      expect(() => trackScreenViewNative('HomeScreen')).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to track screen view',
         error,
@@ -301,9 +354,12 @@ describe('Native Analytics', () => {
     });
 
     it('handles non-Error errors', async () => {
-      mockLogScreenView.mockRejectedValueOnce('string error');
+      mockLogEvent.mockRejectedValueOnce('string error');
 
-      await expect(trackScreenViewNative('HomeScreen')).resolves.not.toThrow();
+      expect(() => trackScreenViewNative('HomeScreen')).not.toThrow();
+
+      await flushPromises();
+
       expect(mockLoggerError).toHaveBeenCalledWith(
         'Failed to track screen view',
         expect.any(Error),
@@ -350,6 +406,109 @@ describe('Native Analytics', () => {
         'Failed to reset analytics',
         expect.any(Error),
         expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+  });
+
+  describe('when Firebase is unavailable', () => {
+    // Use jest.isolateModules to get fresh module state with failing getAnalytics
+    const importWithFailingAnalytics = <T>(
+      modulePath: string,
+      callback: (mod: T) => void | Promise<void>
+    ): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        jest.isolateModules(() => {
+          // Configure getAnalytics to throw before importing the module
+          mockGetAnalytics.mockImplementation(() => {
+            throw new Error('Firebase not configured');
+          });
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const mod = require(modulePath) as T;
+            const result = callback(mod);
+            if (result instanceof Promise) {
+              result.then(resolve).catch(reject);
+            } else {
+              resolve();
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('initializeNativeAnalytics warns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        async (mod) => {
+          await mod.initializePlatformAnalytics();
+
+          expect(mockLoggerWarn).toHaveBeenCalledWith(
+            'Analytics not available - Firebase may not be configured',
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+        }
+      );
+    });
+
+    it('trackEventPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          // Should not throw
+          expect(() => mod.trackEventPlatform('test_event')).not.toThrow();
+          // Firebase logEvent should not be called
+          expect(mockLogEvent).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('setUserIdPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.setUserIdPlatform('user-123')).not.toThrow();
+          expect(mockSetUserId).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('setUserPropertiesPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.setUserPropertiesPlatform({ theme: 'dark' })).not.toThrow();
+          expect(mockSetUserProperties).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('trackScreenViewPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.trackScreenViewPlatform('HomeScreen')).not.toThrow();
+          expect(mockLogEvent).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('resetAnalyticsPlatform warns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        async (mod) => {
+          await mod.resetAnalyticsPlatform();
+
+          expect(mockLoggerWarn).toHaveBeenCalledWith(
+            'Cannot reset analytics - Firebase not available',
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+        }
       );
     });
   });

@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { GlassView } from '@/components/GlassView';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { renderWithProviders } from '@/__tests__/test-utils';
 
 // Mock expo-glass-effect - default to unavailable (fallback mode)
 jest.mock('expo-glass-effect', () => ({
@@ -10,10 +10,12 @@ jest.mock('expo-glass-effect', () => ({
   isLiquidGlassAvailable: jest.fn(() => false),
 }));
 
-// Wrapper for components that need ThemeProvider
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <ThemeProvider>{children}</ThemeProvider>
-);
+// Mock Platform to force iOS for consistent test behavior
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios',
+  select: jest.fn((options: Record<string, unknown>) => options.ios ?? options.default),
+  Version: 18,
+}));
 
 describe('GlassView', () => {
   beforeEach(() => {
@@ -22,33 +24,30 @@ describe('GlassView', () => {
 
   describe('rendering', () => {
     it('renders children correctly', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="glass-view">
           <Text>Test Content</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(screen.getByText('Test Content')).toBeTruthy();
     });
 
     it('applies testID to container', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="my-glass">
           <Text>Content</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(screen.getByTestId('my-glass')).toBeTruthy();
     });
 
     it('applies custom styles', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="styled-glass" style={{ padding: 20, borderRadius: 16 }}>
           <Text>Styled Content</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       const container = screen.getByTestId('styled-glass');
@@ -63,11 +62,10 @@ describe('GlassView', () => {
       const { isLiquidGlassAvailable } = require('expo-glass-effect');
       isLiquidGlassAvailable.mockReturnValue(false);
 
-      render(
+      renderWithProviders(
         <GlassView testID="fallback-glass">
           <Text>Fallback Content</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       const container = screen.getByTestId('fallback-glass');
@@ -84,11 +82,10 @@ describe('GlassView', () => {
 
   describe('props', () => {
     it('defaults effectStyle to regular', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="default-effect">
           <Text>Default</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       // Component should render without errors with default props
@@ -96,22 +93,20 @@ describe('GlassView', () => {
     });
 
     it('accepts effectStyle prop', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="clear-effect" effectStyle="clear">
           <Text>Clear Effect</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(screen.getByTestId('clear-effect')).toBeTruthy();
     });
 
     it('accepts custom tintColor prop', () => {
-      render(
+      renderWithProviders(
         <GlassView testID="tinted-glass" tintColor="rgba(99, 102, 241, 0.1)">
           <Text>Tinted</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(screen.getByTestId('tinted-glass')).toBeTruthy();
@@ -129,11 +124,10 @@ describe('GlassView', () => {
     it('uses ExpoGlassView when glass is available', () => {
       const { GlassView: MockGlassView } = require('expo-glass-effect');
 
-      render(
+      renderWithProviders(
         <GlassView testID="native-glass">
           <Text>Native Content</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(MockGlassView).toHaveBeenCalled();
@@ -142,11 +136,10 @@ describe('GlassView', () => {
     it('passes effectStyle to ExpoGlassView', () => {
       const { GlassView: MockGlassView } = require('expo-glass-effect');
 
-      render(
+      renderWithProviders(
         <GlassView effectStyle="clear">
           <Text>Clear</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(MockGlassView).toHaveBeenCalled();
@@ -157,11 +150,10 @@ describe('GlassView', () => {
     it('passes isInteractive=true to ExpoGlassView', () => {
       const { GlassView: MockGlassView } = require('expo-glass-effect');
 
-      render(
+      renderWithProviders(
         <GlassView>
           <Text>Interactive</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(MockGlassView).toHaveBeenCalled();
@@ -172,11 +164,10 @@ describe('GlassView', () => {
     it('uses theme glassTint by default', () => {
       const { GlassView: MockGlassView } = require('expo-glass-effect');
 
-      render(
+      renderWithProviders(
         <GlassView>
           <Text>Themed</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(MockGlassView).toHaveBeenCalled();
@@ -188,11 +179,10 @@ describe('GlassView', () => {
       const { GlassView: MockGlassView } = require('expo-glass-effect');
       const customTint = 'rgba(99, 102, 241, 0.2)';
 
-      render(
+      renderWithProviders(
         <GlassView tintColor={customTint}>
           <Text>Custom Tint</Text>
-        </GlassView>,
-        { wrapper }
+        </GlassView>
       );
 
       expect(MockGlassView).toHaveBeenCalled();

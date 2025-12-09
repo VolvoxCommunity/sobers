@@ -1,4 +1,6 @@
 // __tests__/lib/analytics-utils.test.ts
+import { Platform } from 'react-native';
+
 import {
   sanitizeParams,
   calculateDaysSoberBucket,
@@ -7,6 +9,9 @@ import {
   getAnalyticsEnvironment,
 } from '@/lib/analytics-utils';
 import type { DaysSoberBucket } from '@/types/analytics';
+
+// Store original Platform.OS to restore after tests
+const originalPlatformOS = Platform.OS;
 
 describe('Analytics Utilities', () => {
   describe('sanitizeParams', () => {
@@ -118,42 +123,87 @@ describe('Analytics Utilities', () => {
   describe('shouldInitializeAnalytics', () => {
     const originalEnv = process.env;
 
+    afterEach(() => {
+      // Restore Platform.OS after each test
+      (Platform as { OS: string }).OS = originalPlatformOS;
+    });
+
     afterAll(() => {
       process.env = originalEnv;
     });
 
-    it('returns true when Firebase config is set', () => {
-      const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = 'G-XXXXXXXX';
-      expect(shouldInitializeAnalytics()).toBe(true);
-      // Restore original value
-      if (originalValue === undefined) {
+    describe('on native platforms (iOS/Android)', () => {
+      it('returns true on iOS regardless of env vars', () => {
+        (Platform as { OS: string }).OS = 'ios';
+        const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
         delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      } else {
-        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
-      }
+
+        expect(shouldInitializeAnalytics()).toBe(true);
+
+        // Restore
+        if (originalValue !== undefined) {
+          process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
+        }
+      });
+
+      it('returns true on Android regardless of env vars', () => {
+        (Platform as { OS: string }).OS = 'android';
+        const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+        delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+
+        expect(shouldInitializeAnalytics()).toBe(true);
+
+        // Restore
+        if (originalValue !== undefined) {
+          process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
+        }
+      });
     });
 
-    it('returns false when Firebase config is missing', () => {
-      const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      expect(shouldInitializeAnalytics()).toBe(false);
-      // Restore original value
-      if (originalValue !== undefined) {
-        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
-      }
-    });
+    describe('on web platform', () => {
+      beforeEach(() => {
+        (Platform as { OS: string }).OS = 'web';
+      });
 
-    it('returns false when Firebase config is empty string', () => {
-      const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = '';
-      expect(shouldInitializeAnalytics()).toBe(false);
-      // Restore original value
-      if (originalValue === undefined) {
+      it('returns true when Firebase measurement ID is set', () => {
+        const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = 'G-XXXXXXXX';
+
+        expect(shouldInitializeAnalytics()).toBe(true);
+
+        // Restore original value
+        if (originalValue === undefined) {
+          delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+        } else {
+          process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
+        }
+      });
+
+      it('returns false when Firebase measurement ID is missing', () => {
+        const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
         delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
-      } else {
-        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
-      }
+
+        expect(shouldInitializeAnalytics()).toBe(false);
+
+        // Restore original value
+        if (originalValue !== undefined) {
+          process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
+        }
+      });
+
+      it('returns false when Firebase measurement ID is empty string', () => {
+        const originalValue = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = '';
+
+        expect(shouldInitializeAnalytics()).toBe(false);
+
+        // Restore original value
+        if (originalValue === undefined) {
+          delete process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+        } else {
+          process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = originalValue;
+        }
+      });
     });
   });
 

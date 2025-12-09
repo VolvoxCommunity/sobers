@@ -437,7 +437,7 @@ describe('SettingsScreen', () => {
       });
     });
 
-    it('calls signOut and navigates on confirmation', async () => {
+    it('calls signOut and dismisses modal on confirmation', async () => {
       const { Alert } = jest.requireMock('react-native');
 
       render(<SettingsScreen />);
@@ -454,8 +454,10 @@ describe('SettingsScreen', () => {
 
       await signOutOption.onPress();
 
+      // Modal is dismissed first, then signOut is called
+      // Auth guard in _layout.tsx handles redirect to /login
+      expect(mockBack).toHaveBeenCalled();
       expect(mockSignOut).toHaveBeenCalled();
-      expect(mockReplace).toHaveBeenCalledWith('/login');
     });
 
     it('shows error alert when sign out fails', async () => {

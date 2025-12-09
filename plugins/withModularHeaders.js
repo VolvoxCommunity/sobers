@@ -21,27 +21,32 @@ const { withPodfile } = require('@expo/config-plugins');
  * @returns {import('@expo/config-plugins').ExpoConfig} The same config object, potentially with `modResults.contents` modified to include `use_modular_headers!`.
  */
 function withModularHeaders(config) {
-  return withPodfile(config, (config) => {
-    const podfile = config.modResults.contents;
+  return withPodfile(config, (podfileConfig) => {
+    if (!podfileConfig.modResults || typeof podfileConfig.modResults.contents !== 'string') {
+      throw new Error('Invalid Podfile config: modResults.contents must be a string');
+    }
+
+    const podfile = podfileConfig.modResults.contents;
 
     // Check if use_modular_headers! is already present
     if (podfile.includes('use_modular_headers!')) {
-      return config;
+      return podfileConfig;
     }
 
     // Add use_modular_headers! after the platform declaration
     // This ensures it's at the top level, before any targets
-    const platformRegex = /^(platform :ios.*$)/m;
+    // Allow optional leading whitespace for indented Podfiles
+    const platformRegex = /^(\s*platform :ios.*$)/m;
     const match = podfile.match(platformRegex);
 
     if (match) {
-      config.modResults.contents = podfile.replace(
+      podfileConfig.modResults.contents = podfile.replace(
         platformRegex,
         `$1\n\n# Enable modular headers globally for Firebase Swift compatibility\nuse_modular_headers!`
       );
     }
 
-    return config;
+    return podfileConfig;
   });
 }
 

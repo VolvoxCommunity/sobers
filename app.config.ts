@@ -86,11 +86,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-build-properties',
       {
         ios: {
-          // Note: Firebase requires modular headers, configured via withModularHeaders plugin below
+          // Note: Firebase requires modular headers, configured via the withModularHeaders plugin
         },
       },
     ],
     './plugins/withModularHeaders', // Required for Firebase/GoogleUtilities Swift compatibility
+    './plugins/withFirebaseConfig', // Injects Firebase config from EAS secrets during builds
     [
       'expo-splash-screen',
       {
@@ -111,13 +112,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         organization: 'volvox',
       },
     ],
-    [
-      '@react-native-firebase/app',
-      {
-        // iOS uses GoogleService-Info.plist from project root (configured via ios.googleServicesFile)
-        // Android uses google-services.json from project root (configured via android.googleServicesFile)
-      },
-    ],
+    '@react-native-firebase/app',
   ],
   experiments: {
     typedRoutes: true,

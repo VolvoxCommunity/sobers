@@ -6,6 +6,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
 import { logger, LogCategory } from '@/lib/logger';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
 // =============================================================================
 // Types & Interfaces
@@ -68,6 +69,9 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
       });
 
       if (error) throw error;
+
+      // Track successful Apple sign in
+      trackEvent(AnalyticsEvents.AUTH_LOGIN, { method: 'apple' });
 
       // Apple only provides the user's full name on the FIRST sign-in.
       // Subsequent sign-ins return null for fullName. We must capture and

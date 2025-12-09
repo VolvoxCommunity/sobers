@@ -193,6 +193,25 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock expo-web-browser
+jest.mock('expo-web-browser', () => ({
+  maybeCompleteAuthSession: jest.fn(),
+  openAuthSessionAsync: jest.fn(() => Promise.resolve({ type: 'cancel' })),
+}));
+
+// Mock expo-linking
+jest.mock('expo-linking', () => ({
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  getInitialURL: jest.fn(() => Promise.resolve(null)),
+  openURL: jest.fn(() => Promise.resolve(true)),
+  canOpenURL: jest.fn(() => Promise.resolve(true)),
+}));
+
+// Mock expo-auth-session
+jest.mock('expo-auth-session', () => ({
+  makeRedirectUri: jest.fn(() => 'sobrietywaypoint://auth/callback'),
+}));
+
 // Mock AsyncStorage
 const mockAsyncStorage = {
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -232,6 +251,9 @@ jest.mock('@sentry/react-native', () => ({
   mobileReplayIntegration: jest.fn(() => ({})),
   feedbackIntegration: jest.fn(() => ({})),
 }));
+
+// Mock react-native-url-polyfill to prevent ESM import errors
+jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 // Mock @supabase/supabase-js with chainable query builder
 jest.mock('@supabase/supabase-js', () => {
@@ -289,8 +311,21 @@ jest.mock('@supabase/supabase-js', () => {
           data: { subscription: { unsubscribe: jest.fn() } },
         })),
         getSession: jest.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+        signInWithOAuth: jest.fn(() =>
+          Promise.resolve({ data: { url: '', provider: 'google' }, error: null })
+        ),
+        setSession: jest.fn(() => Promise.resolve({ data: { session: null }, error: null })),
       },
       from: jest.fn(() => createQueryBuilder()),
+      rpc: jest.fn(() => Promise.resolve({ data: null, error: null })),
     })),
+  };
+});
+
+// Mock @/lib/supabase to use the mocked supabase-js client
+jest.mock('@/lib/supabase', () => {
+  const { createClient } = require('@supabase/supabase-js');
+  return {
+    supabase: createClient('https://test.supabase.co', 'test-anon-key'),
   };
 });

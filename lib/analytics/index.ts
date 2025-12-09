@@ -23,6 +23,8 @@
  * ```
  */
 
+import { Platform } from 'react-native';
+
 import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';
 import { sanitizeParams, shouldInitializeAnalytics, isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
@@ -56,12 +58,25 @@ export async function initializeAnalytics(): Promise<void> {
     return;
   }
 
+  // On native, Firebase reads config from GoogleService-Info.plist / google-services.json
+  // On web, we need explicit configuration via environment variables
   const config: AnalyticsConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
     projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
   };
+
+  // Only warn about missing config on web - native uses config files, not env vars
+  if (Platform.OS === 'web' && (!config.apiKey || !config.projectId || !config.appId)) {
+    logger.warn('Firebase config incomplete - some required values are missing', {
+      category: LogCategory.ANALYTICS,
+      hasApiKey: !!config.apiKey,
+      hasProjectId: !!config.projectId,
+      hasAppId: !!config.appId,
+      hasMeasurementId: !!config.measurementId,
+    });
+  }
 
   await initializePlatformAnalytics(config);
 }

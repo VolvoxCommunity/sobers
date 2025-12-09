@@ -108,6 +108,15 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
+// Mock analytics
+const mockTrackEvent = jest.fn();
+jest.mock('@/lib/analytics', () => ({
+  trackEvent: (...args: unknown[]) => mockTrackEvent(...args),
+  AnalyticsEvents: {
+    AUTH_LOGIN: 'auth_login',
+  },
+}));
+
 // =============================================================================
 // Test Utilities
 // =============================================================================
@@ -307,6 +316,71 @@ describe('AppleSignInButton', () => {
           category: 'auth',
         });
       });
+    });
+
+    it('tracks AUTH_LOGIN event with apple method after successful sign in', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockTrackEvent).toHaveBeenCalledWith('auth_login', { method: 'apple' });
+      });
+    });
+
+    it('does not track analytics event when authentication fails', async () => {
+      const mockError = new Error('Apple auth failed');
+      mockSignInAsync.mockRejectedValueOnce(mockError);
+
+      render(<AppleSignInButton onError={jest.fn()} />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerError).toHaveBeenCalled();
+      });
+
+      expect(mockTrackEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not track analytics event when Supabase returns an error', async () => {
+      const supabaseError = new Error('Supabase auth error');
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: supabaseError });
+
+      render(<AppleSignInButton onError={jest.fn()} />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerError).toHaveBeenCalled();
+      });
+
+      expect(mockTrackEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not track analytics event when user cancels', async () => {
+      const cancelError = { code: 'ERR_REQUEST_CANCELED' };
+      mockSignInAsync.mockRejectedValueOnce(cancelError);
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerInfo).toHaveBeenCalledWith('Apple Sign In cancelled by user', {
+          category: 'auth',
+        });
+      });
+
+      expect(mockTrackEvent).not.toHaveBeenCalled();
     });
   });
 

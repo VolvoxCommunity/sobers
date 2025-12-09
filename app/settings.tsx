@@ -280,15 +280,21 @@ export default function SettingsScreen() {
 
   /**
    * Handles user sign out with platform-specific confirmations.
-   * Shows a confirmation dialog before signing out and navigating to login.
+   * Shows a confirmation dialog before signing out.
+   *
+   * Note: We dismiss the modal first, then sign out. The root layout's auth guard
+   * automatically redirects to /login when user becomes null. Calling router.replace()
+   * from a modal causes navigation conflicts resulting in a blank screen.
    */
   const handleSignOut = async () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('Are you sure you want to sign out?');
       if (confirmed) {
         try {
+          // Dismiss modal first, then sign out
+          // Auth guard in _layout.tsx handles redirect to /login
+          router.back();
           await signOut();
-          router.replace('/login');
         } catch (error: unknown) {
           const err = error instanceof Error ? error : new Error('Unknown error');
           logger.error('Sign out failed', err, {
@@ -305,8 +311,10 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Dismiss modal first, then sign out
+              // Auth guard in _layout.tsx handles redirect to /login
+              router.back();
               await signOut();
-              router.replace('/login');
             } catch (error: unknown) {
               const err = error instanceof Error ? error : new Error('Unknown error');
               logger.error('Sign out failed', err, {
@@ -341,9 +349,11 @@ export default function SettingsScreen() {
 
       setIsDeleting(true);
       try {
+        // Dismiss modal first to avoid navigation conflicts
+        router.back();
         await deleteAccount();
         window.alert('Your account has been deleted. We wish you well on your journey.');
-        router.replace('/login');
+        // Auth guard in _layout.tsx handles redirect to /login
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error('Unknown error occurred');
         logger.error('Account deletion failed in settings', err, {
@@ -371,17 +381,17 @@ export default function SettingsScreen() {
                   onPress: async () => {
                     setIsDeleting(true);
                     try {
+                      // Dismiss modal first to avoid navigation conflicts
+                      router.back();
                       await deleteAccount();
-                      Alert.alert(
-                        'Account Deleted',
-                        'Your account has been deleted. We wish you well on your journey.',
-                        [
-                          {
-                            text: 'OK',
-                            onPress: () => router.replace('/login'),
-                          },
-                        ]
-                      );
+                      // Auth guard in _layout.tsx handles redirect to /login
+                      // Show success message after a brief delay to allow navigation
+                      setTimeout(() => {
+                        Alert.alert(
+                          'Account Deleted',
+                          'Your account has been deleted. We wish you well on your journey.'
+                        );
+                      }, 100);
                     } catch (error: unknown) {
                       const err =
                         error instanceof Error ? error : new Error('Unknown error occurred');

@@ -12,7 +12,14 @@
 // =============================================================================
 
 // Mock react-native-url-polyfill before anything else
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 jest.mock('react-native-url-polyfill/auto', () => ({}));
+
+// Unmock @/lib/supabase to test the actual implementation
+// (global mock in jest.setup.js is only for other test files)
+jest.unmock('@/lib/supabase');
 
 // Mock createClient
 const mockSupabaseClient = {
@@ -31,9 +38,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   removeItem: jest.fn(),
 }));
-
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // =============================================================================
 // Test Suite
