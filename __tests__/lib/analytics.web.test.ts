@@ -174,6 +174,99 @@ describe('Web Analytics', () => {
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
+
+    it('returns immediately when already initialized (with debug logging)', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      // First call initializes
+      await initializeWebAnalytics(mockConfig);
+      jest.clearAllMocks();
+
+      // Second call should return immediately without reinitializing
+      await initializeWebAnalytics(mockConfig);
+
+      expect(initializeApp).not.toHaveBeenCalled();
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Analytics already initialized, skipping re-initialization',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+
+    it('concurrent calls await the same Promise', async () => {
+      // Create a deferred promise to control timing
+      let resolveSupported: (value: boolean) => void;
+      const supportedPromise = new Promise<boolean>((resolve) => {
+        resolveSupported = resolve;
+      });
+      (isSupported as jest.Mock).mockReturnValue(supportedPromise);
+
+      // Start two concurrent initializations
+      const call1 = initializeWebAnalytics(mockConfig);
+      const call2 = initializeWebAnalytics(mockConfig);
+
+      // isSupported should only be called once (first call starts initialization)
+      expect(isSupported).toHaveBeenCalledTimes(1);
+
+      // Resolve and wait for both
+      resolveSupported!(true);
+      await Promise.all([call1, call2]);
+    });
+
+    it('logs waiting message for concurrent calls in debug mode', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      // Create a deferred promise to control timing
+      let resolveSupported: (value: boolean) => void;
+      const supportedPromise = new Promise<boolean>((resolve) => {
+        resolveSupported = resolve;
+      });
+      (isSupported as jest.Mock).mockReturnValue(supportedPromise);
+
+      // Start two concurrent initializations
+      const call1 = initializeWebAnalytics(mockConfig);
+      const call2 = initializeWebAnalytics(mockConfig);
+
+      // Second call should log waiting message
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Analytics initialization in progress, waiting...',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+
+      // Resolve and wait for both
+      resolveSupported!(true);
+      await Promise.all([call1, call2]);
+    });
+
+    it('gracefully handles Firebase failure and marks initialization complete', async () => {
+      // Firebase init fails, but initialization still completes (graceful degradation)
+      (isSupported as jest.Mock).mockResolvedValueOnce(true);
+      (initializeApp as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Firebase init failed');
+      });
+
+      await initializeWebAnalytics(mockConfig);
+
+      // Error should be logged
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        'Failed to initialize Firebase Analytics',
+        expect.any(Error),
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+
+      // Initialization should still be marked complete (graceful degradation)
+      // Subsequent calls should return early
+      jest.clearAllMocks();
+      mockIsDebugMode.mockReturnValue(true);
+
+      await initializeWebAnalytics(mockConfig);
+
+      // Should log that initialization is already complete
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Analytics already initialized, skipping re-initialization',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+      expect(initializeApp).not.toHaveBeenCalled();
+    });
   });
 
   describe('trackEventWeb', () => {
@@ -552,6 +645,23 @@ describe('Web Analytics - New Functionality', () => {
         setTimeout(() => {
           expect(mockLoggerDebug).toHaveBeenCalledWith(
             expect.stringContaining('setUserId (not sent - Firebase not initialized)'),
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+          resolve(undefined);
+        }, 10);
+      });
+    });
+
+    it('logs debug message when clearing user ID (null) without initialization', () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      setUserIdWeb(null);
+
+      // Wait for async hash operation (even for null, there's async processing)
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          expect(mockLoggerDebug).toHaveBeenCalledWith(
+            'setUserId (not sent - Firebase not initialized): null',
             expect.objectContaining({ category: 'ANALYTICS' })
           );
           resolve(undefined);

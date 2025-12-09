@@ -99,6 +99,55 @@ describe('Unified Analytics Module', () => {
         })
       );
     });
+
+    it('returns immediately when already completed (with debug logging)', async () => {
+      mockIsDebugMode.mockReturnValue(true);
+
+      // First call completes initialization
+      await initializeAnalytics();
+      jest.clearAllMocks();
+
+      // Second call should return immediately
+      await initializeAnalytics();
+
+      // Should not call platform init again
+      expect(mockInitializePlatformAnalytics).not.toHaveBeenCalled();
+    });
+
+    it('concurrent calls await the same Promise', async () => {
+      // Create a deferred promise to control timing
+      let resolveInit: () => void;
+      const initPromise = new Promise<void>((resolve) => {
+        resolveInit = resolve;
+      });
+      mockInitializePlatformAnalytics.mockReturnValue(initPromise);
+
+      // Start two concurrent initializations
+      const call1 = initializeAnalytics();
+      const call2 = initializeAnalytics();
+
+      // Platform init should only be called once
+      expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
+
+      // Resolve and wait for both
+      resolveInit!();
+      await Promise.all([call1, call2]);
+    });
+
+    it('allows retry after initialization failure', async () => {
+      // First call fails
+      mockInitializePlatformAnalytics.mockRejectedValueOnce(new Error('Init failed'));
+      await initializeAnalytics();
+
+      // Reset mocks
+      jest.clearAllMocks();
+      mockInitializePlatformAnalytics.mockResolvedValueOnce(undefined);
+
+      // Second call should retry
+      await initializeAnalytics();
+
+      expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('trackEvent', () => {
