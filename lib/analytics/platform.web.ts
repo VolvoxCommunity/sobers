@@ -39,8 +39,13 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
     }
 
     if (getApps().length > 0) {
+      // Retrieve existing app and analytics instance
+      app = getApps()[0];
+      analytics = getAnalytics(app);
       if (isDebugMode()) {
-        logger.info('Firebase app already initialized', { category: LogCategory.ANALYTICS });
+        logger.info('Firebase app already initialized, retrieved existing instance', {
+          category: LogCategory.ANALYTICS,
+        });
       }
       return;
     }
