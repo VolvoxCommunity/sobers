@@ -3,8 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main
-      - develop
+      - main  # Only trigger on direct pushes/merges to main
   pull_request:
     branches:
       - main
