@@ -12,6 +12,7 @@ const mockIsDebugMode = jest.fn(() => false);
 const mockLoggerInfo = jest.fn();
 const mockLoggerDebug = jest.fn();
 const mockLoggerError = jest.fn();
+const mockLoggerWarn = jest.fn();
 
 // Mock analytics-utils - use wrapper to avoid hoisting issues
 jest.mock('@/lib/analytics-utils', () => ({
@@ -24,6 +25,7 @@ jest.mock('@/lib/logger', () => ({
     info: (...args: unknown[]) => mockLoggerInfo(...args),
     debug: (...args: unknown[]) => mockLoggerDebug(...args),
     error: (...args: unknown[]) => mockLoggerError(...args),
+    warn: (...args: unknown[]) => mockLoggerWarn(...args),
   },
   LogCategory: {
     ANALYTICS: 'ANALYTICS',
@@ -36,13 +38,13 @@ const mockSetUserId = jest.fn(() => Promise.resolve());
 const mockSetUserProperties = jest.fn(() => Promise.resolve());
 const mockResetAnalyticsData = jest.fn(() => Promise.resolve());
 const mockSetAnalyticsCollectionEnabled = jest.fn(() => Promise.resolve());
-const mockAnalyticsInstance = { _instance: 'mock-analytics' };
+const mockGetAnalytics = jest.fn(() => ({ _instance: 'mock-analytics' }));
 
 // Mock modular API - named exports instead of default export
 jest.mock('@react-native-firebase/analytics', () => {
   return {
     __esModule: true,
-    getAnalytics: jest.fn(() => mockAnalyticsInstance),
+    getAnalytics: () => mockGetAnalytics(),
     logEvent: (_analytics: unknown, ...args: unknown[]) => mockLogEvent(...args),
     setUserId: (_analytics: unknown, ...args: unknown[]) => mockSetUserId(...args),
     setUserProperties: (_analytics: unknown, ...args: unknown[]) => mockSetUserProperties(...args),
@@ -60,6 +62,7 @@ describe('Native Analytics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsDebugMode.mockReturnValue(false);
+    mockGetAnalytics.mockReturnValue({ _instance: 'mock-analytics' });
   });
 
   describe('initializeNativeAnalytics', () => {
@@ -404,6 +407,109 @@ describe('Native Analytics', () => {
         'Failed to reset analytics',
         expect.any(Error),
         expect.objectContaining({ category: 'ANALYTICS' })
+      );
+    });
+  });
+
+  describe('when Firebase is unavailable', () => {
+    // Use jest.isolateModules to get fresh module state with failing getAnalytics
+    const importWithFailingAnalytics = <T>(
+      modulePath: string,
+      callback: (mod: T) => void | Promise<void>
+    ): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        jest.isolateModules(() => {
+          // Configure getAnalytics to throw before importing the module
+          mockGetAnalytics.mockImplementation(() => {
+            throw new Error('Firebase not configured');
+          });
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const mod = require(modulePath) as T;
+            const result = callback(mod);
+            if (result instanceof Promise) {
+              result.then(resolve).catch(reject);
+            } else {
+              resolve();
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('initializeNativeAnalytics warns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        async (mod) => {
+          await mod.initializePlatformAnalytics();
+
+          expect(mockLoggerWarn).toHaveBeenCalledWith(
+            'Analytics not available - Firebase may not be configured',
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+        }
+      );
+    });
+
+    it('trackEventPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          // Should not throw
+          expect(() => mod.trackEventPlatform('test_event')).not.toThrow();
+          // Firebase logEvent should not be called
+          expect(mockLogEvent).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('setUserIdPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.setUserIdPlatform('user-123')).not.toThrow();
+          expect(mockSetUserId).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('setUserPropertiesPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.setUserPropertiesPlatform({ theme: 'dark' })).not.toThrow();
+          expect(mockSetUserProperties).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('trackScreenViewPlatform silently returns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        (mod) => {
+          expect(() => mod.trackScreenViewPlatform('HomeScreen')).not.toThrow();
+          expect(mockLogEvent).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('resetAnalyticsPlatform warns when analytics unavailable', async () => {
+      await importWithFailingAnalytics<typeof import('@/lib/analytics/platform.native')>(
+        '@/lib/analytics/platform.native',
+        async (mod) => {
+          await mod.resetAnalyticsPlatform();
+
+          expect(mockLoggerWarn).toHaveBeenCalledWith(
+            'Cannot reset analytics - Firebase not available',
+            expect.objectContaining({ category: 'ANALYTICS' })
+          );
+        }
       );
     });
   });

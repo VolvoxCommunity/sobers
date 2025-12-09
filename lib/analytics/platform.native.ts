@@ -21,8 +21,33 @@ import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analy
 import { isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
 
-// Get the analytics instance once for reuse
-const analyticsInstance = getAnalytics();
+// Lazily initialized analytics instance to avoid module-scope crashes
+// when Firebase config files are missing
+let analyticsInstance: ReturnType<typeof getAnalytics> | null = null;
+
+/**
+ * Gets or initializes the Firebase Analytics instance.
+ *
+ * Deferred initialization prevents crashes when Firebase config files
+ * (GoogleService-Info.plist / google-services.json) are missing.
+ *
+ * @returns The analytics instance, or null if initialization fails
+ */
+function getAnalyticsInstance(): ReturnType<typeof getAnalytics> | null {
+  if (analyticsInstance === null) {
+    try {
+      analyticsInstance = getAnalytics();
+    } catch (error) {
+      logger.error(
+        'Failed to get Firebase Analytics instance',
+        error instanceof Error ? error : new Error(String(error)),
+        { category: LogCategory.ANALYTICS }
+      );
+      return null;
+    }
+  }
+  return analyticsInstance;
+}
 
 /**
  * Initializes Firebase Analytics for native platforms.
@@ -33,8 +58,16 @@ const analyticsInstance = getAnalytics();
  */
 export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   try {
+    const analytics = getAnalyticsInstance();
+    if (!analytics) {
+      logger.warn('Analytics not available - Firebase may not be configured', {
+        category: LogCategory.ANALYTICS,
+      });
+      return;
+    }
+
     if (isDebugMode()) {
-      await setAnalyticsCollectionEnabled(analyticsInstance, true);
+      await setAnalyticsCollectionEnabled(analytics, true);
       logger.info('Firebase Analytics initialized for native', {
         category: LogCategory.ANALYTICS,
       });
@@ -60,7 +93,10 @@ export function trackEventPlatform(eventName: string, params?: EventParams): voi
     logger.debug(`Event: ${eventName}`, { category: LogCategory.ANALYTICS, ...safeParams });
   }
 
-  logEvent(analyticsInstance, eventName, params).catch((error: unknown) => {
+  const analytics = getAnalyticsInstance();
+  if (!analytics) return;
+
+  logEvent(analytics, eventName, params).catch((error: unknown) => {
     logger.error(
       `Failed to track event ${eventName}`,
       error instanceof Error ? error : new Error(String(error)),
@@ -96,7 +132,7 @@ function hashUserIdForLogging(input: string | null): string | null {
     hash = hash | 0; // Convert to 32-bit integer
   }
 
-  // Convert to positive hex string (16 chars for 32-bit hash)
+  // Convert to positive hex string (8 chars for 32-bit hash)
   const hashHex = Math.abs(hash).toString(16).padStart(8, '0');
   return hashHex;
 }
@@ -117,7 +153,10 @@ export function setUserIdPlatform(userId: string | null): void {
     }
   }
 
-  setUserId(analyticsInstance, userId).catch((error: unknown) => {
+  const analytics = getAnalyticsInstance();
+  if (!analytics) return;
+
+  setUserId(analytics, userId).catch((error: unknown) => {
     logger.error(
       'Failed to set user ID',
       error instanceof Error ? error : new Error(String(error)),
@@ -192,7 +231,10 @@ export function setUserPropertiesPlatform(properties: UserProperties): void {
     }
   }
 
-  setUserProperties(analyticsInstance, normalized).catch((error: unknown) => {
+  const analytics = getAnalyticsInstance();
+  if (!analytics) return;
+
+  setUserProperties(analytics, normalized).catch((error: unknown) => {
     logger.error(
       'Failed to set user properties',
       error instanceof Error ? error : new Error(String(error)),
@@ -215,15 +257,18 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
     logger.debug(`Screen view: ${screenName}`, { category: LogCategory.ANALYTICS });
   }
 
+  const analytics = getAnalyticsInstance();
+  if (!analytics) return;
+
   // Use logEvent with 'screen_view' instead of the deprecated logScreenView function
   // Type assertion needed because Firebase typings have strict overloads
   (
     logEvent as (
-      analytics: typeof analyticsInstance,
+      analytics: ReturnType<typeof getAnalytics>,
       event: string,
       params?: Record<string, unknown>
     ) => Promise<void>
-  )(analyticsInstance, 'screen_view', {
+  )(analytics, 'screen_view', {
     screen_name: screenName,
     screen_class: screenClass || screenName,
   }).catch((error: unknown) => {
@@ -240,11 +285,19 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   try {
+    const analytics = getAnalyticsInstance();
+    if (!analytics) {
+      logger.warn('Cannot reset analytics - Firebase not available', {
+        category: LogCategory.ANALYTICS,
+      });
+      return;
+    }
+
     if (isDebugMode()) {
       logger.info('Resetting analytics state', { category: LogCategory.ANALYTICS });
     }
 
-    await resetAnalyticsData(analyticsInstance);
+    await resetAnalyticsData(analytics);
   } catch (error) {
     logger.error(
       'Failed to reset analytics',

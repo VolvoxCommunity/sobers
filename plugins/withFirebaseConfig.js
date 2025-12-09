@@ -29,8 +29,9 @@ function withAndroidFirebaseConfig(config) {
       const androidAppDir = path.join(projectRoot, 'android', 'app');
 
       // Check for EAS file secret first
-      const secretConfig = process.env.GOOGLE_SERVICES_JSON;
-      if (secretConfig) {
+      // EAS file secrets (--type file) provide a PATH to a temp file, not the contents
+      const secretFilePath = process.env.GOOGLE_SERVICES_JSON;
+      if (secretFilePath && fs.existsSync(secretFilePath)) {
         const targetPath = path.join(androidAppDir, 'google-services.json');
 
         // Ensure directory exists
@@ -38,8 +39,9 @@ function withAndroidFirebaseConfig(config) {
           fs.mkdirSync(androidAppDir, { recursive: true });
         }
 
-        fs.writeFileSync(targetPath, secretConfig);
-        console.log('✓ Wrote google-services.json from EAS secret');
+        // Copy from the temp file path provided by EAS
+        fs.copyFileSync(secretFilePath, targetPath);
+        console.log('✓ Copied google-services.json from EAS secret');
         return config;
       }
 
@@ -77,8 +79,9 @@ function withIosFirebaseConfig(config) {
       const iosAppDir = path.join(projectRoot, 'ios', projectName);
 
       // Check for EAS file secret first
-      const secretConfig = process.env.GOOGLE_SERVICE_INFO_PLIST;
-      if (secretConfig) {
+      // EAS file secrets (--type file) provide a PATH to a temp file, not the contents
+      const secretFilePath = process.env.GOOGLE_SERVICE_INFO_PLIST;
+      if (secretFilePath && fs.existsSync(secretFilePath)) {
         const targetPath = path.join(iosAppDir, 'GoogleService-Info.plist');
 
         // Ensure directory exists
@@ -86,8 +89,9 @@ function withIosFirebaseConfig(config) {
           fs.mkdirSync(iosAppDir, { recursive: true });
         }
 
-        fs.writeFileSync(targetPath, secretConfig);
-        console.log('✓ Wrote GoogleService-Info.plist from EAS secret');
+        // Copy from the temp file path provided by EAS
+        fs.copyFileSync(secretFilePath, targetPath);
+        console.log('✓ Copied GoogleService-Info.plist from EAS secret');
         return config;
       }
 
