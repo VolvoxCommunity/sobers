@@ -10,6 +10,7 @@ import {
   resetAnalytics,
   AnalyticsEvents,
   calculateDaysSoberBucket,
+  __resetForTesting,
 } from '@/lib/analytics';
 
 const mockInitializePlatformAnalytics = jest.fn(() => Promise.resolve());
@@ -66,6 +67,8 @@ jest.mock('@/lib/logger', () => ({
 describe('Unified Analytics Module', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset the module's internal initialization state between tests
+    __resetForTesting();
     mockShouldInitializeAnalytics.mockReturnValue(true);
     mockIsDebugMode.mockReturnValue(false);
   });

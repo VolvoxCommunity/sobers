@@ -244,9 +244,28 @@ export function trackScreenView(screenName: string, screenClass?: string): void 
  *
  * Clears the analytics user identifier and any user-specific analytics data.
  *
- * Note: This does NOT reset the analytics initialization state (`isInitialized` flag).
+ * Note: This does NOT reset the analytics initialization state.
  * Analytics initialization persists after reset.
  */
 export async function resetAnalytics(): Promise<void> {
   await resetAnalyticsPlatform();
+}
+
+// =============================================================================
+// Testing Utilities
+// =============================================================================
+/**
+ * Reset the module's analytics initialization state for tests.
+ *
+ * Clears the internal initialization state so the module can be re-initialized in a test.
+ *
+ * @throws Will throw an Error if called when NODE_ENV is not 'test'.
+ * @internal
+ */
+export function __resetForTesting(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('__resetForTesting should only be called in test environments');
+  }
+  initializationState = null;
+  initializationPromise = null;
 }

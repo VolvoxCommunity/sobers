@@ -429,11 +429,9 @@ async function doInitialize(config: AnalyticsConfig): Promise<void> {
     });
   }
 
-  // If Firebase failed and it was the only provider, throw to signal failure
-  // This allows callers to handle the error appropriately
-  if (firebaseError && ANALYTICS_PROVIDER === 'firebase') {
-    throw firebaseError;
-  }
+  // Note: We intentionally do NOT throw on Firebase failures.
+  // Analytics initialization failures should be handled gracefully since they're
+  // not critical to app functionality. The error is logged above for monitoring.
 }
 
 /**
@@ -447,13 +445,13 @@ async function doInitialize(config: AnalyticsConfig): Promise<void> {
  * Firebase and Vercel Analytics are initialized independently - a Firebase failure
  * will not prevent Vercel Analytics from initializing when provider is 'both'.
  *
+ * Initialization errors are handled gracefully and logged. Analytics failures do not
+ * throw exceptions since they are not critical to app functionality.
+ *
  * @param config - Firebase configuration required when Firebase analytics is enabled.
  *   If Firebase is enabled but config is missing or invalid (empty apiKey, projectId, or appId),
  *   Firebase initialization will fail and be logged. If Vercel is also enabled (provider='both'),
- *   Vercel Analytics will still be initialized. If only Firebase is enabled (provider='firebase'),
- *   the function will throw an error to allow callers to handle the failure.
- *
- * @throws Error when Firebase is the only provider and initialization fails
+ *   Vercel Analytics will still be initialized.
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   // Already completed successfully - return immediately
