@@ -86,7 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-build-properties',
       {
         ios: {
-          // Note: Firebase requires modular headers, configured via withModularHeaders plugin below
+          // Note: Firebase requires modular headers, configured via the withModularHeaders plugin
         },
       },
     ],
