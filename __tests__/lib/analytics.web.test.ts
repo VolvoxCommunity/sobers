@@ -518,7 +518,6 @@ describe('Web Analytics - New Functionality', () => {
 
       // Should call initializeApp again after reset
       expect(initializeApp).toHaveBeenCalledTimes(1);
-      expect(initializeApp.mock.calls.length).toBeGreaterThan(0);
     });
   });
 
