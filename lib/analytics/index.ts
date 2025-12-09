@@ -72,6 +72,17 @@ export async function initializeAnalytics(): Promise<void> {
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
   };
 
+  // Warn if required config values are missing (they'd be empty strings)
+  if (!config.apiKey || !config.projectId || !config.appId) {
+    logger.warn('Firebase config incomplete - some required values are missing', {
+      category: LogCategory.ANALYTICS,
+      hasApiKey: !!config.apiKey,
+      hasProjectId: !!config.projectId,
+      hasAppId: !!config.appId,
+      hasMeasurementId: !!config.measurementId,
+    });
+  }
+
   await initializePlatformAnalytics(config);
 }
 
