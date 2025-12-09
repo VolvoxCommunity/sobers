@@ -305,5 +305,44 @@ describe('ThemeContext', () => {
       expect(result.current.theme.glassBorder).toBeDefined();
       expect(typeof result.current.theme.glassBorder).toBe('string');
     });
+
+    it('provides glassTint property in dark theme', async () => {
+      mockGetItem.mockResolvedValueOnce('dark');
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isDark).toBe(true);
+      });
+
+      expect(result.current.theme.glassTint).toBeDefined();
+      expect(typeof result.current.theme.glassTint).toBe('string');
+    });
+
+    it('provides glassFallback property in dark theme', async () => {
+      mockGetItem.mockResolvedValueOnce('dark');
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isDark).toBe(true);
+      });
+
+      expect(result.current.theme.glassFallback).toBeDefined();
+      expect(typeof result.current.theme.glassFallback).toBe('string');
+    });
+
+    it('provides glassBorder property in dark theme', async () => {
+      mockGetItem.mockResolvedValueOnce('dark');
+
+      const { result } = renderHook(() => useTheme(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isDark).toBe(true);
+      });
+
+      expect(result.current.theme.glassBorder).toBeDefined();
+      expect(typeof result.current.theme.glassBorder).toBe('string');
+    });
   });
 });
