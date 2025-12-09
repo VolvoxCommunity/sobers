@@ -34,7 +34,6 @@ jest.mock('@/lib/logger', () => ({
 const mockLogEvent = jest.fn(() => Promise.resolve());
 const mockSetUserId = jest.fn(() => Promise.resolve());
 const mockSetUserProperties = jest.fn(() => Promise.resolve());
-const mockLogScreenView = jest.fn(() => Promise.resolve());
 const mockResetAnalyticsData = jest.fn(() => Promise.resolve());
 const mockSetAnalyticsCollectionEnabled = jest.fn(() => Promise.resolve());
 const mockAnalyticsInstance = { _instance: 'mock-analytics' };
@@ -45,7 +44,6 @@ jest.mock('@react-native-firebase/analytics', () => {
     __esModule: true,
     getAnalytics: jest.fn(() => mockAnalyticsInstance),
     logEvent: (_analytics: unknown, ...args: unknown[]) => mockLogEvent(...args),
-    logScreenView: (_analytics: unknown, ...args: unknown[]) => mockLogScreenView(...args),
     setUserId: (_analytics: unknown, ...args: unknown[]) => mockSetUserId(...args),
     setUserProperties: (_analytics: unknown, ...args: unknown[]) => mockSetUserProperties(...args),
     resetAnalyticsData: (_analytics: unknown, ...args: unknown[]) =>
@@ -191,13 +189,14 @@ describe('Native Analytics', () => {
       expect(mockSetUserId).toHaveBeenCalledWith(null);
     });
 
-    it('logs in debug mode', () => {
+    it('logs hashed user ID in debug mode', () => {
       mockIsDebugMode.mockReturnValue(true);
 
       setUserIdNative('user-123');
 
+      // User ID is hashed for privacy in logs
       expect(mockLoggerDebug).toHaveBeenCalledWith(
-        'setUserId: user-123',
+        expect.stringMatching(/^setUserId: <hashed: [0-9a-f]+>$/),
         expect.objectContaining({ category: 'ANALYTICS' })
       );
     });
@@ -307,19 +306,20 @@ describe('Native Analytics', () => {
   });
 
   describe('trackScreenViewNative', () => {
-    it('logs screen view with name', () => {
+    it('logs screen view with name using logEvent', () => {
       trackScreenViewNative('HomeScreen');
 
-      expect(mockLogScreenView).toHaveBeenCalledWith({
+      // Uses logEvent with 'screen_view' instead of deprecated logScreenView
+      expect(mockLogEvent).toHaveBeenCalledWith('screen_view', {
         screen_name: 'HomeScreen',
         screen_class: 'HomeScreen',
       });
     });
 
-    it('logs screen view with name and class', () => {
+    it('logs screen view with name and class using logEvent', () => {
       trackScreenViewNative('HomeScreen', 'TabScreen');
 
-      expect(mockLogScreenView).toHaveBeenCalledWith({
+      expect(mockLogEvent).toHaveBeenCalledWith('screen_view', {
         screen_name: 'HomeScreen',
         screen_class: 'TabScreen',
       });
@@ -337,8 +337,8 @@ describe('Native Analytics', () => {
     });
 
     it('handles errors gracefully', async () => {
-      const error = new Error('LogScreenView failed');
-      mockLogScreenView.mockRejectedValueOnce(error);
+      const error = new Error('Screen view tracking failed');
+      mockLogEvent.mockRejectedValueOnce(error);
 
       expect(() => trackScreenViewNative('HomeScreen')).not.toThrow();
 
@@ -352,7 +352,7 @@ describe('Native Analytics', () => {
     });
 
     it('handles non-Error errors', async () => {
-      mockLogScreenView.mockRejectedValueOnce('string error');
+      mockLogEvent.mockRejectedValueOnce('string error');
 
       expect(() => trackScreenViewNative('HomeScreen')).not.toThrow();
 
