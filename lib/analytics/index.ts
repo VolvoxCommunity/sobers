@@ -46,7 +46,16 @@ export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
 /**
  * Initialize Firebase Analytics for the app.
  *
- * Call once at application startup before invoking any other analytics functions.
+ * Call this once at app startup, before any other analytics calls.
+ * On native platforms, Firebase is configured via config files.
+ * On web, it uses environment variables.
+ *
+ * @example
+ * ```ts
+ * // In app/_layout.tsx
+ * import { initializeAnalytics } from '@/lib/analytics';
+ * initializeAnalytics();
+ * ```
  */
 export async function initializeAnalytics(): Promise<void> {
   if (!shouldInitializeAnalytics()) {
