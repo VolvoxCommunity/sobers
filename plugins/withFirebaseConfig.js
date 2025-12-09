@@ -78,7 +78,7 @@ function detectConfigFormat(content) {
  * if decoding fails or the decoded content does not match those markers the original
  * secretValue is written as-is. The target directory is created if it does not exist.
  *
- * @param {string} secretValue - The secret value to write: either an absolute path to a file or base64-encoded content.
+ * @param {string} secretValue - The secret value to write: either an absolute file path, base64-encoded content, or raw JSON/plist content.
  * @param {string} targetPath - Filesystem path where the secret content should be written.
  * @returns {boolean} `true` if a file was written to targetPath, `false` if secretValue was falsy.
  */
