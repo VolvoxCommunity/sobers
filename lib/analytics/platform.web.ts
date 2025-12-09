@@ -341,23 +341,11 @@ function dispatchEvent(eventName: string, params?: EventParams): void {
 // Main Logic
 // =============================================================================
 /**
- * Initializes analytics providers for web.
+ * Initialize configured analytics providers for the web platform.
  *
- * Initializes Firebase Analytics and/or Vercel Analytics based on configuration.
- * Firebase requires explicit configuration; Vercel Analytics auto-detects if installed.
+ * This function is idempotent: once initialized, subsequent calls are no-ops. If Firebase analytics is enabled, `config` must contain the Firebase app settings.
  *
- * @param config - Firebase configuration (required if Firebase is enabled)
- * @returns Promise that resolves when initialization is complete
- *
- * @example
- * ```ts
- * await initializePlatformAnalytics({
- *   apiKey: 'your-api-key',
- *   projectId: 'your-project',
- *   appId: 'your-app-id',
- *   measurementId: 'G-XXXXXXXXXX'
- * });
- * ```
+ * @param config - Firebase configuration required when Firebase analytics is enabled
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   // Guard against multiple initialization attempts (hot reload, React Strict Mode, etc.)
@@ -573,10 +561,9 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
 }
 
 /**
- * Resets analytics for logout.
+ * Reset analytics state for the current user.
  *
- * Clears user ID and user properties in Firebase Analytics.
- * Vercel Analytics does not support reset operations.
+ * Clears the Firebase Analytics user ID and user properties. No-op for Vercel Analytics because it does not expose a reset API.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   if (isDebugMode()) {
@@ -590,9 +577,11 @@ export async function resetAnalyticsPlatform(): Promise<void> {
 // Testing Utilities
 // =============================================================================
 /**
- * Resets the initialization state for testing purposes.
- * This function is only available in test environments and should never be used in production.
+ * Reset the module's analytics initialization state for tests.
  *
+ * Clears the internal initialization guard and removes stored Firebase and Vercel analytics instances so the module can be re-initialized in a test.
+ *
+ * @throws Will throw an Error if called when NODE_ENV is not 'test'.
  * @internal
  */
 export function __resetForTesting(): void {

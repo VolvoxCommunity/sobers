@@ -12,11 +12,9 @@ import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analy
 import { logger, LogCategory } from '@/lib/logger';
 
 /**
- * Provide a fallback analytics initializer for unsupported platforms.
+ * Logs a warning that the fallback analytics implementation is active on unsupported platforms.
  *
- * Logs a warning that the fallback implementation is in use and performs no analytics initialization.
- *
- * @param _config - Optional analytics configuration; this implementation ignores the value
+ * @param _config - Optional analytics configuration; ignored by the fallback implementation
  */
 export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   logger.warn('Analytics: Using fallback implementation (platform not supported)', {

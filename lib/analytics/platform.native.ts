@@ -50,10 +50,9 @@ function getAnalyticsInstance(): ReturnType<typeof getAnalytics> | null {
 }
 
 /**
- * Initialize Firebase Analytics for native platforms.
+ * Initializes Firebase Analytics for native platforms using the bundled native configuration.
  *
- * On iOS and Android the native Firebase configuration files are used; the
- * optional `config` argument is ignored by the native implementation.
+ * The optional `_config` argument is ignored on iOS and Android.
  *
  * @param _config - Optional analytics configuration; ignored on native platforms
  */
@@ -145,10 +144,10 @@ function hashUserIdForLogging(input: string | null): string | null {
 }
 
 /**
- * Sets the user ID for analytics.
+ * Set the analytics user ID for the current session.
  *
- * This function is synchronous (fire-and-forget) to match the public API in index.ts.
- * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ * Passing `null` clears the current user ID. Errors encountered while setting the ID
+ * are caught and logged and will not be propagated.
  *
  * @param userId - The user ID to set, or `null` to clear the current user ID
  */
@@ -213,15 +212,13 @@ function sanitizeUserPropertiesForLogging(
 }
 
 /**
- * Sets user properties for analytics.
+ * Set analytics user properties for the native platform.
  *
- * This function is synchronous (fire-and-forget) to match the public API in index.ts.
- * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ * Accepts an object mapping property names to values; `null` clears a property and `undefined` entries are ignored.
+ * Boolean values are converted to the strings `'true'` or `'false'` to meet Firebase requirements; other non-null values are converted to strings.
+ * Errors from the underlying analytics call are logged and not rethrown.
  *
- * Firebase requires user properties to be string or null. Boolean values are
- * converted to strings ('true'/'false') to preserve semantic meaning.
- *
- * @param properties - Object mapping property names to string values; use `null` to clear a property
+ * @param properties - Mapping of user property names to string, boolean, `null`, or `undefined` values
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   if (isDebugMode()) {
@@ -255,13 +252,9 @@ export function setUserPropertiesPlatform(properties: UserProperties): void {
 }
 
 /**
- * Tracks a screen view event.
+ * Record a screen view in analytics.
  *
- * Uses logEvent with 'screen_view' instead of the dedicated logScreenView function
- * to avoid deprecation warnings in React Native Firebase v22+.
- *
- * This function is synchronous (fire-and-forget) to match the public API in index.ts.
- * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ * This is a fire-and-forget call: it enqueues a 'screen_view' event and catches/logs any errors without throwing.
  *
  * @param screenName - The displayed name of the screen to record
  * @param screenClass - Optional screen class; defaults to `screenName` when omitted
@@ -295,7 +288,9 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
 }
 
 /**
- * Clear analytics state and stored analytics data (commonly used on user logout).
+ * Clear the native Firebase Analytics instance state and stored analytics data, typically used on user logout.
+ *
+ * If Firebase Analytics is unavailable, logs a warning and returns without error. Any errors encountered while resetting are logged and not rethrown.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   try {

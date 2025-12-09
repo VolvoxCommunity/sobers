@@ -178,25 +178,19 @@ export function setUserProperties(properties: UserProperties): void {
 }
 
 /**
- * Tracks a screen view event.
+ * Record a screen view for analytics.
  *
- * This is typically called automatically by navigation tracking,
- * but can be called manually for non-standard screens.
+ * Typically invoked automatically by navigation tracking; call manually for non-standard or ephemeral screens.
  *
- * @param screenName - The name of the screen
- * @param screenClass - Optional screen class name
- *
- * @example
- * ```ts
- * trackScreenView('HomeScreen', 'TabScreen');
- * ```
+ * @param screenName - The logical name of the screen (e.g., "Home", "Settings")
+ * @param screenClass - Optional class or category of the screen (e.g., "TabScreen")
  */
 export function trackScreenView(screenName: string, screenClass?: string): void {
   trackScreenViewPlatform(screenName, screenClass);
 }
 
 /**
- * Reset analytics state for the current user.
+ * Resets analytics state for the current user.
  *
  * Clears the analytics user identifier and any user-specific analytics data.
  */

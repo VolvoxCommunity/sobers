@@ -69,12 +69,18 @@ function detectConfigFormat(content) {
 }
 
 /**
- * Writes content from an EAS secret to a target file.
- * EAS FILE_BASE64 secrets provide base64-encoded content directly in the env var.
+ * Ensure a file at targetPath is created from an EAS secret value.
  *
- * @param {string} secretValue - The secret value (base64 content or file path)
- * @param {string} targetPath - Where to write the file
- * @returns {boolean} True if file was written successfully
+ * If secretValue is falsy, the function does nothing and returns `false`. If secretValue
+ * is an existing absolute filesystem path, that file is copied to targetPath. Otherwise
+ * secretValue is treated as base64-encoded content and decoded to UTF-8; if the decoded
+ * content appears to be JSON (`{`) or a plist (`<`) it is written to targetPath, and
+ * if decoding fails or the decoded content does not match those markers the original
+ * secretValue is written as-is. The target directory is created if it does not exist.
+ *
+ * @param {string} secretValue - The secret value to write: either an absolute path to a file or base64-encoded content.
+ * @param {string} targetPath - Filesystem path where the secret content should be written.
+ * @returns {boolean} `true` if a file was written to targetPath, `false` if secretValue was falsy.
  */
 function writeFromSecret(secretValue, targetPath) {
   if (!secretValue) return false;
@@ -134,7 +140,16 @@ function writeFromSecret(secretValue, targetPath) {
 }
 
 /**
- * Writes Firebase config for Android (google-services.json).
+ * Ensure google-services.json is present in the Android app directory during prebuild.
+ *
+ * Attempts to write the Android Firebase configuration to android/app/google-services.json
+ * using the EAS secret GOOGLE_SERVICES_JSON (treated as either an absolute file path or
+ * base64-encoded content). If the secret is not provided or cannot be used, falls back to
+ * copying google-services.json from the project root if it exists. If neither source is available,
+ * the function leaves the project unchanged.
+ *
+ * @param {import('@expo/config-plugins').ExpoConfig & { modRequest?: { projectRoot: string } }} config - Expo config passed to the plugin.
+ * @returns {import('@expo/config-plugins').ExpoConfig} The config object after applying the Android Firebase config handler.
  */
 function withAndroidFirebaseConfig(config) {
   return withDangerousMod(config, [
@@ -171,7 +186,14 @@ function withAndroidFirebaseConfig(config) {
 }
 
 /**
- * Writes Firebase config for iOS (GoogleService-Info.plist).
+ * Ensures an iOS Firebase config file (GoogleService-Info.plist) is present in the app project.
+ *
+ * Attempts to write the plist into ios/<projectName>/GoogleService-Info.plist from the
+ * EAS secret `GOOGLE_SERVICE_INFO_PLIST`, falling back to copying a local
+ * GoogleService-Info.plist from the project root if the secret is not provided.
+ *
+ * @param {import('@expo/config-plugins').ConfigPlugin} config - Expo config to modify.
+ * @returns {import('@expo/config-plugins').ConfigPlugin} The updated Expo config.
  */
 function withIosFirebaseConfig(config) {
   return withDangerousMod(config, [
