@@ -44,18 +44,9 @@ export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';
 export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
 
 /**
- * Initializes Firebase Analytics.
+ * Initialize Firebase Analytics for the app.
  *
- * Call this once at app startup, before any other analytics calls.
- * On native platforms, Firebase is configured via config files.
- * On web, it uses environment variables.
- *
- * @example
- * ```ts
- * // In app/_layout.tsx
- * import { initializeAnalytics } from '@/lib/analytics';
- * initializeAnalytics();
- * ```
+ * Call once at application startup before invoking any other analytics functions.
  */
 export async function initializeAnalytics(): Promise<void> {
   if (!shouldInitializeAnalytics()) {
@@ -174,16 +165,9 @@ export function trackScreenView(screenName: string, screenClass?: string): void 
 }
 
 /**
- * Resets analytics for logout.
+ * Reset analytics state for the current user.
  *
- * Clears the user ID and any user-specific analytics data.
- * Call this when a user signs out.
- *
- * @example
- * ```ts
- * // In sign out handler
- * await resetAnalytics();
- * ```
+ * Clears the analytics user identifier and any user-specific analytics data.
  */
 export async function resetAnalytics(): Promise<void> {
   await resetAnalyticsPlatform();

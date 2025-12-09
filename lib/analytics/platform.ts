@@ -12,7 +12,11 @@ import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analy
 import { logger, LogCategory } from '@/lib/logger';
 
 /**
- * Initializes Firebase Analytics (fallback - no-op).
+ * Provide a fallback analytics initializer for unsupported platforms.
+ *
+ * Logs a warning that the fallback implementation is in use and performs no analytics initialization.
+ *
+ * @param _config - Optional analytics configuration; this implementation ignores the value
  */
 export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   logger.warn('Analytics: Using fallback implementation (platform not supported)', {
@@ -21,35 +25,42 @@ export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Pr
 }
 
 /**
- * Tracks an analytics event (fallback - no-op).
+ * Fallback implementation that ignores analytics events on unsupported platforms.
+ *
+ * @param _eventName - The event name to track; ignored by this fallback.
+ * @param _params - Optional event parameters; ignored by this fallback.
  */
 export function trackEventPlatform(_eventName: string, _params?: EventParams): void {
   // No-op on unsupported platforms
 }
 
 /**
- * Sets the user ID (fallback - no-op).
+ * Fallback implementation that accepts a user identifier but does nothing on unsupported platforms.
+ *
+ * @param _userId - The user identifier to set; ignored by this fallback implementation
  */
 export function setUserIdPlatform(_userId: string | null): void {
   // No-op on unsupported platforms
 }
 
 /**
- * Sets user properties (fallback - no-op).
+ * Stores user properties for the current user; in this fallback implementation the call has no effect.
+ *
+ * @param _properties - Key-value map of user attributes to associate with the current user
  */
 export function setUserPropertiesPlatform(_properties: UserProperties): void {
   // No-op on unsupported platforms
 }
 
 /**
- * Tracks a screen view (fallback - no-op).
+ * Fallback implementation for tracking a screen view on unsupported platforms; performs no action.
  */
 export function trackScreenViewPlatform(_screenName: string, _screenClass?: string): void {
   // No-op on unsupported platforms
 }
 
 /**
- * Resets analytics (fallback - no-op).
+ * Resets any platform-specific analytics state; on unsupported platforms this is a no-op.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   // No-op on unsupported platforms

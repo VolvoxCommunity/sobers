@@ -16,10 +16,9 @@
 const { withPodfile } = require('@expo/config-plugins');
 
 /**
- * Adds `use_modular_headers!` to the Podfile after the platform declaration.
- *
- * @param {import('@expo/config-plugins').ExpoConfig} config - The Expo config object
- * @returns {import('@expo/config-plugins').ExpoConfig} Modified config
+ * Injects `use_modular_headers!` into the iOS Podfile immediately after the `platform :ios` line if it's not already present.
+ * @param {import('@expo/config-plugins').ExpoConfig} config - Expo config whose `modResults.contents` holds the Podfile; `modResults.contents` will be updated when insertion occurs.
+ * @returns {import('@expo/config-plugins').ExpoConfig} The same config object, potentially with `modResults.contents` modified to include `use_modular_headers!`.
  */
 function withModularHeaders(config) {
   return withPodfile(config, (podfileConfig) => {
