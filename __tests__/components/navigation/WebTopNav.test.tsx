@@ -38,10 +38,14 @@ describe('WebTopNav', () => {
     expect(mockRouterPush).toHaveBeenCalledWith('/steps');
   });
 
-  it('highlights active route', () => {
+  it('highlights active route with selected accessibility state', () => {
     renderWithProviders(<WebTopNav items={items} />);
-    // Home should be active since pathname is '/'
-    const homeItem = screen.getByText('Home');
-    expect(homeItem).toBeTruthy();
+    // Home should be active since pathname is '/' - verify via accessibilityState
+    const homeTab = screen.getByRole('tab', { name: 'Home' });
+    const stepsTab = screen.getByRole('tab', { name: 'Steps' });
+
+    // Home is active (pathname is '/'), Steps is not
+    expect(homeTab.props.accessibilityState?.selected).toBe(true);
+    expect(stepsTab.props.accessibilityState?.selected).toBe(false);
   });
 });
