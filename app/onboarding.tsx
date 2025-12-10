@@ -71,7 +71,11 @@ export default function OnboardingScreen() {
 
   // Pre-fill display name from OAuth profile if available (e.g., Google sign-in)
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
-  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+  // Initialize error state with validation result to prevent race condition where
+  // form could be valid before debounced validation runs
+  const [displayNameError, setDisplayNameError] = useState<string | null>(() =>
+    validateDisplayName(profile?.display_name ?? '')
+  );
 
   // Track onboarding start time for analytics duration calculation
   const [onboardingStartTime] = useState(() => Date.now());
