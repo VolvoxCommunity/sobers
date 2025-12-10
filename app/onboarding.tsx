@@ -308,13 +308,15 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
       style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <View style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <OnboardingStep>
             <View style={styles.headerContainer}>
@@ -479,14 +481,14 @@ export default function OnboardingScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Sign Out Button - Inside ScrollView to avoid keyboard overlap */}
+            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+              <LogOut size={16} color={theme.textSecondary} />
+              <Text style={styles.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
           </OnboardingStep>
         </ScrollView>
-
-        {/* Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <LogOut size={16} color={theme.textSecondary} />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -508,7 +510,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     scrollContent: {
       flexGrow: 1,
-      paddingBottom: 80, // Space for sign out button
+      paddingBottom: 24,
     },
     headerContainer: {
       marginBottom: 32,
@@ -716,7 +718,7 @@ const createStyles = (theme: ThemeColors) =>
       justifyContent: 'center',
       padding: 16,
       gap: 8,
-      marginBottom: 8,
+      marginTop: 8,
     },
     signOutText: {
       fontSize: 14,
