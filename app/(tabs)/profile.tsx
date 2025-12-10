@@ -176,6 +176,7 @@ export default function ProfileScreen() {
   const scrollPadding = Platform.OS === 'ios' ? insets.bottom + IOS_TAB_BAR_HEIGHT + 16 : 16;
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [showInviteInput, setShowInviteInput] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -667,11 +668,24 @@ export default function ProfileScreen() {
     await refreshProfile();
   };
 
+  /**
+   * Shows the invite code input and scrolls to the bottom so it's visible.
+   * Uses a small delay to allow the state update to render before scrolling.
+   */
+  const handleShowInviteInput = () => {
+    setShowInviteInput(true);
+    // Delay scroll to allow the invite input to render first
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
   const styles = createStyles(theme, insets);
 
   return (
     <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
       <ScrollView
+        ref={scrollViewRef}
         style={styles.container}
         contentContainerStyle={{ paddingBottom: scrollPadding }}
         keyboardShouldPersistTaps="handled"
@@ -791,10 +805,7 @@ export default function ProfileScreen() {
             <View>
               <Text style={styles.emptyStateText}>No sponsor connected yet</Text>
               {!showInviteInput ? (
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => setShowInviteInput(true)}
-                >
+                <TouchableOpacity style={styles.actionButton} onPress={handleShowInviteInput}>
                   <QrCode size={20} color={theme.primary} />
                   <Text style={styles.actionButtonText}>Enter Invite Code</Text>
                 </TouchableOpacity>
@@ -841,7 +852,7 @@ export default function ProfileScreen() {
 
         {sponsorRelationships.length > 0 && !showInviteInput && (
           <View style={styles.section}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setShowInviteInput(true)}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleShowInviteInput}>
               <QrCode size={20} color={theme.primary} />
               <Text style={styles.actionButtonText}>Connect to Another Sponsor</Text>
             </TouchableOpacity>
