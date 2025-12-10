@@ -235,8 +235,8 @@ export default function OnboardingScreen() {
         timezone: userTimezone,
       };
 
-      // Use upsert to create the profile if it doesn't exist (OAuth users)
-      // or update it if it already exists (email/password users)
+      // Use upsert to create the profile if it doesn't exist (for both OAuth and email/password users),
+      // or update it if the user is restarting onboarding and a profile already exists.
       const { error } = await supabase.from('profiles').upsert(profileData, {
         onConflict: 'id',
       });
