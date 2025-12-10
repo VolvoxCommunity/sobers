@@ -411,20 +411,13 @@ describe('ProfileScreen', () => {
   });
 
   describe('Settings Navigation', () => {
-    beforeEach(() => {
-      mockSetOptions.mockClear();
-    });
-
-    it('configures header with settings button via navigation.setOptions', async () => {
+    it('renders settings button inline in the profile header', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        // Verify setOptions was called with headerRight
-        expect(mockSetOptions).toHaveBeenCalledWith(
-          expect.objectContaining({
-            headerRight: expect.any(Function),
-          })
-        );
+        // Settings button is now rendered inline in the UI (not via navigation.setOptions)
+        // because native bottom tabs don't support navigation.setOptions for header customization
+        expect(screen.getByLabelText('Open settings')).toBeTruthy();
       });
     });
 
@@ -432,16 +425,9 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(mockSetOptions).toHaveBeenCalled();
+        const settingsButton = screen.getByLabelText('Open settings');
+        expect(settingsButton).toBeTruthy();
       });
-
-      // Extract the headerRight function from the setOptions call
-      const setOptionsCall = mockSetOptions.mock.calls[0][0];
-      const HeaderRightComponent = setOptionsCall.headerRight;
-
-      // Render the header right component to verify its accessibility
-      const { getByLabelText } = render(<HeaderRightComponent />);
-      expect(getByLabelText('Open settings')).toBeTruthy();
     });
   });
 
@@ -922,20 +908,13 @@ describe('ProfileScreen', () => {
   });
 
   describe('Settings Button', () => {
-    beforeEach(() => {
-      mockSetOptions.mockClear();
-    });
-
-    it('renders settings gear icon button in native header', async () => {
+    it('renders settings gear icon button inline in profile header', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        // Settings button is now in the native header via navigation.setOptions
-        expect(mockSetOptions).toHaveBeenCalledWith(
-          expect.objectContaining({
-            headerRight: expect.any(Function),
-          })
-        );
+        // Settings button is rendered inline in the profile header
+        // (moved from navigation.setOptions because native bottom tabs don't support it)
+        expect(screen.getByLabelText('Open settings')).toBeTruthy();
       });
     });
 
@@ -943,19 +922,12 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(mockSetOptions).toHaveBeenCalled();
+        const settingsButton = screen.getByLabelText('Open settings');
+        expect(settingsButton).toBeTruthy();
+
+        // Verify the button can be pressed without errors
+        fireEvent.press(settingsButton);
       });
-
-      // Extract and render the headerRight component
-      const setOptionsCall = mockSetOptions.mock.calls[0][0];
-      const HeaderRightComponent = setOptionsCall.headerRight;
-
-      const { getByLabelText } = render(<HeaderRightComponent />);
-      const settingsButton = getByLabelText('Open settings');
-
-      // Verify the button can be pressed without errors
-      fireEvent.press(settingsButton);
-      expect(settingsButton).toBeTruthy();
     });
   });
 

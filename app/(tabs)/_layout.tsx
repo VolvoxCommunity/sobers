@@ -6,9 +6,13 @@ import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Home, BookOpen, TrendingUp, CheckSquare, User } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import TabBarIcon from '@/components/navigation/TabBarIcon';
-import TabBarBackground from '@/components/navigation/TabBarBackground';
+import type { SFSymbol } from 'sf-symbols-typescript';
 import WebTopNav from '@/components/navigation/WebTopNav';
+
+// Conditionally import native tabs only on mobile to avoid web bundling issues
+// react-native-bottom-tabs uses native codegen which isn't available on web
+const NativeTabs =
+  Platform.OS !== 'web' ? require('@/components/navigation/NativeBottomTabs').NativeTabs : null;
 
 // =============================================================================
 // Types & Interfaces
@@ -18,7 +22,7 @@ import WebTopNav from '@/components/navigation/WebTopNav';
 interface TabRoute {
   name: string;
   title: string;
-  sfSymbol: string;
+  sfSymbol: SFSymbol;
   icon: React.ComponentType<{ size?: number; color?: string }>;
 }
 
@@ -67,8 +71,9 @@ const tabRoutes: TabRoute[] = [
 /**
  * Tab layout with platform-specific navigation.
  *
- * - iOS: Native tabs with SF Symbols, Liquid Glass blur headers, and large titles
- * - Android: Native tabs with Lucide icons and Material elevation
+ * - iOS/Android: Native bottom tabs via react-native-bottom-tabs
+ *   - iOS: UITabBarController with SF Symbols, native blur, and haptics
+ *   - Android: BottomNavigationView with Material Design styling
  * - Web: Top navigation bar (bottom tabs hidden)
  *
  * @returns Tab navigator appropriate for current platform
@@ -103,73 +108,36 @@ export default function TabLayout(): React.ReactElement {
     );
   }
 
-  // Mobile: Native tabs with platform-specific styling
-  // Note: iOS Large Titles and blur effects require native-stack navigator.
-  // The tab bar itself gets the Liquid Glass treatment via transparent background.
+  // Mobile: Native bottom tabs with platform-specific styling
+  // Uses react-native-bottom-tabs for truly native tab bars:
+  // - iOS: UITabBarController with SF Symbols and native blur
+  // - Android: BottomNavigationView with Material Design
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: true,
-        // Header styling
-        headerTitleStyle: {
-          fontFamily: 'JetBrainsMono-SemiBold',
-        },
-        headerStyle: Platform.select({
-          ios: {
-            backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)',
-          },
-          android: {
-            backgroundColor: theme.surface,
-            elevation: 4,
-          },
-        }),
-        headerShadowVisible: Platform.OS !== 'ios', // Hide shadow on iOS for cleaner look
-        headerTintColor: theme.text,
-        // Tab bar styling - Liquid Glass effect on iOS
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarBackground: () => <TabBarBackground />,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Transparent background to show blur effect underneath
-            position: 'absolute',
-            backgroundColor: 'transparent',
-            borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-          },
-          android: {
-            backgroundColor: theme.surface,
-            elevation: 8,
-            borderTopWidth: 1,
-            borderTopColor: theme.border,
-          },
-        }),
+    <NativeTabs
+      tabBarActiveTintColor={theme.primary}
+      tabBarInactiveTintColor={theme.textSecondary}
+      tabBarStyle={{
+        backgroundColor: isDark ? theme.surface : theme.card,
       }}
     >
       {tabRoutes.map((route) => (
-        <Tabs.Screen
+        <NativeTabs.Screen
           key={route.name}
           name={route.name}
           options={{
             title: route.title,
-            tabBarIcon: ({ focused, color }) => (
-              <TabBarIcon
-                sfSymbol={route.sfSymbol as any}
-                fallbackIcon={route.icon}
-                focused={focused}
-                color={color}
-              />
-            ),
+            tabBarIcon: () => ({ sfSymbol: route.sfSymbol }),
           }}
         />
       ))}
       {/* Hidden route - accessible via navigation but not shown in tab bar */}
-      <Tabs.Screen
+      <NativeTabs.Screen
         name="manage-tasks"
         options={{
           title: 'Manage Tasks',
-          href: null, // Hide from tab bar
+          tabBarItemHidden: true,
         }}
       />
-    </Tabs>
+    </NativeTabs>
   );
 }

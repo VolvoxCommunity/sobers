@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Platform } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -59,9 +59,9 @@ interface TimelineEvent {
 export default function JourneyScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
-  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
-  const nativeTabBarHeight = useBottomTabBarHeight();
-  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
+  // Get safe area insets for scroll padding
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'ios' ? insets.bottom : 0;
   const {
     daysSober,
     journeyDays,

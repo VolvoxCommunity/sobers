@@ -16,7 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +28,13 @@ import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/** Standard iOS tab bar height (49pt) - used for FAB positioning */
+const IOS_TAB_BAR_HEIGHT = 49;
 
 // =============================================================================
 // Types & Interfaces
@@ -49,9 +56,9 @@ type ViewMode = 'my-tasks' | 'manage';
 export default function TasksScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
-  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
-  const nativeTabBarHeight = useBottomTabBarHeight();
-  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
+  // Get safe area insets for scroll padding
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'ios' ? insets.bottom : 0;
 
   // =============================================================================
   // State
@@ -1290,7 +1297,8 @@ const createStyles = (theme: ThemeColors) =>
     fab: {
       position: 'absolute',
       right: 20,
-      bottom: 20,
+      // Position above the native tab bar on iOS
+      bottom: Platform.OS === 'ios' ? IOS_TAB_BAR_HEIGHT + 20 : 20,
       width: 56,
       height: 56,
       borderRadius: 28,

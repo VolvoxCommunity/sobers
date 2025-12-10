@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -21,9 +21,9 @@ export default function StepsScreen() {
   const { theme } = useTheme();
   const { profile } = useAuth();
   const router = useRouter();
-  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
-  const nativeTabBarHeight = useBottomTabBarHeight();
-  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
+  // Get safe area insets for scroll padding
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'ios' ? insets.bottom : 0;
   const [steps, setSteps] = useState<StepContent[]>([]);
   const [progress, setProgress] = useState<Record<number, UserStepProgress>>({});
   const [loading, setLoading] = useState(true);

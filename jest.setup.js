@@ -452,6 +452,13 @@ jest.mock('react-native-gesture-handler', () => {
 
 // Mock @react-navigation/bottom-tabs
 jest.mock('@react-navigation/bottom-tabs', () => ({
-  useBottomTabBarHeight: () => 49, // Standard iOS tab bar height
+  useBottomTabBarHeight: () => 49, // Standard iOS tab bar height (kept for backwards compatibility)
   createBottomTabNavigator: jest.fn(),
+}));
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 44, right: 0, bottom: 34, left: 0 }),
+  SafeAreaProvider: ({ children }) => children,
+  SafeAreaView: ({ children }) => children,
 }));

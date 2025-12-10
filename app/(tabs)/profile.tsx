@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,7 @@ import {
   Modal,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useNavigation } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -35,6 +34,17 @@ import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
 import SettingsSheet, { SettingsSheetRef } from '@/components/SettingsSheet';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/** Standard iOS tab bar height (49pt) - used for scroll padding */
+const IOS_TAB_BAR_HEIGHT = 49;
+
+// =============================================================================
+// Helper Components
+// =============================================================================
 
 /**
  * Renders a card for a sponsee showing avatar, display name, connection date, optional sobriety days and task completion, and a disconnect control.
@@ -160,10 +170,10 @@ function SponsorDaysDisplay({
 export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
-  const navigation = useNavigation();
-  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
-  const nativeTabBarHeight = useBottomTabBarHeight();
-  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
+  // Get safe area insets for scroll padding
+  const insets = useSafeAreaInsets();
+  // Account for native tab bar height on iOS
+  const scrollPadding = Platform.OS === 'ios' ? insets.bottom + IOS_TAB_BAR_HEIGHT + 16 : 16;
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const [inviteCode, setInviteCode] = useState('');
@@ -181,22 +191,6 @@ export default function ProfileScreen() {
   const [sponseeTaskStats, setSponseeTaskStats] = useState<{
     [key: string]: { total: number; completed: number };
   }>({});
-
-  // Configure header with Settings button (native header integration)
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => settingsSheetRef.current?.present()}
-          style={{ padding: 8, marginRight: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Open settings"
-        >
-          <Settings size={22} color={theme.text} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, theme.text]);
 
   // User's timezone (stored in profile) with device timezone as fallback
   const userTimezone = getUserTimezone(profile);
@@ -679,11 +673,20 @@ export default function ProfileScreen() {
     <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: tabBarHeight }}
+        contentContainerStyle={{ paddingBottom: scrollPadding }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={true}
       >
         <View style={styles.header}>
+          {/* Settings button positioned in top-right corner */}
+          <TouchableOpacity
+            onPress={() => settingsSheetRef.current?.present()}
+            style={styles.settingsButton}
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+          >
+            <Settings size={22} color={theme.text} />
+          </TouchableOpacity>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {profile?.display_name?.[0]?.toUpperCase() || '?'}
@@ -959,6 +962,15 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       padding: 24,
       paddingTop: Platform.OS === 'ios' ? 16 : 24, // Reduced top padding since native header provides spacing
       backgroundColor: theme.surface,
+      position: 'relative', // For absolute positioning of settings button
+    },
+    settingsButton: {
+      position: 'absolute',
+      top: Platform.OS === 'ios' ? 16 : 24,
+      right: 16,
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: theme.primaryLight,
     },
     avatar: {
       width: 80,

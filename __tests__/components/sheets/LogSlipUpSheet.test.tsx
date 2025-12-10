@@ -112,11 +112,7 @@ describe('LogSlipUpSheet', () => {
 
     // Mock Alert.alert to auto-confirm (simulates user pressing "Continue")
     (Alert.alert as jest.Mock).mockImplementation(
-      (
-        _title: string,
-        _message: string,
-        buttons?: { text: string; onPress?: () => void }[]
-      ) => {
+      (_title: string, _message: string, buttons?: { text: string; onPress?: () => void }[]) => {
         // Find and call the "Continue" button's onPress handler
         const continueButton = buttons?.find((btn) => btn.text === 'Continue');
         if (continueButton?.onPress) {

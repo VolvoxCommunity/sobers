@@ -22,6 +22,13 @@ import { logger, LogCategory } from '@/lib/logger';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/** Standard iOS tab bar height (49pt) - used for footer padding when nested in tabs */
+const IOS_TAB_BAR_HEIGHT = 49;
+
+// =============================================================================
 // Component
 // =============================================================================
 
@@ -264,55 +271,55 @@ export default function StepDetailScreen() {
           </View>
         )}
 
-        {/* Bottom padding for scroll clearance */}
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* Footer with Navigation and Completion */}
-      <View style={styles.footer}>
-        {/* Step Navigation */}
-        <View style={styles.navigation}>
+        {/* Action Buttons - inside scroll content for glass tab bar visibility */}
+        <View style={styles.actionSection}>
+          {/* Completion Button */}
           <Pressable
-            onPress={handlePreviousStep}
-            style={[styles.navButton, !hasPrevious && styles.navButtonDisabled]}
-            disabled={!hasPrevious}
+            style={[styles.completeButton, isCompleted && styles.completeButtonActive]}
+            onPress={handleToggleCompletion}
           >
-            <ChevronLeft size={20} color={hasPrevious ? theme.primary : theme.textSecondary} />
-            <Text style={[styles.navButtonText, !hasPrevious && styles.navButtonTextDisabled]}>
-              Previous
-            </Text>
+            {isCompleted ? (
+              <>
+                <CheckCircle size={20} color="#ffffff" />
+                <Text style={styles.completeButtonText}>Marked as Complete</Text>
+              </>
+            ) : (
+              <>
+                <Circle size={20} color="#ffffff" />
+                <Text style={styles.completeButtonText}>Mark as Complete</Text>
+              </>
+            )}
           </Pressable>
 
-          <Pressable
-            onPress={handleNextStep}
-            style={[styles.navButton, !hasNext && styles.navButtonDisabled]}
-            disabled={!hasNext}
-          >
-            <Text style={[styles.navButtonText, !hasNext && styles.navButtonTextDisabled]}>
-              Next
-            </Text>
-            <ChevronRight size={20} color={hasNext ? theme.primary : theme.textSecondary} />
-          </Pressable>
+          {/* Step Navigation */}
+          <View style={styles.navigation}>
+            <Pressable
+              onPress={handlePreviousStep}
+              style={[styles.navButton, !hasPrevious && styles.navButtonDisabled]}
+              disabled={!hasPrevious}
+            >
+              <ChevronLeft size={20} color={hasPrevious ? theme.primary : theme.textSecondary} />
+              <Text style={[styles.navButtonText, !hasPrevious && styles.navButtonTextDisabled]}>
+                Previous
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleNextStep}
+              style={[styles.navButton, !hasNext && styles.navButtonDisabled]}
+              disabled={!hasNext}
+            >
+              <Text style={[styles.navButtonText, !hasNext && styles.navButtonTextDisabled]}>
+                Next
+              </Text>
+              <ChevronRight size={20} color={hasNext ? theme.primary : theme.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
-        {/* Completion Button */}
-        <Pressable
-          style={[styles.completeButton, isCompleted && styles.completeButtonActive]}
-          onPress={handleToggleCompletion}
-        >
-          {isCompleted ? (
-            <>
-              <CheckCircle size={20} color="#ffffff" />
-              <Text style={styles.completeButtonText}>Marked as Complete</Text>
-            </>
-          ) : (
-            <>
-              <Circle size={20} color="#ffffff" />
-              <Text style={styles.completeButtonText}>Mark as Complete</Text>
-            </>
-          )}
-        </Pressable>
-      </View>
+        {/* Bottom padding for tab bar clearance */}
+        <View style={styles.bottomPadding} />
+      </ScrollView>
     </View>
   );
 }
@@ -452,17 +459,16 @@ const createStyles = (theme: ThemeColors, insets: { top: number; bottom: number 
       color: theme.textSecondary,
       lineHeight: 26,
     },
-    bottomPadding: {
-      height: 24,
-    },
-    footer: {
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : 20,
-      backgroundColor: theme.card,
+    actionSection: {
+      marginTop: 16,
+      paddingTop: 24,
       borderTopWidth: 1,
       borderTopColor: theme.border,
-      gap: 12,
+      gap: 16,
+    },
+    bottomPadding: {
+      // Account for native tab bar height plus safe area so content isn't hidden
+      height: Platform.OS === 'ios' ? insets.bottom + IOS_TAB_BAR_HEIGHT + 16 : 24,
     },
     navigation: {
       flexDirection: 'row',

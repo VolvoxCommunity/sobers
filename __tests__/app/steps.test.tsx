@@ -111,11 +111,6 @@ jest.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
-// Mock @react-navigation/bottom-tabs
-jest.mock('@react-navigation/bottom-tabs', () => ({
-  useBottomTabBarHeight: () => 80,
-}));
-
 // Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => ({
   CheckCircle: () => null,
