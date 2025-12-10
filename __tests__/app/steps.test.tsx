@@ -1,21 +1,31 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps.tsx
+ * @fileoverview Tests for app/(tabs)/steps/index.tsx
  *
- * Tests the Steps screen including:
+ * Tests the Steps list screen including:
  * - Loading, error, and empty states
  * - Step list rendering
- * - Step completion toggling
- * - Modal interactions
+ * - Completed step badge display
+ * - Navigation to detail screen when step is pressed
  */
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import StepsScreen from '@/app/(tabs)/steps';
+import StepsScreen from '@/app/(tabs)/steps/index';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================
 // Mocks
 // =============================================================================
+
+// Mock expo-router for navigation testing
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    back: jest.fn(),
+    replace: jest.fn(),
+  }),
+}));
 
 // Mock supabase - simpler approach
 let mockStepsData: StepContent[] | null = null;
@@ -42,14 +52,6 @@ jest.mock('@/lib/supabase', () => ({
             eq: jest
               .fn()
               .mockImplementation(() => Promise.resolve({ data: mockProgressData, error: null })),
-          }),
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: { id: 'new-progress' }, error: null }),
-            }),
-          }),
-          delete: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({ error: null }),
           }),
         };
       }
@@ -109,11 +111,14 @@ jest.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
+// Mock @react-navigation/bottom-tabs
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 80,
+}));
+
 // Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => ({
-  X: () => null,
   CheckCircle: () => null,
-  Circle: () => null,
 }));
 
 // Mock logger
@@ -126,14 +131,6 @@ jest.mock('@/lib/logger', () => ({
   },
   LogCategory: {
     DATABASE: 'database',
-  },
-}));
-
-// Mock analytics
-jest.mock('@/lib/analytics', () => ({
-  trackEvent: jest.fn(),
-  AnalyticsEvents: {
-    STEP_VIEWED: 'step_viewed',
   },
 }));
 
@@ -178,6 +175,7 @@ const mockSteps: StepContent[] = [
 describe('StepsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPush.mockClear();
     // Default mock setup: steps load successfully with no progress
     mockStepsData = mockSteps;
     mockStepsError = null;
@@ -284,8 +282,8 @@ describe('StepsScreen', () => {
     });
   });
 
-  describe('step modal', () => {
-    it('opens modal when step is pressed', async () => {
+  describe('step navigation', () => {
+    it('navigates to detail screen when step is pressed', async () => {
       render(<StepsScreen />);
 
       await waitFor(() => {
@@ -294,57 +292,23 @@ describe('StepsScreen', () => {
 
       fireEvent.press(screen.getByText('We admitted we were powerless'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Step 1')).toBeTruthy();
-        expect(screen.getByText('Understanding This Step')).toBeTruthy();
-      });
+      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
     });
 
-    it('shows step detailed content in modal', async () => {
+    it('navigates with correct id for different steps', async () => {
       render(<StepsScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
+        expect(screen.getByText('Came to believe')).toBeTruthy();
       });
 
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
+      fireEvent.press(screen.getByText('Came to believe'));
 
-      await waitFor(() => {
-        expect(screen.getByText('Detailed content for step 1')).toBeTruthy();
-      });
-    });
-
-    it('shows reflection prompts when available', async () => {
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
-      });
-
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Reflection Questions')).toBeTruthy();
-        expect(screen.getByText('What does powerlessness mean to you?')).toBeTruthy();
-      });
-    });
-
-    it('shows mark as complete button in modal', async () => {
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
-      });
-
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Mark as Complete')).toBeTruthy();
-      });
+      expect(mockPush).toHaveBeenCalledWith('/steps/step-2');
     });
   });
 
-  describe('step completion', () => {
+  describe('step completion badges', () => {
     it('shows completed badge for completed steps', async () => {
       // Mock progress for step 1
       mockProgressData = [
@@ -358,8 +322,23 @@ describe('StepsScreen', () => {
       });
     });
 
-    it('toggles step to complete when Mark as Complete is pressed', async () => {
-      const { supabase } = jest.requireMock('@/lib/supabase');
+    it('shows multiple completed badges when multiple steps are completed', async () => {
+      // Mock progress for steps 1 and 2
+      mockProgressData = [
+        { id: 'progress-1', step_number: 1, user_id: 'user-123', completed: true },
+        { id: 'progress-2', step_number: 2, user_id: 'user-123', completed: true },
+      ];
+
+      render(<StepsScreen />);
+
+      await waitFor(() => {
+        // Should have two "Completed" badges
+        const completedBadges = screen.getAllByText('Completed');
+        expect(completedBadges).toHaveLength(2);
+      });
+    });
+
+    it('does not show completed badge for incomplete steps', async () => {
       mockProgressData = [];
 
       render(<StepsScreen />);
@@ -368,50 +347,7 @@ describe('StepsScreen', () => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
 
-      // Open step modal
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Mark as Complete')).toBeTruthy();
-      });
-
-      // Press mark as complete
-      fireEvent.press(screen.getByText('Mark as Complete'));
-
-      // Should call supabase insert
-      await waitFor(() => {
-        expect(supabase.from).toHaveBeenCalledWith('user_step_progress');
-      });
-    });
-
-    it('toggles step to incomplete when Marked as Complete button is pressed', async () => {
-      const { supabase } = jest.requireMock('@/lib/supabase');
-      // Mock progress for step 1 (already completed)
-      mockProgressData = [
-        { id: 'progress-1', step_number: 1, user_id: 'user-123', completed: true },
-      ];
-
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Completed')).toBeTruthy();
-      });
-
-      // Open step modal
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        // The button shows "Marked as Complete" when already completed (toggles to incomplete)
-        expect(screen.getByText('Marked as Complete')).toBeTruthy();
-      });
-
-      // Press the toggle button (will uncomplete it)
-      fireEvent.press(screen.getByText('Marked as Complete'));
-
-      // Should call supabase delete
-      await waitFor(() => {
-        expect(supabase.from).toHaveBeenCalledWith('user_step_progress');
-      });
+      expect(screen.queryByText('Completed')).toBeNull();
     });
   });
 
@@ -517,12 +453,9 @@ describe('StepsScreen', () => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
 
-      // Verify component can still toggle step completion (uses profile.id)
+      // Verify navigation still works when display_name is undefined
       fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Mark as Complete')).toBeTruthy();
-      });
+      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
     });
   });
 
@@ -624,61 +557,6 @@ describe('StepsScreen', () => {
         expect(screen.getByText('An unexpected error occurred')).toBeTruthy();
         expect(logger.error).toHaveBeenCalledWith(
           'Steps content fetch exception',
-          expect.any(Error),
-          expect.objectContaining({ category: 'database' })
-        );
-      });
-    });
-
-    it('handles error in step completion toggle', async () => {
-      const { logger } = jest.requireMock('@/lib/logger');
-      mockProgressData = [];
-
-      const { supabase } = jest.requireMock('@/lib/supabase');
-      supabase.from.mockImplementation((table: string) => {
-        if (table === 'steps_content') {
-          return {
-            select: jest.fn().mockReturnValue({
-              order: jest.fn().mockResolvedValue({ data: mockSteps, error: null }),
-            }),
-          };
-        }
-        if (table === 'user_step_progress') {
-          return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-            }),
-            insert: jest.fn().mockReturnValue({
-              select: jest.fn().mockReturnValue({
-                single: jest.fn().mockRejectedValue(new Error('Insert failed')),
-              }),
-            }),
-          };
-        }
-        return {
-          select: jest.fn().mockReturnThis(),
-        };
-      });
-
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
-      });
-
-      // Open step modal
-      fireEvent.press(screen.getByText('We admitted we were powerless'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Mark as Complete')).toBeTruthy();
-      });
-
-      // Press mark as complete (will fail)
-      fireEvent.press(screen.getByText('Mark as Complete'));
-
-      await waitFor(() => {
-        expect(logger.error).toHaveBeenCalledWith(
-          'Step completion toggle failed',
           expect.any(Error),
           expect.objectContaining({ category: 'database' })
         );

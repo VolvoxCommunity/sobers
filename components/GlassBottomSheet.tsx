@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { forwardRef, useCallback, useMemo } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, StyleSheet, ViewStyle } from 'react-native';
 import {
   BottomSheetModal,
@@ -9,7 +9,6 @@ import {
   BottomSheetView,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '@/contexts/ThemeContext';
 
 // =============================================================================
@@ -133,41 +132,71 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
     // ---------------------------------------------------------------------------
     const { theme, isDark } = useTheme();
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
+    const [isOpen, setIsOpen] = useState(false);
+
+    // ---------------------------------------------------------------------------
+    // Escape Key Handler (Web Only)
+    // ---------------------------------------------------------------------------
+    useEffect(() => {
+      // Only add keyboard listener on web platform
+      if (Platform.OS !== 'web' || !isOpen) return;
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          bottomSheetRef.current?.dismiss();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
 
     // ---------------------------------------------------------------------------
     // Imperative API
     // ---------------------------------------------------------------------------
     React.useImperativeHandle(ref, () => ({
-      present: () => bottomSheetRef.current?.present(),
-      dismiss: () => bottomSheetRef.current?.dismiss(),
+      present: () => {
+        setIsOpen(true);
+        bottomSheetRef.current?.present();
+      },
+      dismiss: () => {
+        setIsOpen(false);
+        bottomSheetRef.current?.dismiss();
+      },
       snapToIndex: (index: number) => bottomSheetRef.current?.snapToIndex(index),
     }));
+
+    /**
+     * Handles the sheet dismissal - updates open state and calls onDismiss callback.
+     */
+    const handleDismiss = useCallback(() => {
+      setIsOpen(false);
+      onDismiss?.();
+    }, [onDismiss]);
 
     // ---------------------------------------------------------------------------
     // Backdrop Component
     // ---------------------------------------------------------------------------
     /**
      * Renders platform-specific backdrop.
-     * - iOS: BlurView with translucent effect
+     * - iOS: BottomSheetBackdrop with reduced opacity for glass effect
      * - Android: Standard backdrop with opacity
+     *
+     * Note: We use BottomSheetBackdrop on all platforms to ensure proper
+     * gesture handling. The BlurView approach was causing double-tap issues
+     * because it bypassed the backdrop's touch event coordination.
      */
     const renderBackdrop = useCallback(
-      (props: BottomSheetBackdropProps) => {
-        if (Platform.OS === 'ios') {
-          return (
-            <BlurView
-              intensity={20}
-              tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-          );
-        }
-
-        return (
-          <BottomSheetBackdrop {...props} opacity={0.5} appearsOnIndex={0} disappearsOnIndex={-1} />
-        );
-      },
-      [isDark]
+      (props: BottomSheetBackdropProps) => (
+        <BottomSheetBackdrop
+          {...props}
+          opacity={Platform.OS === 'ios' ? 0.3 : 0.5}
+          appearsOnIndex={0}
+          disappearsOnIndex={-1}
+          pressBehavior="close"
+        />
+      ),
+      []
     );
 
     // ---------------------------------------------------------------------------
@@ -209,13 +238,16 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
     return (
       <BottomSheetModal
         ref={bottomSheetRef}
+        index={0}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
         backgroundStyle={backgroundStyle}
         handleIndicatorStyle={handleIndicatorStyle}
         keyboardBehavior={keyboardBehavior}
-        onDismiss={onDismiss}
-        enablePanDownToClose
+        onDismiss={handleDismiss}
+        enablePanDownToClose={true}
+        enableDismissOnClose={true}
+        enableDynamicSizing={false}
       >
         <BottomSheetView style={styles.contentContainer}>{children}</BottomSheetView>
       </BottomSheetModal>

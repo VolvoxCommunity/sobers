@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -58,6 +59,9 @@ interface TimelineEvent {
 export default function JourneyScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
+  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
+  const nativeTabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
   const {
     daysSober,
     journeyDays,
@@ -349,7 +353,7 @@ export default function JourneyScreen() {
         <Text style={styles.headerSubtitle}>Every day is a victory</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: tabBarHeight }}>
         {profile?.sobriety_date && (
           <View style={styles.statsCard}>
             {!hasSlipUps ? (

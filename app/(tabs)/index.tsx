@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -39,6 +40,9 @@ import { parseDateAsLocal } from '@/lib/date';
 export default function HomeScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
+  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
+  const nativeTabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
   const [relationships, setRelationships] = useState<SponsorSponseeRelationship[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -186,6 +190,7 @@ export default function HomeScreen() {
     <ScrollView
       testID="home-scroll-view"
       style={styles.container}
+      contentContainerStyle={{ paddingBottom: tabBarHeight }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
       }

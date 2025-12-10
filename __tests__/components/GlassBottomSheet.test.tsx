@@ -106,19 +106,19 @@ describe('GlassBottomSheet', () => {
   // Platform-Specific Tests
   // ---------------------------------------------------------------------------
   describe('Platform-Specific Behavior', () => {
-    it('should use BlurView backdrop on iOS', () => {
+    it('should use standard backdrop on iOS', () => {
       Platform.OS = 'ios';
       const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
-      expect(getByTestId('blur-view')).toBeTruthy();
+      // We use BottomSheetBackdrop on all platforms for proper gesture handling
+      // iOS gets a lighter opacity (0.3) for a glass-like effect
+      expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
     });
 
     it('should use standard backdrop on Android', () => {
       Platform.OS = 'android';
-      const { getByTestId, queryByTestId } = renderWithTheme(
-        <GlassBottomSheet {...defaultProps} />
-      );
+      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      // Android uses the same backdrop component but with higher opacity (0.5)
       expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
-      expect(queryByTestId('blur-view')).toBeNull();
     });
   });
 

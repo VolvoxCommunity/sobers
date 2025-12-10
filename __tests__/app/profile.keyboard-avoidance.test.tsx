@@ -108,6 +108,12 @@ jest.mock('expo-router', () => ({
     replace: jest.fn(),
     back: jest.fn(),
   }),
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
+  }),
 }));
 
 // Mock AuthContext
@@ -386,7 +392,9 @@ describe('ProfileScreen Keyboard Avoidance', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -395,7 +403,9 @@ describe('ProfileScreen Keyboard Avoidance', () => {
 
       // Main profile sections are rendered (days sober tested in profile.test.tsx)
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
         expect(screen.getByText('Log a Slip Up')).toBeTruthy();
       });
     });
@@ -445,7 +455,9 @@ describe('ProfileScreen Keyboard Avoidance', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -454,7 +466,9 @@ describe('ProfileScreen Keyboard Avoidance', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
       });
     });
   });

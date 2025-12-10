@@ -2,7 +2,8 @@
 // Imports
 // =============================================================================
 import React, { forwardRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { BottomSheetScrollView, TouchableOpacity } from '@gorhom/bottom-sheet';
 import { CheckCircle, Circle } from 'lucide-react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
@@ -105,65 +106,71 @@ const StepContentSheet = forwardRef<GlassBottomSheetRef, StepContentSheetProps>(
     // ---------------------------------------------------------------------------
     // Render
     // ---------------------------------------------------------------------------
-    if (!step) {
-      return null;
-    }
-
+    // IMPORTANT: Always render GlassBottomSheet so the ref is always connected.
+    // If we return null when step is null, the ref won't be available on first tap,
+    // causing a "double-tap to open" bug where the first tap sets state but
+    // present() fails because ref.current is null.
     return (
       <GlassBottomSheet ref={ref} snapPoints={['70%', '95%']} onDismiss={onDismiss}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.stepNumber}>Step {step.step_number}</Text>
-            <Text style={styles.title}>{step.title}</Text>
-            <Text style={styles.description}>{step.description}</Text>
-          </View>
-
-          {/* Scrollable Content */}
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Detailed Content Section */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Understanding This Step</Text>
-              <Text style={styles.sectionContent}>{step.detailed_content}</Text>
+        {step && (
+          <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.stepNumber}>Step {step.step_number}</Text>
+              <Text style={styles.title}>{step.title}</Text>
+              <Text style={styles.description}>{step.description}</Text>
             </View>
 
-            {/* Reflection Prompts Section */}
-            {step.reflection_prompts && step.reflection_prompts.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Reflection Questions</Text>
-                {step.reflection_prompts.map((prompt, index) => (
-                  <View key={index} style={styles.promptItem}>
-                    <Text style={styles.promptBullet}>•</Text>
-                    <Text style={styles.promptText}>{prompt}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Bottom padding for scrolling clearance */}
-            <View style={styles.bottomPadding} />
-          </ScrollView>
-
-          {/* Footer with Completion Button */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.completeButton, isCompleted && styles.completeButtonActive]}
-              onPress={handleTogglePress}
+            {/* Scrollable Content - Must use BottomSheetScrollView for proper gesture handling */}
+            <BottomSheetScrollView
+              style={styles.scrollContent}
+              contentContainerStyle={styles.scrollContentContainer}
+              showsVerticalScrollIndicator={false}
             >
-              {isCompleted ? (
-                <>
-                  <CheckCircle size={20} color="#ffffff" />
-                  <Text style={styles.completeButtonText}>Marked as Complete</Text>
-                </>
-              ) : (
-                <>
-                  <Circle size={20} color="#ffffff" />
-                  <Text style={styles.completeButtonText}>Mark as Complete</Text>
-                </>
+              {/* Detailed Content Section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Understanding This Step</Text>
+                <Text style={styles.sectionContent}>{step.detailed_content}</Text>
+              </View>
+
+              {/* Reflection Prompts Section */}
+              {step.reflection_prompts && step.reflection_prompts.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Reflection Questions</Text>
+                  {step.reflection_prompts.map((prompt, index) => (
+                    <View key={index} style={styles.promptItem}>
+                      <Text style={styles.promptBullet}>•</Text>
+                      <Text style={styles.promptText}>{prompt}</Text>
+                    </View>
+                  ))}
+                </View>
               )}
-            </TouchableOpacity>
+
+              {/* Bottom padding for scrolling clearance */}
+              <View style={styles.bottomPadding} />
+            </BottomSheetScrollView>
+
+            {/* Footer with Completion Button */}
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={[styles.completeButton, isCompleted && styles.completeButtonActive]}
+                onPress={handleTogglePress}
+              >
+                {isCompleted ? (
+                  <>
+                    <CheckCircle size={20} color="#ffffff" />
+                    <Text style={styles.completeButtonText}>Marked as Complete</Text>
+                  </>
+                ) : (
+                  <>
+                    <Circle size={20} color="#ffffff" />
+                    <Text style={styles.completeButtonText}>Mark as Complete</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
       </GlassBottomSheet>
     );
   }
@@ -210,7 +217,11 @@ const createStyles = (theme: ThemeColors) =>
     },
     scrollContent: {
       flex: 1,
+    },
+    scrollContentContainer: {
       paddingHorizontal: 24,
+      // flexGrow ensures content can expand and scroll properly
+      flexGrow: 1,
     },
     section: {
       marginTop: 24,
@@ -248,7 +259,8 @@ const createStyles = (theme: ThemeColors) =>
       lineHeight: 24,
     },
     bottomPadding: {
-      height: 32,
+      // Extra padding to ensure content can scroll fully into view
+      height: 48,
     },
     footer: {
       padding: 20,

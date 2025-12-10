@@ -37,6 +37,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { X } from 'lucide-react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import {
@@ -215,21 +216,26 @@ export default wrapRootComponent(function RootLayout() {
   }
 
   return (
-    <ErrorBoundary>
-      <KeyboardProvider>
-        <BottomSheetModalProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <RootLayoutNav />
-            </AuthProvider>
-          </ThemeProvider>
-        </BottomSheetModalProvider>
-      </KeyboardProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={styles.container}>
+      <ErrorBoundary>
+        <KeyboardProvider>
+          <BottomSheetModalProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <RootLayoutNav />
+              </AuthProvider>
+            </ThemeProvider>
+          </BottomSheetModalProvider>
+        </KeyboardProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 });
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -48,6 +49,9 @@ type ViewMode = 'my-tasks' | 'manage';
 export default function TasksScreen() {
   const { profile } = useAuth();
   const { theme } = useTheme();
+  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
+  const nativeTabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
 
   // =============================================================================
   // State
@@ -369,6 +373,7 @@ export default function TasksScreen() {
 
           <ScrollView
             style={styles.content}
+            contentContainerStyle={{ paddingBottom: tabBarHeight }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -674,6 +679,7 @@ export default function TasksScreen() {
           {/* Manage Tasks Content */}
           <ScrollView
             style={styles.content}
+            contentContainerStyle={{ paddingBottom: tabBarHeight }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

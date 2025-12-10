@@ -136,6 +136,12 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
     canGoBack: jest.fn(() => true),
   }),
+  useNavigation: () => ({
+    setOptions: jest.fn(),
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
+  }),
   useSegments: () => [],
   usePathname: () => '/',
   Link: ({ children, ...props }) => children,
@@ -220,6 +226,21 @@ const mockAsyncStorage = {
   clear: jest.fn(() => Promise.resolve()),
 };
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
+
+// Mock @react-native-community/datetimepicker
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: ({ value, onChange, mode, display, ...props }) =>
+      React.createElement('DateTimePicker', {
+        value: value?.toISOString(),
+        mode,
+        display,
+        ...props,
+      }),
+  };
+});
 
 // Mock expo core module
 jest.mock('expo', () => ({
@@ -356,6 +377,13 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement('BottomSheetScrollView', props, children),
     BottomSheetBackdrop: ({ children, ...props }) =>
       React.createElement('BottomSheetBackdrop', props, children),
+    // Touchable components for use inside bottom sheets
+    TouchableOpacity: ({ children, onPress, ...props }) =>
+      React.createElement('TouchableOpacity', { onPress, ...props }, children),
+    TouchableHighlight: ({ children, onPress, ...props }) =>
+      React.createElement('TouchableHighlight', { onPress, ...props }, children),
+    TouchableWithoutFeedback: ({ children, onPress, ...props }) =>
+      React.createElement('TouchableWithoutFeedback', { onPress, ...props }, children),
     useBottomSheetModal: () => ({
       dismiss: jest.fn(),
       present: jest.fn(),
@@ -392,3 +420,38 @@ jest.mock('expo-symbols', () => {
     SymbolView: ({ children, ...props }) => React.createElement('SymbolView', props, children),
   };
 });
+
+// Mock react-native-gesture-handler
+jest.mock('react-native-gesture-handler', () => {
+  const React = require('react');
+  return {
+    GestureHandlerRootView: ({ children, ...props }) =>
+      React.createElement('GestureHandlerRootView', props, children),
+    PanGestureHandler: ({ children }) => children,
+    TapGestureHandler: ({ children }) => children,
+    FlingGestureHandler: ({ children }) => children,
+    LongPressGestureHandler: ({ children }) => children,
+    PinchGestureHandler: ({ children }) => children,
+    RotationGestureHandler: ({ children }) => children,
+    ScrollView: ({ children, ...props }) => React.createElement('ScrollView', props, children),
+    State: {},
+    Directions: {},
+    gestureHandlerRootHOC: (component) => component,
+    Swipeable: ({ children }) => children,
+    DrawerLayout: ({ children }) => children,
+    TouchableOpacity: ({ children, ...props }) =>
+      React.createElement('TouchableOpacity', props, children),
+    TouchableHighlight: ({ children, ...props }) =>
+      React.createElement('TouchableHighlight', props, children),
+    TouchableWithoutFeedback: ({ children, ...props }) =>
+      React.createElement('TouchableWithoutFeedback', props, children),
+    TouchableNativeFeedback: ({ children, ...props }) =>
+      React.createElement('TouchableNativeFeedback', props, children),
+  };
+});
+
+// Mock @react-navigation/bottom-tabs
+jest.mock('@react-navigation/bottom-tabs', () => ({
+  useBottomTabBarHeight: () => 49, // Standard iOS tab bar height
+  createBottomTabNavigator: jest.fn(),
+}));

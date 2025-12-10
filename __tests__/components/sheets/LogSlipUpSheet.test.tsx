@@ -3,6 +3,7 @@
 // =============================================================================
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 import { supabase } from '@/lib/supabase';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -108,6 +109,21 @@ describe('LogSlipUpSheet', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     sheetRef = React.createRef<LogSlipUpSheetRef>();
+
+    // Mock Alert.alert to auto-confirm (simulates user pressing "Continue")
+    (Alert.alert as jest.Mock).mockImplementation(
+      (
+        _title: string,
+        _message: string,
+        buttons?: { text: string; onPress?: () => void }[]
+      ) => {
+        // Find and call the "Continue" button's onPress handler
+        const continueButton = buttons?.find((btn) => btn.text === 'Continue');
+        if (continueButton?.onPress) {
+          continueButton.onPress();
+        }
+      }
+    );
 
     // Mock Supabase responses
     (supabase.from as jest.Mock).mockImplementation((table: string) => ({
@@ -317,9 +333,13 @@ describe('LogSlipUpSheet', () => {
           return { insert: insertMock };
         }
         if (table === 'sponsor_sponsee_relationships') {
+          // Chain: .select().eq().eq() - need two .eq() calls
           return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
           };
         }
         if (table === 'notifications') {
@@ -354,11 +374,15 @@ describe('LogSlipUpSheet', () => {
           return { insert: jest.fn().mockResolvedValue({ error: null }) };
         }
         if (table === 'sponsor_sponsee_relationships') {
+          // Chain: .select().eq().eq() - need two .eq() calls
           return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockResolvedValue({
-              data: [{ sponsor_id: 'sponsor-123' }, { sponsor_id: 'sponsor-456' }],
-              error: null,
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: [{ sponsor_id: 'sponsor-123' }, { sponsor_id: 'sponsor-456' }],
+                  error: null,
+                }),
+              }),
             }),
           };
         }

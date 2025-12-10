@@ -10,6 +10,7 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
+  Alert,
 } from 'react-native';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { supabase } from '@/lib/supabase';
@@ -170,13 +171,16 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
       const confirmMessage =
         'This will log your slip-up and restart your current streak. Your sponsor will be notified. Continue?';
 
-      const confirmed =
-        Platform.OS === 'web'
-          ? window.confirm(confirmMessage)
-          : await new Promise<boolean>((resolve) => {
-              // Web will never reach this, but TypeScript requires it
-              resolve(false);
-            });
+      const confirmed = await new Promise<boolean>((resolve) => {
+        if (Platform.OS === 'web') {
+          resolve(window.confirm(confirmMessage));
+        } else {
+          Alert.alert('Confirm Slip-Up', confirmMessage, [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Continue', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        }
+      });
 
       if (!confirmed) return;
 

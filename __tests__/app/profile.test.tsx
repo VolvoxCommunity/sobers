@@ -103,11 +103,18 @@ jest.mock('@/lib/supabase', () => ({
 
 // Mock expo-router
 const mockPush = jest.fn();
+const mockSetOptions = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: jest.fn(),
     back: jest.fn(),
+  }),
+  useNavigation: () => ({
+    setOptions: mockSetOptions,
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
   }),
 }));
 
@@ -352,8 +359,9 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        // Name is split across multiple Text elements
-        expect(screen.queryByText(/John/)).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText(/John/);
+        expect(nameElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -403,26 +411,37 @@ describe('ProfileScreen', () => {
   });
 
   describe('Settings Navigation', () => {
-    it('renders settings button with accessibility label', async () => {
+    beforeEach(() => {
+      mockSetOptions.mockClear();
+    });
+
+    it('configures header with settings button via navigation.setOptions', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Open settings')).toBeTruthy();
+        // Verify setOptions was called with headerRight
+        expect(mockSetOptions).toHaveBeenCalledWith(
+          expect.objectContaining({
+            headerRight: expect.any(Function),
+          })
+        );
       });
     });
 
-    it('opens settings when settings button is pressed', async () => {
+    it('settings button in header has correct accessibility label', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Open settings')).toBeTruthy();
+        expect(mockSetOptions).toHaveBeenCalled();
       });
 
-      fireEvent.press(screen.getByLabelText('Open settings'));
+      // Extract the headerRight function from the setOptions call
+      const setOptionsCall = mockSetOptions.mock.calls[0][0];
+      const HeaderRightComponent = setOptionsCall.headerRight;
 
-      // Settings are now opened via bottom sheet, not router navigation
-      // The button press should work without errors
-      expect(screen.getByLabelText('Open settings')).toBeTruthy();
+      // Render the header right component to verify its accessibility
+      const { getByLabelText } = render(<HeaderRightComponent />);
+      expect(getByLabelText('Open settings')).toBeTruthy();
     });
   });
 
@@ -903,26 +922,40 @@ describe('ProfileScreen', () => {
   });
 
   describe('Settings Button', () => {
-    it('renders settings gear icon button', async () => {
+    beforeEach(() => {
+      mockSetOptions.mockClear();
+    });
+
+    it('renders settings gear icon button in native header', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        const settingsButton = screen.getByLabelText('Open settings');
-        expect(settingsButton).toBeTruthy();
+        // Settings button is now in the native header via navigation.setOptions
+        expect(mockSetOptions).toHaveBeenCalledWith(
+          expect.objectContaining({
+            headerRight: expect.any(Function),
+          })
+        );
       });
     });
 
-    it('opens settings when pressed', async () => {
+    it('settings button in header can be pressed', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        const settingsButton = screen.getByLabelText('Open settings');
-        fireEvent.press(settingsButton);
+        expect(mockSetOptions).toHaveBeenCalled();
       });
 
-      // Settings are now opened via bottom sheet, not router navigation
-      // The button press should work without errors
-      expect(screen.getByLabelText('Open settings')).toBeTruthy();
+      // Extract and render the headerRight component
+      const setOptionsCall = mockSetOptions.mock.calls[0][0];
+      const HeaderRightComponent = setOptionsCall.headerRight;
+
+      const { getByLabelText } = render(<HeaderRightComponent />);
+      const settingsButton = getByLabelText('Open settings');
+
+      // Verify the button can be pressed without errors
+      fireEvent.press(settingsButton);
+      expect(settingsButton).toBeTruthy();
     });
   });
 
@@ -1143,7 +1176,9 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        // Name may appear in multiple places (profile header and edit sheet)
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -2176,8 +2211,10 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       // Should still render without crashing
+      // Name may appear in multiple places (profile header and edit sheet)
       await waitFor(() => {
-        expect(screen.getByText('John D.')).toBeTruthy();
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
       });
 
       consoleSpy.mockRestore();

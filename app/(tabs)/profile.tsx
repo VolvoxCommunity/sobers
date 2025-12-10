@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   Modal,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -158,6 +160,10 @@ function SponsorDaysDisplay({
 export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
+  const navigation = useNavigation();
+  // Get tab bar height for scroll padding (only needed on iOS with absolute positioning)
+  const nativeTabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = Platform.OS === 'ios' ? nativeTabBarHeight : 0;
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const [inviteCode, setInviteCode] = useState('');
@@ -175,6 +181,22 @@ export default function ProfileScreen() {
   const [sponseeTaskStats, setSponseeTaskStats] = useState<{
     [key: string]: { total: number; completed: number };
   }>({});
+
+  // Configure header with Settings button (native header integration)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => settingsSheetRef.current?.present()}
+          style={{ padding: 8, marginRight: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+        >
+          <Settings size={22} color={theme.text} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, theme.text]);
 
   // User's timezone (stored in profile) with device timezone as fallback
   const userTimezone = getUserTimezone(profile);
@@ -657,20 +679,11 @@ export default function ProfileScreen() {
     <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
       <ScrollView
         style={styles.container}
+        contentContainerStyle={{ paddingBottom: tabBarHeight }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={true}
       >
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={() => settingsSheetRef.current?.present()}
-              accessibilityRole="button"
-              accessibilityLabel="Open settings"
-            >
-              <Settings size={24} color={theme.text} />
-            </TouchableOpacity>
-          </View>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {profile?.display_name?.[0]?.toUpperCase() || '?'}
@@ -944,19 +957,8 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     header: {
       alignItems: 'center',
       padding: 24,
-      paddingTop: 60,
+      paddingTop: Platform.OS === 'ios' ? 16 : 24, // Reduced top padding since native header provides spacing
       backgroundColor: theme.surface,
-    },
-    headerTop: {
-      width: '100%',
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      marginBottom: 16,
-    },
-    settingsButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: theme.card,
     },
     avatar: {
       width: 80,
