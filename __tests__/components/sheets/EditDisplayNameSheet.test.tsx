@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useRef } from 'react';
+import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert, Platform } from 'react-native';
 import EditDisplayNameSheet, {
@@ -73,26 +73,6 @@ const mockTheme = {
   error: '#FF3B30',
   fontRegular: 'System',
 };
-
-// =============================================================================
-// Test Helpers
-// =============================================================================
-function TestWrapper({ onSave }: { onSave: (name: string) => Promise<void> }) {
-  const sheetRef = useRef<EditDisplayNameSheetRef>(null);
-
-  React.useEffect(() => {
-    sheetRef.current?.present();
-  }, []);
-
-  return (
-    <EditDisplayNameSheet
-      ref={sheetRef}
-      currentDisplayName="John Doe"
-      theme={mockTheme}
-      onSave={onSave}
-    />
-  );
-}
 
 // =============================================================================
 // Tests
