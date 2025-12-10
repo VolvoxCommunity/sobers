@@ -1,7 +1,14 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -158,7 +165,16 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    const sheetRef = React.useRef<GlassBottomSheetRef>(null);
+    const sheetRef = useRef<GlassBottomSheetRef>(null);
+    const isMountedRef = useRef(true);
+
+    // Track mounted state to prevent state updates after unmount
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    }, []);
 
     // ---------------------------------------------------------------------------
     // Imperative API
@@ -242,17 +258,23 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
       setIsSaving(true);
       try {
         await onSave(trimmedName);
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         resetForm();
         sheetRef.current?.dismiss();
         onClose?.();
       } catch (error: unknown) {
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         // Error handling is delegated to onSave callback
         // This allows parent component to show appropriate error messages
         setValidationError(
           error instanceof Error ? error.message : 'Failed to update display name'
         );
       } finally {
-        setIsSaving(false);
+        if (isMountedRef.current) {
+          setIsSaving(false);
+        }
       }
     }, [displayName, currentDisplayName, isSaving, onSave, onClose, resetForm]);
 

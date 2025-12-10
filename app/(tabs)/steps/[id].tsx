@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -59,6 +59,15 @@ export default function StepDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Track mounted state to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Derived State
   // ---------------------------------------------------------------------------
@@ -80,6 +89,9 @@ export default function StepDetailScreen() {
         .from('steps_content')
         .select('*')
         .order('step_number');
+
+      // Guard against state updates after unmount
+      if (!isMountedRef.current) return;
 
       if (stepsError) {
         logger.error('Failed to fetch steps', stepsError as Error, {
@@ -112,15 +124,21 @@ export default function StepDetailScreen() {
           .eq('step_number', currentStep.step_number)
           .maybeSingle();
 
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         setProgress(progressData);
       }
     } catch (err) {
       logger.error('Step data fetch exception', err as Error, {
         category: LogCategory.DATABASE,
       });
+      // Guard against state updates after unmount
+      if (!isMountedRef.current) return;
       setError('An unexpected error occurred');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [id, profile]);
 
@@ -161,6 +179,8 @@ export default function StepDetailScreen() {
           .eq('id', progress.id);
 
         if (deleteError) throw deleteError;
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         setProgress(null);
       } else {
         // Mark as complete
@@ -176,6 +196,8 @@ export default function StepDetailScreen() {
           .single();
 
         if (insertError) throw insertError;
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         setProgress(data);
       }
     } catch (err) {

@@ -106,10 +106,28 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
     const sheetRef = React.useRef<GlassBottomSheetRef>(null);
 
     // ---------------------------------------------------------------------------
+    // Helper Functions (defined before imperative API to avoid hoisting issues)
+    // ---------------------------------------------------------------------------
+    const resetForm = useCallback(() => {
+      setSelectedSponseeId(preselectedSponseeId || '');
+      setSelectedStepNumber(null);
+      setSelectedTemplate(null);
+      setCustomTitle('');
+      setCustomDescription('');
+      setDueDate(null);
+      setError('');
+      setActiveDropdown(null);
+    }, [preselectedSponseeId]);
+
+    // ---------------------------------------------------------------------------
     // Imperative API
     // ---------------------------------------------------------------------------
     useImperativeHandle(ref, () => ({
-      present: () => sheetRef.current?.present(),
+      present: () => {
+        // Reset form when presenting to ensure clean state
+        resetForm();
+        sheetRef.current?.present();
+      },
       dismiss: () => sheetRef.current?.dismiss(),
     }));
 
@@ -216,17 +234,6 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
       } finally {
         setIsSubmitting(false);
       }
-    };
-
-    const resetForm = () => {
-      setSelectedSponseeId(preselectedSponseeId || '');
-      setSelectedStepNumber(null);
-      setSelectedTemplate(null);
-      setCustomTitle('');
-      setCustomDescription('');
-      setDueDate(null);
-      setError('');
-      setActiveDropdown(null);
     };
 
     const handleClose = () => {

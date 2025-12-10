@@ -1,7 +1,14 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -120,7 +127,16 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    const sheetRef = React.useRef<GlassBottomSheetRef>(null);
+    const sheetRef = useRef<GlassBottomSheetRef>(null);
+    const isMountedRef = useRef(true);
+
+    // Track mounted state to prevent state updates after unmount
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    }, []);
 
     // User's timezone (stored in profile) with device timezone as fallback
     const userTimezone = getUserTimezone(profile);
@@ -197,6 +213,9 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
 
         if (slipUpError) throw slipUpError;
 
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
+
         // Fetch sponsors to notify
         const { data: sponsors } = await supabase
           .from('sponsor_sponsee_relationships')
@@ -220,6 +239,9 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           await supabase.from('notifications').insert(notifications);
         }
 
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
+
         // Success - notify parent and close
         onSlipUpLogged();
         handleClose();
@@ -234,9 +256,13 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
         logger.error('Slip-up logging failed', err as Error, {
           category: LogCategory.DATABASE,
         });
+        // Guard against state updates after unmount
+        if (!isMountedRef.current) return;
         setError('Failed to log slip-up. Please try again.');
       } finally {
-        setIsSubmitting(false);
+        if (isMountedRef.current) {
+          setIsSubmitting(false);
+        }
       }
     }, [slipUpDate, notes, profile, userTimezone, onSlipUpLogged, handleClose]);
 

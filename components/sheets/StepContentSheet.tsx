@@ -278,7 +278,7 @@ const createStyles = (theme: ThemeColors) =>
       gap: 8,
     },
     completeButtonActive: {
-      backgroundColor: '#10b981',
+      backgroundColor: theme.success,
     },
     completeButtonText: {
       fontSize: 16,
