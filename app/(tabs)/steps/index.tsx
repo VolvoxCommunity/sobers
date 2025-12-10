@@ -10,12 +10,11 @@ import { CheckCircle } from 'lucide-react-native';
 import { logger, LogCategory } from '@/lib/logger';
 
 /**
- * Screen that displays the 12 steps list with completion progress.
+ * Display the list of the 12 steps with per-step completion indicators and navigation to each step's detail screen.
  *
- * Navigates to a dedicated detail screen when a step is tapped,
- * providing full-screen space for reading and reflection.
+ * Renders a header, handles loading/error/empty states, and shows a scrollable list of step cards; tapping a card navigates to /steps/{id}.
  *
- * @returns The Steps list screen component
+ * @returns The rendered Steps list screen component
  */
 export default function StepsScreen() {
   const { theme } = useTheme();

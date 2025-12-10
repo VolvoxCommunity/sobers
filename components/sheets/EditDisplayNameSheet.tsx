@@ -82,10 +82,10 @@ export interface EditDisplayNameSheetProps {
 // =============================================================================
 
 /**
- * Validates display name input.
+ * Validate a display name and return a specific error message when it fails validation.
  *
  * @param name - The display name to validate
- * @returns Error message if invalid, null if valid
+ * @returns An error message describing the validation failure, or `null` if the name is valid
  */
 function validateDisplayName(name: string): string | null {
   const trimmed = name.trim();

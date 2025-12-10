@@ -18,17 +18,18 @@ interface TabBarIconProps {
 }
 
 /**
- * Platform-adaptive tab bar icon component.
+ * Render a platform-adaptive tab bar icon.
  *
- * Uses SF Symbols on iOS for native integration with Liquid Glass,
- * and Lucide icons on Android/Web for consistency.
+ * On iOS, renders a SymbolView for the given SF Symbol name and uses a
+ * 'semibold' weight when `focused` is true; on other platforms, renders the
+ * provided fallback icon component.
  *
- * @param sfSymbol - SF Symbol name for iOS
- * @param fallbackIcon - Lucide icon component for non-iOS platforms
- * @param focused - Whether the tab is focused
+ * @param sfSymbol - SF Symbol name used on iOS
+ * @param fallbackIcon - Icon component to render on non-iOS platforms
+ * @param focused - Whether the tab is focused; affects symbol weight on iOS
  * @param color - Icon color
- * @param size - Icon size (default: 24)
- * @returns Platform-appropriate icon component
+ * @param size - Icon size in pixels (default: 24)
+ * @returns The platform-appropriate icon React element
  */
 export default function TabBarIcon({
   sfSymbol,

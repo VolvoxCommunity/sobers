@@ -143,7 +143,10 @@ const EXTERNAL_LINKS = {
 // Helper Functions
 // =============================================================================
 /**
- * Safely extracts a string value from config, returning null if not a valid string.
+ * Return the input if it is a non-empty string, otherwise null.
+ *
+ * @param value - The value to validate as a non-empty string.
+ * @returns The original string when `value` is a non-empty string, `null` otherwise.
  */
 function getStringOrNull(value: unknown): string | null {
   if (typeof value === 'string' && value.length > 0) {
@@ -153,10 +156,12 @@ function getStringOrNull(value: unknown): string | null {
 }
 
 /**
- * Retrieves comprehensive build information from multiple Expo APIs.
- * Combines EAS Build env vars, expo-updates, expo-device, and expo-application.
+ * Collects build, update, device, and application metadata from Expo APIs and app config.
  *
- * @returns BuildInfo object with full debugging details (null values indicate local dev)
+ * Gathers EAS build fields from expo config extra, OTA update info from expo-updates,
+ * device information from expo-device, and version/build values from expo-application.
+ *
+ * @returns A BuildInfo object containing build, update, device, and application details; fields are `null` when the corresponding value is unavailable (for example in local development).
  */
 function getBuildInfo(): BuildInfo {
   const extra = Constants.expoConfig?.extra;

@@ -33,16 +33,12 @@ const IOS_TAB_BAR_HEIGHT = 49;
 // =============================================================================
 
 /**
- * Dedicated screen for viewing step details with full scrolling support.
+ * Renders a full-screen, scrollable detail view for a single step with navigation and completion controls.
  *
- * Features:
- * - Full-screen layout for distraction-free reading
- * - Complete scroll support for long-form content
- * - Previous/Next step navigation
- * - Mark as complete functionality
- * - Safe area handling for notched devices
+ * Fetches step content and, when a user is authenticated, their progress; displays loading and error states,
+ * allows toggling completion for the current step, and enables previous/next step navigation.
  *
- * @returns The step detail screen component
+ * @returns The Step detail screen component
  */
 export default function StepDetailScreen() {
   // ---------------------------------------------------------------------------

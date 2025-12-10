@@ -86,14 +86,9 @@ const tabRoutes: TabRoute[] = [
 // =============================================================================
 
 /**
- * Tab layout with platform-specific navigation.
+ * Render the app's tabbed navigation using a platform-appropriate navigator.
  *
- * - iOS/Android: Native bottom tabs via react-native-bottom-tabs
- *   - iOS: UITabBarController with SF Symbols, native blur, and haptics
- *   - Android: BottomNavigationView with Material Design styling
- * - Web: Top navigation bar (bottom tabs hidden)
- *
- * @returns Tab navigator appropriate for current platform
+ * @returns A React element containing the tab navigator configured for the current platform (native bottom tabs on mobile, top navigation on web).
  */
 export default function TabLayout(): React.ReactElement {
   const { theme, isDark } = useTheme();

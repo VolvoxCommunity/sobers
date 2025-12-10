@@ -16,13 +16,15 @@ interface WebTopNavProps {
 }
 
 /**
- * Top navigation bar for web platform.
+ * Render a horizontal top navigation bar for web with icons and labels.
  *
- * Displays horizontal navigation items at the top of the screen,
- * following web UX conventions instead of mobile bottom tabs.
+ * Highlights the active item based on the current pathname (an item with route '/'
+ * is active only when pathname is exactly '/', otherwise an item is active when
+ * the pathname starts with its route). Tapping an item navigates to its route;
+ * each item exposes accessibilityRole="tab" and accessibilityState.selected when active.
  *
- * @param items - Array of navigation items with route, label, and icon
- * @returns Horizontal navigation bar component
+ * @param items - Array of navigation items; each item provides a `route`, `label`, and `icon` component
+ * @returns A React element representing the top navigation bar
  */
 export default function WebTopNav({ items }: WebTopNavProps): React.ReactElement {
   const { theme } = useTheme();
