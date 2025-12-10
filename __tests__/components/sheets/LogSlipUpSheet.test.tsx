@@ -22,14 +22,17 @@ jest.mock('lucide-react-native', () => ({
   AlertCircle: 'AlertCircle',
 }));
 
-// Mock GlassBottomSheet
+// Mock GlassBottomSheet - triggers onDismiss when dismiss() is called (mirrors real behavior)
 jest.mock('@/components/GlassBottomSheet', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const MockGlassBottomSheet = React.forwardRef(({ children }: any, ref: any) => {
+  const MockGlassBottomSheet = React.forwardRef(({ children, onDismiss }: any, ref: any) => {
     React.useImperativeHandle(ref, () => ({
       present: jest.fn(),
-      dismiss: jest.fn(),
+      dismiss: () => {
+        // Simulate the real behavior: onDismiss fires when sheet finishes dismissing
+        if (onDismiss) onDismiss();
+      },
       snapToIndex: jest.fn(),
     }));
     return <View testID="glass-bottom-sheet">{children}</View>;

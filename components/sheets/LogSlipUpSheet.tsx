@@ -163,11 +163,22 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
       setShowDatePicker(false);
     }, []);
 
-    const handleClose = useCallback(() => {
+    /**
+     * Handler for GlassBottomSheet's onDismiss callback.
+     * Performs cleanup and notifies parent - called when sheet finishes dismissing.
+     */
+    const handleDismiss = useCallback(() => {
       resetForm();
-      sheetRef.current?.dismiss();
       onClose();
     }, [resetForm, onClose]);
+
+    /**
+     * Handler for button press events (close icon, cancel button).
+     * Only triggers the dismiss animation - cleanup happens in handleDismiss.
+     */
+    const handlePressClose = useCallback(() => {
+      sheetRef.current?.dismiss();
+    }, []);
 
     /**
      * Submits a slip-up record with timezone-aware date formatting.
@@ -253,7 +264,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
 
         // Success - notify parent and close
         onSlipUpLogged();
-        handleClose();
+        handlePressClose();
 
         // Show success message
         if (Platform.OS === 'web') {
@@ -273,7 +284,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           setIsSubmitting(false);
         }
       }
-    }, [slipUpDate, notes, profile, userTimezone, onSlipUpLogged, handleClose]);
+    }, [slipUpDate, notes, profile, userTimezone, onSlipUpLogged, handlePressClose]);
 
     const styles = createStyles(theme);
 
@@ -284,7 +295,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
       <GlassBottomSheet
         ref={sheetRef}
         snapPoints={['50%', '70%']}
-        onDismiss={handleClose}
+        onDismiss={handleDismiss}
         keyboardBehavior="extend"
       >
         <View style={styles.header}>
@@ -293,7 +304,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           </View>
           <Text style={styles.title}>Log a Slip Up</Text>
           <TouchableOpacity
-            onPress={handleClose}
+            onPress={handlePressClose}
             style={styles.closeButton}
             testID="close-icon-button"
             accessibilityLabel="Close"
@@ -386,7 +397,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={handleClose}
+              onPress={handlePressClose}
               disabled={isSubmitting}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
