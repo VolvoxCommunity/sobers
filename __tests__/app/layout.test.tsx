@@ -125,8 +125,7 @@ jest.mock('react-native/Libraries/Utilities/Platform', () => ({
 
 // Mock AuthContext
 let mockUser: { id: string } | null = null;
-let mockProfile: { first_name: string; last_initial: string; sobriety_date: string | null } | null =
-  null;
+let mockProfile: { display_name: string | null; sobriety_date: string | null } | null = null;
 let mockLoading = false;
 
 jest.mock('@/contexts/AuthContext', () => ({
@@ -305,8 +304,7 @@ describe('RootLayout', () => {
     it('redirects to tabs when user has complete profile on auth screen', async () => {
       mockUser = { id: 'user-123' };
       mockProfile = {
-        first_name: 'John',
-        last_initial: 'D',
+        display_name: 'John D.',
         sobriety_date: '2024-01-01',
       };
       mockSegments = ['login'];
@@ -322,8 +320,7 @@ describe('RootLayout', () => {
     it('redirects to onboarding when user has incomplete profile', async () => {
       mockUser = { id: 'user-123' };
       mockProfile = {
-        first_name: 'User',
-        last_initial: 'U',
+        display_name: null,
         sobriety_date: null,
       };
       mockSegments = ['(tabs)'];
