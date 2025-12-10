@@ -11,8 +11,8 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
-  KeyboardAvoidingView,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -779,11 +779,7 @@ export default function ProfileScreen() {
   const styles = createStyles(theme);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoidingContainer}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
       <ScrollView
         style={styles.container}
         keyboardShouldPersistTaps="handled"
@@ -1042,11 +1038,7 @@ export default function ProfileScreen() {
         )}
 
         <Modal visible={showSlipUpModal} transparent animationType="slide">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.slipUpModalOverlay}
-            keyboardVerticalOffset={0}
-          >
+          <KeyboardAvoidingView style={styles.slipUpModalOverlay}>
             <TouchableOpacity
               style={styles.slipUpModalBackdrop}
               activeOpacity={1}
