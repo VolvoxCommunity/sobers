@@ -1540,8 +1540,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     slipUpModalButtonsContainer: {
       padding: 24,
       paddingTop: 16,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
       backgroundColor: theme.surface,
     },
     modalTitle: {
