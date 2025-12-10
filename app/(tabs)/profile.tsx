@@ -23,7 +23,6 @@ import {
   QrCode,
   UserMinus,
   Edit2,
-  Calendar,
   AlertCircle,
   CheckCircle,
   Settings,
@@ -33,6 +32,7 @@ import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
 import SettingsSheet, { SettingsSheetRef } from '@/components/SettingsSheet';
+import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 
 /**
  * Renders a card for a sponsee showing avatar, display name, connection date, optional sobriety days and task completion, and a disconnect control.
@@ -159,6 +159,7 @@ export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
+  const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [showInviteInput, setShowInviteInput] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -171,13 +172,6 @@ export default function ProfileScreen() {
   const [loadingRelationships, setLoadingRelationships] = useState(true);
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
-  const [showSlipUpModal, setShowSlipUpModal] = useState(false);
-  const [slipUpDate, setSlipUpDate] = useState<Date>(new Date());
-  const [recoveryDate, setRecoveryDate] = useState<Date>(new Date());
-  const [slipUpNotes, setSlipUpNotes] = useState('');
-  const [showSlipUpDatePicker, setShowSlipUpDatePicker] = useState(false);
-  const [showRecoveryDatePicker, setShowRecoveryDatePicker] = useState(false);
-  const [isLoggingSlipUp, setIsLoggingSlipUp] = useState(false);
   const [sponseeTaskStats, setSponseeTaskStats] = useState<{
     [key: string]: { total: number; completed: number };
   }>({});
@@ -650,130 +644,11 @@ export default function ProfileScreen() {
   };
 
   const handleLogSlipUp = () => {
-    const today = new Date();
-    setSlipUpDate(today);
-    setRecoveryDate(today);
-    setSlipUpNotes('');
-    setShowSlipUpModal(true);
+    logSlipUpSheetRef.current?.present();
   };
 
-  /**
-   * Submits a slip-up record with timezone-aware date formatting.
-   * Uses the user's stored timezone if available, otherwise falls back to device timezone.
-   */
-  const submitSlipUp = async () => {
-    if (!profile) return;
-
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    if (slipUpDate > today) {
-      if (Platform.OS === 'web') {
-        window.alert('Slip-up date cannot be in the future');
-      } else {
-        Alert.alert('Invalid Date', 'Slip-up date cannot be in the future');
-      }
-      return;
-    }
-
-    if (recoveryDate < slipUpDate) {
-      if (Platform.OS === 'web') {
-        window.alert('Recovery restart date must be on or after the slip-up date');
-      } else {
-        Alert.alert('Invalid Date', 'Recovery restart date must be on or after the slip-up date');
-      }
-      return;
-    }
-
-    const confirmMessage =
-      'This will log your slip-up and restart your current streak. Your sponsor will be notified. Continue?';
-
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm(confirmMessage)
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert('Confirm Slip-Up Log', confirmMessage, [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => resolve(false),
-              },
-              {
-                text: 'Continue',
-                style: 'destructive',
-                onPress: () => resolve(true),
-              },
-            ]);
-          });
-
-    if (!confirmed) return;
-
-    setIsLoggingSlipUp(true);
-
-    try {
-      const { error: slipUpError } = await supabase.from('slip_ups').insert({
-        user_id: profile.id,
-        slip_up_date: formatDateWithTimezone(slipUpDate, userTimezone),
-        recovery_restart_date: formatDateWithTimezone(recoveryDate, userTimezone),
-        notes: slipUpNotes.trim() || null,
-      });
-
-      if (slipUpError) throw slipUpError;
-
-      // IMPORTANT BEHAVIORAL CHANGE:
-      // We intentionally do NOT update profile.sobriety_date here.
-      // Previously, sobriety_date was updated on slip-ups to track 'current streak start'.
-      // Now, sobriety_date represents when the user's recovery journey began (immutable).
-      // The slip_ups table stores recovery_restart_date which useDaysSober uses to
-      // calculate the current streak. See Profile.sobriety_date in types/database.ts.
-
-      const { data: sponsors } = await supabase
-        .from('sponsor_sponsee_relationships')
-        .select('sponsor_id')
-        .eq('sponsee_id', profile.id)
-        .eq('status', 'active');
-
-      if (sponsors && sponsors.length > 0) {
-        const notifications = sponsors.map((rel) => ({
-          user_id: rel.sponsor_id,
-          type: 'milestone',
-          title: 'Sponsee Slip Up',
-          content: `${profile.display_name ?? 'Unknown'} has logged a slip-up and restarted their recovery journey.`,
-          data: {
-            sponsee_id: profile.id,
-            slip_up_date: slipUpDate.toISOString(),
-          },
-        }));
-
-        await supabase.from('notifications').insert(notifications);
-      }
-
-      await refreshProfile();
-      setShowSlipUpModal(false);
-
-      if (Platform.OS === 'web') {
-        window.alert(
-          'Your slip-up has been logged. Remember, recovery is a journey. You are brave for being honest. Keep moving forward, one day at a time.'
-        );
-      } else {
-        Alert.alert(
-          'Slip-Up Logged',
-          'Your slip-up has been logged. Remember, recovery is a journey. You are brave for being honest. Keep moving forward, one day at a time.'
-        );
-      }
-    } catch (error: unknown) {
-      logger.error('Slip-up logging failed', error as Error, {
-        category: LogCategory.DATABASE,
-      });
-      const message = error instanceof Error ? error.message : 'Failed to log slip-up.';
-      if (Platform.OS === 'web') {
-        window.alert(message);
-      } else {
-        Alert.alert('Error', message);
-      }
-    } finally {
-      setIsLoggingSlipUp(false);
-    }
+  const handleSlipUpLogged = async () => {
+    await refreshProfile();
   };
 
   const styles = createStyles(theme);
@@ -1037,175 +912,21 @@ export default function ProfileScreen() {
           </Modal>
         )}
 
-        <Modal visible={showSlipUpModal} transparent animationType="slide">
-          <KeyboardAvoidingView style={styles.slipUpModalOverlay}>
-            <TouchableOpacity
-              style={styles.slipUpModalBackdrop}
-              activeOpacity={1}
-              onPress={() => setShowSlipUpModal(false)}
-            />
-            <View style={styles.slipUpModal}>
-              <ScrollView
-                contentContainerStyle={styles.slipUpModalScrollContent}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={true}
-                bounces={false}
-              >
-                <Text style={styles.modalTitle}>Log a Slip Up</Text>
-                <Text style={styles.modalSubtitle}>
-                  Recovery is a journey, not a destination. Logging a slip up is an act of courage
-                  and honesty.
-                </Text>
-
-                <View style={styles.dateSection}>
-                  <Text style={styles.dateLabel}>Slip Up Date</Text>
-                  {Platform.OS === 'web' ? (
-                    <input
-                      type="date"
-                      value={formatDateWithTimezone(slipUpDate, userTimezone)}
-                      max={formatDateWithTimezone(new Date(), userTimezone)}
-                      onChange={(e) =>
-                        setSlipUpDate(parseDateAsLocal(e.target.value, userTimezone))
-                      }
-                      style={{
-                        padding: 12,
-                        fontSize: 16,
-                        borderRadius: 8,
-                        border: `1px solid ${theme.border}`,
-                        width: '100%',
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowSlipUpDatePicker(true)}
-                      >
-                        <Calendar size={20} color={theme.textSecondary} />
-                        <Text style={styles.dateButtonText}>
-                          {slipUpDate.toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </Text>
-                      </TouchableOpacity>
-                      {showSlipUpDatePicker && (
-                        <DateTimePicker
-                          value={slipUpDate}
-                          mode="date"
-                          display="default"
-                          onChange={(event, date) => {
-                            setShowSlipUpDatePicker(false);
-                            if (date) setSlipUpDate(date);
-                          }}
-                          maximumDate={new Date()}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
-
-                <View style={styles.dateSection}>
-                  <Text style={styles.dateLabel}>Recovery Restart Date</Text>
-                  {Platform.OS === 'web' ? (
-                    <input
-                      type="date"
-                      value={formatDateWithTimezone(recoveryDate, userTimezone)}
-                      min={formatDateWithTimezone(slipUpDate, userTimezone)}
-                      onChange={(e) =>
-                        setRecoveryDate(parseDateAsLocal(e.target.value, userTimezone))
-                      }
-                      style={{
-                        padding: 12,
-                        fontSize: 16,
-                        borderRadius: 8,
-                        border: `1px solid ${theme.border}`,
-                        width: '100%',
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowRecoveryDatePicker(true)}
-                      >
-                        <Calendar size={20} color={theme.textSecondary} />
-                        <Text style={styles.dateButtonText}>
-                          {recoveryDate.toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </Text>
-                      </TouchableOpacity>
-                      {showRecoveryDatePicker && (
-                        <DateTimePicker
-                          value={recoveryDate}
-                          mode="date"
-                          display="default"
-                          onChange={(event, date) => {
-                            setShowRecoveryDatePicker(false);
-                            if (date) setRecoveryDate(date);
-                          }}
-                          minimumDate={slipUpDate}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
-
-                <View style={styles.notesSection}>
-                  <Text style={styles.dateLabel}>Notes (Optional)</Text>
-                  <TextInput
-                    style={styles.notesInput}
-                    placeholder="What happened? How are you feeling?"
-                    placeholderTextColor={theme.textTertiary}
-                    value={slipUpNotes}
-                    onChangeText={setSlipUpNotes}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                </View>
-
-                <Text style={styles.privacyNote}>
-                  This information will be visible to you and your sponsor.
-                </Text>
-              </ScrollView>
-
-              <View style={styles.slipUpModalButtonsContainer}>
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={styles.modalCancelButton}
-                    onPress={() => setShowSlipUpModal(false)}
-                    disabled={isLoggingSlipUp}
-                  >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.modalConfirmButton,
-                      styles.slipUpConfirmButton,
-                      isLoggingSlipUp && styles.buttonDisabled,
-                    ]}
-                    onPress={submitSlipUp}
-                    disabled={isLoggingSlipUp}
-                  >
-                    {isLoggingSlipUp ? (
-                      <ActivityIndicator size="small" color={theme.white} />
-                    ) : (
-                      <Text style={styles.modalConfirmText}>Log Slip Up</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
-
         {/* Settings Sheet */}
         <SettingsSheet ref={settingsSheetRef} />
+
+        {/* Log Slip Up Sheet */}
+        {profile && (
+          <LogSlipUpSheet
+            ref={logSlipUpSheetRef}
+            profile={profile}
+            theme={theme}
+            onClose={() => {
+              // Sheet dismissed without logging
+            }}
+            onSlipUpLogged={handleSlipUpLogged}
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1515,28 +1236,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       maxWidth: 400,
       alignItems: 'center',
     },
-    slipUpModalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    slipUpModalBackdrop: {
-      flex: 1,
-    },
-    slipUpModal: {
-      backgroundColor: theme.surface,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      maxHeight: '85%',
-    },
-    slipUpModalScrollContent: {
-      padding: 24,
-      paddingBottom: 16,
-    },
-    slipUpModalButtonsContainer: {
-      padding: 24,
-      paddingTop: 16,
-      backgroundColor: theme.surface,
-    },
     modalTitle: {
       fontSize: 20,
       fontFamily: theme.fontRegular,
@@ -1544,59 +1243,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       color: theme.text,
       marginBottom: 8,
       textAlign: 'center',
-    },
-    modalSubtitle: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-      textAlign: 'center',
-      marginBottom: 24,
-    },
-    dateSection: {
-      marginBottom: 20,
-    },
-    dateLabel: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-      marginBottom: 8,
-    },
-    dateButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.card,
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
-    },
-    dateButtonText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      color: theme.text,
-      marginLeft: 12,
-    },
-    notesSection: {
-      marginBottom: 20,
-    },
-    notesInput: {
-      backgroundColor: theme.card,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      color: theme.text,
-      minHeight: 100,
-    },
-    privacyNote: {
-      fontSize: 12,
-      fontFamily: theme.fontRegular,
-      color: theme.textTertiary,
-      textAlign: 'center',
-      marginBottom: 24,
     },
     modalButtons: {
       flexDirection: 'row',
@@ -1623,9 +1269,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       borderRadius: 8,
       backgroundColor: theme.primary,
       alignItems: 'center',
-    },
-    slipUpConfirmButton: {
-      backgroundColor: theme.danger,
     },
     modalConfirmText: {
       fontSize: 16,

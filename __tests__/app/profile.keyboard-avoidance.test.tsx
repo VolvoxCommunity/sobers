@@ -293,6 +293,17 @@ jest.mock('@/lib/validation', () => ({
 }));
 
 // Mock GlassBottomSheet (required by SettingsSheet)
+// Mock LogSlipUpSheet
+jest.mock('@/components/sheets/LogSlipUpSheet', () => {
+  const React = require('react');
+  const MockLogSlipUpSheet = React.forwardRef(() => null);
+  MockLogSlipUpSheet.displayName = 'LogSlipUpSheet';
+  return {
+    __esModule: true,
+    default: MockLogSlipUpSheet,
+  };
+});
+
 jest.mock('@/components/GlassBottomSheet', () => {
   const React = require('react');
   const MockGlassBottomSheet = React.forwardRef(
@@ -412,7 +423,7 @@ describe('ProfileScreen Keyboard Avoidance', () => {
     });
   });
 
-  describe('Slip-up Modal', () => {
+  describe('Slip-up Sheet', () => {
     it('shows slip up button', async () => {
       render(<ProfileScreen />);
 
@@ -421,30 +432,10 @@ describe('ProfileScreen Keyboard Avoidance', () => {
       });
     });
 
-    it('opens slip-up modal when button is pressed', async () => {
-      render(<ProfileScreen />);
-
-      await waitFor(() => {
-        fireEvent.press(screen.getByText('Log a Slip Up'));
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText('Slip Up Date')).toBeTruthy();
-        expect(screen.getByText('Notes (Optional)')).toBeTruthy();
-      });
-    });
-
-    it('shows notes input in slip-up modal', async () => {
-      render(<ProfileScreen />);
-
-      await waitFor(() => {
-        fireEvent.press(screen.getByText('Log a Slip Up'));
-      });
-
-      await waitFor(() => {
-        const notesInput = screen.getByPlaceholderText('What happened? How are you feeling?');
-        expect(notesInput).toBeTruthy();
-      });
+    it('slip-up sheet UI tests are in LogSlipUpSheet.test.tsx', () => {
+      // The slip-up modal has been moved to LogSlipUpSheet component
+      // All UI and interaction tests are now in __tests__/components/sheets/LogSlipUpSheet.test.tsx
+      expect(true).toBe(true);
     });
   });
 
