@@ -384,3 +384,11 @@ jest.mock('react-native-keyboard-controller', () => {
     useReanimatedKeyboardAnimation: () => ({ height: { value: 0 }, progress: { value: 0 } }),
   };
 });
+
+// Mock expo-symbols
+jest.mock('expo-symbols', () => {
+  const React = require('react');
+  return {
+    SymbolView: ({ children, ...props }) => React.createElement('SymbolView', props, children),
+  };
+});
