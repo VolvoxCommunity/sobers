@@ -19,8 +19,7 @@ import type { EventParams, DaysSoberBucket } from '@/types/analytics';
 const PII_FIELDS = [
   'email',
   'name',
-  'first_name',
-  'last_name',
+  'display_name',
   'phone',
   'password',
   'token',
