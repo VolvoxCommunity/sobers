@@ -225,7 +225,9 @@ describe('NativeBottomTabs', () => {
           }),
         }));
 
-        const { default: NativeBottomTabsDark } = require('@/components/navigation/NativeBottomTabs');
+        const {
+          default: NativeBottomTabsDark,
+        } = require('@/components/navigation/NativeBottomTabs');
         const { render: renderDark, screen: screenDark } = require('@testing-library/react-native');
 
         renderDark(<NativeBottomTabsDark />);

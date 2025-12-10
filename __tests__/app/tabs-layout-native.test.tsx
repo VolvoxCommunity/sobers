@@ -3,7 +3,7 @@
  *
  * Tests the main tabs layout including:
  * - Platform-specific rendering (native vs web)
- * - Tab navigator configuration  
+ * - Tab navigator configuration
  * - Theme integration
  * - Navigation structure
  * - Accessibility
