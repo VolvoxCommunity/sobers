@@ -42,10 +42,14 @@ jest.mock('@gorhom/bottom-sheet', () => {
   );
   BottomSheetBackdrop.displayName = 'BottomSheetBackdrop';
 
+  // Provider passthrough for renderWithProviders compatibility
+  const BottomSheetModalProvider = ({ children }: any) => children;
+
   return {
     BottomSheetModal: MockBottomSheetModal,
     BottomSheetView,
     BottomSheetBackdrop,
+    BottomSheetModalProvider,
   };
 });
 /* eslint-enable @typescript-eslint/no-require-imports */
