@@ -684,6 +684,19 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
+      {/* Navigation Header Bar */}
+      <View style={styles.navigationHeader}>
+        <Text style={styles.navigationTitle}>Profile</Text>
+        <TouchableOpacity
+          onPress={() => settingsSheetRef.current?.present()}
+          style={styles.settingsButton}
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+        >
+          <Settings size={22} color={theme.text} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         ref={scrollViewRef}
         style={styles.container}
@@ -691,16 +704,7 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={true}
       >
-        <View style={styles.header}>
-          {/* Settings button positioned in top-right corner */}
-          <TouchableOpacity
-            onPress={() => settingsSheetRef.current?.present()}
-            style={styles.settingsButton}
-            accessibilityRole="button"
-            accessibilityLabel="Open settings"
-          >
-            <Settings size={22} color={theme.text} />
-          </TouchableOpacity>
+        <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {profile?.display_name?.[0]?.toUpperCase() || '?'}
@@ -971,22 +975,33 @@ const createStyles = (
       flex: 1,
       backgroundColor: theme.background,
     },
-    header: {
+    navigationHeader: {
+      flexDirection: 'row',
       alignItems: 'center',
-      padding: 24,
-      // Add safe area top inset for Dynamic Island/notch clearance
-      paddingTop: insets.top + 16,
-      backgroundColor: theme.surface,
-      position: 'relative', // For absolute positioning of settings button
+      justifyContent: 'space-between',
+      paddingTop: insets.top + 8,
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      backgroundColor: theme.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    navigationTitle: {
+      fontSize: 28,
+      fontFamily: theme.fontRegular,
+      fontWeight: '700',
+      color: theme.text,
     },
     settingsButton: {
-      position: 'absolute',
-      // Position below Dynamic Island/notch
-      top: insets.top + 8,
-      right: 16,
       padding: 8,
       borderRadius: 8,
       backgroundColor: theme.primaryLight,
+    },
+    profileHeader: {
+      alignItems: 'center',
+      padding: 24,
+      paddingTop: 20,
+      backgroundColor: theme.surface,
     },
     avatar: {
       width: 80,
