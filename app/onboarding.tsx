@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,17 +15,9 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
-import {
-  Calendar,
-  LogOut,
-  ChevronRight,
-  ChevronLeft,
-  Info,
-  Square,
-  CheckSquare,
-} from 'lucide-react-native';
+import { validateDisplayName } from '@/lib/validation';
+import { Calendar, LogOut, Info, Square, CheckSquare } from 'lucide-react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import ProgressBar from '@/components/onboarding/ProgressBar';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
@@ -41,16 +33,29 @@ import { trackEvent, AnalyticsEvents, calculateDaysSoberBucket } from '@/lib/ana
 // =============================================================================
 
 /**
- * Default placeholder first name used when OAuth doesn't provide name data.
- * This is set during initial profile creation in the auth trigger.
- * 'User' is always treated as a placeholder since no real person has this name.
+ * Character count threshold for warning color display (25 out of 30).
+ * When user reaches this many characters, the count display changes to warning color.
  */
-const PLACEHOLDER_FIRST_NAME = 'User';
+const CHARACTER_WARNING_THRESHOLD = 25;
 
 /**
- * Renders the two-step onboarding flow used after authentication to collect the user's name and sobriety date.
+ * Maximum allowed characters for display name (enforced by validation).
+ */
+const MAX_DISPLAY_NAME_LENGTH = 30;
+
+/**
+ * Debounce delay in milliseconds for real-time validation feedback.
+ */
+const VALIDATION_DEBOUNCE_MS = 300;
+
+// =============================================================================
+// Component
+// =============================================================================
+
+/**
+ * Renders the single-page onboarding flow used after authentication to collect the user's display name and sobriety date.
  *
- * The component updates the user's profile with the provided first name, last initial, and sobriety date,
+ * The component updates the user's profile with the provided display name and sobriety date,
  * refreshes profile state, and navigates to the main app once the profile is complete.
  *
  * @returns A React element that renders the onboarding screen
@@ -60,57 +65,12 @@ export default function OnboardingScreen() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const router = useRouter();
 
-  /**
-   * Determines if the profile has a complete, non-placeholder name from OAuth.
-   *
-   * Checks for:
-   * - Non-null/undefined values (profile might be loading)
-   * - Non-empty/whitespace-only values (must contain actual content)
-   * - First name is not the placeholder value 'User'
-   *
-   * Note: We only check first_name for placeholder detection because:
-   * - 'User' is clearly not a real name, so it's always a placeholder
-   * - 'U' as last_initial could be legitimate (e.g., "Underwood", "Ulrich")
-   *
-   * When true, we can skip the name entry step in onboarding since OAuth already provided valid data.
-   */
-  const hasCompleteName = useMemo(() => {
-    const trimmedFirstName = profile?.first_name?.trim() ?? '';
-    const trimmedLastInitial = profile?.last_initial?.trim() ?? '';
+  // Pre-fill display name from OAuth profile if available (e.g., Google sign-in)
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
 
-    // Must have non-empty values
-    if (!trimmedFirstName || !trimmedLastInitial) {
-      return false;
-    }
-
-    // 'User' is always a placeholder - no real person has this name
-    if (trimmedFirstName === PLACEHOLDER_FIRST_NAME) {
-      return false;
-    }
-
-    return true;
-  }, [profile?.first_name, profile?.last_initial]);
-
-  // Skip Step 1 (name entry) if OAuth already provided complete name
-  const [step, setStep] = useState(hasCompleteName ? 2 : 1);
-  // Pre-fill name fields from OAuth profile if available (e.g., Google sign-in)
-  // Filter out placeholder 'User' to show empty field instead of confusing pre-fill
-  const [firstName, setFirstName] = useState(() => {
-    const profileFirstName = profile?.first_name ?? '';
-    return profileFirstName === PLACEHOLDER_FIRST_NAME ? '' : profileFirstName;
-  });
-  const [lastInitial, setLastInitial] = useState(profile?.last_initial ?? '');
   // Track onboarding start time for analytics duration calculation
   const [onboardingStartTime] = useState(() => Date.now());
-
-  /**
-   * Validates that Step 1 form fields contain valid data for advancing.
-   * Requires non-empty firstName and exactly one character for lastInitial.
-   */
-  const isStep1Valid = useMemo(
-    () => firstName.trim() !== '' && lastInitial.trim().length === 1,
-    [firstName, lastInitial]
-  );
 
   // Stable maximum date for DateTimePicker to prevent iOS crash when value > maximumDate.
   // Using useMemo ensures we don't create a new Date on every render, which could cause
@@ -133,39 +93,17 @@ export default function OnboardingScreen() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   // Track when we're waiting for profile to update after form submission
   const [awaitingProfileUpdate, setAwaitingProfileUpdate] = useState(false);
-  // Track if user manually navigated back to Step 1 to edit their name
-  const [userWentBackToStep1, setUserWentBackToStep1] = useState(false);
 
-  // Sync name fields when profile loads/updates asynchronously
+  // Sync display name when profile loads/updates asynchronously
   // This handles the case where profile data arrives after initial render
-  // (e.g., OAuth data or page refresh) - inputs should show the stored values
-  // BUT: Don't sync if user manually went back to edit their name
-  // AND: Filter out placeholder 'User' value - show empty field instead
+  // (e.g., OAuth data or page refresh) - input should show the stored value
   useEffect(() => {
-    if (userWentBackToStep1) return;
-
-    // Only sync if profile has trimmed non-empty values and local state is empty
-    // Using functional updates to avoid needing firstName/lastInitial in deps
-    const trimmedFirst = profile?.first_name?.trim();
-    const trimmedLast = profile?.last_initial?.trim();
-
-    // Filter out placeholder value - user should see empty field, not 'User'
-    if (trimmedFirst && trimmedFirst !== PLACEHOLDER_FIRST_NAME) {
-      setFirstName((prev) => (prev ? prev : trimmedFirst));
+    // Only sync if profile has trimmed non-empty value and local state is empty
+    const trimmedDisplayName = profile?.display_name?.trim();
+    if (trimmedDisplayName) {
+      setDisplayName((prev) => (prev ? prev : trimmedDisplayName));
     }
-    if (trimmedLast) {
-      setLastInitial((prev) => (prev ? prev : trimmedLast));
-    }
-  }, [profile?.first_name, profile?.last_initial, userWentBackToStep1]);
-
-  // Auto-advance to Step 2 if profile updates with complete name while on Step 1
-  // This handles: page refresh, navigation quirks, async profile data arrival
-  // BUT: Don't auto-advance if user manually clicked "Back" to edit their name
-  useEffect(() => {
-    if (step === 1 && hasCompleteName && !userWentBackToStep1) {
-      setStep(2);
-    }
-  }, [step, hasCompleteName, userWentBackToStep1]);
+  }, [profile?.display_name]);
 
   // Navigate to main app when profile becomes complete after submission
   // This ensures we only navigate AFTER React has processed the profile state update
@@ -173,7 +111,7 @@ export default function OnboardingScreen() {
     if (!awaitingProfileUpdate) return;
 
     // Profile is complete - navigate to main app
-    if (profile?.sobriety_date && profile?.first_name && profile?.last_initial) {
+    if (profile?.sobriety_date && profile?.display_name) {
       router.replace('/(tabs)');
       return;
     }
@@ -199,30 +137,36 @@ export default function OnboardingScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awaitingProfileUpdate, profile]);
 
-  // Ref for field navigation
-  const lastInitialRef = useRef<TextInput>(null);
-
   // Track onboarding started on mount
   useEffect(() => {
     trackEvent(AnalyticsEvents.ONBOARDING_STARTED);
   }, []);
 
-  /**
-   * Advances to step 2 if name validation passes.
-   * Shared by Continue button and keyboard submit on last initial field.
-   */
-  const advanceToStep2 = useCallback(() => {
-    if (!isStep1Valid) return;
-    setUserWentBackToStep1(false);
-    setStep(2);
-    // Track step completion
-    trackEvent(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, {
-      step: 1,
-      step_name: 'name_entry',
-    });
-  }, [isStep1Valid]);
+  // Debounced validation for display name
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const error = validateDisplayName(displayName);
+      setDisplayNameError(error);
+    }, VALIDATION_DEBOUNCE_MS);
 
-  const totalSteps = 2;
+    return () => clearTimeout(timeoutId);
+  }, [displayName]);
+
+  /**
+   * Validates that the form is complete and valid for submission.
+   * Requires valid display name and accepted terms.
+   */
+  const isFormValid = useMemo(() => {
+    const hasValidDisplayName = displayName.trim() !== '' && displayNameError === null;
+    return hasValidDisplayName && termsAccepted;
+  }, [displayName, displayNameError, termsAccepted]);
+
+  /**
+   * Character count for display name with visual feedback.
+   * Color changes to warning when approaching limit.
+   */
+  const characterCount = displayName.length;
+  const isNearLimit = characterCount >= CHARACTER_WARNING_THRESHOLD;
 
   const handleSignOut = async () => {
     try {
@@ -247,23 +191,15 @@ export default function OnboardingScreen() {
       const updateData: {
         sobriety_date: string;
         terms_accepted_at: string;
-        first_name?: string;
-        last_initial?: string;
+        display_name: string;
       } = {
         // Format the sobriety date using the user's timezone
         sobriety_date: formatDateWithTimezone(sobrietyDate, userTimezone),
         // Record when the user accepted the Privacy Policy and Terms of Service
         terms_accepted_at: new Date().toISOString(),
+        // Trim whitespace before saving (consistent with validation)
+        display_name: displayName.trim(),
       };
-
-      // Trim whitespace before saving (consistent with settings.tsx)
-      const trimmedFirstName = firstName.trim();
-      const trimmedLastInitial = lastInitial.trim().toUpperCase();
-
-      if (trimmedFirstName && trimmedLastInitial) {
-        updateData.first_name = trimmedFirstName;
-        updateData.last_initial = trimmedLastInitial;
-      }
 
       const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
 
@@ -323,203 +259,18 @@ export default function OnboardingScreen() {
   /**
    * Opens the privacy policy URL in the default browser.
    */
-  const openPrivacyPolicy = () => {
+  const openPrivacyPolicy = useCallback(() => {
     Linking.openURL('https://www.volvoxdev.com/privacy');
-  };
+  }, []);
 
   /**
    * Opens the terms of service URL in the default browser.
    */
-  const openTermsOfService = () => {
+  const openTermsOfService = useCallback(() => {
     Linking.openURL('https://www.volvoxdev.com/terms');
-  };
+  }, []);
 
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  const renderStep1 = () => (
-    <OnboardingStep>
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Welcome to Sobriety Waypoint</Text>
-        <Text style={styles.subtitle}>Let&apos;s get to know you better.</Text>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>First Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. John"
-            placeholderTextColor={theme.textTertiary}
-            value={firstName}
-            onChangeText={setFirstName}
-            autoCapitalize="words"
-            returnKeyType="next"
-            onSubmitEditing={() => lastInitialRef.current?.focus()}
-            blurOnSubmit={false}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Last Initial</Text>
-          <TextInput
-            ref={lastInitialRef}
-            style={styles.input}
-            placeholder="e.g. D"
-            placeholderTextColor={theme.textTertiary}
-            value={lastInitial}
-            onChangeText={(text) => setLastInitial(text.toUpperCase())}
-            maxLength={1}
-            autoCapitalize="characters"
-            returnKeyType="done"
-            onSubmitEditing={advanceToStep2}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.infoButton} onPress={() => setShowInfo(!showInfo)}>
-          <Info size={16} color={theme.textSecondary} />
-          <Text style={styles.infoText}>Why do we ask for this?</Text>
-        </TouchableOpacity>
-
-        {showInfo && (
-          <Animated.View entering={FadeInDown} style={styles.infoBox}>
-            <Text style={styles.infoBoxText}>
-              We value your privacy. Your first name and last initial are used to personalize your
-              experience while maintaining anonymity within the community.
-            </Text>
-          </Animated.View>
-        )}
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.button, !isStep1Valid && styles.buttonDisabled]}
-          onPress={advanceToStep2}
-          disabled={!isStep1Valid}
-        >
-          <Text style={styles.buttonText}>Continue</Text>
-          <ChevronRight size={20} color={theme.textOnPrimary} />
-        </TouchableOpacity>
-      </View>
-    </OnboardingStep>
-  );
-
-  const renderStep2 = () => (
-    <OnboardingStep>
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>Your Sobriety Date</Text>
-        <Text style={styles.subtitle}>When did your journey begin?</Text>
-      </View>
-
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.dateDisplay} onPress={() => setShowDatePicker(true)}>
-          <Calendar size={32} color={theme.primary} />
-          <View style={styles.dateTextContainer}>
-            <Text style={styles.dateLabel}>Sobriety Date</Text>
-            <Text style={styles.dateValue}>
-              {sobrietyDate.toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {showDatePicker && Platform.OS !== 'web' && (
-          <DateTimePicker
-            value={sobrietyDate}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={onDateChange}
-            maximumDate={maximumDate}
-          />
-        )}
-
-        {Platform.OS === 'web' && showDatePicker && (
-          <View style={styles.webDatePicker}>
-            <input
-              type="date"
-              value={formatDateWithTimezone(sobrietyDate, getUserTimezone(profile))}
-              max={formatDateWithTimezone(new Date(), getUserTimezone(profile))}
-              onChange={(e) => {
-                setSobrietyDate(parseDateAsLocal(e.target.value, getUserTimezone(profile)));
-                setShowDatePicker(false);
-              }}
-              style={{
-                padding: '12px',
-                fontSize: '16px',
-                fontFamily: theme.fontRegular,
-                borderRadius: '8px',
-                border: `2px solid ${theme.primary}`,
-                marginBottom: '16px',
-                width: '100%',
-              }}
-            />
-          </View>
-        )}
-
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsCount}>
-            {getDateDiffInDays(sobrietyDate, new Date(), getUserTimezone(profile))}
-          </Text>
-          <Text style={styles.statsLabel}>Days Sober</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={styles.termsContainer}
-        onPress={() => setTermsAccepted(!termsAccepted)}
-        activeOpacity={0.7}
-      >
-        {termsAccepted ? (
-          <CheckSquare size={24} color={theme.primary} />
-        ) : (
-          <Square size={24} color={theme.textSecondary} />
-        )}
-        <Text style={styles.termsText}>
-          I agree to the{' '}
-          <Text style={styles.termsLink} onPress={openPrivacyPolicy}>
-            Privacy Policy
-          </Text>{' '}
-          and{' '}
-          <Text style={styles.termsLink} onPress={openTermsOfService}>
-            Terms of Service
-          </Text>
-        </Text>
-      </TouchableOpacity>
-
-      <View style={styles.footer}>
-        <View style={styles.buttonGroup}>
-          {step === 2 && (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => {
-                setUserWentBackToStep1(true);
-                setStep(1);
-              }}
-              disabled={loading}
-            >
-              <ChevronLeft size={20} color={theme.text} />
-              <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              styles.flexButton,
-              (loading || !termsAccepted) && styles.buttonDisabled,
-            ]}
-            onPress={handleComplete}
-            disabled={loading || !termsAccepted}
-          >
-            <Text style={styles.buttonText}>{loading ? 'Setting up...' : 'Complete Setup'}</Text>
-            {!loading && <ChevronRight size={20} color={theme.textOnPrimary} />}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </OnboardingStep>
-  );
 
   return (
     <KeyboardAvoidingView
@@ -527,17 +278,160 @@ export default function OnboardingScreen() {
       style={styles.container}
     >
       <View style={styles.safeArea}>
-        <View style={styles.topBar}>
-          <ProgressBar step={step} totalSteps={totalSteps} theme={theme} />
-        </View>
-
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {step === 1 ? renderStep1() : renderStep2()}
+          <OnboardingStep>
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Welcome to Sobriety Waypoint</Text>
+              <Text style={styles.subtitle}>Let&apos;s set up your profile.</Text>
+            </View>
+
+            {/* Card 1: About You - Display Name */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>👤 ABOUT YOU</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Display Name</Text>
+                <TextInput
+                  style={[styles.input, displayNameError && styles.inputError]}
+                  placeholder="e.g. John D."
+                  placeholderTextColor={theme.textTertiary}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  autoCapitalize="words"
+                  returnKeyType="done"
+                  maxLength={MAX_DISPLAY_NAME_LENGTH}
+                />
+                <View style={styles.inputFooter}>
+                  <Text
+                    style={[styles.characterCount, isNearLimit && styles.characterCountWarning]}
+                  >
+                    {characterCount}/{MAX_DISPLAY_NAME_LENGTH} characters
+                  </Text>
+                </View>
+                {displayNameError && (
+                  <Animated.View entering={FadeInDown}>
+                    <Text style={styles.errorText}>{displayNameError}</Text>
+                  </Animated.View>
+                )}
+              </View>
+
+              <TouchableOpacity style={styles.infoButton} onPress={() => setShowInfo(!showInfo)}>
+                <Info size={16} color={theme.textSecondary} />
+                <Text style={styles.infoText}>How you&apos;ll appear to others</Text>
+              </TouchableOpacity>
+
+              {showInfo && (
+                <Animated.View entering={FadeInDown} style={styles.infoBox}>
+                  <Text style={styles.infoBoxText}>
+                    Your display name is how you&apos;ll be identified in the app. Choose any name
+                    you&apos;re comfortable with - it can be your real name, initials, or a
+                    nickname.
+                  </Text>
+                </Animated.View>
+              )}
+            </View>
+
+            {/* Card 2: Your Journey - Sobriety Date */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
+
+              <TouchableOpacity style={styles.dateDisplay} onPress={() => setShowDatePicker(true)}>
+                <Calendar size={32} color={theme.primary} />
+                <View style={styles.dateTextContainer}>
+                  <Text style={styles.dateLabel}>Sobriety Date</Text>
+                  <Text style={styles.dateValue}>
+                    {sobrietyDate.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {showDatePicker && Platform.OS !== 'web' && (
+                <DateTimePicker
+                  value={sobrietyDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onDateChange}
+                  maximumDate={maximumDate}
+                />
+              )}
+
+              {Platform.OS === 'web' && showDatePicker && (
+                <View style={styles.webDatePicker}>
+                  <input
+                    type="date"
+                    value={formatDateWithTimezone(sobrietyDate, getUserTimezone(profile))}
+                    max={formatDateWithTimezone(new Date(), getUserTimezone(profile))}
+                    onChange={(e) => {
+                      setSobrietyDate(parseDateAsLocal(e.target.value, getUserTimezone(profile)));
+                      setShowDatePicker(false);
+                    }}
+                    style={{
+                      padding: '12px',
+                      fontSize: '16px',
+                      fontFamily: theme.fontRegular,
+                      borderRadius: '8px',
+                      border: `2px solid ${theme.primary}`,
+                      marginBottom: '16px',
+                      width: '100%',
+                    }}
+                  />
+                </View>
+              )}
+
+              <View style={styles.statsContainer}>
+                <Text style={styles.statsCount}>
+                  {getDateDiffInDays(sobrietyDate, new Date(), getUserTimezone(profile))}
+                </Text>
+                <Text style={styles.statsLabel}>Days</Text>
+              </View>
+            </View>
+
+            {/* Terms Acceptance */}
+            <TouchableOpacity
+              style={styles.termsContainer}
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              activeOpacity={0.7}
+            >
+              {termsAccepted ? (
+                <CheckSquare size={24} color={theme.primary} />
+              ) : (
+                <Square size={24} color={theme.textSecondary} />
+              )}
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+                <Text style={styles.termsLink} onPress={openPrivacyPolicy}>
+                  Privacy Policy
+                </Text>{' '}
+                and{' '}
+                <Text style={styles.termsLink} onPress={openTermsOfService}>
+                  Terms of Service
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Complete Setup Button */}
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={[styles.button, (!isFormValid || loading) && styles.buttonDisabled]}
+                onPress={handleComplete}
+                disabled={!isFormValid || loading}
+              >
+                <Text style={styles.buttonText}>
+                  {loading ? 'Setting up...' : 'Complete Setup'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </OnboardingStep>
         </ScrollView>
 
+        {/* Sign Out Button */}
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <LogOut size={16} color={theme.textSecondary} />
           <Text style={styles.signOutText}>Sign Out</Text>
@@ -546,6 +440,10 @@ export default function OnboardingScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+// =============================================================================
+// Styles
+// =============================================================================
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
@@ -557,11 +455,9 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       paddingTop: Platform.OS === 'android' ? 40 : 60,
     },
-    topBar: {
-      marginBottom: 20,
-    },
     scrollContent: {
       flexGrow: 1,
+      paddingBottom: 80, // Space for sign out button
     },
     headerContainer: {
       marginBottom: 32,
@@ -592,6 +488,14 @@ const createStyles = (theme: ThemeColors) =>
       shadowRadius: 12,
       elevation: 2,
     },
+    cardTitle: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      fontWeight: '700',
+      color: theme.textSecondary,
+      marginBottom: 20,
+      letterSpacing: 1,
+    },
     inputGroup: {
       marginBottom: 20,
     },
@@ -613,6 +517,29 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 18,
       fontFamily: theme.fontRegular,
       color: theme.text,
+    },
+    inputError: {
+      borderColor: '#ef4444', // Red color for error state
+    },
+    inputFooter: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 4,
+    },
+    characterCount: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.textTertiary,
+    },
+    characterCountWarning: {
+      color: '#f59e0b', // Amber color for warning
+      fontWeight: '600',
+    },
+    errorText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: '#ef4444',
+      marginTop: 4,
     },
     infoButton: {
       flexDirection: 'row',
@@ -686,9 +613,26 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
     },
+    termsContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      marginBottom: 16,
+      paddingHorizontal: 4,
+    },
+    termsText: {
+      flex: 1,
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      lineHeight: 22,
+    },
+    termsLink: {
+      color: theme.primary,
+      fontWeight: '600',
+      textDecorationLine: 'underline',
+    },
     footer: {
-      flexGrow: 1,
-      justifyContent: 'flex-end',
       marginBottom: 24,
     },
     button: {
@@ -715,31 +659,6 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
     },
-    buttonGroup: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    secondaryButton: {
-      backgroundColor: theme.card,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 16,
-      padding: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
-      gap: 4,
-      minWidth: 100,
-    },
-    secondaryButtonText: {
-      color: theme.text,
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-    },
-    flexButton: {
-      flex: 1,
-    },
     signOutButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -753,24 +672,5 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       fontWeight: '500',
-    },
-    termsContainer: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 12,
-      marginBottom: 16,
-      paddingHorizontal: 4,
-    },
-    termsText: {
-      flex: 1,
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-      lineHeight: 22,
-    },
-    termsLink: {
-      color: theme.primary,
-      fontWeight: '600',
-      textDecorationLine: 'underline',
     },
   });
