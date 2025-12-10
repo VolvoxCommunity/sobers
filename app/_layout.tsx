@@ -36,6 +36,8 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { X } from 'lucide-react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import {
   JetBrainsMono_400Regular,
@@ -213,11 +215,15 @@ export default wrapRootComponent(function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </ThemeProvider>
+      <KeyboardProvider>
+        <BottomSheetModalProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <RootLayoutNav />
+            </AuthProvider>
+          </ThemeProvider>
+        </BottomSheetModalProvider>
+      </KeyboardProvider>
     </ErrorBoundary>
   );
 });
