@@ -17,6 +17,7 @@ import {
   calculateDaysSoberBucket,
   AnalyticsEvents,
 } from '@/lib/analytics';
+import { getPendingAppleAuthName } from '@/lib/apple-auth-name';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -196,24 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * @throws Error if profile creation fails (but not if profile check fails - auth continues)
    */
   const createOAuthProfileIfNeeded = async (user: User): Promise<void> => {
-    // Import pending Apple auth name data (set by AppleSignInButton before signInWithIdToken)
-    // Using dynamic import to avoid circular dependency issues
-    let pendingAppleName: { displayName: string } | null = null;
-    try {
-      const appleAuthModule = await import('@/lib/apple-auth-name');
-      pendingAppleName = appleAuthModule.getPendingAppleAuthName();
-      logger.info('createOAuthProfileIfNeeded: checked for pending Apple name', {
-        category: LogCategory.AUTH,
-        hasPendingName: !!pendingAppleName,
-        pendingDisplayName: pendingAppleName?.displayName ?? 'NONE',
-      });
-    } catch (importError) {
-      // Module may not be available in test environment
-      logger.warn('createOAuthProfileIfNeeded: failed to import apple-auth-name module', {
-        category: LogCategory.AUTH,
-        error: String(importError),
-      });
-    }
+    // Get pending Apple auth name data (set by AppleSignInButton before signInWithIdToken)
+    const pendingAppleName = getPendingAppleAuthName();
+    logger.info('createOAuthProfileIfNeeded: checked for pending Apple name', {
+      category: LogCategory.AUTH,
+      hasPendingName: !!pendingAppleName,
+      pendingDisplayName: pendingAppleName?.displayName ?? 'NONE',
+    });
 
     const { data: existingProfile, error: queryError } = await supabase
       .from('profiles')
