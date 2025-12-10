@@ -202,8 +202,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const appleAuthModule = await import('@/lib/apple-auth-name');
       pendingAppleName = appleAuthModule.getPendingAppleAuthName();
-    } catch {
+      logger.info('createOAuthProfileIfNeeded: checked for pending Apple name', {
+        category: LogCategory.AUTH,
+        hasPendingName: !!pendingAppleName,
+        pendingDisplayName: pendingAppleName?.displayName ?? 'NONE',
+      });
+    } catch (importError) {
       // Module may not be available in test environment
+      logger.warn('createOAuthProfileIfNeeded: failed to import apple-auth-name module', {
+        category: LogCategory.AUTH,
+        error: String(importError),
+      });
     }
 
     const { data: existingProfile, error: queryError } = await supabase
@@ -228,6 +237,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (!existingProfile) {
       // Query succeeded and profile doesn't exist - create it
       shouldCreateProfile = true;
+      logger.info('createOAuthProfileIfNeeded: profile does not exist, will create', {
+        category: LogCategory.AUTH,
+        userId: user.id,
+      });
+    } else {
+      // Profile already exists
+      logger.info('createOAuthProfileIfNeeded: profile already exists, skipping creation', {
+        category: LogCategory.AUTH,
+        userId: user.id,
+        existingDisplayName: existingProfile.display_name ?? 'NULL',
+      });
     }
 
     if (shouldCreateProfile) {
