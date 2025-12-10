@@ -5,6 +5,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { logger, LogCategory } from '@/lib/logger';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
@@ -32,6 +33,7 @@ interface AppleSignInButtonProps {
  */
 export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps) {
   const { isDark } = useTheme();
+  const { refreshProfile } = useAuth();
 
   // Only render on iOS - Apple Sign In is not available on Android
   // and web would require OAuth redirect flow (not implemented)
@@ -135,6 +137,8 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
               category: LogCategory.AUTH,
               displayName,
             });
+            // Refresh AuthContext profile state so onboarding sees the display name
+            await refreshProfile();
           }
         }
       }

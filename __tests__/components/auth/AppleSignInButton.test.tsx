@@ -93,6 +93,14 @@ jest.mock('@/contexts/ThemeContext', () => ({
   }),
 }));
 
+// Mock AuthContext
+const mockRefreshProfile = jest.fn();
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    refreshProfile: mockRefreshProfile,
+  }),
+}));
+
 // Mock logger
 const mockLoggerInfo = jest.fn();
 const mockLoggerWarn = jest.fn();
@@ -142,6 +150,7 @@ function resetMocks() {
   mockUpdateUser.mockResolvedValue({ error: null });
   mockGetUser.mockResolvedValue({ data: { user: { id: 'mock-user-id' } } });
   mockProfileUpdateEq.mockResolvedValue({ error: null });
+  mockRefreshProfile.mockResolvedValue(undefined);
 }
 
 // =============================================================================
@@ -732,6 +741,50 @@ describe('AppleSignInButton', () => {
           displayName: 'Test U.',
         });
       });
+    });
+
+    it('calls refreshProfile after successfully updating profile with name', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'Test',
+          familyName: 'User',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockRefreshProfile).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('does not call refreshProfile when profile update fails', async () => {
+      mockSignInAsync.mockResolvedValueOnce({
+        identityToken: 'mock-identity-token',
+        fullName: {
+          givenName: 'Test',
+          familyName: 'User',
+        },
+      });
+      mockSignInWithIdToken.mockResolvedValueOnce({ error: null });
+      mockProfileUpdateEq.mockResolvedValueOnce({ error: { message: 'Profile update failed' } });
+
+      render(<AppleSignInButton />);
+
+      fireEvent.press(screen.getByTestId('apple-sign-in-button'));
+
+      await waitFor(() => {
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          'Failed to update profile with Apple name data',
+          expect.objectContaining({ category: 'auth' })
+        );
+      });
+
+      expect(mockRefreshProfile).not.toHaveBeenCalled();
     });
 
     it('logs warning but continues when updateUser fails', async () => {
