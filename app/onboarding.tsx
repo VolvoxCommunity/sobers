@@ -204,6 +204,14 @@ export default function OnboardingScreen() {
   const handleComplete = async () => {
     if (!user) return;
 
+    // Synchronous validation before submit - debounce may not have fired yet
+    // This prevents submitting invalid names if user types quickly and clicks submit
+    const validationError = validateDisplayName(displayName);
+    if (validationError) {
+      setDisplayNameError(validationError);
+      return;
+    }
+
     setLoading(true);
     try {
       const userTimezone = getUserTimezone(profile);
