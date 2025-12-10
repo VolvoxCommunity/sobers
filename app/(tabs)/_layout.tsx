@@ -12,6 +12,7 @@ import WebTopNav from '@/components/navigation/WebTopNav';
 // Conditionally import native tabs only on mobile to avoid web bundling issues
 // react-native-bottom-tabs uses native codegen which isn't available on web
 const NativeTabs =
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Platform.OS !== 'web' ? require('@/components/navigation/NativeBottomTabs').NativeTabs : null;
 
 // =============================================================================
