@@ -1545,7 +1545,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       textAlign: 'right',
     },
     characterCountWarning: {
-      color: '#f59e0b',
+      color: theme.warning,
     },
     validationError: {
       fontSize: 14,

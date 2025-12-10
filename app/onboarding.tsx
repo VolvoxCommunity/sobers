@@ -539,7 +539,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     inputError: {
-      borderColor: '#ef4444', // Red color for error state
+      borderColor: theme.danger,
     },
     inputFooter: {
       flexDirection: 'row',
@@ -552,13 +552,13 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.textTertiary,
     },
     characterCountWarning: {
-      color: '#f59e0b', // Amber color for warning
+      color: theme.warning,
       fontWeight: '600',
     },
     errorText: {
       fontSize: 12,
       fontFamily: theme.fontRegular,
-      color: '#ef4444',
+      color: theme.danger,
       marginTop: 4,
     },
     infoButton: {

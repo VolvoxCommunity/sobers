@@ -19,6 +19,7 @@ export interface ThemeColors {
   borderLight: string;
   error: string;
   success: string;
+  warning: string;
   danger: string;
   dangerLight: string;
   dangerBorder: string;
@@ -55,6 +56,7 @@ const lightTheme: ThemeColors = {
   borderLight: '#f3f4f6',
   error: '#ef4444',
   success: '#007AFF',
+  warning: '#f59e0b',
   danger: '#ef4444',
   dangerLight: '#fef2f2',
   dangerBorder: '#fee2e2',
@@ -84,6 +86,7 @@ const darkTheme: ThemeColors = {
   borderLight: '#4b5563',
   error: '#ef4444',
   success: '#007AFF',
+  warning: '#f59e0b',
   danger: '#ef4444',
   dangerLight: '#7f1d1d',
   dangerBorder: '#991b1b',
