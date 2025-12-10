@@ -2,10 +2,9 @@
 // Imports
 // =============================================================================
 import React, { createRef } from 'react';
-import { render } from '@testing-library/react-native';
 import { Platform, Text } from 'react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { renderWithProviders } from '@/__tests__/test-utils';
 
 // =============================================================================
 // Mock Dependencies
@@ -63,16 +62,10 @@ jest.mock('expo-blur', () => ({
 }));
 
 // =============================================================================
-// Test Helpers
-// =============================================================================
-const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider>{component}</ThemeProvider>);
-};
-
-// =============================================================================
 // Test Suite
 // =============================================================================
 describe('GlassBottomSheet', () => {
+  const originalPlatformOS = Platform.OS;
   const defaultProps = {
     snapPoints: ['50%', '90%'],
     children: <Text>Test Content</Text>,
@@ -80,6 +73,7 @@ describe('GlassBottomSheet', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    Platform.OS = originalPlatformOS;
   });
 
   // ---------------------------------------------------------------------------
@@ -87,19 +81,21 @@ describe('GlassBottomSheet', () => {
   // ---------------------------------------------------------------------------
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
     });
 
     it('should render children content', () => {
-      const { getByText } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByText } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       expect(getByText('Test Content')).toBeTruthy();
     });
 
     it('should render children directly inside modal (no BottomSheetView wrapper)', () => {
       // Children are passed directly to BottomSheetModal without a BottomSheetView wrapper.
       // This is required for BottomSheetScrollView to work correctly as a direct child.
-      const { getByTestId, getByText } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId, getByText } = renderWithProviders(
+        <GlassBottomSheet {...defaultProps} />
+      );
       const modal = getByTestId('bottom-sheet-modal');
       const content = getByText('Test Content');
       // Verify content is rendered and is a child of the modal
@@ -114,7 +110,7 @@ describe('GlassBottomSheet', () => {
   describe('Platform-Specific Behavior', () => {
     it('should use standard backdrop on iOS', () => {
       Platform.OS = 'ios';
-      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       // We use BottomSheetBackdrop on all platforms for proper gesture handling
       // iOS gets a lighter opacity (0.3) for a glass-like effect
       expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
@@ -122,7 +118,7 @@ describe('GlassBottomSheet', () => {
 
     it('should use standard backdrop on Android', () => {
       Platform.OS = 'android';
-      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       // Android uses the same backdrop component but with higher opacity (0.5)
       expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
     });
@@ -134,7 +130,7 @@ describe('GlassBottomSheet', () => {
   describe('Props', () => {
     it('should accept custom snapPoints', () => {
       const customSnapPoints = ['25%', '50%', '75%'];
-      const { getByTestId } = renderWithTheme(
+      const { getByTestId } = renderWithProviders(
         <GlassBottomSheet snapPoints={customSnapPoints}>{defaultProps.children}</GlassBottomSheet>
       );
       expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
@@ -142,14 +138,14 @@ describe('GlassBottomSheet', () => {
 
     it('should call onDismiss callback when provided', async () => {
       const onDismiss = jest.fn();
-      renderWithTheme(<GlassBottomSheet {...defaultProps} onDismiss={onDismiss} />);
+      renderWithProviders(<GlassBottomSheet {...defaultProps} onDismiss={onDismiss} />);
       // Note: In real usage, dismissal would trigger onDismiss
       // This is a structural test to ensure the prop is accepted
       expect(onDismiss).not.toHaveBeenCalled();
     });
 
     it('should accept keyboardBehavior prop', () => {
-      const { getByTestId } = renderWithTheme(
+      const { getByTestId } = renderWithProviders(
         <GlassBottomSheet {...defaultProps} keyboardBehavior="extend" />
       );
       expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
@@ -162,7 +158,7 @@ describe('GlassBottomSheet', () => {
   describe('Imperative API', () => {
     it('should expose present method via ref', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       expect(ref.current).toBeTruthy();
       expect(ref.current?.present).toBeDefined();
@@ -171,7 +167,7 @@ describe('GlassBottomSheet', () => {
 
     it('should expose dismiss method via ref', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       expect(ref.current?.dismiss).toBeDefined();
       expect(typeof ref.current?.dismiss).toBe('function');
@@ -179,7 +175,7 @@ describe('GlassBottomSheet', () => {
 
     it('should expose snapToIndex method via ref', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       expect(ref.current?.snapToIndex).toBeDefined();
       expect(typeof ref.current?.snapToIndex).toBe('function');
@@ -187,7 +183,7 @@ describe('GlassBottomSheet', () => {
 
     it('should call present on ref.current.present()', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       ref.current?.present();
       expect(ref.current?.present).toBeDefined();
@@ -195,7 +191,7 @@ describe('GlassBottomSheet', () => {
 
     it('should call dismiss on ref.current.dismiss()', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       ref.current?.dismiss();
       expect(ref.current?.dismiss).toBeDefined();
@@ -203,7 +199,7 @@ describe('GlassBottomSheet', () => {
 
     it('should call snapToIndex with index parameter', () => {
       const ref = createRef<GlassBottomSheetRef>();
-      renderWithTheme(<GlassBottomSheet ref={ref} {...defaultProps} />);
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
 
       ref.current?.snapToIndex(1);
       expect(ref.current?.snapToIndex).toBeDefined();
@@ -215,12 +211,12 @@ describe('GlassBottomSheet', () => {
   // ---------------------------------------------------------------------------
   describe('Theme Integration', () => {
     it('should render with theme context', () => {
-      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
     });
 
     it('should apply theme colors to backdrop and content', () => {
-      const { getByTestId } = renderWithTheme(<GlassBottomSheet {...defaultProps} />);
+      const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
       const bottomSheet = getByTestId('bottom-sheet-modal');
       expect(bottomSheet).toBeTruthy();
       // Theme colors are applied in the component implementation
@@ -232,7 +228,7 @@ describe('GlassBottomSheet', () => {
   // ---------------------------------------------------------------------------
   describe('Accessibility', () => {
     it('should render accessible content', () => {
-      const { getByText } = renderWithTheme(
+      const { getByText } = renderWithProviders(
         <GlassBottomSheet {...defaultProps}>
           <Text accessibilityLabel="Sheet Content">Accessible Content</Text>
         </GlassBottomSheet>
