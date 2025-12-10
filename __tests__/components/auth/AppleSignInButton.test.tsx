@@ -603,7 +603,7 @@ describe('AppleSignInButton', () => {
       });
     });
 
-    it('updates profile with first name and last initial', async () => {
+    it('updates profile with display name in "FirstName L." format', async () => {
       mockSignInAsync.mockResolvedValueOnce({
         identityToken: 'mock-identity-token',
         fullName: {
@@ -619,13 +619,12 @@ describe('AppleSignInButton', () => {
 
       await waitFor(() => {
         expect(mockProfileUpdate).toHaveBeenCalledWith({
-          first_name: 'Jane',
-          last_initial: 'S',
+          display_name: 'Jane S.',
         });
       });
     });
 
-    it('uses first name initial when no family name provided', async () => {
+    it('uses only first name when no family name provided', async () => {
       mockSignInAsync.mockResolvedValueOnce({
         identityToken: 'mock-identity-token',
         fullName: {
@@ -641,13 +640,12 @@ describe('AppleSignInButton', () => {
 
       await waitFor(() => {
         expect(mockProfileUpdate).toHaveBeenCalledWith({
-          first_name: 'Madonna',
-          last_initial: 'M',
+          display_name: 'Madonna',
         });
       });
     });
 
-    it('handles only family name provided', async () => {
+    it('handles only family name provided with initial', async () => {
       mockSignInAsync.mockResolvedValueOnce({
         identityToken: 'mock-identity-token',
         fullName: {
@@ -663,8 +661,7 @@ describe('AppleSignInButton', () => {
 
       await waitFor(() => {
         expect(mockProfileUpdate).toHaveBeenCalledWith({
-          first_name: null,
-          last_initial: 'S',
+          display_name: ' S.',
         });
       });
     });
@@ -732,8 +729,7 @@ describe('AppleSignInButton', () => {
       await waitFor(() => {
         expect(mockLoggerInfo).toHaveBeenCalledWith('Profile updated with Apple name data', {
           category: 'auth',
-          firstName: 'Test',
-          lastInitial: 'U',
+          displayName: 'Test U.',
         });
       });
     });

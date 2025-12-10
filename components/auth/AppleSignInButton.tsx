@@ -85,26 +85,21 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
       // Solution: Update BOTH user_metadata (for future reference) AND the profile
       // table directly (to fix the profile that was just created without a name).
       if (credential.fullName?.givenName || credential.fullName?.familyName) {
-        const firstName = credential.fullName.givenName ?? null;
-        const familyName = credential.fullName.familyName ?? null;
+        const firstName = credential.fullName.givenName ?? '';
+        const familyName = credential.fullName.familyName ?? '';
 
-        const nameParts: string[] = [];
-        if (firstName) nameParts.push(firstName);
-        if (familyName) nameParts.push(familyName);
+        // Build display name in "FirstName L." format
+        const lastInitial = familyName?.[0]?.toUpperCase() ?? '';
+        const displayName = lastInitial ? `${firstName} ${lastInitial}.` : firstName;
 
-        const fullName = nameParts.join(' ');
-
-        // Calculate last initial following the same logic as createOAuthProfileIfNeeded:
-        // - If family name exists: use first letter of family name
-        // - Otherwise: use first letter of first name
-        const lastInitial = familyName?.[0]?.toUpperCase() ?? firstName?.[0]?.toUpperCase() ?? null;
+        const fullName = [firstName, familyName].filter(Boolean).join(' ');
 
         // Update user_metadata for future reference (e.g., if profile is recreated)
         const { error: updateError } = await supabase.auth.updateUser({
           data: {
             full_name: fullName,
-            given_name: firstName,
-            family_name: familyName,
+            given_name: firstName || null,
+            family_name: familyName || null,
           },
         });
 
@@ -124,13 +119,10 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
           logger.warn('Cannot update profile: user ID not available after sign-in', {
             category: LogCategory.AUTH,
           });
-        } else {
+        } else if (displayName) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({
-              first_name: firstName,
-              last_initial: lastInitial,
-            })
+            .update({ display_name: displayName })
             .eq('id', userId);
 
           if (profileError) {
@@ -141,8 +133,7 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
           } else {
             logger.info('Profile updated with Apple name data', {
               category: LogCategory.AUTH,
-              firstName,
-              lastInitial,
+              displayName,
             });
           }
         }
