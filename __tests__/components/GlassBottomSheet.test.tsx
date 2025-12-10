@@ -12,9 +12,8 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 // =============================================================================
 /* eslint-disable @typescript-eslint/no-require-imports */
 jest.mock('@gorhom/bottom-sheet', () => {
-   
   const React = require('react');
-   
+
   const { View } = require('react-native');
 
   const MockBottomSheetModal = React.forwardRef(

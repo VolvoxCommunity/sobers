@@ -82,10 +82,14 @@ jest.mock('lucide-react-native', () => ({
   ClipboardList: () => null,
 }));
 
-// Mock TaskCreationModal
-jest.mock('@/components/TaskCreationModal', () => {
-  return function MockTaskCreationModal() {
-    return null;
+// Mock TaskCreationSheet
+jest.mock('@/components/TaskCreationSheet', () => {
+  const React = require('react');
+  const MockTaskCreationSheet = React.forwardRef(() => null);
+  MockTaskCreationSheet.displayName = 'TaskCreationSheet';
+  return {
+    __esModule: true,
+    default: MockTaskCreationSheet,
   };
 });
 

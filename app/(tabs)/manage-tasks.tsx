@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { Task, Profile } from '@/types/database';
 import { Plus, CheckCircle, Clock, Calendar, Trash2 } from 'lucide-react-native';
-import TaskCreationModal from '@/components/TaskCreationModal';
+import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
@@ -33,10 +33,10 @@ export default function ManageTasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sponsees, setSponsees] = useState<Profile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [preselectedSponseeId, setPreselectedSponseeId] = useState<string | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<'all' | 'assigned' | 'completed'>('all');
   const [selectedSponseeFilter, setSelectedSponseeFilter] = useState<string>('all');
+  const taskSheetRef = useRef<TaskCreationSheetRef>(null);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
@@ -346,7 +346,7 @@ export default function ManageTasksScreen() {
                     style={styles.addTaskButton}
                     onPress={() => {
                       setPreselectedSponseeId(sponseeId);
-                      setShowCreateModal(true);
+                      taskSheetRef.current?.present();
                     }}
                   >
                     <Plus size={20} color={theme.primary} />
@@ -434,17 +434,16 @@ export default function ManageTasksScreen() {
           style={styles.fab}
           onPress={() => {
             setPreselectedSponseeId(undefined);
-            setShowCreateModal(true);
+            taskSheetRef.current?.present();
           }}
         >
           <Plus size={24} color="#ffffff" />
         </TouchableOpacity>
       )}
 
-      <TaskCreationModal
-        visible={showCreateModal}
+      <TaskCreationSheet
+        ref={taskSheetRef}
         onClose={() => {
-          setShowCreateModal(false);
           setPreselectedSponseeId(undefined);
         }}
         onTaskCreated={fetchData}

@@ -73,7 +73,7 @@ const tabRoutes: TabRoute[] = [
  * @returns Tab navigator appropriate for current platform
  */
 export default function TabLayout(): React.ReactElement {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {

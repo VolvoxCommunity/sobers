@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,7 @@ import {
   ClipboardList,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import TaskCreationModal from '@/components/TaskCreationModal';
+import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
 
@@ -42,11 +42,11 @@ export default function HomeScreen() {
   const [relationships, setRelationships] = useState<SponsorSponseeRelationship[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedSponseeId, setSelectedSponseeId] = useState<string>('');
   const [sponseeProfiles, setSponseeProfiles] = useState<Profile[]>([]);
   const router = useRouter();
   const { daysSober, currentStreakStartDate, loading: loadingDaysSober } = useDaysSober();
+  const taskSheetRef = useRef<TaskCreationSheetRef>(null);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
@@ -290,7 +290,7 @@ export default function HomeScreen() {
                   style={styles.assignTaskButton}
                   onPress={() => {
                     setSelectedSponseeId(rel.sponsee_id);
-                    setShowTaskModal(true);
+                    taskSheetRef.current?.present();
                   }}
                 >
                   <Plus size={16} color={theme.primary} />
@@ -309,10 +309,9 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <TaskCreationModal
-        visible={showTaskModal}
+      <TaskCreationSheet
+        ref={taskSheetRef}
         onClose={() => {
-          setShowTaskModal(false);
           setSelectedSponseeId('');
         }}
         onTaskCreated={fetchData}
