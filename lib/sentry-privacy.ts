@@ -14,6 +14,7 @@ const SENSITIVE_FIELDS = [
   'email',
   'phone',
   'name',
+  'display_name',
   'password',
   'token',
   'access_token',
