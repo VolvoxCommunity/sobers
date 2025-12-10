@@ -8,7 +8,11 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger, LogCategory } from '@/lib/logger';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
-import { setPendingAppleAuthName, clearPendingAppleAuthName } from '@/lib/apple-auth-name';
+import {
+  setPendingAppleAuthName,
+  clearPendingAppleAuthName,
+  type PendingAppleAuthName,
+} from '@/lib/apple-auth-name';
 
 // =============================================================================
 // Types & Interfaces
@@ -82,12 +86,7 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
       // deleted the app), Apple will NOT provide the name again. To get the name
       // again, you must go to Settings > Apple ID > Password & Security >
       // Apps Using Apple ID > [App] > Stop Using Apple ID, then sign in again.
-      let nameData: {
-        firstName: string;
-        familyName: string;
-        displayName: string;
-        fullName: string;
-      } | null = null;
+      let nameData: PendingAppleAuthName | null = null;
 
       if (credential.fullName?.givenName || credential.fullName?.familyName) {
         logger.info('Apple provided name data - storing for profile creation', {

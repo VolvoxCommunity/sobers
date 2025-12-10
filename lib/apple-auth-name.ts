@@ -27,7 +27,7 @@
 // Types
 // =============================================================================
 
-interface PendingAppleAuthName {
+export interface PendingAppleAuthName {
   firstName: string;
   familyName: string;
   displayName: string;
