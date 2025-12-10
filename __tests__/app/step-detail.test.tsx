@@ -182,6 +182,7 @@ const mockSteps: StepContent[] = [
     detailed_content: 'Detailed content for step 1',
     reflection_prompts: ['What does powerlessness mean to you?'],
     created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   },
   {
     id: 'step-2',
@@ -191,6 +192,7 @@ const mockSteps: StepContent[] = [
     detailed_content: 'Detailed content for step 2',
     reflection_prompts: ['What does a higher power mean to you?'],
     created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   },
   {
     id: 'step-3',
@@ -200,6 +202,7 @@ const mockSteps: StepContent[] = [
     detailed_content: 'Detailed content for step 3',
     reflection_prompts: [],
     created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   },
 ];
 
