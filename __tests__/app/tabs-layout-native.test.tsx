@@ -5,6 +5,7 @@
  * - Platform-specific rendering (native vs web)
  * - Tab navigator configuration
  * - Route rendering
+ * - TabBarIcon callback execution
  */
 
 // =============================================================================
@@ -29,6 +30,10 @@ jest.mock('@/assets/icons/trending-up.svg', () => 'mock-trending-icon');
 jest.mock('@/assets/icons/check-square.svg', () => 'mock-tasks-icon');
 jest.mock('@/assets/icons/user.svg', () => 'mock-profile-icon');
 
+// Store captured tabBarIcon callbacks for testing
+// Note: Variable must be prefixed with 'mock' to be allowed in jest.mock() factory
+let mockCapturedTabBarIcons: Record<string, () => unknown> = {};
+
 // Mock WebTopNav component
 jest.mock('@/components/navigation/WebTopNav', () => {
   const React = require('react');
@@ -40,16 +45,30 @@ jest.mock('@/components/navigation/WebTopNav', () => {
   };
 });
 
-// Mock NativeBottomTabs component
+// Mock NativeBottomTabs component - captures tabBarIcon callbacks for testing
 jest.mock('@/components/navigation/NativeBottomTabs', () => {
   const React = require('react');
   const { View } = require('react-native');
 
-  const MockScreen = ({ name, options }: { name: string; options?: object }) =>
-    React.createElement(View, {
+  const MockScreen = ({
+    name,
+    options,
+  }: {
+    name: string;
+    options?: { tabBarIcon?: () => unknown; title?: string; tabBarItemHidden?: boolean };
+  }) => {
+    // Capture the tabBarIcon callback for later testing
+    if (options?.tabBarIcon) {
+      mockCapturedTabBarIcons[name] = options.tabBarIcon;
+    }
+    return React.createElement(View, {
       testID: `tab-screen-${name}`,
-      'data-options': JSON.stringify(options),
+      'data-options': JSON.stringify({
+        ...options,
+        tabBarIcon: options?.tabBarIcon ? 'function' : undefined,
+      }),
     });
+  };
 
   const MockNativeTabs = ({ children, ...props }: { children: React.ReactNode }) =>
     React.createElement(View, { testID: 'native-bottom-tabs', ...props }, children);
@@ -135,6 +154,7 @@ function setPlatform(os: 'ios' | 'android' | 'web') {
 describe('TabsLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCapturedTabBarIcons = {};
     // Default to iOS
     setPlatform('ios');
   });
@@ -207,6 +227,61 @@ describe('TabsLayout', () => {
       expect(screen.getByTestId('expo-tab-screen-tasks')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-profile')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-manage-tasks')).toBeTruthy();
+    });
+  });
+
+  describe('tabBarIcon callbacks', () => {
+    it('returns SF Symbol config on iOS', () => {
+      setPlatform('ios');
+
+      render(<TabsLayout />);
+
+      // Execute the captured tabBarIcon callback for the index tab
+      const indexIcon = mockCapturedTabBarIcons['index'];
+      expect(indexIcon).toBeDefined();
+
+      const result = indexIcon();
+      expect(result).toEqual({ sfSymbol: 'house.fill' });
+    });
+
+    it('returns Android icon config on Android', () => {
+      setPlatform('android');
+
+      render(<TabsLayout />);
+
+      // Execute the captured tabBarIcon callback for the index tab
+      const indexIcon = mockCapturedTabBarIcons['index'];
+      expect(indexIcon).toBeDefined();
+
+      const result = indexIcon();
+      // Android returns the required SVG asset
+      expect(result).toBe('mock-home-icon');
+    });
+
+    it('provides correct SF Symbols for all tabs on iOS', () => {
+      setPlatform('ios');
+
+      render(<TabsLayout />);
+
+      expect(mockCapturedTabBarIcons['index']()).toEqual({ sfSymbol: 'house.fill' });
+      expect(mockCapturedTabBarIcons['steps']()).toEqual({ sfSymbol: 'book.fill' });
+      expect(mockCapturedTabBarIcons['journey']()).toEqual({
+        sfSymbol: 'chart.line.uptrend.xyaxis',
+      });
+      expect(mockCapturedTabBarIcons['tasks']()).toEqual({ sfSymbol: 'checklist' });
+      expect(mockCapturedTabBarIcons['profile']()).toEqual({ sfSymbol: 'person.fill' });
+    });
+
+    it('provides correct Android icons for all tabs on Android', () => {
+      setPlatform('android');
+
+      render(<TabsLayout />);
+
+      expect(mockCapturedTabBarIcons['index']()).toBe('mock-home-icon');
+      expect(mockCapturedTabBarIcons['steps']()).toBe('mock-book-icon');
+      expect(mockCapturedTabBarIcons['journey']()).toBe('mock-trending-icon');
+      expect(mockCapturedTabBarIcons['tasks']()).toBe('mock-tasks-icon');
+      expect(mockCapturedTabBarIcons['profile']()).toBe('mock-profile-icon');
     });
   });
 
