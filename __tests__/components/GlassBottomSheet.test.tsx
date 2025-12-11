@@ -2,9 +2,30 @@
 // Imports
 // =============================================================================
 import React, { createRef } from 'react';
-import { Platform, Text } from 'react-native';
+import { Dimensions, Platform, Text } from 'react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import { renderWithProviders } from '@/__tests__/test-utils';
+
+// =============================================================================
+// Device Size Constants
+// =============================================================================
+
+/**
+ * iPhone screen dimensions for testing various device sizes.
+ * Values represent logical points (not physical pixels).
+ */
+const IPHONE_SIZES = {
+  // iPhone SE (3rd gen) / iPhone 8 - smallest modern iPhone
+  SE: { width: 375, height: 667 },
+  // iPhone 14 / 15 - standard size
+  STANDARD: { width: 390, height: 844 },
+  // iPhone 14 Pro / 15 Pro - Pro size
+  PRO: { width: 393, height: 852 },
+  // iPhone 14 Pro Max / 15 Pro Max - largest iPhone
+  PRO_MAX: { width: 430, height: 932 },
+  // iPhone 14 Plus / 15 Plus - Plus size (between standard and Pro Max)
+  PLUS: { width: 428, height: 926 },
+} as const;
 
 // =============================================================================
 // Mock Dependencies
@@ -272,6 +293,205 @@ describe('GlassBottomSheet', () => {
       // The onDismiss callback is passed to the component
       // This test verifies the prop is properly accepted
       expect(onDismiss).not.toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // iPhone Screen Size Tests
+  // ---------------------------------------------------------------------------
+  describe('iPhone Screen Sizes', () => {
+    const originalDimensions = Dimensions.get('window');
+
+    /**
+     * Helper to mock screen dimensions for testing.
+     */
+    const mockScreenSize = (size: { width: number; height: number }) => {
+      jest.spyOn(Dimensions, 'get').mockReturnValue({
+        width: size.width,
+        height: size.height,
+        scale: 3,
+        fontScale: 1,
+      });
+    };
+
+    beforeEach(() => {
+      // Ensure iOS platform for iPhone tests
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'ios',
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('iPhone SE / iPhone 8 (375x667)', () => {
+      beforeEach(() => {
+        mockScreenSize(IPHONE_SIZES.SE);
+      });
+
+      it('should render correctly on smallest iPhone screen', () => {
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+      });
+
+      it('should render backdrop on iPhone SE', () => {
+        const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+      });
+
+      it('should handle multiple snap points on smaller screen', () => {
+        const { getByTestId } = renderWithProviders(
+          <GlassBottomSheet snapPoints={['25%', '50%', '90%']}>
+            <Text>Multi-snap Content</Text>
+          </GlassBottomSheet>
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+      });
+    });
+
+    describe('iPhone 14/15 Standard (390x844)', () => {
+      beforeEach(() => {
+        mockScreenSize(IPHONE_SIZES.STANDARD);
+      });
+
+      it('should render correctly on standard iPhone screen', () => {
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+      });
+
+      it('should render backdrop on standard iPhone', () => {
+        const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+      });
+
+      it('should expose imperative API on standard iPhone', () => {
+        const ref = createRef<GlassBottomSheetRef>();
+        renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+        expect(ref.current?.present).toBeDefined();
+        expect(ref.current?.dismiss).toBeDefined();
+        expect(ref.current?.snapToIndex).toBeDefined();
+      });
+    });
+
+    describe('iPhone 14/15 Pro (393x852)', () => {
+      beforeEach(() => {
+        mockScreenSize(IPHONE_SIZES.PRO);
+      });
+
+      it('should render correctly on Pro iPhone screen', () => {
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+      });
+
+      it('should render backdrop on Pro iPhone', () => {
+        const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+      });
+
+      it('should handle keyboard behavior on Pro iPhone', () => {
+        const { getByTestId } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} keyboardBehavior="extend" />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+      });
+    });
+
+    describe('iPhone 14/15 Plus (428x926)', () => {
+      beforeEach(() => {
+        mockScreenSize(IPHONE_SIZES.PLUS);
+      });
+
+      it('should render correctly on Plus iPhone screen', () => {
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+      });
+
+      it('should render backdrop on Plus iPhone', () => {
+        const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+      });
+    });
+
+    describe('iPhone 14/15 Pro Max (430x932)', () => {
+      beforeEach(() => {
+        mockScreenSize(IPHONE_SIZES.PRO_MAX);
+      });
+
+      it('should render correctly on Pro Max iPhone screen', () => {
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet {...defaultProps} />
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+      });
+
+      it('should render backdrop on Pro Max iPhone', () => {
+        const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+      });
+
+      it('should handle large snap points on Pro Max screen', () => {
+        const { getByTestId } = renderWithProviders(
+          <GlassBottomSheet snapPoints={['30%', '60%', '95%']}>
+            <Text>Large Screen Content</Text>
+          </GlassBottomSheet>
+        );
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+      });
+
+      it('should expose full imperative API on Pro Max iPhone', () => {
+        const ref = createRef<GlassBottomSheetRef>();
+        renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+        expect(ref.current?.present).toBeDefined();
+        expect(ref.current?.dismiss).toBeDefined();
+        expect(ref.current?.snapToIndex).toBeDefined();
+
+        // Verify methods can be called without errors
+        ref.current?.present();
+        ref.current?.snapToIndex(1);
+        ref.current?.dismiss();
+      });
+    });
+
+    describe('Cross-Size Consistency', () => {
+      it.each([
+        ['iPhone SE', IPHONE_SIZES.SE],
+        ['iPhone Standard', IPHONE_SIZES.STANDARD],
+        ['iPhone Pro', IPHONE_SIZES.PRO],
+        ['iPhone Plus', IPHONE_SIZES.PLUS],
+        ['iPhone Pro Max', IPHONE_SIZES.PRO_MAX],
+      ])('should render consistently on %s', (name, size) => {
+        mockScreenSize(size);
+        const ref = createRef<GlassBottomSheetRef>();
+
+        const { getByTestId, getByText } = renderWithProviders(
+          <GlassBottomSheet ref={ref} {...defaultProps} />
+        );
+
+        // Verify core functionality works across all sizes
+        expect(getByTestId('bottom-sheet-modal')).toBeTruthy();
+        expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
+        expect(getByText('Test Content')).toBeTruthy();
+        expect(ref.current?.present).toBeDefined();
+        expect(ref.current?.dismiss).toBeDefined();
+        expect(ref.current?.snapToIndex).toBeDefined();
+      });
     });
   });
 });
