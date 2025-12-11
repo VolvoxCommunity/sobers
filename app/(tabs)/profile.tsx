@@ -815,7 +815,9 @@ export default function ProfileScreen() {
           </Modal>
         )}
 
-        {/* iOS: Use custom modal with inline spinner picker */}
+        {/* iOS: Custom modal with spinner picker requires explicit "Update" button
+            because the spinner UI allows continuous scrolling without clear confirmation.
+            This matches iOS platform conventions for date selection. */}
         {Platform.OS === 'ios' && showSobrietyDatePicker && (
           <Modal visible={showSobrietyDatePicker} transparent animationType="slide">
             <View style={styles.modalOverlay}>
@@ -852,16 +854,16 @@ export default function ProfileScreen() {
           </Modal>
         )}
 
-        {/* Android: Use native date picker dialog (has its own OK/Cancel buttons) */}
+        {/* Android: Native dialog has built-in OK/Cancel buttons. Pressing OK confirms
+            the selection immediately, which matches Android platform conventions.
+            The dialog auto-closes on any action, so we sync state accordingly. */}
         {Platform.OS === 'android' && showSobrietyDatePicker && (
           <DateTimePicker
             value={selectedSobrietyDate}
             mode="date"
             display="default"
             onChange={(event, date) => {
-              // Always hide picker on Android since dialog auto-closes
               setShowSobrietyDatePicker(false);
-              // Only update if user pressed OK (date is defined)
               if (date) {
                 updateSobrietyDate(date);
               }
