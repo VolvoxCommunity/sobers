@@ -20,11 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { StepContent, UserStepProgress } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
-import {
-  getTabBarScrollPadding,
-  IOS_TAB_BAR_EXTRA_PADDING,
-  ANDROID_TAB_BAR_EXTRA_PADDING,
-} from '@/constants/layout';
+import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 
 // =============================================================================
 // Component
@@ -47,6 +43,7 @@ export default function StepDetailScreen() {
   const { theme } = useTheme();
   const { profile } = useAuth();
   const insets = useSafeAreaInsets();
+  const tabBarPadding = useTabBarPadding();
 
   // ---------------------------------------------------------------------------
   // State
@@ -215,7 +212,10 @@ export default function StepDetailScreen() {
   // ---------------------------------------------------------------------------
   // Memoized Values
   // ---------------------------------------------------------------------------
-  const styles = useMemo(() => createStyles(theme, insets), [theme, insets]);
+  const styles = useMemo(
+    () => createStyles(theme, insets, tabBarPadding),
+    [theme, insets, tabBarPadding]
+  );
 
   // ---------------------------------------------------------------------------
   // Render
@@ -360,7 +360,7 @@ export default function StepDetailScreen() {
 // =============================================================================
 // Styles
 // =============================================================================
-const createStyles = (theme: ThemeColors, insets: { top: number; bottom: number }) =>
+const createStyles = (theme: ThemeColors, insets: { top: number }, tabBarPadding: number) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -501,10 +501,7 @@ const createStyles = (theme: ThemeColors, insets: { top: number; bottom: number 
     },
     bottomPadding: {
       // Account for native tab bar height plus safe area so content isn't hidden
-      height: getTabBarScrollPadding(
-        insets.bottom,
-        Platform.OS === 'ios' ? IOS_TAB_BAR_EXTRA_PADDING : ANDROID_TAB_BAR_EXTRA_PADDING
-      ),
+      height: tabBarPadding,
     },
     navigation: {
       flexDirection: 'row',

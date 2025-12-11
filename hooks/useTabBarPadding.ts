@@ -2,13 +2,8 @@
 // Imports
 // =============================================================================
 import { useMemo } from 'react';
-import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  getTabBarScrollPadding,
-  IOS_TAB_BAR_EXTRA_PADDING,
-  ANDROID_TAB_BAR_EXTRA_PADDING,
-} from '@/constants/layout';
+import { getTabBarScrollPadding } from '@/constants/layout';
 
 // =============================================================================
 // Hook
@@ -64,10 +59,10 @@ export function useTabBarPadding(extraPadding?: number): number {
   const insets = useSafeAreaInsets();
 
   const padding = useMemo(() => {
-    const platformExtraPadding =
-      extraPadding ??
-      (Platform.OS === 'ios' ? IOS_TAB_BAR_EXTRA_PADDING : ANDROID_TAB_BAR_EXTRA_PADDING);
-    return getTabBarScrollPadding(insets.bottom, platformExtraPadding);
+    // If extraPadding is provided, pass it; otherwise let getTabBarScrollPadding use its default
+    return extraPadding !== undefined
+      ? getTabBarScrollPadding(insets.bottom, extraPadding)
+      : getTabBarScrollPadding(insets.bottom);
   }, [insets.bottom, extraPadding]);
 
   return padding;

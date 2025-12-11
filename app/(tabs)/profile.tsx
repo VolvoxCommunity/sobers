@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  InteractionManager,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -164,6 +165,7 @@ function SponsorDaysDisplay({
 export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   // Account for native tab bar height and safe area
   const scrollPadding = useTabBarPadding();
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
@@ -662,14 +664,14 @@ export default function ProfileScreen() {
 
   /**
    * Shows the invite code input and scrolls to the bottom so it's visible.
-   * Uses a small delay to allow the state update to render before scrolling.
+   * Uses InteractionManager to wait for the state update to render before scrolling.
    */
   const handleShowInviteInput = () => {
     setShowInviteInput(true);
-    // Delay scroll to allow the invite input to render first
-    setTimeout(() => {
+    // Wait for interactions to complete (state update rendered) before scrolling
+    InteractionManager.runAfterInteractions(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    });
   };
 
   const styles = createStyles(theme, insets);
