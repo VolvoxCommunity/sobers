@@ -340,10 +340,27 @@ jest.mock('@gorhom/bottom-sheet', () => ({
   },
 }));
 
-// Mock EnterInviteCodeSheet
+// Mock EnterInviteCodeSheet - functional mock that captures onSubmit prop
+let capturedOnSubmit: ((code: string) => Promise<void>) | null = null;
+const mockEnterInviteCodePresent = jest.fn();
+const mockEnterInviteCodeDismiss = jest.fn();
+
 jest.mock('@/components/sheets/EnterInviteCodeSheet', () => {
   const React = require('react');
-  const MockEnterInviteCodeSheet = React.forwardRef(() => null);
+  const MockEnterInviteCodeSheet = React.forwardRef(
+    (
+      props: { onSubmit: (code: string) => Promise<void>; onClose?: () => void },
+      ref: React.Ref<{ present: () => void; dismiss: () => void }>
+    ) => {
+      // Capture the onSubmit callback for testing
+      capturedOnSubmit = props.onSubmit;
+      React.useImperativeHandle(ref, () => ({
+        present: mockEnterInviteCodePresent,
+        dismiss: mockEnterInviteCodeDismiss,
+      }));
+      return null;
+    }
+  );
   MockEnterInviteCodeSheet.displayName = 'EnterInviteCodeSheet';
   return {
     __esModule: true,
@@ -360,6 +377,9 @@ describe('ProfileScreen', () => {
     jest.clearAllMocks();
     mockSponsorRelationships = [];
     mockSponseeRelationships = [];
+    capturedOnSubmit = null;
+    mockEnterInviteCodePresent.mockClear();
+    mockEnterInviteCodeDismiss.mockClear();
   });
 
   describe('User Profile Display', () => {
@@ -1959,4 +1979,680 @@ describe('ProfileScreen', () => {
 
   // Note: Sponsor Profile Fetch Error test is now covered in EnterInviteCodeSheet.test.tsx
   // Error from joinWithInviteCode is thrown and displayed by the sheet
+
+  // =============================================================================
+  // Integration Tests: Profile + EnterInviteCodeSheet
+  // =============================================================================
+  // These tests verify the integration between profile screen and the sheet,
+  // specifically testing the joinWithInviteCode callback that gets passed to the sheet.
+
+  describe('Profile + EnterInviteCodeSheet Integration', () => {
+    describe('joinWithInviteCode callback', () => {
+      it('passes joinWithInviteCode to EnterInviteCodeSheet', async () => {
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+          expect(typeof capturedOnSubmit).toBe('function');
+        });
+      });
+
+      it('presents sheet when Enter Invite Code button is pressed', async () => {
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Enter Invite Code')).toBeTruthy();
+        });
+
+        fireEvent.press(screen.getByText('Enter Invite Code'));
+
+        expect(mockEnterInviteCodePresent).toHaveBeenCalled();
+      });
+    });
+
+    describe('joinWithInviteCode - Success Flow', () => {
+      beforeEach(() => {
+        mockSponsorRelationships = [];
+        mockSponseeRelationships = [];
+
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              insert: jest.fn().mockResolvedValue({ error: null }),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  gt: jest.fn().mockReturnValue({
+                    is: jest.fn().mockReturnValue({
+                      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+                    }),
+                  }),
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-123',
+                      code: 'TEST1234',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({ error: null }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'sponsor-456', display_name: 'Test Sponsor' },
+                    error: null,
+                  }),
+                }),
+              }),
+              update: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({ error: null }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation((field: string) => {
+                  if (field === 'sponsee_id') {
+                    return {
+                      eq: jest.fn().mockResolvedValue({
+                        data: mockSponsorRelationships,
+                        error: null,
+                      }),
+                    };
+                  }
+                  if (field === 'sponsor_id') {
+                    return {
+                      eq: jest.fn().mockImplementation((field2: string) => {
+                        if (field2 === 'sponsee_id') {
+                          return {
+                            eq: jest.fn().mockImplementation(() => ({
+                              maybeSingle: jest.fn().mockResolvedValue({
+                                data: null, // No existing relationship
+                                error: null,
+                              }),
+                            })),
+                            maybeSingle: jest.fn().mockResolvedValue({
+                              data: null,
+                              error: null,
+                            }),
+                          };
+                        }
+                        return {
+                          eq: jest.fn().mockResolvedValue({
+                            data: mockSponseeRelationships,
+                            error: null,
+                          }),
+                        };
+                      }),
+                    };
+                  }
+                  return {
+                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }),
+              })),
+              insert: jest.fn().mockResolvedValue({ error: null }),
+            };
+          }
+          if (table === 'notifications') {
+            return {
+              insert: jest.fn().mockResolvedValue({ error: null }),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+      });
+
+      it('connects to sponsor successfully when invite code is valid', async () => {
+        const { Alert } = jest.requireMock('react-native');
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        // Call the captured callback (simulating sheet submission)
+        await capturedOnSubmit!('TEST1234');
+
+        // Should show success alert
+        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Connected with Test Sponsor');
+      });
+    });
+
+    describe('joinWithInviteCode - Error Cases', () => {
+      it('throws error for invalid/expired invite code', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: null,
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation(() => ({
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                })),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        // Should throw error for invalid code
+        await expect(capturedOnSubmit!('INVALID1')).rejects.toThrow(
+          'Invalid or expired invite code'
+        );
+      });
+
+      it('throws error for expired invite code', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-expired',
+                      code: 'EXPIRED1',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'sponsor-456', display_name: 'Test Sponsor' },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation(() => ({
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                })),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('EXPIRED1')).rejects.toThrow('This invite code has expired');
+      });
+
+      it('throws error for already used invite code', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-used',
+                      code: 'USEDCODE',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() + 86400000).toISOString(),
+                      used_by: 'other-user-id', // Already used
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'sponsor-456', display_name: 'Test Sponsor' },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation(() => ({
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                })),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('USEDCODE')).rejects.toThrow(
+          'This invite code has already been used'
+        );
+      });
+
+      it('throws error when trying to connect to self', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-self',
+                      code: 'SELFCODE',
+                      sponsor_id: 'user-123', // Same as mock user id
+                      expires_at: new Date(Date.now() + 86400000).toISOString(),
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'user-123', display_name: 'John D.' },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation(() => ({
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                })),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('SELFCODE')).rejects.toThrow(
+          'You cannot connect to yourself as a sponsor'
+        );
+      });
+
+      it('throws error when already connected to sponsor', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-dup',
+                      code: 'DUPCODE1',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() + 86400000).toISOString(),
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'sponsor-456', display_name: 'Test Sponsor' },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation((field: string) => {
+                  // Check for existing relationship query
+                  if (field === 'sponsor_id') {
+                    return {
+                      eq: jest.fn().mockImplementation((field2: string) => {
+                        if (field2 === 'sponsee_id') {
+                          return {
+                            eq: jest.fn().mockReturnValue({
+                              maybeSingle: jest.fn().mockResolvedValue({
+                                data: { id: 'existing-rel' }, // Existing relationship
+                                error: null,
+                              }),
+                            }),
+                          };
+                        }
+                        return {
+                          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                        };
+                      }),
+                    };
+                  }
+                  if (field === 'sponsee_id') {
+                    return {
+                      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                    };
+                  }
+                  return {
+                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('DUPCODE1')).rejects.toThrow(
+          'You are already connected to this sponsor'
+        );
+      });
+
+      it('throws error when sponsor profile fetch fails', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-123',
+                      code: 'PROFAIL1',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() + 86400000).toISOString(),
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: null,
+                    error: { message: 'Profile not found' },
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation(() => ({
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                })),
+              })),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('PROFAIL1')).rejects.toThrow(
+          'Unable to fetch sponsor information'
+        );
+      });
+
+      it('throws error when relationship creation fails', async () => {
+        const { supabase } = jest.requireMock('@/lib/supabase');
+        supabase.from.mockImplementation((table: string) => {
+          if (table === 'invite_codes') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  maybeSingle: jest.fn().mockResolvedValue({
+                    data: {
+                      id: 'invite-123',
+                      code: 'RELFAIL1',
+                      sponsor_id: 'sponsor-456',
+                      expires_at: new Date(Date.now() + 86400000).toISOString(),
+                      used_by: null,
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'profiles') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  single: jest.fn().mockResolvedValue({
+                    data: { id: 'sponsor-456', display_name: 'Test Sponsor' },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'sponsor_sponsee_relationships') {
+            return {
+              select: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockImplementation((field: string) => {
+                  if (field === 'sponsor_id') {
+                    return {
+                      eq: jest.fn().mockImplementation((field2: string) => {
+                        if (field2 === 'sponsee_id') {
+                          return {
+                            eq: jest.fn().mockReturnValue({
+                              maybeSingle: jest.fn().mockResolvedValue({
+                                data: null, // No existing relationship
+                                error: null,
+                              }),
+                            }),
+                          };
+                        }
+                        return {
+                          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                        };
+                      }),
+                    };
+                  }
+                  if (field === 'sponsee_id') {
+                    return {
+                      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                    };
+                  }
+                  return {
+                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }),
+              })),
+              insert: jest
+                .fn()
+                .mockResolvedValue({ error: { message: 'Database constraint error' } }),
+            };
+          }
+          if (table === 'tasks') {
+            return {
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  in: jest.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            };
+          }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+          };
+        });
+
+        render(<ProfileScreen />);
+
+        await waitFor(() => {
+          expect(capturedOnSubmit).not.toBeNull();
+        });
+
+        await expect(capturedOnSubmit!('RELFAIL1')).rejects.toThrow('Database constraint error');
+      });
+    });
+  });
 });

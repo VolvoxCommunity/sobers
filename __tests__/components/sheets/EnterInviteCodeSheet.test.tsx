@@ -399,4 +399,94 @@ describe('EnterInviteCodeSheet', () => {
       });
     });
   });
+
+  describe('Integration with onSubmit callback', () => {
+    it('passes the exact invite code entered to onSubmit', async () => {
+      mockOnSubmit.mockResolvedValueOnce(undefined);
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      fireEvent.changeText(input, 'TEST1234');
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+        expect(mockOnSubmit).toHaveBeenCalledWith('TEST1234');
+      });
+    });
+
+    it('handles async onSubmit that resolves', async () => {
+      mockOnSubmit.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      fireEvent.changeText(input, 'ASYNC123');
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      // Should show loading state (button disabled during submission)
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith('ASYNC123');
+      });
+
+      // After resolution, sheet should dismiss
+      await waitFor(() => {
+        expect(mockDismiss).toHaveBeenCalled();
+      });
+    });
+
+    it('handles async onSubmit that rejects with Error', async () => {
+      const testError = new Error('Sponsor not found');
+      mockOnSubmit.mockRejectedValueOnce(testError);
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      fireEvent.changeText(input, 'FAIL1234');
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Sponsor not found')).toBeTruthy();
+      });
+
+      // Sheet should NOT dismiss on error
+      expect(mockDismiss).not.toHaveBeenCalled();
+    });
+
+    it('allows retry after onSubmit failure', async () => {
+      // First attempt fails
+      mockOnSubmit.mockRejectedValueOnce(new Error('Network error'));
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      fireEvent.changeText(input, 'RETRY123');
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Network error')).toBeTruthy();
+      });
+
+      // Second attempt succeeds
+      mockOnSubmit.mockResolvedValueOnce(undefined);
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledTimes(2);
+        expect(mockDismiss).toHaveBeenCalled();
+      });
+    });
+
+    it('sanitizes and capitalizes code before passing to onSubmit', async () => {
+      mockOnSubmit.mockResolvedValueOnce(undefined);
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      // Enter lowercase - should be capitalized
+      fireEvent.changeText(input, 'abcd1234');
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        // Should receive sanitized, capitalized code
+        expect(mockOnSubmit).toHaveBeenCalledWith('ABCD1234');
+      });
+    });
+  });
 });
