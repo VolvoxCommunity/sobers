@@ -9,7 +9,6 @@ import { renderWithProviders } from '@/__tests__/test-utils';
 
 // Extend global for TypeScript
 declare global {
-   
   var __backHandlerListeners: (() => boolean)[] | undefined;
 }
 

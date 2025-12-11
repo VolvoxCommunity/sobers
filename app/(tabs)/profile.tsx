@@ -892,9 +892,6 @@ export default function ProfileScreen() {
             ref={inviteCodeSheetRef}
             theme={theme}
             onSubmit={joinWithInviteCode}
-            onClose={() => {
-              // Sheet dismissed without submitting
-            }}
           />
         )}
       </View>
