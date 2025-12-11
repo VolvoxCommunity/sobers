@@ -161,10 +161,53 @@ global.processColor = (color) => color;
 // Define __DEV__ for tests
 global.__DEV__ = false;
 
-// Mock document for web platform tests (keyboard event handling)
+// Mock document for web platform tests (keyboard event handling, DOM access, etc.)
+// This provides a more complete mock to avoid errors when code accesses document properties.
+// Note: For comprehensive web testing, consider using jsdom test environment instead.
 global.document = {
+  // Event handling
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+
+  // DOM queries (return null/empty to simulate no matches)
+  getElementById: jest.fn(() => null),
+  getElementsByClassName: jest.fn(() => []),
+  getElementsByTagName: jest.fn(() => []),
+  querySelector: jest.fn(() => null),
+  querySelectorAll: jest.fn(() => []),
+
+  // Document properties
+  body: {
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+    style: {},
+  },
+  head: {
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+  },
+  documentElement: {
+    style: {},
+  },
+
+  // Element creation
+  createElement: jest.fn((tagName) => ({
+    tagName,
+    style: {},
+    setAttribute: jest.fn(),
+    getAttribute: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+  createTextNode: jest.fn((text) => ({ textContent: text })),
+
+  // Document state
+  readyState: 'complete',
+  visibilityState: 'visible',
+  hidden: false,
 };
 
 // Mock expo-router
