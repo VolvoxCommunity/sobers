@@ -1,7 +1,14 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import {
   View,
   Text,
@@ -104,6 +111,15 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
     const [error, setError] = useState('');
 
     const sheetRef = React.useRef<GlassBottomSheetRef>(null);
+    const isMountedRef = useRef(true);
+
+    // Track mounted state to prevent state updates after unmount
+    useEffect(() => {
+      isMountedRef.current = true;
+      return () => {
+        isMountedRef.current = false;
+      };
+    }, []);
 
     // ---------------------------------------------------------------------------
     // Helper Functions (defined before imperative API to avoid hoisting issues)
@@ -152,7 +168,10 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
           stepNumber: selectedStepNumber,
         });
       }
-      setTemplates(data || []);
+      // Guard: Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setTemplates(data || []);
+      }
     }, [selectedStepNumber]);
 
     useEffect(() => {
@@ -241,16 +260,25 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
           });
         }
 
-        resetForm();
-        onTaskCreated();
-        handleClose();
+        // Guard: Only update state and call callbacks if component is still mounted
+        if (isMountedRef.current) {
+          resetForm();
+          onTaskCreated();
+          handleClose();
+        }
       } catch (err) {
         logger.error('Task creation failed', err as Error, {
           category: LogCategory.DATABASE,
         });
-        setError('Failed to create task. Please try again.');
+        // Guard: Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setError('Failed to create task. Please try again.');
+        }
       } finally {
-        setIsSubmitting(false);
+        // Guard: Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setIsSubmitting(false);
+        }
       }
     };
 

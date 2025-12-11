@@ -197,6 +197,20 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
       setIsSaving(false);
     }, [currentDisplayName]);
 
+    /**
+     * Handler for GlassBottomSheet's onDismiss callback.
+     * Performs cleanup and notifies parent - called when sheet finishes dismissing.
+     */
+    const handleDismiss = useCallback(() => {
+      resetForm();
+      onClose?.();
+    }, [resetForm, onClose]);
+
+    /**
+     * Handler for button press events (close icon, cancel button).
+     * Handles unsaved changes confirmation before dismissing.
+     * Only triggers the dismiss animation - cleanup happens in handleDismiss.
+     */
     const handleClose = useCallback(() => {
       const hasChanges = displayName.trim() !== currentDisplayName.trim();
 
@@ -213,9 +227,7 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
               text: 'Discard',
               style: 'destructive',
               onPress: () => {
-                resetForm();
                 sheetRef.current?.dismiss();
-                onClose?.();
               },
             },
           ]);
@@ -223,10 +235,8 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
         }
       }
 
-      resetForm();
       sheetRef.current?.dismiss();
-      onClose?.();
-    }, [displayName, currentDisplayName, isSaving, resetForm, onClose]);
+    }, [displayName, currentDisplayName, isSaving]);
 
     const handleChangeText = useCallback((text: string) => {
       setDisplayName(text);
@@ -248,10 +258,9 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
 
       const trimmedName = displayName.trim();
 
-      // Guard: No changes
+      // Guard: No changes - just dismiss (cleanup happens in handleDismiss)
       if (trimmedName === currentDisplayName.trim()) {
         sheetRef.current?.dismiss();
-        onClose?.();
         return;
       }
 
@@ -260,9 +269,8 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
         await onSave(trimmedName);
         // Guard against state updates after unmount
         if (!isMountedRef.current) return;
-        resetForm();
+        // Dismiss sheet - cleanup happens in handleDismiss
         sheetRef.current?.dismiss();
-        onClose?.();
       } catch (error: unknown) {
         // Guard against state updates after unmount
         if (!isMountedRef.current) return;
@@ -276,7 +284,7 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
           setIsSaving(false);
         }
       }
-    }, [displayName, currentDisplayName, isSaving, onSave, onClose, resetForm]);
+    }, [displayName, currentDisplayName, isSaving, onSave]);
 
     const styles = createStyles(theme);
 
@@ -284,7 +292,7 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
     // Render
     // ---------------------------------------------------------------------------
     return (
-      <GlassBottomSheet ref={sheetRef} snapPoints={['40%']} onDismiss={onClose}>
+      <GlassBottomSheet ref={sheetRef} snapPoints={['40%']} onDismiss={handleDismiss}>
         <BottomSheetScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
