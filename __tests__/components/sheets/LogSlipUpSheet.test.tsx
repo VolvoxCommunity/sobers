@@ -19,24 +19,31 @@ jest.mock('@/lib/logger');
 jest.mock('lucide-react-native', () => ({
   X: 'X',
   Calendar: 'Calendar',
-  AlertCircle: 'AlertCircle',
+  Heart: 'Heart',
 }));
 
 // Mock GlassBottomSheet - triggers onDismiss when dismiss() is called (mirrors real behavior)
 jest.mock('@/components/GlassBottomSheet', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const MockGlassBottomSheet = React.forwardRef(({ children, onDismiss }: any, ref: any) => {
-    React.useImperativeHandle(ref, () => ({
-      present: jest.fn(),
-      dismiss: () => {
-        // Simulate the real behavior: onDismiss fires when sheet finishes dismissing
-        if (onDismiss) onDismiss();
-      },
-      snapToIndex: jest.fn(),
-    }));
-    return <View testID="glass-bottom-sheet">{children}</View>;
-  });
+  const MockGlassBottomSheet = React.forwardRef(
+    ({ children, onDismiss, footerComponent: FooterComponent }: any, ref: any) => {
+      React.useImperativeHandle(ref, () => ({
+        present: jest.fn(),
+        dismiss: () => {
+          // Simulate the real behavior: onDismiss fires when sheet finishes dismissing
+          if (onDismiss) onDismiss();
+        },
+        snapToIndex: jest.fn(),
+      }));
+      return (
+        <View testID="glass-bottom-sheet">
+          {children}
+          {FooterComponent && <FooterComponent animatedFooterPosition={{ value: 0 }} />}
+        </View>
+      );
+    }
+  );
   MockGlassBottomSheet.displayName = 'GlassBottomSheet';
   return {
     __esModule: true,
@@ -44,15 +51,16 @@ jest.mock('@/components/GlassBottomSheet', () => {
   };
 });
 
-// Mock BottomSheetScrollView and BottomSheetTextInput
+// Mock BottomSheetScrollView, BottomSheetTextInput, and BottomSheetFooter
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');
-  const { ScrollView, TextInput } = require('react-native');
+  const { ScrollView, TextInput, View } = require('react-native');
   return {
     BottomSheetScrollView: ({ children, ...props }: any) => (
       <ScrollView {...props}>{children}</ScrollView>
     ),
     BottomSheetTextInput: (props: any) => <TextInput {...props} />,
+    BottomSheetFooter: ({ children }: any) => <View testID="bottom-sheet-footer">{children}</View>,
   };
 });
 
@@ -114,11 +122,11 @@ describe('LogSlipUpSheet', () => {
     jest.clearAllMocks();
     sheetRef = React.createRef<LogSlipUpSheetRef>();
 
-    // Mock Alert.alert to auto-confirm (simulates user pressing "Continue")
+    // Mock Alert.alert to auto-confirm (simulates user pressing "Yes, Continue")
     (Alert.alert as jest.Mock).mockImplementation(
       (_title: string, _message: string, buttons?: { text: string; onPress?: () => void }[]) => {
-        // Find and call the "Continue" button's onPress handler
-        const continueButton = buttons?.find((btn) => btn.text === 'Continue');
+        // Find and call the "Yes, Continue" button's onPress handler
+        const continueButton = buttons?.find((btn) => btn.text === 'Yes, Continue');
         if (continueButton?.onPress) {
           continueButton.onPress();
         }
@@ -146,7 +154,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      expect(getByText('Log a Slip Up')).toBeTruthy();
+      expect(getByText('Record a Setback')).toBeTruthy();
     });
 
     it('renders the subtitle message', () => {
@@ -160,9 +168,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      expect(
-        getByText(/Recovery is a journey, not a destination. Logging a slip up is an act/)
-      ).toBeTruthy();
+      expect(getByText(/Recovery includes setbacks — they're part of the journey/)).toBeTruthy();
     });
 
     it('renders date picker field', () => {
@@ -176,7 +182,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      expect(getByText('Slip Up Date')).toBeTruthy();
+      expect(getByText('When did this happen?')).toBeTruthy();
     });
 
     it('renders optional notes field', () => {
@@ -208,7 +214,7 @@ describe('LogSlipUpSheet', () => {
       expect(getByText('This information will be visible to you and your sponsor.')).toBeTruthy();
     });
 
-    it('renders Cancel and Log Slip Up buttons', () => {
+    it('renders Record & Restart button', () => {
       const { getByText } = renderWithProviders(
         <LogSlipUpSheet
           ref={sheetRef}
@@ -219,8 +225,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      expect(getByText('Cancel')).toBeTruthy();
-      expect(getByText('Log Slip Up')).toBeTruthy();
+      expect(getByText('Record & Restart')).toBeTruthy();
     });
   });
 
@@ -240,23 +245,6 @@ describe('LogSlipUpSheet', () => {
       fireEvent.changeText(notesInput, 'Test notes about the slip-up');
 
       expect(notesInput.props.value).toBe('Test notes about the slip-up');
-    });
-
-    it('calls onClose when Cancel button is pressed', () => {
-      const { getByText } = renderWithProviders(
-        <LogSlipUpSheet
-          ref={sheetRef}
-          profile={mockProfile}
-          theme={mockTheme}
-          onClose={mockOnClose}
-          onSlipUpLogged={mockOnSlipUpLogged}
-        />
-      );
-
-      const cancelButton = getByText('Cancel');
-      fireEvent.press(cancelButton);
-
-      expect(mockOnClose).toHaveBeenCalled();
     });
 
     it('calls onClose when close icon is pressed', () => {
@@ -316,7 +304,7 @@ describe('LogSlipUpSheet', () => {
       fireEvent.changeText(notesInput, 'Test notes');
 
       // Submit form
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {
@@ -362,7 +350,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {
@@ -406,7 +394,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {
@@ -447,7 +435,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {
@@ -487,7 +475,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {
@@ -571,7 +559,7 @@ describe('LogSlipUpSheet', () => {
 
       // Simulate selecting a future date by mocking the date picker change
       // The form should prevent future date submissions
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       // insertMock should be called because today's date is valid
@@ -584,8 +572,8 @@ describe('LogSlipUpSheet', () => {
       // Mock Alert.alert to simulate user canceling
       (Alert.alert as jest.Mock).mockImplementation(
         (_title: string, _message: string, buttons?: { text: string; onPress?: () => void }[]) => {
-          // Find and call the "Cancel" button's onPress handler
-          const cancelButton = buttons?.find((btn) => btn.text === 'Cancel');
+          // Find and call the "Not Yet" button's onPress handler
+          const cancelButton = buttons?.find((btn) => btn.text === 'Not Yet');
           if (cancelButton?.onPress) {
             cancelButton.onPress();
           }
@@ -610,7 +598,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       // Wait a tick to ensure async logic completes
@@ -660,7 +648,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       // The slip-up should still be logged successfully
@@ -702,7 +690,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       // The slip-up should still be logged successfully
@@ -751,7 +739,7 @@ describe('LogSlipUpSheet', () => {
         />
       );
 
-      const submitButton = getByText('Log Slip Up');
+      const submitButton = getByText('Record & Restart');
       fireEvent.press(submitButton);
 
       await waitFor(() => {

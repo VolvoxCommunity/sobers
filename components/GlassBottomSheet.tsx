@@ -7,6 +7,7 @@ import {
   BottomSheetModal,
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -114,6 +115,14 @@ export interface GlassBottomSheetProps {
    * @optional
    */
   keyboardBlurBehavior?: 'none' | 'restore';
+
+  /**
+   * Component to render as the sheet's footer.
+   * Use this for action buttons that should always be visible at the bottom.
+   *
+   * @optional
+   */
+  footerComponent?: React.FC<BottomSheetFooterProps>;
 }
 
 // =============================================================================
@@ -157,6 +166,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
       onDismiss,
       keyboardBehavior = 'interactive',
       keyboardBlurBehavior = 'none',
+      footerComponent,
     },
     ref
   ) => {
@@ -299,6 +309,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
         enablePanDownToClose={true}
         enableDismissOnClose={true}
         enableDynamicSizing={false}
+        footerComponent={footerComponent}
       >
         {children}
       </BottomSheetModal>
@@ -313,3 +324,4 @@ GlassBottomSheet.displayName = 'GlassBottomSheet';
 // Exports
 // =============================================================================
 export default GlassBottomSheet;
+export type { BottomSheetFooterProps };

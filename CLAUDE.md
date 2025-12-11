@@ -475,43 +475,6 @@ Only skip visual verification for changes that have NO runtime impact:
 - Auto-refresh tokens enabled
 - Root layout guards routes based on auth state
 
-### Project Structure
-
-```
-app/
-├── _layout.tsx              # Root layout with auth guards + provider wrapping
-├── login.tsx                # Email/password + social sign in
-├── signup.tsx               # Registration flow
-├── onboarding.tsx           # Profile setup (name, sobriety date)
-├── +not-found.tsx           # 404 handler
-└── (tabs)/                  # Authenticated tab navigation
-    ├── _layout.tsx          # Tab bar configuration
-    ├── index.tsx            # Dashboard/home
-    ├── tasks.tsx            # Task list for sponsees
-    ├── manage-tasks.tsx     # Task assignment for sponsors
-    ├── journey.tsx          # Timeline/milestone view
-    ├── steps.tsx            # 12-step program content
-    └── profile.tsx          # User profile + settings
-
-components/                  # Shared UI components
-contexts/                    # Global state providers
-├── AuthContext.tsx          # User session, profile, auth methods
-└── ThemeContext.tsx         # Theme switching (light/dark/system)
-
-lib/
-├── supabase.ts              # Configured Supabase client + storage adapter
-├── sentry.ts                # Centralized Sentry initialization
-├── sentry-privacy.ts        # PII scrubbing rules
-├── logger.ts                # Universal logging with Sentry breadcrumbs
-└── validation.ts            # Shared validation logic
-
-types/
-└── database.ts              # TypeScript types for Supabase schema (Profile, Task, etc.)
-
-hooks/                       # Custom React hooks
-styles/                      # Shared theme constants
-```
-
 ### Important Implementation Details
 
 **Path Aliases:**

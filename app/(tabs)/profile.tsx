@@ -23,7 +23,6 @@ import {
   QrCode,
   UserMinus,
   Edit2,
-  AlertCircle,
   CheckCircle,
   Settings,
 } from 'lucide-react-native';
@@ -712,8 +711,8 @@ export default function ProfileScreen() {
             </Text>
           )}
           <TouchableOpacity style={styles.slipUpButton} onPress={handleLogSlipUp}>
-            <AlertCircle size={18} color={theme.white} />
-            <Text style={styles.slipUpButtonText}>Log a Slip Up</Text>
+            <Heart size={18} color={theme.white} />
+            <Text style={styles.slipUpButtonText}>Record a Setback</Text>
           </TouchableOpacity>
         </View>
 
@@ -1042,7 +1041,7 @@ const createStyles = (
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.danger,
+      backgroundColor: theme.primary,
       paddingHorizontal: 20,
       paddingVertical: 12,
       borderRadius: 8,

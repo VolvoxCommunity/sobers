@@ -423,7 +423,7 @@ describe('ProfileScreen Keyboard Avoidance', () => {
         // Name may appear in multiple places (profile header and edit sheet)
         const nameElements = screen.getAllByText('John D.');
         expect(nameElements.length).toBeGreaterThan(0);
-        expect(screen.getByText('Log a Slip Up')).toBeTruthy();
+        expect(screen.getByText('Record a Setback')).toBeTruthy();
       });
     });
   });
@@ -454,7 +454,7 @@ describe('ProfileScreen Keyboard Avoidance', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('Log a Slip Up')).toBeTruthy();
+        expect(screen.getByText('Record a Setback')).toBeTruthy();
       });
     });
 

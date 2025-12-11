@@ -18,10 +18,15 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import {
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+  BottomSheetFooter,
+  BottomSheetFooterProps,
+} from '@gorhom/bottom-sheet';
 import { supabase } from '@/lib/supabase';
 import { ThemeColors } from '@/contexts/ThemeContext';
-import { X, Calendar, AlertCircle } from 'lucide-react-native';
+import { X, Calendar, Heart } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
@@ -195,15 +200,15 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
       }
 
       const confirmMessage =
-        'This will log your slip-up and restart your current streak. Your sponsor will be notified. Continue?';
+        'Recording this will restart your journey counter. Your sponsor will be notified so they can support you. Ready to continue?';
 
       const confirmed = await new Promise<boolean>((resolve) => {
         if (Platform.OS === 'web') {
           resolve(window.confirm(confirmMessage));
         } else {
-          Alert.alert('Confirm Slip-Up', confirmMessage, [
-            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-            { text: 'Continue', style: 'destructive', onPress: () => resolve(true) },
+          Alert.alert('Ready to Record?', confirmMessage, [
+            { text: 'Not Yet', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Yes, Continue', style: 'default', onPress: () => resolve(true) },
           ]);
         }
       });
@@ -270,7 +275,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
         // Show success message
         if (Platform.OS === 'web') {
           window.alert(
-            'Your slip-up has been logged. Remember, recovery is a journey. You are brave for being honest. Keep moving forward, one day at a time.'
+            "Your setback has been recorded. This took real courage. Remember: every day is a fresh start, and you're not alone on this journey."
           );
         }
       } catch (err) {
@@ -290,21 +295,51 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
     const styles = createStyles(theme);
 
     // ---------------------------------------------------------------------------
+    // Footer Component
+    // ---------------------------------------------------------------------------
+    /**
+     * Renders the footer with the submit button.
+     * Using BottomSheetFooter ensures the button is always visible at the bottom.
+     * Users can dismiss via backdrop tap, swipe down, or the X button.
+     */
+    const renderFooter = useCallback(
+      (props: BottomSheetFooterProps) => (
+        <BottomSheetFooter {...props} bottomInset={0}>
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={theme.white} />
+              ) : (
+                <Text style={styles.submitButtonText}>Record & Restart</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </BottomSheetFooter>
+      ),
+      [styles, handleSubmit, isSubmitting, theme.white]
+    );
+
+    // ---------------------------------------------------------------------------
     // Render
     // ---------------------------------------------------------------------------
     return (
       <GlassBottomSheet
         ref={sheetRef}
-        snapPoints={['50%', '90%']}
+        snapPoints={['60%', '90%']}
         onDismiss={handleDismiss}
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
+        footerComponent={renderFooter}
       >
         <View style={styles.header}>
           <View style={styles.headerIcon}>
-            <AlertCircle size={24} color={theme.danger} />
+            <Heart size={24} color={theme.primary} />
           </View>
-          <Text style={styles.title}>Log a Slip Up</Text>
+          <Text style={styles.title}>Record a Setback</Text>
           <TouchableOpacity
             onPress={handlePressClose}
             style={styles.closeButton}
@@ -322,8 +357,8 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           contentContainerStyle={styles.scrollViewContent}
         >
           <Text style={styles.subtitle}>
-            Recovery is a journey, not a destination. Logging a slip up is an act of courage and
-            honesty.
+            Recovery includes setbacks — they&apos;re part of the journey, not the end of it.
+            Recording this honestly takes courage, and we&apos;re here to support you.
           </Text>
 
           {error ? (
@@ -333,7 +368,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           ) : null}
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Slip Up Date</Text>
+            <Text style={styles.label}>When did this happen?</Text>
             {Platform.OS === 'web' ? (
               <input
                 type="date"
@@ -400,27 +435,6 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
           <Text style={styles.privacyNote}>
             This information will be visible to you and your sponsor.
           </Text>
-
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handlePressClose}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color={theme.white} />
-              ) : (
-                <Text style={styles.submitButtonText}>Log Slip Up</Text>
-              )}
-            </TouchableOpacity>
-          </View>
         </BottomSheetScrollView>
       </GlassBottomSheet>
     );
@@ -528,31 +542,18 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textTertiary,
       textAlign: 'center',
-      marginBottom: 24,
     },
     footer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    cancelButton: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
-      alignItems: 'center',
-    },
-    cancelButtonText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.textSecondary,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      backgroundColor: theme.surface,
     },
     submitButton: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 8,
-      backgroundColor: theme.danger,
+      padding: 16,
+      borderRadius: 12,
+      backgroundColor: theme.primary,
       alignItems: 'center',
     },
     submitButtonText: {

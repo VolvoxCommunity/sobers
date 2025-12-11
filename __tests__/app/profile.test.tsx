@@ -503,7 +503,7 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('Log a Slip Up')).toBeTruthy();
+        expect(screen.getByText('Record a Setback')).toBeTruthy();
       });
     });
 
@@ -513,10 +513,10 @@ describe('ProfileScreen', () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('Log a Slip Up')).toBeTruthy();
+        expect(screen.getByText('Record a Setback')).toBeTruthy();
       });
 
-      fireEvent.press(screen.getByText('Log a Slip Up'));
+      fireEvent.press(screen.getByText('Record a Setback'));
 
       // The sheet is mocked, so we can't test its opening behavior here
       // That behavior is tested in LogSlipUpSheet.test.tsx
@@ -827,11 +827,11 @@ describe('ProfileScreen', () => {
       });
     });
 
-    it('renders Log a Slip Up button', async () => {
+    it('renders Record a Setback button', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        expect(screen.getByText('Log a Slip Up')).toBeTruthy();
+        expect(screen.getByText('Record a Setback')).toBeTruthy();
       });
     });
 
