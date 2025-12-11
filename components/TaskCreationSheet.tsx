@@ -103,7 +103,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
     const [customTitle, setCustomTitle] = useState('');
     const [customDescription, setCustomDescription] = useState('');
     const [dueDate, setDueDate] = useState<Date | null>(null);
-    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<'sponsee' | 'step' | 'template' | null>(
       null
     );
@@ -261,8 +261,8 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
         }
 
         // Guard: Only update state and call callbacks if component is still mounted
+        // Note: resetForm() and onClose() are called via handleDismiss when the sheet closes
         if (isMountedRef.current) {
-          resetForm();
           onTaskCreated();
           handleClose();
         }
@@ -282,10 +282,22 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
       }
     };
 
-    const handleClose = () => {
+    /**
+     * Handles cleanup when the sheet is dismissed (called via onDismiss).
+     * This ensures cleanup and callbacks only run once after the sheet fully closes.
+     */
+    const handleDismiss = () => {
+      if (!isMountedRef.current) return;
       resetForm();
-      sheetRef.current?.dismiss();
       onClose();
+    };
+
+    /**
+     * Requests the sheet to close. The actual cleanup happens in handleDismiss
+     * when the sheet finishes closing.
+     */
+    const handleClose = () => {
+      sheetRef.current?.dismiss();
     };
 
     const styles = createStyles(theme);
@@ -297,7 +309,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
       <GlassBottomSheet
         ref={sheetRef}
         snapPoints={['60%', '90%']}
-        onDismiss={handleClose}
+        onDismiss={handleDismiss}
         keyboardBehavior="extend"
       >
         <View style={styles.header}>
@@ -499,7 +511,10 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
               />
             ) : (
               <>
-                <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setIsDatePickerVisible(true)}
+                >
                   <Calendar size={20} color={theme.textSecondary} />
                   <Text style={styles.dateButtonText}>
                     {dueDate
@@ -516,13 +531,13 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                     <Text style={styles.clearDateText}>Clear Date</Text>
                   </TouchableOpacity>
                 )}
-                {showDatePicker && (
+                {isDatePickerVisible && (
                   <DateTimePicker
                     value={dueDate || new Date()}
                     mode="date"
                     display="default"
                     onChange={(event, date) => {
-                      setShowDatePicker(false);
+                      setIsDatePickerVisible(false);
                       if (date) setDueDate(date);
                     }}
                     minimumDate={new Date()}

@@ -129,7 +129,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
     // ---------------------------------------------------------------------------
     // Hooks
     // ---------------------------------------------------------------------------
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -208,11 +208,9 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
      */
     const backgroundStyle: ViewStyle = useMemo(() => {
       if (Platform.OS === 'ios') {
-        // Translucent glass effect for iOS
+        // Translucent glass effect for iOS using theme's glassFallback color
         return {
-          backgroundColor: isDark
-            ? 'rgba(28, 28, 30, 0.85)' // Dark glass with 85% opacity
-            : 'rgba(255, 255, 255, 0.85)', // Light glass with 85% opacity
+          backgroundColor: theme.glassFallback,
         };
       }
 
@@ -221,7 +219,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
         backgroundColor: theme.surface,
         elevation: 8,
       };
-    }, [isDark, theme.surface]);
+    }, [theme.glassFallback, theme.surface]);
 
     const handleIndicatorStyle: ViewStyle = useMemo(
       () => ({

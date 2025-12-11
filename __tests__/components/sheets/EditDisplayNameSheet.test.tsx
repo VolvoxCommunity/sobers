@@ -184,11 +184,11 @@ describe('EditDisplayNameSheet', () => {
       fireEvent.changeText(input, '');
       fireEvent.press(saveButton);
 
-      expect(queryByText('Display name cannot be empty')).toBeTruthy();
+      expect(queryByText('Display name is required')).toBeTruthy();
 
       // Clear error by typing
       fireEvent.changeText(input, 'Valid Name');
-      expect(queryByText('Display name cannot be empty')).toBeNull();
+      expect(queryByText('Display name is required')).toBeNull();
     });
   });
 

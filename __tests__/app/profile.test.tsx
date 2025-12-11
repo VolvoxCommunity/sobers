@@ -103,7 +103,6 @@ jest.mock('@/lib/supabase', () => ({
 
 // Mock expo-router
 const mockPush = jest.fn();
-const mockSetOptions = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
@@ -111,7 +110,7 @@ jest.mock('expo-router', () => ({
     back: jest.fn(),
   }),
   useNavigation: () => ({
-    setOptions: mockSetOptions,
+    setOptions: jest.fn(),
     navigate: jest.fn(),
     goBack: jest.fn(),
     addListener: jest.fn(() => jest.fn()),
@@ -411,22 +410,19 @@ describe('ProfileScreen', () => {
   });
 
   describe('Settings Navigation', () => {
-    it('renders settings button inline in the profile header', async () => {
+    it('renders accessible settings button inline in profile header (not via navigation.setOptions)', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
         // Settings button is now rendered inline in the UI (not via navigation.setOptions)
-        // because native bottom tabs don't support navigation.setOptions for header customization
-        expect(screen.getByLabelText('Open settings')).toBeTruthy();
-      });
-    });
-
-    it('settings button in header has correct accessibility label', async () => {
-      render(<ProfileScreen />);
-
-      await waitFor(() => {
-        const settingsButton = screen.getByLabelText('Open settings');
+        // because native bottom tabs don't support navigation.setOptions for header customization.
+        // Use testID for reliable querying since RNTL has issues resolving accessible names
+        // when both accessibilityLabel and accessibilityLabelledBy are present.
+        const settingsButton = screen.getByTestId('settings-button');
         expect(settingsButton).toBeTruthy();
+        // Verify accessibility props are set correctly
+        expect(settingsButton.props.accessibilityLabel).toBe('Open settings');
+        expect(settingsButton.props.accessibilityRole).toBe('button');
       });
     });
   });
@@ -873,30 +869,6 @@ describe('ProfileScreen', () => {
       await waitFor(() => {
         expect(screen.getByText('Your Sponsor')).toBeTruthy();
         expect(screen.getByText('Your Sponsees')).toBeTruthy();
-      });
-    });
-  });
-
-  describe('Settings Button', () => {
-    it('renders settings gear icon button inline in profile header', async () => {
-      render(<ProfileScreen />);
-
-      await waitFor(() => {
-        // Settings button is rendered inline in the profile header
-        // (moved from navigation.setOptions because native bottom tabs don't support it)
-        expect(screen.getByLabelText('Open settings')).toBeTruthy();
-      });
-    });
-
-    it('settings button in header can be pressed', async () => {
-      render(<ProfileScreen />);
-
-      await waitFor(() => {
-        const settingsButton = screen.getByLabelText('Open settings');
-        expect(settingsButton).toBeTruthy();
-
-        // Verify the button can be pressed without errors
-        fireEvent.press(settingsButton);
       });
     });
   });

@@ -166,7 +166,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   // Get safe area insets for scroll padding
   const insets = useSafeAreaInsets();
-  // Account for native tab bar height on iOS
+  // Account for native tab bar on iOS and provide padding on Android
   const scrollPadding = getTabBarScrollPadding(insets.bottom);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
@@ -680,12 +680,16 @@ export default function ProfileScreen() {
     <KeyboardAvoidingView style={styles.keyboardAvoidingContainer}>
       {/* Navigation Header Bar */}
       <View style={styles.navigationHeader}>
-        <Text style={styles.navigationTitle}>Profile</Text>
+        <Text style={styles.navigationTitle} nativeID="profile-title">
+          Profile
+        </Text>
         <TouchableOpacity
           onPress={() => settingsSheetRef.current?.present()}
           style={styles.settingsButton}
           accessibilityRole="button"
           accessibilityLabel="Open settings"
+          accessibilityLabelledBy="profile-title"
+          testID="settings-button"
         >
           <Settings size={22} color={theme.text} />
         </TouchableOpacity>

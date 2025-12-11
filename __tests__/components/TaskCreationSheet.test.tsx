@@ -94,9 +94,17 @@ jest.mock('@/components/GlassBottomSheet', () => {
       { children, onDismiss }: { children: React.ReactNode; onDismiss?: () => void },
       ref: React.Ref<{ present: () => void; dismiss: () => void }>
     ) => {
+      // Store onDismiss to be called when dismiss() is invoked
+      const onDismissRef = React.useRef(onDismiss);
+      onDismissRef.current = onDismiss;
+
       React.useImperativeHandle(ref, () => ({
         present: mockPresent,
-        dismiss: mockDismiss,
+        dismiss: () => {
+          mockDismiss();
+          // Simulate the actual bottom sheet behavior: onDismiss is called after dismiss()
+          onDismissRef.current?.();
+        },
       }));
       return React.createElement('View', { testID: 'glass-bottom-sheet' }, children);
     }

@@ -102,6 +102,11 @@ function RootLayoutNav() {
    * available from the database after the step data is fetched.
    */
   const getPageTitle = (): string => {
+    // Guard against null pathname (can occur on first render before router is ready)
+    if (!pathname) {
+      return 'Sobriety Waypoint';
+    }
+
     const titles: Record<string, string> = {
       '/': 'Home',
       '/login': 'Sign In',
@@ -123,6 +128,8 @@ function RootLayoutNav() {
     // Handle dynamic routes like /steps/[id]
     // Note: The URL contains the step's UUID, not the step number (1-12).
     // The step number is only available from the database, so we use a generic title here.
+    // This could be enhanced in the future by adding the step number to the route params
+    // or using a separate metadata API to fetch the step number for more specific titles (better for SEO).
     if (pathname.startsWith('/steps/')) {
       return 'Step Details | Sobriety Waypoint';
     }

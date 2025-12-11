@@ -67,6 +67,11 @@ export interface StepContentSheetProps {
  * This "always render" pattern prevents the "double-tap to open" bug that occurs
  * with conditionally rendered `forwardRef` components.
  *
+ * @deprecated This bottom sheet component is being replaced by a dedicated detail screen
+ * at `/steps/[id]`. The detail screen provides better navigation, back button support,
+ * and integrates with the native navigation stack. This component may be removed in a
+ * future release once all step viewing is migrated to the detail screen.
+ *
  * @example
  * ```tsx
  * const sheetRef = useRef<GlassBottomSheetRef>(null);

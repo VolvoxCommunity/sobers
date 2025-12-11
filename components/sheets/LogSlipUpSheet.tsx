@@ -215,6 +215,8 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
 
       try {
         // Insert slip-up record
+        // Note: recovery_restart_date is intentionally set to the same value as slip_up_date
+        // because the user's recovery journey restarts from the slip-up date
         const { error: slipUpError } = await supabase.from('slip_ups').insert({
           user_id: profile.id,
           slip_up_date: formatDateWithTimezone(slipUpDate, userTimezone),
