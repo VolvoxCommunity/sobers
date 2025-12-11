@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import StepDetailScreen from '@/app/(tabs)/steps/[id]';
 import { StepContent, Profile } from '@/types/database';
 
@@ -566,10 +566,14 @@ describe('StepDetailScreen', () => {
         expect(screen.getByText('Updating...')).toBeTruthy();
       });
 
-      // Resolve the promise
-      resolveInsert!({ data: { id: 'new-progress' }, error: null });
+      // Resolve the promise and wait for state to update
+      await act(async () => {
+        resolveInsert!({ data: { id: 'new-progress' }, error: null });
+        // Give time for the promise to resolve and state to update
+        await new Promise((r) => setTimeout(r, 0));
+      });
 
-      // Should return to normal state
+      // Should return to normal state - now shows "Marked as Complete" since step is completed
       await waitFor(() => {
         expect(screen.queryByText('Updating...')).toBeNull();
       });
