@@ -368,12 +368,9 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
                     mode="date"
                     display="default"
                     onChange={(event, date) => {
-                      // On Android with display="default", the native dialog auto-closes
-                      // on OK/Cancel press. We must hide the picker component to prevent
-                      // it from reopening. On iOS, display="default" also shows a dialog.
-                      //
-                      // IMPORTANT: Update the date BEFORE hiding the picker to ensure
-                      // the state update completes before the component unmounts.
+                      // Native dialog auto-closes on both OK and Cancel press.
+                      // We always hide the picker to sync React state with native UI.
+                      // When date is defined (OK pressed), update it before hiding.
                       if (date) {
                         setSlipUpDate(date);
                       }
