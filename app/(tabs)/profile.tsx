@@ -363,7 +363,7 @@ export default function ProfileScreen() {
         throw new Error('This invite code has already been used');
       }
 
-      if (invite.sponsor_id === user.id) {
+      if (invite.sponsor_id === user.id || invite.sponsor_id === profile.id) {
         throw new Error('You cannot connect to yourself as a sponsor');
       }
 
@@ -1051,48 +1051,6 @@ const createStyles = (
       fontWeight: '600',
       color: theme.text,
       marginLeft: 12,
-    },
-    inviteInputContainer: {
-      backgroundColor: theme.card,
-      padding: 16,
-      borderRadius: 12,
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    inviteInput: {
-      backgroundColor: theme.borderLight,
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      marginBottom: 12,
-      color: theme.text,
-    },
-    inviteSubmitButton: {
-      backgroundColor: theme.primary,
-      borderRadius: 8,
-      padding: 12,
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    inviteSubmitText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.white,
-    },
-    inviteCancelButton: {
-      padding: 12,
-      alignItems: 'center',
-    },
-    inviteCancelText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.textSecondary,
     },
     loadingContainer: {
       padding: 20,
