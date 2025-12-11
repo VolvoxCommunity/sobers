@@ -815,7 +815,8 @@ export default function ProfileScreen() {
           </Modal>
         )}
 
-        {Platform.OS !== 'web' && showSobrietyDatePicker && (
+        {/* iOS: Use custom modal with inline spinner picker */}
+        {Platform.OS === 'ios' && showSobrietyDatePicker && (
           <Modal visible={showSobrietyDatePicker} transparent animationType="slide">
             <View style={styles.modalOverlay}>
               <View style={styles.datePickerModal}>
@@ -849,6 +850,24 @@ export default function ProfileScreen() {
               </View>
             </View>
           </Modal>
+        )}
+
+        {/* Android: Use native date picker dialog (has its own OK/Cancel buttons) */}
+        {Platform.OS === 'android' && showSobrietyDatePicker && (
+          <DateTimePicker
+            value={selectedSobrietyDate}
+            mode="date"
+            display="default"
+            onChange={(event, date) => {
+              // Always hide picker on Android since dialog auto-closes
+              setShowSobrietyDatePicker(false);
+              // Only update if user pressed OK (date is defined)
+              if (date) {
+                updateSobrietyDate(date);
+              }
+            }}
+            maximumDate={maximumDate}
+          />
         )}
 
         {/* Settings Sheet */}
