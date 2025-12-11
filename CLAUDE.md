@@ -132,7 +132,7 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 
 - Do NOT skip the validation checks to save time
 - All validation checks must pass before changes are considered complete
-- Only push once everything is validated and commited
+- Only push once everything is validated and committed
 
 **Commit Workflow (for Claude Code):**
 
