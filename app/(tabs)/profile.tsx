@@ -538,70 +538,90 @@ export default function ProfileScreen() {
     setShowSobrietyDatePicker(true);
   };
 
-  const updateSobrietyDate = async (newDate: Date) => {
-    if (!profile) return;
+  const updateSobrietyDate = useCallback(
+    async (newDate: Date) => {
+      if (!profile) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(newDate);
-    selectedDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(newDate);
+      selectedDate.setHours(0, 0, 0, 0);
 
-    if (selectedDate > today) {
-      if (Platform.OS === 'web') {
-        window.alert('Sobriety date cannot be in the future');
-      } else {
-        Alert.alert('Invalid Date', 'Sobriety date cannot be in the future');
+      if (selectedDate > today) {
+        if (Platform.OS === 'web') {
+          window.alert('Sobriety date cannot be in the future');
+        } else {
+          Alert.alert('Invalid Date', 'Sobriety date cannot be in the future');
+        }
+        return;
       }
-      return;
-    }
 
-    const confirmMessage = `Update your sobriety date to ${newDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}?`;
+      const confirmMessage = `Update your sobriety date to ${newDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}?`;
 
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm(confirmMessage)
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert('Confirm Date Change', confirmMessage, [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => resolve(false),
-              },
-              { text: 'Update', onPress: () => resolve(true) },
-            ]);
-          });
+      const confirmed =
+        Platform.OS === 'web'
+          ? window.confirm(confirmMessage)
+          : await new Promise<boolean>((resolve) => {
+              Alert.alert('Confirm Date Change', confirmMessage, [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                  onPress: () => resolve(false),
+                },
+                { text: 'Update', onPress: () => resolve(true) },
+              ]);
+            });
 
-    if (!confirmed) return;
+      if (!confirmed) return;
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          sobriety_date: formatDateWithTimezone(newDate, userTimezone),
-        })
-        .eq('id', profile.id);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            sobriety_date: formatDateWithTimezone(newDate, userTimezone),
+          })
+          .eq('id', profile.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      await refreshProfile();
+        await refreshProfile();
 
-      if (Platform.OS === 'web') {
-        window.alert('Sobriety date updated successfully');
-      } else {
-        Alert.alert('Success', 'Sobriety date updated successfully');
+        if (Platform.OS === 'web') {
+          window.alert('Sobriety date updated successfully');
+        } else {
+          Alert.alert('Success', 'Sobriety date updated successfully');
+        }
+      } catch (error: unknown) {
+        logger.error('Sobriety date update failed', error as Error, {
+          category: LogCategory.DATABASE,
+        });
+        const message = error instanceof Error ? error.message : 'Failed to update sobriety date.';
+        if (Platform.OS === 'web') {
+          window.alert(message);
+        } else {
+          Alert.alert('Error', message);
+        }
       }
-    } catch (error: unknown) {
-      logger.error('Sobriety date update failed', error as Error, {
-        category: LogCategory.DATABASE,
-      });
-      const message = error instanceof Error ? error.message : 'Failed to update sobriety date.';
-      if (Platform.OS === 'web') {
-        window.alert(message);
-      } else {
-        Alert.alert('Error', message);
+    },
+    [profile, userTimezone, refreshProfile]
+  );
+
+  /**
+   * Shared handler for confirming a sobriety date selection.
+   * Closes the date picker and triggers the update.
+   * Used by both iOS (Update button) and Android (native OK) date pickers.
+   *
+   * @param date - The selected date to update, or undefined to cancel
+   */
+  const handleSobrietyDateConfirm = useCallback(
+    (date: Date | undefined) => {
+      setShowSobrietyDatePicker(false);
+      if (date) {
+        updateSobrietyDate(date);
       }
-    }
-  };
+    },
+    [updateSobrietyDate]
+  );
 
   const handleLogSlipUp = () => {
     logSlipUpSheetRef.current?.present();
@@ -835,16 +855,13 @@ export default function ProfileScreen() {
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
                     style={styles.modalCancelButton}
-                    onPress={() => setShowSobrietyDatePicker(false)}
+                    onPress={() => handleSobrietyDateConfirm(undefined)}
                   >
                     <Text style={styles.modalCancelText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.modalConfirmButton}
-                    onPress={() => {
-                      updateSobrietyDate(selectedSobrietyDate);
-                      setShowSobrietyDatePicker(false);
-                    }}
+                    onPress={() => handleSobrietyDateConfirm(selectedSobrietyDate)}
                   >
                     <Text style={styles.modalConfirmText}>Update</Text>
                   </TouchableOpacity>
@@ -862,12 +879,7 @@ export default function ProfileScreen() {
             value={selectedSobrietyDate}
             mode="date"
             display="default"
-            onChange={(event, date) => {
-              setShowSobrietyDatePicker(false);
-              if (date) {
-                updateSobrietyDate(date);
-              }
-            }}
+            onChange={(event, date) => handleSobrietyDateConfirm(date)}
             maximumDate={maximumDate}
           />
         )}
