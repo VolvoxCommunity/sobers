@@ -261,7 +261,7 @@ describe('EnterInviteCodeSheet', () => {
       });
     });
 
-    it('shows error message when onSubmit throws', async () => {
+    it('shows error message when onSubmit throws and resets submitting state', async () => {
       mockOnSubmit.mockRejectedValueOnce(new Error('Invalid invite code'));
       renderSheet();
 
@@ -273,9 +273,13 @@ describe('EnterInviteCodeSheet', () => {
       await waitFor(() => {
         expect(screen.getByText('Invalid invite code')).toBeTruthy();
       });
+
+      // Verify isSubmitting was reset - button should be enabled again
+      const button = screen.getByTestId('connect-button');
+      expect(button.props.disabled).toBe(false);
     });
 
-    it('shows generic error when onSubmit throws non-Error', async () => {
+    it('shows generic error when onSubmit throws non-Error and resets submitting state', async () => {
       mockOnSubmit.mockRejectedValueOnce('Something went wrong');
       renderSheet();
 
@@ -287,6 +291,10 @@ describe('EnterInviteCodeSheet', () => {
       await waitFor(() => {
         expect(screen.getByText('Failed to connect. Please try again.')).toBeTruthy();
       });
+
+      // Verify isSubmitting was reset - button should be enabled again
+      const button = screen.getByTestId('connect-button');
+      expect(button.props.disabled).toBe(false);
     });
 
     it('clears error when user starts typing', async () => {
