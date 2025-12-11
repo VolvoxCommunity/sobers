@@ -239,7 +239,6 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
               editable={!isSubmitting}
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
-              autoFocus
               testID="invite-code-input"
               accessibilityLabel="Invite code input"
             />
