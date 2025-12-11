@@ -163,7 +163,8 @@ global.__DEV__ = false;
 
 // Mock document for web platform tests (keyboard event handling, DOM access, etc.)
 // This provides a more complete mock to avoid errors when code accesses document properties.
-// Note: For comprehensive web testing, consider using jsdom test environment instead.
+// Note: Jest is configured to use the 'node' environment (see CLAUDE.md), so jsdom is not available.
+// This manual mock provides basic document functionality for compatibility in tests.
 global.document = {
   // Event handling
   addEventListener: jest.fn(),
