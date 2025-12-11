@@ -34,7 +34,7 @@ import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
 import SettingsSheet, { SettingsSheetRef } from '@/components/SettingsSheet';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
-import { getTabBarScrollPadding } from '@/constants/layout';
+import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 
 // =============================================================================
 // Helper Components
@@ -164,10 +164,8 @@ function SponsorDaysDisplay({
 export default function ProfileScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
-  // Get safe area insets for scroll padding
-  const insets = useSafeAreaInsets();
-  // Account for native tab bar on iOS and provide padding on Android
-  const scrollPadding = getTabBarScrollPadding(insets.bottom);
+  // Account for native tab bar height and safe area
+  const scrollPadding = useTabBarPadding();
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const scrollViewRef = useRef<ScrollView>(null);

@@ -71,8 +71,9 @@ export default function StepDetailScreen() {
   // Derived State
   // ---------------------------------------------------------------------------
   const currentIndex = allSteps.findIndex((s) => s.id === id);
+  // Ensure navigation is disabled when step is not found (currentIndex === -1)
   const hasPrevious = currentIndex > 0;
-  const hasNext = currentIndex < allSteps.length - 1;
+  const hasNext = currentIndex !== -1 && currentIndex < allSteps.length - 1;
   const isCompleted = !!progress;
 
   // ---------------------------------------------------------------------------

@@ -456,6 +456,25 @@ describe('StepDetailScreen', () => {
       // Should not navigate since it's the last step
       expect(mockPush).not.toHaveBeenCalled();
     });
+
+    it('disables both navigation buttons when step not found in allSteps array', async () => {
+      // This tests the edge case where findIndex returns -1
+      // Prior to the fix, hasNext would be true when currentIndex was -1
+      // because -1 < allSteps.length - 1 evaluates to true
+      mockRouteId = 'non-existent-step';
+
+      render(<StepDetailScreen />);
+
+      // Should show error state when step not found
+      await waitFor(() => {
+        expect(screen.getByText('Step not found')).toBeTruthy();
+      });
+
+      // Navigation buttons should not be rendered in error state
+      // The error state renders before the navigation section
+      expect(screen.queryByText('Previous')).toBeNull();
+      expect(screen.queryByText('Next')).toBeNull();
+    });
   });
 
   describe('error handling', () => {
