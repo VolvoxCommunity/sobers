@@ -107,31 +107,45 @@ describe('TabBarBackground', () => {
     });
 
     it('renders solid View on Android (no blur)', () => {
-      const { queryByTestId } = render(<TabBarBackground />);
+      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
       // Android should NOT render BlurView - it uses a solid View instead
       expect(queryByTestId('blur-view')).toBeNull();
+      // Android should render its dedicated View
+      expect(getByTestId('tab-bar-background-android')).toBeTruthy();
     });
 
-    it('uses theme surface color for Android background', () => {
+    it('uses theme surface color for Android background in light mode', () => {
+      const lightSurface = '#f5f5f5';
       mockUseTheme.mockReturnValue({
         isDark: false,
-        theme: { surface: '#f5f5f5' },
+        theme: { surface: lightSurface },
       });
 
-      const { queryByTestId } = render(<TabBarBackground />);
+      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
       // Android should NOT render BlurView
       expect(queryByTestId('blur-view')).toBeNull();
+      // Verify the background color matches theme.surface
+      const androidView = getByTestId('tab-bar-background-android');
+      expect(androidView.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining({ backgroundColor: lightSurface })])
+      );
     });
 
-    it('uses dark theme surface color in dark mode', () => {
+    it('uses theme surface color for Android background in dark mode', () => {
+      const darkSurface = '#1a1a1a';
       mockUseTheme.mockReturnValue({
         isDark: true,
-        theme: { surface: '#1a1a1a' },
+        theme: { surface: darkSurface },
       });
 
-      const { queryByTestId } = render(<TabBarBackground />);
+      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
       // Android should NOT render BlurView regardless of dark mode
       expect(queryByTestId('blur-view')).toBeNull();
+      // Verify the background color matches theme.surface
+      const androidView = getByTestId('tab-bar-background-android');
+      expect(androidView.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining({ backgroundColor: darkSurface })])
+      );
     });
   });
 });

@@ -1,11 +1,30 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
 import { Platform, Text } from 'react-native';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
+import { renderWithProviders } from '@/__tests__/test-utils';
 
-// Mock expo-symbols SymbolView
+// =============================================================================
+// Types for Mock
+// =============================================================================
+
+/**
+ * Props for the mocked SymbolView component.
+ * Based on expo-symbols SymbolViewProps but simplified for testing.
+ */
+interface MockSymbolViewProps {
+  name: string;
+  tintColor?: string;
+  weight?: string;
+  testID?: string;
+}
+
+// =============================================================================
+// Mocks
+// =============================================================================
+
+// Mock expo-symbols SymbolView with typed props
 jest.mock('expo-symbols', () => ({
-  SymbolView: ({ name, tintColor, weight, testID }: any) => {
+  SymbolView: ({ name, tintColor, weight, testID }: MockSymbolViewProps) => {
     const { View, Text } = require('react-native');
     return (
       <View testID={testID || 'symbol-view'}>
@@ -16,6 +35,10 @@ jest.mock('expo-symbols', () => ({
     );
   },
 }));
+
+// =============================================================================
+// Test Helpers
+// =============================================================================
 
 // Store original Platform.OS
 const originalPlatformOS = Platform.OS;
@@ -30,6 +53,10 @@ function setPlatformOS(os: 'ios' | 'android' | 'web') {
   });
 }
 
+// =============================================================================
+// Test Suite
+// =============================================================================
+
 describe('TabBarIcon', () => {
   afterEach(() => {
     // Restore original Platform.OS after each test
@@ -41,7 +68,7 @@ describe('TabBarIcon', () => {
 
   it('renders SymbolView with semibold weight when focused on iOS', () => {
     setPlatformOS('ios');
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithProviders(
       <TabBarIcon sfSymbol="house.fill" fallbackIcon={() => <></>} focused={true} color="#10b981" />
     );
 
@@ -54,7 +81,7 @@ describe('TabBarIcon', () => {
 
   it('renders SymbolView with regular weight when not focused on iOS', () => {
     setPlatformOS('ios');
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithProviders(
       <TabBarIcon
         sfSymbol="house.fill"
         fallbackIcon={() => <></>}
@@ -71,7 +98,7 @@ describe('TabBarIcon', () => {
   it('renders fallback Lucide icon with correct color on Android', () => {
     setPlatformOS('android');
     const MockIcon = ({ color }: { color: string }) => <Text testID="mock-icon">{color}</Text>;
-    const { getByTestId } = render(
+    const { getByTestId } = renderWithProviders(
       <TabBarIcon sfSymbol="house.fill" fallbackIcon={MockIcon} focused={false} color="#666" />
     );
 

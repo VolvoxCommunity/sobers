@@ -27,7 +27,12 @@ export default function TabBarBackground(): React.ReactElement {
 
   // Android doesn't support blur, use solid background
   if (Platform.OS === 'android') {
-    return <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.surface }]} />;
+    return (
+      <View
+        testID="tab-bar-background-android"
+        style={[StyleSheet.absoluteFill, { backgroundColor: theme.surface }]}
+      />
+    );
   }
 
   // iOS: Use native blur effect for Liquid Glass look
