@@ -14,12 +14,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   Platform,
   Alert,
 } from 'react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { supabase } from '@/lib/supabase';
 import { ThemeColors } from '@/contexts/ThemeContext';
 import { X, Calendar, AlertCircle } from 'lucide-react-native';
@@ -296,9 +295,10 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
     return (
       <GlassBottomSheet
         ref={sheetRef}
-        snapPoints={['50%', '70%']}
+        snapPoints={['50%', '90%']}
         onDismiss={handleDismiss}
-        keyboardBehavior="extend"
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
       >
         <View style={styles.header}>
           <View style={styles.headerIcon}>
@@ -380,7 +380,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Notes (Optional)</Text>
-            <TextInput
+            <BottomSheetTextInput
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}

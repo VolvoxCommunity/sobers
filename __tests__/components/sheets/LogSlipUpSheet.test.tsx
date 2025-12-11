@@ -44,14 +44,15 @@ jest.mock('@/components/GlassBottomSheet', () => {
   };
 });
 
-// Mock BottomSheetScrollView
+// Mock BottomSheetScrollView and BottomSheetTextInput
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');
-  const { ScrollView } = require('react-native');
+  const { ScrollView, TextInput } = require('react-native');
   return {
     BottomSheetScrollView: ({ children, ...props }: any) => (
       <ScrollView {...props}>{children}</ScrollView>
     ),
+    BottomSheetTextInput: (props: any) => <TextInput {...props} />,
   };
 });
 

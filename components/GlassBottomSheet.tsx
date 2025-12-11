@@ -103,6 +103,17 @@ export interface GlassBottomSheetProps {
    * @optional
    */
   keyboardBehavior?: 'interactive' | 'extend' | 'fillParent';
+
+  /**
+   * Keyboard blur behavior configuration for iOS.
+   *
+   * - `'none'` - No action when keyboard blurs
+   * - `'restore'` - Restore sheet position when keyboard dismisses (recommended for iOS)
+   *
+   * @default 'none'
+   * @optional
+   */
+  keyboardBlurBehavior?: 'none' | 'restore';
 }
 
 // =============================================================================
@@ -139,7 +150,16 @@ export interface GlassBottomSheetProps {
  * ```
  */
 const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
-  ({ snapPoints, children, onDismiss, keyboardBehavior = 'interactive' }, ref) => {
+  (
+    {
+      snapPoints,
+      children,
+      onDismiss,
+      keyboardBehavior = 'interactive',
+      keyboardBlurBehavior = 'none',
+    },
+    ref
+  ) => {
     // ---------------------------------------------------------------------------
     // Hooks
     // ---------------------------------------------------------------------------
@@ -258,6 +278,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
         backgroundStyle={backgroundStyle}
         handleIndicatorStyle={handleIndicatorStyle}
         keyboardBehavior={keyboardBehavior}
+        keyboardBlurBehavior={keyboardBlurBehavior}
         onDismiss={handleDismiss}
         enablePanDownToClose={true}
         enableDismissOnClose={true}
