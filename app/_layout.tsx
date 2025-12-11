@@ -96,6 +96,10 @@ function RootLayoutNav() {
   /**
    * Maps the current pathname to a human-readable page title.
    * Used for the browser tab title on web.
+   *
+   * Note: Dynamic routes like /steps/[id] use UUIDs in the URL, so we show
+   * a generic "Step Details" title. The actual step number (1-12) is only
+   * available from the database after the step data is fetched.
    */
   const getPageTitle = (): string => {
     const titles: Record<string, string> = {
@@ -108,7 +112,7 @@ function RootLayoutNav() {
       '/manage-tasks': 'Manage Tasks',
       '/profile': 'Profile',
       '/settings': 'Settings',
-      '/steps': '12 Steps',
+      '/steps': 'Steps',
     };
 
     // Check for exact match first
@@ -117,6 +121,8 @@ function RootLayoutNav() {
     }
 
     // Handle dynamic routes like /steps/[id]
+    // Note: The URL contains the step's UUID, not the step number (1-12).
+    // The step number is only available from the database, so we use a generic title here.
     if (pathname.startsWith('/steps/')) {
       return 'Step Details | Sobriety Waypoint';
     }
