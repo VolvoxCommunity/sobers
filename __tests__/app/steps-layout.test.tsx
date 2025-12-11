@@ -9,19 +9,52 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { View } from 'react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import StepsLayout from '@/app/(tabs)/steps/_layout';
 
 // =============================================================================
 // Mocks
 // =============================================================================
 
-// Mock expo-router Stack
+// Track screenOptions and screen configurations
+let capturedScreenOptions: Record<string, unknown> | null = null;
+const capturedScreens: { name: string; options?: Record<string, unknown> }[] = [];
+
+// Mock Stack component
+function MockStack({
+  children,
+  screenOptions,
+  ...props
+}: {
+  children: React.ReactNode;
+  screenOptions?: Record<string, unknown>;
+}) {
+  // Capture screenOptions for assertions
+  capturedScreenOptions = screenOptions || null;
+  return (
+    <View testID="stack-navigator" {...props}>
+      {children}
+    </View>
+  );
+}
+MockStack.displayName = 'MockStack';
+
+// Mock Screen component
+function MockScreen({ name, options }: { name: string; options?: Record<string, unknown> }) {
+  // Track screen configurations for assertions
+  capturedScreens.push({ name, options });
+  return <View testID={`stack-screen-${name}`} />;
+}
+MockScreen.displayName = 'MockScreen';
+
+// Attach Screen to Stack
+MockStack.Screen = MockScreen;
+
+// Mock expo-router Stack with Screen subcomponent
 jest.mock('expo-router', () => ({
-  Stack: ({ children, ...props }: { children: React.ReactNode }) => {
-    const React = require('react');
-    return React.createElement('View', { testID: 'stack-navigator', ...props }, children);
-  },
+  Stack: MockStack,
 }));
 
 // Mock ThemeContext
@@ -43,46 +76,55 @@ jest.mock('@/contexts/ThemeContext', () => ({
 describe('StepsLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    capturedScreenOptions = null;
+    capturedScreens.length = 0;
   });
 
   describe('rendering', () => {
     it('renders stack navigator', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders without errors', () => {
-      const { toJSON } = render(<StepsLayout />);
+      const { toJSON } = renderWithProviders(<StepsLayout />);
 
       expect(toJSON()).toBeTruthy();
     });
   });
 
   describe('navigation structure', () => {
-    it('provides proper stack navigation context', () => {
-      render(<StepsLayout />);
+    it('configures Stack with headerShown false', () => {
+      renderWithProviders(<StepsLayout />);
 
-      const stack = screen.getByTestId('stack-navigator');
-      expect(stack).toBeTruthy();
+      expect(capturedScreenOptions).toEqual({ headerShown: false });
     });
 
-    it('configures screen options correctly', () => {
-      render(<StepsLayout />);
+    it('registers both index and detail screens', () => {
+      renderWithProviders(<StepsLayout />);
 
-      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
+      const screenNames = capturedScreens.map((s) => s.name);
+      expect(screenNames).toContain('index');
+      expect(screenNames).toContain('[id]');
+    });
+
+    it('configures detail screen with slide_from_right animation', () => {
+      renderWithProviders(<StepsLayout />);
+
+      const detailScreen = capturedScreens.find((s) => s.name === '[id]');
+      expect(detailScreen?.options).toEqual({ animation: 'slide_from_right' });
     });
   });
 
   describe('header configuration', () => {
-    it('applies header styling from theme', () => {
-      render(<StepsLayout />);
+    it('hides headers globally via screenOptions', () => {
+      renderWithProviders(<StepsLayout />);
 
-      const stack = screen.getByTestId('stack-navigator');
-      expect(stack).toBeTruthy();
+      expect(capturedScreenOptions?.headerShown).toBe(false);
     });
 
-    it('handles dark theme header styling', () => {
+    it('handles dark theme rendering', () => {
       jest.isolateModules(() => {
         jest.doMock('@/contexts/ThemeContext', () => ({
           useTheme: () => ({
@@ -95,7 +137,9 @@ describe('StepsLayout', () => {
           }),
         }));
 
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { default: StepsLayoutDark } = require('@/app/(tabs)/steps/_layout');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { render: renderDark, screen: screenDark } = require('@testing-library/react-native');
 
         renderDark(<StepsLayoutDark />);
@@ -106,14 +150,14 @@ describe('StepsLayout', () => {
   });
 
   describe('edge cases', () => {
-    it('handles missing theme gracefully', () => {
-      render(<StepsLayout />);
+    it('renders with mocked theme values', () => {
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders consistently across multiple renders', () => {
-      const { rerender } = render(<StepsLayout />);
+      const { rerender } = renderWithProviders(<StepsLayout />);
 
       rerender(<StepsLayout />);
 
