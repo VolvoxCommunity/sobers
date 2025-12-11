@@ -56,6 +56,17 @@ export interface StepContentSheetProps {
  * - Liquid Glass styling via GlassBottomSheet
  * - Scrollable content area with snap points at 70% and 95%
  *
+ * @remarks
+ * This component always renders the GlassBottomSheet wrapper, even when `step` is null.
+ * This is intentional to ensure the forwarded ref is always connected to the bottom sheet.
+ * Without this pattern, the first tap to open the sheet would fail because:
+ * 1. Parent state update triggers a re-render
+ * 2. Component mounts and connects the ref
+ * 3. But `ref.current.present()` was already called before the ref was available
+ *
+ * This "always render" pattern prevents the "double-tap to open" bug that occurs
+ * with conditionally rendered `forwardRef` components.
+ *
  * @example
  * ```tsx
  * const sheetRef = useRef<GlassBottomSheetRef>(null);
