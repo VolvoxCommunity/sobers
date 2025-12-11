@@ -3,8 +3,15 @@
 // =============================================================================
 import React, { createRef } from 'react';
 import { Dimensions, Platform, Text } from 'react-native';
+import { act } from '@testing-library/react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import { renderWithProviders } from '@/__tests__/test-utils';
+
+// Extend global for TypeScript
+declare global {
+   
+  var __backHandlerListeners: (() => boolean)[] | undefined;
+}
 
 // =============================================================================
 // Device Size Constants
@@ -87,6 +94,41 @@ jest.mock('expo-blur', () => ({
 }));
 
 // =============================================================================
+// BackHandler Test Helpers
+// =============================================================================
+
+/**
+ * Returns the current BackHandler listeners from the global mock.
+ * BackHandler is mocked in jest.setup.js with listeners stored in global.__backHandlerListeners.
+ */
+const getBackHandlerListeners = (): (() => boolean)[] => {
+  return global.__backHandlerListeners || [];
+};
+
+/**
+ * Clears all BackHandler listeners.
+ */
+const clearBackHandlerListeners = (): void => {
+  global.__backHandlerListeners = [];
+};
+
+/**
+ * Simulates pressing the Android hardware back button.
+ * Calls all registered BackHandler listeners in reverse order (LIFO).
+ * Returns true if any listener handled the event (returned true).
+ */
+const simulateBackPress = (): boolean => {
+  const listeners = getBackHandlerListeners();
+  // Process listeners in reverse order (most recent first, like real BackHandler)
+  for (let i = listeners.length - 1; i >= 0; i--) {
+    if (listeners[i]()) {
+      return true; // Event was handled
+    }
+  }
+  return false; // Event was not handled
+};
+
+// =============================================================================
 // Test Suite
 // =============================================================================
 describe('GlassBottomSheet', () => {
@@ -98,6 +140,8 @@ describe('GlassBottomSheet', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // Clear BackHandler listeners between tests
+    clearBackHandlerListeners();
     // Restore Platform.OS using Object.defineProperty for robustness across Jest environments
     Object.defineProperty(Platform, 'OS', {
       get: () => originalPlatformOS,
@@ -333,6 +377,113 @@ describe('GlassBottomSheet', () => {
       // Call present and dismiss - should work without onDismiss callback
       ref.current?.present();
       ref.current?.dismiss();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Android Back Button Tests
+  // ---------------------------------------------------------------------------
+  describe('Android Back Button Behavior', () => {
+    beforeEach(() => {
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'android',
+        configurable: true,
+      });
+    });
+
+    it('should register BackHandler listener when sheet is presented on Android', () => {
+      const ref = createRef<GlassBottomSheetRef>();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+      // Initially no listeners
+      expect(getBackHandlerListeners().length).toBe(0);
+
+      // Present the sheet
+      act(() => {
+        ref.current?.present();
+      });
+
+      // BackHandler listener should be registered when sheet is open
+      expect(getBackHandlerListeners().length).toBe(1);
+    });
+
+    it('should dismiss sheet when back button is pressed while sheet is open', () => {
+      const ref = createRef<GlassBottomSheetRef>();
+      const onDismiss = jest.fn();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} onDismiss={onDismiss} />);
+
+      // Present the sheet
+      act(() => {
+        ref.current?.present();
+      });
+
+      // Simulate back press - should return true (handled) and dismiss the sheet
+      const handled = simulateBackPress();
+      expect(handled).toBe(true);
+    });
+
+    it('should not register BackHandler listener when sheet is not open', () => {
+      const ref = createRef<GlassBottomSheetRef>();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+      // Sheet not presented - no listener should be registered
+      expect(getBackHandlerListeners().length).toBe(0);
+    });
+
+    it('should remove BackHandler listener when sheet is dismissed', () => {
+      const ref = createRef<GlassBottomSheetRef>();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+      // Present the sheet
+      act(() => {
+        ref.current?.present();
+      });
+
+      expect(getBackHandlerListeners().length).toBe(1);
+
+      // Dismiss the sheet
+      act(() => {
+        ref.current?.dismiss();
+      });
+
+      // Listener should be removed
+      expect(getBackHandlerListeners().length).toBe(0);
+    });
+
+    it('should not intercept back button on iOS', () => {
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'ios',
+        configurable: true,
+      });
+
+      const ref = createRef<GlassBottomSheetRef>();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+      // Present the sheet
+      act(() => {
+        ref.current?.present();
+      });
+
+      // iOS should not register BackHandler listener
+      expect(getBackHandlerListeners().length).toBe(0);
+    });
+
+    it('should not intercept back button on web', () => {
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'web',
+        configurable: true,
+      });
+
+      const ref = createRef<GlassBottomSheetRef>();
+      renderWithProviders(<GlassBottomSheet ref={ref} {...defaultProps} />);
+
+      // Present the sheet
+      act(() => {
+        ref.current?.present();
+      });
+
+      // Web should not register BackHandler listener (uses Escape key instead)
+      expect(getBackHandlerListeners().length).toBe(0);
     });
   });
 

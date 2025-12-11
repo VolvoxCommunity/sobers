@@ -128,6 +128,30 @@ jest.mock('react-native', () => {
       clearInteractionHandle: jest.fn(),
       setDeadline: jest.fn(),
     },
+    // BackHandler mock for Android back button testing
+    // Tests can access the listeners via global.__backHandlerListeners
+    BackHandler: {
+      addEventListener: jest.fn((event, handler) => {
+        if (event === 'hardwareBackPress') {
+          if (!global.__backHandlerListeners) {
+            global.__backHandlerListeners = [];
+          }
+          global.__backHandlerListeners.push(handler);
+        }
+        return {
+          remove: jest.fn(() => {
+            if (global.__backHandlerListeners) {
+              const index = global.__backHandlerListeners.indexOf(handler);
+              if (index > -1) {
+                global.__backHandlerListeners.splice(index, 1);
+              }
+            }
+          }),
+        };
+      }),
+      removeEventListener: jest.fn(),
+      exitApp: jest.fn(),
+    },
   };
 });
 
@@ -136,6 +160,12 @@ global.processColor = (color) => color;
 
 // Define __DEV__ for tests
 global.__DEV__ = false;
+
+// Mock document for web platform tests (keyboard event handling)
+global.document = {
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+};
 
 // Mock expo-router
 jest.mock('expo-router', () => ({

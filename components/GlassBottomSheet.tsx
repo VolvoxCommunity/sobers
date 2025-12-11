@@ -2,7 +2,7 @@
 // Imports
 // =============================================================================
 import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, ViewStyle } from 'react-native';
+import { BackHandler, Platform, ViewStyle } from 'react-native';
 import {
   BottomSheetModal,
   BottomSheetBackdrop,
@@ -182,6 +182,22 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
 
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
+
+    // ---------------------------------------------------------------------------
+    // Android Hardware Back Button Handler
+    // ---------------------------------------------------------------------------
+    useEffect(() => {
+      // Only add BackHandler listener on Android platform when sheet is open
+      if (Platform.OS !== 'android' || !isOpen) return;
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        // Dismiss the sheet and return true to indicate event was handled
+        bottomSheetRef.current?.dismiss();
+        return true;
+      });
+
+      return () => subscription.remove();
     }, [isOpen]);
 
     // ---------------------------------------------------------------------------
