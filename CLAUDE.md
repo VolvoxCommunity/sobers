@@ -29,6 +29,7 @@ pnpm format:check     # Check formatting without modifying
 pnpm test                     # Run all Jest tests
 pnpm test:watch              # Run tests in watch mode
 pnpm test -- --coverage      # Run tests with coverage report (80% minimum required)
+pnpm test:ci                 # Run tests with coverage in CI mode (used by GitHub Actions)
 pnpm maestro                 # Run all Maestro E2E flows
 pnpm maestro:record          # Record new Maestro flow
 ```
@@ -67,6 +68,59 @@ pnpm test -- -t "test name pattern"             # Run tests matching pattern
 
 These checks are not optional. All six validation steps must pass before the user commits. If any check fails, fix the issues and re-run all checks before proceeding.
 
+**Test-Driven Development (TDD) - REQUIRED:**
+
+You MUST use TDD for ALL code changes. This is not optional. The TDD cycle is:
+
+1. **RED** - Write a failing test first
+2. **GREEN** - Write the minimum code to make the test pass
+3. **REFACTOR** - Clean up the code while keeping tests green
+
+**TDD Workflow:**
+
+```bash
+# 1. Write the test FIRST (it should fail)
+pnpm test -- path/to/new-feature.test.ts
+# Expected: Test fails (RED)
+
+# 2. Write the implementation
+# ... make code changes ...
+
+# 3. Run the test again (it should pass)
+pnpm test -- path/to/new-feature.test.ts
+# Expected: Test passes (GREEN)
+
+# 4. Refactor if needed, keeping tests green
+pnpm test -- path/to/new-feature.test.ts
+# Expected: Test still passes (REFACTOR)
+
+# 5. Run full test suite to check for regressions
+pnpm test
+```
+
+**What Requires Tests:**
+
+| Change Type      | Test Requirement                                   |
+| ---------------- | -------------------------------------------------- |
+| New feature      | Tests for happy path, edge cases, error handling   |
+| Bug fix          | Regression test that would have caught the bug     |
+| Refactoring      | Existing tests must pass; add tests if gaps found  |
+| New component    | Rendering, props, user interactions, state changes |
+| New hook         | Return values, state updates, side effects         |
+| New utility      | All code paths, edge cases, error conditions       |
+| API integration  | Mock external calls, test success/error scenarios  |
+| Deletion/removal | Update or remove related tests                     |
+| UI changes       | Snapshot tests or interaction tests                |
+
+**TDD Anti-Patterns to AVOID:**
+
+- Writing code first and tests after (defeats the purpose)
+- Writing tests that always pass (tests must fail first)
+- Testing implementation details instead of behavior
+- Skipping tests "because it's a small change"
+- Mocking everything (test real behavior when possible)
+- Writing tests without assertions
+
 **Complete Workflow:**
 
 ```bash
@@ -76,12 +130,270 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 
 **Important:**
 
-- Do NOT commit or push changes - allow the user to do this manually
 - Do NOT skip the validation checks to save time
 - All validation checks must pass before changes are considered complete
+- Only push once everything is validated and commited
+
+**Commit Workflow (for Claude Code):**
+
+When completing multiple tasks in a session:
+
+1. **Commit after each completed task** - Create an atomic commit once a task passes all validation checks
+2. **Use Conventional Commits** - Format: `<type>(<scope>): <description>` (see Git Workflow section)
+3. **Keep commits atomic** - One feature, fix, or change per commit
+4. **Only push after ALL tasks are complete** - Do not push until the entire session's work is finished
+5. **Verify before pushing** - Ensure all commits are ready and all tasks pass validation
+
+Example workflow for multiple tasks:
+
+```bash
+# Task 1 complete - commit immediately
+git add . && git commit -m "feat(auth): add password reset flow"
+
+# Task 2 complete - commit immediately
+git add . && git commit -m "fix(profile): handle null avatar gracefully"
+
+# Task 3 complete - commit immediately
+git add . && git commit -m "test(auth): add coverage for password reset"
+
+# ALL tasks complete - now push
+git push
+```
+
+**Visual Verification (CRITICAL):**
+
+Before committing ANY UI or functional changes, you MUST verify them visually:
+
+1. **Start the web dev server**: Run `pnpm web` to launch the development server
+2. **Use Chrome DevTools MCP**: Use the `chrome-devtools` MCP tools to interact with and verify the running app
+3. **Test the changes**: Navigate to affected screens and verify the changes work correctly
+4. **Check for regressions**: Ensure existing functionality still works as expected
+
+**Chrome DevTools MCP Workflow:**
+
+```bash
+# 1. Start the dev server (in background or separate terminal)
+pnpm web
+
+# 2. Use Chrome DevTools MCP to:
+#    - Navigate to pages (navigate_page)
+#    - Take snapshots (take_snapshot) to see page structure
+#    - Take screenshots (take_screenshot) to verify visual appearance
+#    - Click elements (click) to test interactions
+#    - Fill forms (fill) to test inputs
+#    - Check console for errors (list_console_messages)
+#    - Verify network requests (list_network_requests)
+```
+
+**Verification Checklist:**
+
+For every change, verify the following as applicable:
+
+- [ ] **Page loads without errors** - No console errors, no white screen
+- [ ] **Layout renders correctly** - Elements positioned as expected, no overflow issues
+- [ ] **Text is readable** - Correct fonts, sizes, colors, contrast
+- [ ] **Interactive elements work** - Buttons clickable, forms submittable, links navigate
+- [ ] **State updates correctly** - UI reflects data changes, loading states show/hide
+- [ ] **Error states display** - Invalid inputs show errors, failed requests show messages
+- [ ] **Responsive behavior** - Use `resize_page` to test different viewport sizes
+- [ ] **Theme compatibility** - Test in both light and dark modes if applicable
+- [ ] **Accessibility** - Elements have proper labels (check snapshot for accessible names)
+- [ ] **Navigation flows** - Back/forward buttons work, deep links resolve correctly
+- [ ] **Data persistence** - Changes save to Supabase, refresh preserves state
+- [ ] **Loading states** - Spinners/skeletons show during async operations
+- [ ] **Empty states** - UI handles zero-data scenarios gracefully
+- [ ] **Edge cases** - Very long text, special characters, boundary values
+
+**Network & API Verification:**
+
+Always verify API interactions for data-related changes:
+
+1. **Check request payload** - Use `get_network_request` to verify correct data is sent
+2. **Verify response handling** - Ensure success/error responses update UI correctly
+3. **Test offline behavior** - Use `emulate` with `networkConditions: "Offline"` to test graceful degradation
+4. **Check for race conditions** - Rapid clicking shouldn't cause duplicate requests
+5. **Verify auth headers** - Authenticated requests include proper tokens
+
+```bash
+# Example: Verify a form submission
+1. Fill form: mcp__chrome-devtools__fill_form
+2. Submit: mcp__chrome-devtools__click (submit button)
+3. Check network: mcp__chrome-devtools__list_network_requests (resourceTypes: ["fetch", "xhr"])
+4. Get request details: mcp__chrome-devtools__get_network_request (reqid from step 3)
+5. Verify payload and response are correct
+```
+
+**Console Error Severity:**
+
+Not all console messages are equal - know what to look for:
+
+| Level      | Action Required                                        |
+| ---------- | ------------------------------------------------------ |
+| `error`    | **MUST FIX** - Indicates broken functionality          |
+| `warn`     | **SHOULD FIX** - May indicate potential issues         |
+| `log/info` | Review if unexpected - May indicate debug code left in |
+
+Filter console messages by type:
+
+```bash
+mcp__chrome-devtools__list_console_messages (types: ["error", "warn"])
+```
+
+**Performance Testing:**
+
+For changes that may impact performance, use Chrome DevTools performance tracing:
+
+```bash
+# Start a performance trace with page reload
+mcp__chrome-devtools__performance_start_trace (reload: true, autoStop: true)
+
+# Or manually control the trace
+mcp__chrome-devtools__performance_start_trace (reload: false, autoStop: false)
+# ... perform actions ...
+mcp__chrome-devtools__performance_stop_trace
+
+# Analyze specific insights
+mcp__chrome-devtools__performance_analyze_insight (insightSetId: "...", insightName: "LCPBreakdown")
+```
+
+**Performance Checklist:**
+
+- [ ] **Initial load time** - Page renders meaningful content within 2-3 seconds
+- [ ] **Largest Contentful Paint (LCP)** - Main content visible quickly
+- [ ] **Time to Interactive (TTI)** - Page responds to input promptly
+- [ ] **No layout shifts** - Content doesn't jump around during load
+- [ ] **Efficient re-renders** - State changes don't cause excessive re-renders
+- [ ] **Network waterfall** - No blocking requests, parallel fetches where possible
+- [ ] **Bundle size** - New dependencies don't significantly increase bundle
+
+**When to performance test:**
+
+- Adding new dependencies/libraries
+- Implementing list views with many items
+- Adding images or media
+- Creating complex animations
+- Fetching large datasets
+
+**Form Validation Edge Cases:**
+
+Test forms with unexpected inputs to ensure robust validation:
+
+**Email Fields:**
+
+```bash
+# Test these values with mcp__chrome-devtools__fill
+- ""                           # Empty
+- "notanemail"                 # Missing @
+- "@nodomain.com"              # Missing local part
+- "spaces in@email.com"        # Spaces
+- "valid@email.com"            # Valid (should pass)
+- "a@b.c"                      # Minimal valid
+- "very.long.email.address.that.exceeds.normal.length@extremely-long-domain-name.com"
+```
+
+**Password Fields:**
+
+```bash
+- ""                           # Empty
+- "short"                      # Too short
+- "nouppercaseornumbers"       # Missing requirements
+- "ValidP@ssw0rd!"             # Valid (should pass)
+- "a]P1" + "x".repeat(1000)    # Extremely long
+- "<script>alert(1)</script>"  # XSS attempt (should be escaped)
+```
+
+**Text/Name Fields:**
+
+```bash
+- ""                           # Empty
+- "   "                        # Only whitespace
+- "A"                          # Single character
+- "José María"                 # Unicode/accents
+- "李明"                        # Non-Latin characters
+- "O'Brien-Smith"              # Apostrophes and hyphens
+- "<script>alert(1)</script>"  # XSS attempt
+- "x".repeat(10000)            # Extremely long input
+```
+
+**Date Fields:**
+
+```bash
+- ""                           # Empty
+- "2099-12-31"                 # Far future
+- "1900-01-01"                 # Far past
+- "2024-02-30"                 # Invalid date
+- Today's date                 # Boundary
+- Tomorrow                     # Future (may be invalid for sobriety_date)
+```
+
+**Form Validation Checklist:**
+
+- [ ] **Required fields show errors when empty** - Clear error messages appear
+- [ ] **Invalid formats rejected** - Email, date, etc. validate format
+- [ ] **Error messages are helpful** - Tell user what's wrong and how to fix
+- [ ] **Errors clear when corrected** - Message disappears after valid input
+- [ ] **Submit disabled until valid** - Or shows all errors on attempt
+- [ ] **Server errors handled** - Network failures, duplicate entries, etc.
+- [ ] **XSS inputs escaped** - Script tags render as text, not executed
+- [ ] **SQL injection prevented** - Special characters don't break queries (Supabase RLS helps)
+
+**Testing Authentication Flows:**
+
+Since this app has auth guards, test these scenarios:
+
+1. **Unauthenticated state** - Verify redirect to `/login`
+2. **Authenticated without profile** - Verify redirect to `/onboarding`
+3. **Fully authenticated** - Verify access to `/(tabs)` screens
+4. **Session expiry** - Verify graceful handling of expired tokens
+
+**Common Issues to Watch For:**
+
+| Issue                  | How to Detect                    | Chrome DevTools Tool                                |
+| ---------------------- | -------------------------------- | --------------------------------------------------- |
+| JavaScript errors      | Red errors in console            | `list_console_messages`                             |
+| Failed API calls       | 4xx/5xx responses                | `list_network_requests`, `get_network_request`      |
+| Missing elements       | Element not in snapshot          | `take_snapshot`                                     |
+| Visual regressions     | Screenshot differs from expected | `take_screenshot`                                   |
+| Broken interactions    | Click does nothing               | `click` + `take_snapshot`                           |
+| Form validation issues | Submit doesn't work              | `fill` + `click`                                    |
+| Performance problems   | Slow load times                  | `performance_start_trace`, `performance_stop_trace` |
+| Layout breakage        | Elements overlapping/hidden      | `take_screenshot` at different sizes                |
+
+**Step-by-Step Example:**
+
+```
+# Example: Verifying a new button on the profile screen
+
+1. Start dev server: pnpm web
+2. List pages: mcp__chrome-devtools__list_pages
+3. Navigate: mcp__chrome-devtools__navigate_page (url: "http://localhost:8081/profile")
+4. Wait for load: mcp__chrome-devtools__wait_for (text: "Profile")
+5. Take snapshot: mcp__chrome-devtools__take_snapshot
+6. Verify button exists in snapshot with correct uid
+7. Click button: mcp__chrome-devtools__click (uid: "button-uid")
+8. Take screenshot: mcp__chrome-devtools__take_screenshot
+9. Check console: mcp__chrome-devtools__list_console_messages
+10. Verify no errors and expected behavior occurred
+```
+
+**When to Skip Visual Verification:**
+
+Only skip visual verification for changes that have NO runtime impact:
+
+- Documentation-only changes (README, CLAUDE.md, comments)
+- Type-only changes (interfaces, type definitions with no runtime code)
+- Test-only changes (test files that don't affect production code)
+- Configuration changes that don't affect the UI (ESLint rules, tsconfig)
+
+**For ALL other changes, visual verification is MANDATORY.**
 
 **Why this matters:**
 
+- Static analysis (typecheck, lint) cannot catch runtime or visual bugs
+- UI changes may look correct in code but render incorrectly
+- User interactions may have unexpected side effects
+- Console errors or network issues only appear at runtime
+- This is the final safety check before committing
 - Prevents TypeScript errors from reaching production
 - Maintains consistent code style across the project
 - Catches potential bugs and issues early
@@ -269,6 +581,28 @@ Every code change MUST include corresponding tests. This applies to:
 - Clean up mocks in `beforeEach()` or `afterEach()`
 - Avoid testing implementation details; test behavior instead
 
+**Jest Configuration (`jest.config.js`):**
+
+- Test environment: `node` (not jsdom - faster for React Native)
+- Coverage thresholds: 80% global (statements, branches, functions, lines)
+- Test patterns: `**/__tests__/**/*.(spec|test).[jt]s?(x)`
+
+**Mock Strategy (`jest.setup.js`):**
+
+Comprehensive mocks are configured for:
+
+- **React Native**: Core components, Animated, Platform
+- **Expo modules**: Router, Font, SplashScreen, AuthSession, WebBrowser, Linking
+- **Supabase**: Auth and database client
+- **Sentry**: Error tracking
+- **AsyncStorage**: Secure storage
+- **Firebase**: Analytics
+
+**Test Utilities Location:** `__tests__/test-utils.tsx`
+
+- Exports `renderWithProviders()` wrapper for components needing context
+- Pre-configured AuthContext and ThemeContext mocks
+
 ## Supabase Schema Overview
 
 **Core Tables:**
@@ -320,6 +654,32 @@ SENTRY_PROJECT=sobriety-waypoint
 - `EXPO_PUBLIC_*` = Available in client-side code
 - Other vars = Build-time only (NOT in app code)
 
+## Advanced Expo Configuration
+
+**Experimental Features Enabled (`app.config.ts`):**
+
+- `experiments.reactCompiler: true` - React Compiler for automatic memoization
+- `experiments.typedRoutes: true` - Type-safe routing with Expo Router
+- `newArchEnabled: true` - React Native New Architecture
+
+**EAS Update Configuration:**
+
+- Runtime version policy: `"appVersion"` - Updates tied to app version
+- Update check on launch: Enabled
+- Fallback to cache timeout: 0ms (immediate)
+
+**Firebase Integration:**
+
+Firebase configuration uses a two-tier strategy:
+
+1. **EAS Builds**: Uses EAS secrets (`GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICES_PLIST`)
+2. **Local Development**: Falls back to local files (`google-services.json`, `GoogleService-Info.plist`)
+
+**Build Tools:**
+
+- **Babel** (`babel.config.js`): Uses `babel-preset-expo` (standard Expo preset)
+- **Metro** (`metro.config.js`): Wrapped with Sentry for source map uploads
+
 ## CI/CD Pipeline
 
 **GitHub Actions:**
@@ -340,18 +700,36 @@ SENTRY_PROJECT=sobriety-waypoint
    - Applies 2-5 relevant labels (type, area, priority)
    - Runs on PR/issue open, reopen, or edit
 
+4. **Daily Codebase Review** (`.github/workflows/daily-codebase-review.yml`):
+   - Runs daily on schedule or manual trigger
+   - Comprehensive codebase health assessment
+   - Creates GitHub issues for findings
+
 **EAS Build Profiles:**
 
 - `development`: Dev client for local testing
 - `preview`: CI builds with Release config, OTA channel `preview`
 - `production`: Production builds with auto version bump
 
+**EAS CLI Requirement:**
+
+- Minimum version: `>= 16.27.0`
+- App version source: `remote` (version managed by EAS)
+
 **Required GitHub Secrets:**
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - `EXPO_TOKEN` (from expo.dev → Access Tokens)
-- `CLAUDE_CODE_OAUTH_TOKEN` (for Claude Code Review and Auto Label actions)
+- `CLAUDE_CODE_OAUTH_TOKEN` (for Claude Code Review, Auto Label, and Daily Review actions)
+
+**Custom GitHub Action:**
+
+`.github/actions/setup-project/action.yml` - Reusable action for:
+
+- Node.js 22 setup
+- pnpm installation with caching
+- Dependency installation
 
 ## Security Reminders
 
@@ -586,9 +964,17 @@ const styles = StyleSheet.create({
 | Event handlers     | handle prefix          | `handlePress`, `handleSubmit`  |
 | Async functions    | verb describing action | `fetchTasks`, `updateProfile`  |
 
-**TypeScript:**
+**TypeScript Configuration (`tsconfig.json`):**
 
-- Strict mode enabled (`strict: true` in tsconfig)
+Key settings for performance and developer experience:
+
+- `strict: true` - Full type safety
+- `incremental: true` - Faster rebuilds via incremental compilation
+- `skipLibCheck: true` - Skip type checking of declaration files
+- `paths: { "@/*": ["./*"] }` - Path alias for clean imports
+
+**TypeScript Best Practices:**
+
 - Prefer explicit types over inference for public APIs
 - Use database types from `types/database.ts` as source of truth
 - Avoid `any` - use `unknown` with type guards when type is truly unknown
@@ -606,11 +992,43 @@ const styles = StyleSheet.create({
 - StyleSheet.create() for component styles (no inline objects)
 - Extract reusable logic into custom hooks
 
-**Git Workflow:**
+**ESLint Configuration (`eslint.config.js`):**
 
-- Husky + lint-staged auto-format on commit
-- Pre-commit checks: Prettier format + ESLint on staged TS/JS files
-- Skip hooks only via `git commit -n` (not recommended)
+This project uses ESLint flat config with:
+
+- `eslint-config-expo/flat` as base configuration
+- `eslint-config-prettier` for Prettier compatibility
+- **`no-console: 'error'`** globally enforced (use `logger` from `@/lib/logger` instead)
+
+Files exempt from `no-console`:
+
+- `lib/logger.ts` - Logger implementation
+- `lib/sentry.ts` - Sentry initialization
+- `jest.setup.js` - Test setup
+
+**Prettier Configuration (`.prettierrc`):**
+
+| Setting         | Value      | Purpose                            |
+| --------------- | ---------- | ---------------------------------- |
+| `semi`          | `true`     | Use semicolons                     |
+| `singleQuote`   | `true`     | Prefer single quotes               |
+| `trailingComma` | `"es5"`    | Trailing commas where valid in ES5 |
+| `printWidth`    | `100`      | Line wrap at 100 characters        |
+| `tabWidth`      | `2`        | 2-space indentation                |
+| `arrowParens`   | `"always"` | Always wrap arrow function params  |
+| `endOfLine`     | `"lf"`     | Unix line endings                  |
+
+**Pre-commit Hooks (Husky + lint-staged):**
+
+Automatically runs on every commit:
+
+1. **TypeScript/JavaScript files** (`*.{js,jsx,ts,tsx}`):
+   - `prettier --write` - Auto-format
+   - `eslint --fix` - Fix lint issues
+2. **JSON/Markdown files** (`*.{json,md}`):
+   - `prettier --write` - Auto-format
+
+Skip hooks (not recommended): `git commit -n`
 
 **Branch Naming (Conventional Branch):**
 
@@ -678,9 +1096,9 @@ Common scopes for this project:
 Examples:
 
 ```text
-feat(journey): add dual metrics display for slip-ups
-fix(supabase): make client SSR-compatible for static builds
-refactor(auth): simplify session refresh logic
+feat(auth): add password reset flow
+fix(journey): handle null avatar gracefully
+refactor(tasks): optimize task loading logic
 test(journey): add coverage for timeline events
 chore(deps): bump expo-router to v6.0.15
 docs(readme): update setup instructions

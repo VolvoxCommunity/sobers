@@ -25,6 +25,19 @@ export interface AnimatedBottomNavProps {
   accentColor?: string;
 }
 
+/**
+ * An animated bottom navigation bar with smooth icon and underline transitions.
+ *
+ * @remarks
+ * Supports both controlled (via activeIndex prop) and uncontrolled modes.
+ * Uses React Native Animated API for smooth icon lift and underline expansion effects.
+ *
+ * @param items - Array of navigation items with label, icon, and optional onPress handler
+ * @param activeIndex - Controlled active tab index (optional)
+ * @param onActiveIndexChange - Callback when active tab changes
+ * @param accentColor - Override the theme's primary color for active state
+ * @returns An animated bottom navigation bar component
+ */
 export default function AnimatedBottomNav({
   items,
   activeIndex: controlledActiveIndex,
