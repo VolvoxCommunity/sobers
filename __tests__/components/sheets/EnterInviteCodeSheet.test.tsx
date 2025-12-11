@@ -356,12 +356,30 @@ describe('EnterInviteCodeSheet', () => {
       expect(mockDismiss).toHaveBeenCalled();
     });
 
-    it('calls onClose when sheet is dismissed', () => {
+    it('calls onClose when sheet is dismissed via Cancel', () => {
       renderSheet();
 
       fireEvent.press(screen.getByTestId('cancel-button'));
 
       expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('does NOT call onClose after successful submission', async () => {
+      mockOnSubmit.mockResolvedValueOnce(undefined);
+      renderSheet();
+
+      const input = screen.getByPlaceholderText('Enter 8-character code');
+      fireEvent.changeText(input, 'ABC12345');
+
+      fireEvent.press(screen.getByTestId('connect-button'));
+
+      await waitFor(() => {
+        expect(mockDismiss).toHaveBeenCalled();
+      });
+
+      // onClose should NOT be called after successful submission
+      // (per documented contract: "invoked when the sheet is dismissed without submitting")
+      expect(mockOnClose).not.toHaveBeenCalled();
     });
 
     it('resets form when sheet is presented again', async () => {

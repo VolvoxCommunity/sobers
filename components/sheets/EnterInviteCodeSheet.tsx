@@ -112,6 +112,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
 
     const sheetRef = useRef<GlassBottomSheetRef>(null);
     const isMountedRef = useRef(true);
+    const didSubmitSuccessfullyRef = useRef(false);
 
     // Track mounted state to prevent state updates after unmount
     useEffect(() => {
@@ -139,15 +140,20 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
       setInviteCode('');
       setError(null);
       setIsSubmitting(false);
+      didSubmitSuccessfullyRef.current = false;
     }, []);
 
     /**
      * Handler for GlassBottomSheet's onDismiss callback.
-     * Performs cleanup and notifies parent.
+     * Performs cleanup and notifies parent only if dismissed without submitting.
      */
     const handleDismiss = useCallback(() => {
+      const wasSuccessfulSubmission = didSubmitSuccessfullyRef.current;
       resetForm();
-      onClose?.();
+      // Only call onClose if dismissed without successful submission
+      if (!wasSuccessfulSubmission) {
+        onClose?.();
+      }
     }, [resetForm, onClose]);
 
     /**
@@ -183,6 +189,9 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
         await onSubmit(inviteCode);
         // Guard against state updates after unmount
         if (!isMountedRef.current) return;
+        // Mark as successful submission before dismissing
+        // This prevents onClose from being called (per documented contract)
+        didSubmitSuccessfullyRef.current = true;
         // Dismiss sheet on success
         sheetRef.current?.dismiss();
       } catch (err: unknown) {
