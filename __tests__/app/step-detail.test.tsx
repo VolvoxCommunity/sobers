@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import StepDetailScreen from '@/app/(tabs)/steps/[id]';
 import { StepContent, Profile } from '@/types/database';
 
@@ -241,7 +242,7 @@ describe('StepDetailScreen', () => {
 
   describe('loading state', () => {
     it('shows loading indicator initially', () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       expect(screen.getByText('Loading step...')).toBeTruthy();
     });
@@ -252,7 +253,7 @@ describe('StepDetailScreen', () => {
       mockStepsData = null;
       mockStepsError = new Error('Network error');
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Failed to load step content')).toBeTruthy();
@@ -263,7 +264,7 @@ describe('StepDetailScreen', () => {
       mockStepsData = null;
       mockStepsError = new Error('Network error');
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Retry')).toBeTruthy();
@@ -273,7 +274,7 @@ describe('StepDetailScreen', () => {
     it('shows error when step not found', async () => {
       mockRouteId = 'non-existent-step';
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Step not found')).toBeTruthy();
@@ -283,7 +284,7 @@ describe('StepDetailScreen', () => {
 
   describe('step content rendering', () => {
     it('renders step indicator in header', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Step 1 of 3')).toBeTruthy();
@@ -291,7 +292,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('renders step number label', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Step 1')).toBeTruthy();
@@ -299,7 +300,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('renders step title', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -307,7 +308,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('renders step description', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('The first step in recovery')).toBeTruthy();
@@ -315,7 +316,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('renders detailed content section', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Understanding This Step')).toBeTruthy();
@@ -324,7 +325,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('renders reflection questions when available', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Reflection Questions')).toBeTruthy();
@@ -335,7 +336,7 @@ describe('StepDetailScreen', () => {
     it('does not render reflection section when no prompts', async () => {
       mockRouteId = 'step-3';
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Made a decision')).toBeTruthy();
@@ -347,7 +348,7 @@ describe('StepDetailScreen', () => {
 
   describe('navigation', () => {
     it('renders navigation controls', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -361,7 +362,7 @@ describe('StepDetailScreen', () => {
     it('navigates to previous step when Previous is pressed', async () => {
       mockRouteId = 'step-2';
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Came to believe')).toBeTruthy();
@@ -373,7 +374,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('navigates to next step when Next is pressed', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -385,7 +386,7 @@ describe('StepDetailScreen', () => {
     });
 
     it('disables Previous button on first step', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -400,7 +401,7 @@ describe('StepDetailScreen', () => {
     it('disables Next button on last step', async () => {
       mockRouteId = 'step-3';
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Made a decision')).toBeTruthy();
@@ -417,7 +418,7 @@ describe('StepDetailScreen', () => {
     it('shows Mark as Complete button when step is not completed', async () => {
       mockProgressData = null;
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Mark as Complete')).toBeTruthy();
@@ -427,7 +428,7 @@ describe('StepDetailScreen', () => {
     it('shows Marked as Complete button when step is completed', async () => {
       mockProgressData = { id: 'progress-1', step_number: 1, user_id: 'user-123', completed: true };
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Marked as Complete')).toBeTruthy();
@@ -438,7 +439,7 @@ describe('StepDetailScreen', () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
       mockProgressData = null;
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Mark as Complete')).toBeTruthy();
@@ -455,7 +456,7 @@ describe('StepDetailScreen', () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
       mockProgressData = { id: 'progress-1', step_number: 1, user_id: 'user-123', completed: true };
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Marked as Complete')).toBeTruthy();
@@ -471,7 +472,7 @@ describe('StepDetailScreen', () => {
 
   describe('analytics', () => {
     it('tracks step viewed event on load', async () => {
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -487,7 +488,7 @@ describe('StepDetailScreen', () => {
       mockStepsData = null;
       mockStepsError = new Error('Network error');
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(logger.error).toHaveBeenCalledWith(
@@ -534,7 +535,7 @@ describe('StepDetailScreen', () => {
         };
       });
 
-      render(<StepDetailScreen />);
+      renderWithProviders(<StepDetailScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Mark as Complete')).toBeTruthy();
