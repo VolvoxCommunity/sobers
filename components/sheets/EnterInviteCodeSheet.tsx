@@ -254,6 +254,8 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
               autoFocus
+              testID="invite-code-input"
+              accessibilityLabel="Invite code input"
             />
             <Text style={styles.characterCount}>{inviteCode.length}/8 characters</Text>
           </View>
