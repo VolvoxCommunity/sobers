@@ -412,7 +412,10 @@ describe('TaskCreationSheet', () => {
       expect(onClose).toHaveBeenCalled();
     });
 
-    it('resets form when closing', () => {
+    it('calls onClose callback when cancel is pressed (form state is reset internally)', () => {
+      // Note: The form resets its state when the sheet closes via the onDismiss callback.
+      // This test verifies the dismiss flow is triggered; the actual form reset
+      // happens in handleClose which calls resetFormState() before dismissing.
       render(<TaskCreationSheet {...defaultProps} />);
 
       // Fill in some data
