@@ -183,25 +183,27 @@ export default function ManageTasksScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Tasks</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Manage Tasks
+        </Text>
         <Text style={styles.headerSubtitle}>Track and assign sponsee tasks</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        <View style={styles.statCard} accessibilityLabel={`${stats.total} Total Tasks`}>
           <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={styles.statCard} accessibilityLabel={`${stats.assigned} Assigned Tasks`}>
           <Text style={[styles.statValue, { color: theme.primary }]}>{stats.assigned}</Text>
           <Text style={styles.statLabel}>Assigned</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={styles.statCard} accessibilityLabel={`${stats.completed} Completed Tasks`}>
           <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         {stats.overdue > 0 && (
-          <View style={styles.statCard}>
+          <View style={styles.statCard} accessibilityLabel={`${stats.overdue} Overdue Tasks`}>
             <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.overdue}</Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
@@ -217,6 +219,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
             onPress={() => setFilterStatus('all')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'all' }}
+            accessibilityLabel="Filter by All Tasks"
           >
             <Text
               style={[styles.filterChipText, filterStatus === 'all' && styles.filterChipTextActive]}
@@ -227,6 +232,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'assigned' && styles.filterChipActive]}
             onPress={() => setFilterStatus('assigned')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'assigned' }}
+            accessibilityLabel="Filter by Assigned Tasks"
           >
             <Text
               style={[
@@ -240,6 +248,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
             onPress={() => setFilterStatus('completed')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'completed' }}
+            accessibilityLabel="Filter by Completed Tasks"
           >
             <Text
               style={[
@@ -266,6 +277,9 @@ export default function ManageTasksScreen() {
                 selectedSponseeFilter === 'all' && styles.filterChipActive,
               ]}
               onPress={() => setSelectedSponseeFilter('all')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedSponseeFilter === 'all' }}
+              accessibilityLabel="Filter by All Sponsees"
             >
               <Text
                 style={[
@@ -284,6 +298,9 @@ export default function ManageTasksScreen() {
                   selectedSponseeFilter === sponsee.id && styles.filterChipActive,
                 ]}
                 onPress={() => setSelectedSponseeFilter(sponsee.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedSponseeFilter === sponsee.id }}
+                accessibilityLabel={`Filter by sponsee ${formatProfileName(sponsee)}`}
               >
                 <Text
                   style={[
@@ -330,7 +347,7 @@ export default function ManageTasksScreen() {
             return (
               <View key={sponseeId} style={styles.sponseeSection}>
                 <View style={styles.sponseeHeader}>
-                  <View style={styles.sponseeAvatar}>
+                  <View style={styles.sponseeAvatar} accessibilityRole="image">
                     <Text style={styles.sponseeAvatarText}>
                       {(sponsee?.display_name?.[0] || '?').toUpperCase()}
                     </Text>
@@ -348,6 +365,8 @@ export default function ManageTasksScreen() {
                       setPreselectedSponseeId(sponseeId);
                       taskSheetRef.current?.present();
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
                   >
                     <Plus size={20} color={theme.primary} />
                   </TouchableOpacity>
@@ -357,15 +376,16 @@ export default function ManageTasksScreen() {
                   <View
                     key={task.id}
                     style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
+                    accessibilityLabel={`Task: ${task.title}, Step ${task.step_number || 'None'}, Status: ${task.status === 'assigned' ? 'Assigned' : task.status === 'in_progress' ? 'In Progress' : 'Completed'}${isOverdue(task, now) ? ', Overdue' : ''}`}
                   >
                     <View style={styles.taskHeader}>
                       <View style={styles.stepBadge}>
                         <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
                       </View>
                       {task.status === 'completed' ? (
-                        <CheckCircle size={20} color="#10b981" />
+                        <CheckCircle size={20} color="#10b981" accessibilityLabel="Completed" />
                       ) : isOverdue(task, now) ? (
-                        <Clock size={20} color="#ef4444" />
+                        <Clock size={20} color="#ef4444" accessibilityLabel="Overdue" />
                       ) : (
                         <Clock size={20} color={theme.textSecondary} />
                       )}
@@ -416,6 +436,9 @@ export default function ManageTasksScreen() {
                         <TouchableOpacity
                           style={styles.deleteButton}
                           onPress={() => handleDeleteTask(task.id, task.title)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete task ${task.title}`}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
                           <Trash2 size={16} color="#ef4444" />
                         </TouchableOpacity>
@@ -436,6 +459,9 @@ export default function ManageTasksScreen() {
             setPreselectedSponseeId(undefined);
             taskSheetRef.current?.present();
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Assign new task"
+          accessibilityHint="Opens the task assignment sheet"
         >
           <Plus size={24} color="#ffffff" />
         </TouchableOpacity>
