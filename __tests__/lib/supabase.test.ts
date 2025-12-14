@@ -13,7 +13,7 @@
 
 // Mock react-native-url-polyfill before anything else
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
@@ -31,12 +31,6 @@ const mockSupabaseClient = {
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => mockSupabaseClient),
-}));
-
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
 }));
 
 // =============================================================================
@@ -133,10 +127,10 @@ describe('Supabase Module', () => {
         global.window = originalWindow;
       });
 
-      it('uses AsyncStorage on native platform', async () => {
+      it('uses SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
-        (AsyncStorage.getItem as jest.Mock).mockResolvedValue('stored-value');
+        (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('stored-value');
 
         // Ensure window is defined for client environment
         global.window = {} as Window & typeof globalThis;
@@ -150,7 +144,7 @@ describe('Supabase Module', () => {
 
         if (storageAdapter) {
           const result = await storageAdapter.getItem('test-key');
-          expect(AsyncStorage.getItem).toHaveBeenCalledWith('test-key');
+          expect(SecureStore.getItemAsync).toHaveBeenCalledWith('test-key');
           expect(result).toBe('stored-value');
         }
       });
@@ -209,10 +203,10 @@ describe('Supabase Module', () => {
         global.window = originalWindow;
       });
 
-      it('stores value in AsyncStorage on native platform', async () => {
+      it('stores value in SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
-        (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+        (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
         global.window = {} as Window & typeof globalThis;
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -224,7 +218,7 @@ describe('Supabase Module', () => {
 
         if (storageAdapter) {
           await storageAdapter.setItem('test-key', 'test-value');
-          expect(AsyncStorage.setItem).toHaveBeenCalledWith('test-key', 'test-value');
+          expect(SecureStore.setItemAsync).toHaveBeenCalledWith('test-key', 'test-value');
         }
       });
 
@@ -280,10 +274,10 @@ describe('Supabase Module', () => {
         global.window = originalWindow;
       });
 
-      it('removes value from AsyncStorage on native platform', async () => {
+      it('removes value from SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
-        (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+        (SecureStore.deleteItemAsync as jest.Mock).mockResolvedValue(undefined);
         global.window = {} as Window & typeof globalThis;
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -295,7 +289,7 @@ describe('Supabase Module', () => {
 
         if (storageAdapter) {
           await storageAdapter.removeItem('test-key');
-          expect(AsyncStorage.removeItem).toHaveBeenCalledWith('test-key');
+          expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('test-key');
         }
       });
 
