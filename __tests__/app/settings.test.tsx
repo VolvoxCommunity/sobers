@@ -1283,3 +1283,177 @@ describe('SettingsScreen', () => {
     });
   });
 });
+
+// =============================================================================
+// Web Platform Tests
+// =============================================================================
+
+describe('SettingsScreen - Web Platform', () => {
+  const { Platform } = require('react-native');
+  const originalWindow = global.window;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSignOut.mockResolvedValue(undefined);
+    mockDeleteAccount.mockResolvedValue(undefined);
+    mockRefreshProfile.mockResolvedValue(undefined);
+    mockProfile = defaultMockProfile;
+    Platform.OS = 'web';
+    global.window = {
+      ...originalWindow,
+      confirm: jest.fn().mockReturnValue(true),
+      alert: jest.fn(),
+    } as unknown as Window & typeof globalThis;
+  });
+
+  afterEach(() => {
+    Platform.OS = 'ios';
+    global.window = originalWindow;
+  });
+
+  describe('Sign Out - Web', () => {
+    it('shows web confirmation dialog when sign out is pressed', async () => {
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Sign out of your account'));
+
+      await waitFor(() => {
+        expect(global.window.confirm).toHaveBeenCalledWith('Are you sure you want to sign out?');
+      });
+    });
+
+    it('calls signOut on web after confirmation', async () => {
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Sign out of your account'));
+
+      await waitFor(() => {
+        expect(mockBack).toHaveBeenCalled();
+        expect(mockSignOut).toHaveBeenCalled();
+      });
+    });
+
+    it('does not sign out when cancelled on web', async () => {
+      (global.window.confirm as jest.Mock).mockReturnValueOnce(false);
+
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Sign out of your account'));
+
+      await waitFor(() => {
+        expect(global.window.confirm).toHaveBeenCalled();
+      });
+
+      expect(mockSignOut).not.toHaveBeenCalled();
+    });
+
+    it('shows error alert when sign out fails on web', async () => {
+      mockSignOut.mockRejectedValueOnce(new Error('Network error'));
+
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Sign out of your account'));
+
+      await waitFor(() => {
+        expect(global.window.alert).toHaveBeenCalledWith(expect.stringContaining('Network error'));
+      });
+    });
+  });
+
+  describe('Delete Account - Web', () => {
+    it('shows two confirmation dialogs on web before deleting', async () => {
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Danger Zone section'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Account')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Delete your account permanently'));
+
+      await waitFor(() => {
+        // Both confirms should be called
+        expect(global.window.confirm).toHaveBeenCalledTimes(2);
+        expect(mockBack).toHaveBeenCalled();
+        expect(mockDeleteAccount).toHaveBeenCalled();
+      });
+    });
+
+    it('shows success alert after account deletion on web', async () => {
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Danger Zone section'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Account')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Delete your account permanently'));
+
+      await waitFor(() => {
+        expect(global.window.alert).toHaveBeenCalledWith(
+          expect.stringContaining('account has been deleted')
+        );
+      });
+    });
+
+    it('does not delete when first confirm is cancelled on web', async () => {
+      (global.window.confirm as jest.Mock).mockReturnValueOnce(false);
+
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Danger Zone section'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Account')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Delete your account permanently'));
+
+      await waitFor(() => {
+        expect(global.window.confirm).toHaveBeenCalledTimes(1);
+      });
+
+      expect(mockDeleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('does not delete when second confirm is cancelled on web', async () => {
+      (global.window.confirm as jest.Mock).mockReturnValueOnce(true).mockReturnValueOnce(false);
+
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Danger Zone section'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Account')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Delete your account permanently'));
+
+      await waitFor(() => {
+        expect(global.window.confirm).toHaveBeenCalledTimes(2);
+      });
+
+      expect(mockDeleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('shows error alert when delete fails on web', async () => {
+      mockDeleteAccount.mockRejectedValueOnce(new Error('Delete failed'));
+
+      render(<SettingsScreen />);
+
+      fireEvent.press(screen.getByLabelText('Danger Zone section'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Account')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByLabelText('Delete your account permanently'));
+
+      await waitFor(() => {
+        expect(global.window.alert).toHaveBeenCalledWith(expect.stringContaining('Delete failed'));
+      });
+    });
+  });
+});
