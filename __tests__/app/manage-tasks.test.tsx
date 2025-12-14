@@ -401,8 +401,93 @@ describe('ManageTasksScreen', () => {
         expect(screen.getByText('Complete Step 1 Reading')).toBeTruthy();
       });
 
-      // The delete button would be next to each task
-      // Since icons are mocked, we'd need accessibility labels
+      // Use accessibility label to find the delete button
+      const deleteButton = screen.getByLabelText('Delete task Complete Step 1 Reading');
+      fireEvent.press(deleteButton);
+
+      expect(Alert.alert).toHaveBeenCalled();
+    });
+
+    it('deletes task when confirmed', async () => {
+      const { Alert } = jest.requireMock('react-native');
+      Alert.alert.mockImplementation((title, message, buttons) => {
+        // Simulate pressing "Delete"
+        const deleteButton = (buttons || []).find((b: any) => b.text === 'Delete');
+        if (deleteButton) deleteButton.onPress();
+      });
+
+      const { supabase } = require('@/lib/supabase');
+
+      // Capture the original implementation to wrap it
+      const originalFrom = supabase.from.getMockImplementation();
+      const deleteMock = jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ error: null }),
+      });
+
+      supabase.from.mockImplementation((table: string) => {
+        const result = originalFrom(table);
+        if (table === 'tasks') {
+          return {
+            ...result,
+            delete: deleteMock,
+          };
+        }
+        return result;
+      });
+
+      render(<ManageTasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Complete Step 1 Reading')).toBeTruthy();
+      });
+
+      const deleteButton = screen.getByLabelText('Delete task Complete Step 1 Reading');
+      fireEvent.press(deleteButton);
+
+      await waitFor(() => {
+        expect(deleteMock).toHaveBeenCalled();
+      });
+    });
+
+    it('does not delete task when cancelled', async () => {
+      const { Alert } = jest.requireMock('react-native');
+      Alert.alert.mockImplementation((title, message, buttons) => {
+        // Simulate pressing "Cancel"
+        const cancelButton = (buttons || []).find((b: any) => b.text === 'Cancel');
+        if (cancelButton) cancelButton.onPress();
+      });
+
+      const { supabase } = require('@/lib/supabase');
+
+      const originalFrom = supabase.from.getMockImplementation();
+      const deleteMock = jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ error: null }),
+      });
+
+      supabase.from.mockImplementation((table: string) => {
+        const result = originalFrom(table);
+        if (table === 'tasks') {
+          return {
+            ...result,
+            delete: deleteMock,
+          };
+        }
+        return result;
+      });
+
+      render(<ManageTasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Complete Step 1 Reading')).toBeTruthy();
+      });
+
+      const deleteButton = screen.getByLabelText('Delete task Complete Step 1 Reading');
+      fireEvent.press(deleteButton);
+
+      // Should NOT call delete
+      await waitFor(() => {
+        expect(deleteMock).not.toHaveBeenCalled();
+      });
     });
   });
 

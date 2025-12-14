@@ -314,8 +314,16 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
         keyboardBehavior="extend"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Assign New Task</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <Text style={styles.title} accessibilityRole="header">
+            Assign New Task
+          </Text>
+          <TouchableOpacity
+            onPress={handleClose}
+            style={styles.closeButton}
+            accessibilityLabel="Close"
+            accessibilityRole="button"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <X size={24} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -326,14 +334,21 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
           onTouchStart={closeAllDropdowns}
         >
           {error ? (
-            <View style={styles.errorContainer}>
+            <View style={styles.errorContainer} accessibilityLiveRegion="polite">
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Sponsee *</Text>
-            <TouchableOpacity style={styles.dropdown} onPress={() => toggleDropdown('sponsee')}>
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => toggleDropdown('sponsee')}
+              accessibilityRole="combobox"
+              accessibilityLabel="Select sponsee"
+              accessibilityHint="Double tap to choose a sponsee"
+              accessibilityState={{ expanded: activeDropdown === 'sponsee' }}
+            >
               <Text style={[styles.dropdownText, !selectedSponseeId && styles.placeholderText]}>
                 {selectedSponseeId
                   ? (sponsees.find((s) => s.id === selectedSponseeId)?.display_name ??
@@ -355,6 +370,8 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                       setSelectedSponseeId(sponsee.id);
                       closeAllDropdowns();
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={sponsee?.display_name ?? 'Unknown sponsee'}
                   >
                     <Text style={styles.dropdownItemText}>
                       {sponsee?.display_name ?? 'Unknown sponsee'}
@@ -367,7 +384,13 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Step Number (Optional)</Text>
-            <TouchableOpacity style={styles.dropdown} onPress={() => toggleDropdown('step')}>
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => toggleDropdown('step')}
+              accessibilityRole="combobox"
+              accessibilityLabel="Select step number"
+              accessibilityState={{ expanded: activeDropdown === 'step' }}
+            >
               <Text style={[styles.dropdownText, !selectedStepNumber && styles.placeholderText]}>
                 {selectedStepNumber ? `Step ${selectedStepNumber}` : 'Select step (optional)'}
               </Text>
@@ -387,6 +410,8 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                     setCustomDescription('');
                     closeAllDropdowns();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="No specific step"
                 >
                   <Text style={[styles.dropdownItemText, { fontStyle: 'italic' }]}>
                     No specific step
@@ -403,6 +428,8 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                       setCustomDescription('');
                       closeAllDropdowns();
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Step ${step}`}
                   >
                     <Text style={styles.dropdownItemText}>Step {step}</Text>
                   </TouchableOpacity>
@@ -421,6 +448,15 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                 }
               }}
               disabled={!selectedStepNumber}
+              accessibilityRole="combobox"
+              accessibilityLabel="Select task template"
+              accessibilityState={{
+                expanded: activeDropdown === 'template',
+                disabled: !selectedStepNumber,
+              }}
+              accessibilityHint={
+                !selectedStepNumber ? 'Select a step first to enable templates' : ''
+              }
             >
               <Text
                 style={[
@@ -453,6 +489,9 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                       key={template.id}
                       style={styles.dropdownItem}
                       onPress={() => handleTemplateSelect(template)}
+                      accessibilityRole="button"
+                      accessibilityLabel={template.title}
+                      accessibilityHint="Applies this template"
                     >
                       <Text style={styles.dropdownItemTextBold}>{template.title}</Text>
                       <Text style={styles.dropdownItemTextSmall} numberOfLines={2}>
@@ -473,6 +512,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
               onChangeText={setCustomTitle}
               placeholder="Enter task title"
               placeholderTextColor={theme.textTertiary}
+              accessibilityLabel="Task Title"
             />
           </View>
 
@@ -487,6 +527,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
               multiline
               numberOfLines={6}
               textAlignVertical="top"
+              accessibilityLabel="Task Description"
             />
           </View>
 
@@ -509,12 +550,17 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                   color: theme.text,
                   width: '100%',
                 }}
+                aria-label="Due Date"
               />
             ) : (
               <>
                 <TouchableOpacity
                   style={styles.dateButton}
                   onPress={() => setIsDatePickerVisible(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Set due date"
+                  accessibilityHint="Opens date picker"
+                  accessibilityValue={{ text: dueDate ? dueDate.toLocaleDateString() : 'None' }}
                 >
                   <Calendar size={20} color={theme.textSecondary} />
                   <Text style={styles.dateButtonText}>
@@ -528,7 +574,13 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
                   </Text>
                 </TouchableOpacity>
                 {dueDate && (
-                  <TouchableOpacity style={styles.clearDateButton} onPress={() => setDueDate(null)}>
+                  <TouchableOpacity
+                    style={styles.clearDateButton}
+                    onPress={() => setDueDate(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear Date"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
                     <Text style={styles.clearDateText}>Clear Date</Text>
                   </TouchableOpacity>
                 )}
@@ -553,6 +605,9 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
               style={styles.cancelButton}
               onPress={handleClose}
               disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              accessibilityState={{ disabled: isSubmitting }}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -560,6 +615,9 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
               style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel="Assign Task"
+              accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
             >
               {isSubmitting ? (
                 <ActivityIndicator size="small" color={theme.white} />

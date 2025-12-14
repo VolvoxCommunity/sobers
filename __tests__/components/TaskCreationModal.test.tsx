@@ -477,4 +477,41 @@ describe('TaskCreationModal', () => {
       });
     });
   });
+
+  describe('date picker interaction', () => {
+    it('clears date when clear button is pressed', async () => {
+      render(<TaskCreationModal {...defaultProps} />);
+
+      // First set a date by triggering the date picker mock
+      // Since we can't easily trigger the mock's onChange from here without finding it
+      // Let's assume we can find the button that opens it
+      fireEvent.press(screen.getByText('Set due date'));
+
+      // The mock implementation of DateTimePicker (which is rendered when showDatePicker is true)
+      // should be visible or interactable if we could find it.
+      // But our mock is a View with onPress that calls onChange immediately?
+      // No, the mock is:
+      // default: ({ onChange }) => React.createElement('View', { testID: 'date-time-picker', onPress: () => onChange({}, new Date('2025-01-15')) })
+
+      // So we need to find that View and press it.
+      // But it is only rendered when showDatePicker is true.
+
+      // Find the picker and press it to select date
+      const picker = screen.getByTestId('date-time-picker');
+      fireEvent.press(picker);
+
+      await waitFor(() => {
+        // Date should be set (mock sets it to 2025-01-15)
+        expect(screen.getByText(/January 15, 2025/)).toBeTruthy();
+      });
+
+      // Now clear it
+      fireEvent.press(screen.getByText('Clear Date'));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Clear Date')).toBeNull();
+        expect(screen.getByText('Set due date')).toBeTruthy();
+      });
+    });
+  });
 });
