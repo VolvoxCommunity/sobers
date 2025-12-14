@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -165,7 +165,7 @@ export default function ManageTasksScreen() {
   const now = new Date();
   const stats = getTaskStats(now);
   const filteredTasks = getFilteredTasks();
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const groupTasksBySponsee = () => {
     const grouped: { [key: string]: Task[] } = {};

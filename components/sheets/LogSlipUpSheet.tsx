@@ -8,6 +8,7 @@ import React, {
   useImperativeHandle,
   useRef,
   useEffect,
+  useMemo,
 } from 'react';
 import {
   View,
@@ -292,7 +293,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
       }
     }, [slipUpDate, notes, profile, userTimezone, onSlipUpLogged, handlePressClose]);
 
-    const styles = createStyles(theme);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // ---------------------------------------------------------------------------
     // Footer Component

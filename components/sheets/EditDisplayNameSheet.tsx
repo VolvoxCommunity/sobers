@@ -8,6 +8,7 @@ import React, {
   useImperativeHandle,
   useRef,
   useEffect,
+  useMemo,
 } from 'react';
 import {
   View,
@@ -253,7 +254,7 @@ const EditDisplayNameSheet = forwardRef<EditDisplayNameSheetRef, EditDisplayName
       }
     }, [displayName, currentDisplayName, isSaving, onSave]);
 
-    const styles = createStyles(theme);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // ---------------------------------------------------------------------------
     // Render

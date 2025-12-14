@@ -1,7 +1,14 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
+import React, {
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useMemo,
+} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { ThemeColors } from '@/contexts/ThemeContext';
@@ -182,7 +189,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
       }
     }, [inviteCode, isSubmitting, onSubmit]);
 
-    const styles = createStyles(theme);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // ---------------------------------------------------------------------------
     // Render
