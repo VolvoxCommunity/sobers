@@ -65,9 +65,13 @@ function SponseeDaysDisplay({
   const { daysSober } = useDaysSober(relationship.sponsee_id);
 
   return (
-    <View style={createStyles(theme).relationshipCard}>
+    <View
+      style={createStyles(theme).relationshipCard}
+      accessible={true}
+      accessibilityLabel={`Sponsee ${relationship.sponsee?.display_name ?? 'unknown'}`}
+    >
       <View style={createStyles(theme).relationshipHeader}>
-        <View style={createStyles(theme).avatar}>
+        <View style={createStyles(theme).avatar} accessibilityRole="image">
           <Text style={createStyles(theme).avatarText}>
             {(relationship.sponsee?.display_name || '?')[0].toUpperCase()}
           </Text>
@@ -80,13 +84,19 @@ function SponseeDaysDisplay({
             Connected {new Date(relationship.connected_at).toLocaleDateString()}
           </Text>
           {relationship.sponsee?.sobriety_date && (
-            <View style={createStyles(theme).sobrietyInfo}>
+            <View
+              style={createStyles(theme).sobrietyInfo}
+              accessibilityLabel={`${daysSober} days sober`}
+            >
               <Heart size={14} color={theme.primary} fill={theme.primary} />
               <Text style={createStyles(theme).sobrietyText}>{daysSober} days sober</Text>
             </View>
           )}
           {taskStats && (
-            <View style={createStyles(theme).taskStatsInfo}>
+            <View
+              style={createStyles(theme).taskStatsInfo}
+              accessibilityLabel={`${taskStats.completed} out of ${taskStats.total} tasks completed`}
+            >
               <CheckCircle size={14} color={theme.success} />
               <Text style={createStyles(theme).taskStatsText}>
                 {taskStats.completed}/{taskStats.total} tasks completed
@@ -95,7 +105,13 @@ function SponseeDaysDisplay({
           )}
         </View>
       </View>
-      <TouchableOpacity style={createStyles(theme).disconnectButton} onPress={onDisconnect}>
+      <TouchableOpacity
+        style={createStyles(theme).disconnectButton}
+        onPress={onDisconnect}
+        accessibilityRole="button"
+        accessibilityLabel={`Disconnect from ${relationship.sponsee?.display_name ?? 'sponsee'}`}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
         <UserMinus size={18} color={theme.danger} />
         <Text style={createStyles(theme).disconnectText}>Disconnect</Text>
       </TouchableOpacity>
@@ -123,9 +139,13 @@ function SponsorDaysDisplay({
   const { daysSober } = useDaysSober(relationship.sponsor_id);
 
   return (
-    <View style={createStyles(theme).relationshipCard}>
+    <View
+      style={createStyles(theme).relationshipCard}
+      accessible={true}
+      accessibilityLabel={`Sponsor ${relationship.sponsor?.display_name ?? 'unknown'}`}
+    >
       <View style={createStyles(theme).relationshipHeader}>
-        <View style={createStyles(theme).avatar}>
+        <View style={createStyles(theme).avatar} accessibilityRole="image">
           <Text style={createStyles(theme).avatarText}>
             {(relationship.sponsor?.display_name || '?')[0].toUpperCase()}
           </Text>
@@ -138,14 +158,23 @@ function SponsorDaysDisplay({
             Connected {new Date(relationship.connected_at).toLocaleDateString()}
           </Text>
           {relationship.sponsor?.sobriety_date && (
-            <View style={createStyles(theme).sobrietyInfo}>
+            <View
+              style={createStyles(theme).sobrietyInfo}
+              accessibilityLabel={`${daysSober} days sober`}
+            >
               <Heart size={14} color={theme.primary} fill={theme.primary} />
               <Text style={createStyles(theme).sobrietyText}>{daysSober} days sober</Text>
             </View>
           )}
         </View>
       </View>
-      <TouchableOpacity style={createStyles(theme).disconnectButton} onPress={onDisconnect}>
+      <TouchableOpacity
+        style={createStyles(theme).disconnectButton}
+        onPress={onDisconnect}
+        accessibilityRole="button"
+        accessibilityLabel={`Disconnect from ${relationship.sponsor?.display_name ?? 'sponsor'}`}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
         <UserMinus size={18} color={theme.danger} />
         <Text style={createStyles(theme).disconnectText}>Disconnect</Text>
       </TouchableOpacity>
@@ -669,22 +698,37 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.container}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
+        <View style={styles.profileHeader} accessible={true}>
+          <View style={styles.avatar} accessibilityRole="image">
             <Text style={styles.avatarText}>
               {profile?.display_name?.[0]?.toUpperCase() || '?'}
             </Text>
           </View>
-          <Text style={styles.name}>{profile?.display_name ?? '?'}</Text>
-          <Text style={styles.email}>{profile?.email}</Text>
+          <Text style={styles.name} accessibilityRole="header">
+            {profile?.display_name ?? '?'}
+          </Text>
+          <Text style={styles.email} accessibilityRole="text">
+            {profile?.email}
+          </Text>
         </View>
 
-        <View style={styles.sobrietyCard}>
-          <View style={styles.sobrietyHeader}>
+        <View style={styles.sobrietyCard} accessible={false}>
+          <View
+            style={styles.sobrietyHeader}
+            accessibilityRole="header"
+            accessibilityLabel="Sobriety Journey"
+          >
             <Heart size={24} color={theme.primary} fill={theme.primary} />
             <Text style={styles.sobrietyTitle}>Sobriety Journey</Text>
           </View>
-          <Text style={styles.daysSober}>{loadingDaysSober ? '...' : `${daysSober} Days`}</Text>
+          <Text
+            style={styles.daysSober}
+            accessibilityRole="text"
+            accessibilityLabel={loadingDaysSober ? 'Loading days sober' : `${daysSober} Days Sober`}
+            accessibilityLiveRegion="polite"
+          >
+            {loadingDaysSober ? '...' : `${daysSober} Days`}
+          </Text>
           <View style={styles.sobrietyDateContainer}>
             {journeyStartDate && (
               <Text style={styles.journeyStartDate}>
@@ -696,12 +740,22 @@ export default function ProfileScreen() {
                 })}
               </Text>
             )}
-            <TouchableOpacity style={styles.editButton} onPress={handleEditSobrietyDate}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleEditSobrietyDate}
+              accessibilityRole="button"
+              accessibilityLabel="Edit sobriety date"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Edit2 size={16} color={theme.primary} />
             </TouchableOpacity>
           </View>
           {hasSlipUps && currentStreakStartDate && (
-            <Text style={styles.currentStreakDate}>
+            <Text
+              style={styles.currentStreakDate}
+              accessibilityRole="text"
+              accessibilityLabel={`Current streak since ${parseDateAsLocal(currentStreakStartDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+            >
               Current streak since{' '}
               {parseDateAsLocal(currentStreakStartDate).toLocaleDateString('en-US', {
                 month: 'long',
@@ -710,7 +764,13 @@ export default function ProfileScreen() {
               })}
             </Text>
           )}
-          <TouchableOpacity style={styles.slipUpButton} onPress={handleLogSlipUp}>
+          <TouchableOpacity
+            style={styles.slipUpButton}
+            onPress={handleLogSlipUp}
+            accessibilityRole="button"
+            accessibilityLabel="Record a Setback"
+            accessibilityHint="Logs a slip up and resets your streak"
+          >
             <Heart size={18} color={theme.white} />
             <Text style={styles.slipUpButtonText}>Record a Setback</Text>
           </TouchableOpacity>
@@ -735,7 +795,12 @@ export default function ProfileScreen() {
                   }
                 />
               ))}
-              <TouchableOpacity style={styles.actionButton} onPress={generateInviteCode}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={generateInviteCode}
+                accessibilityRole="button"
+                accessibilityLabel="Generate New Invite Code"
+              >
                 <Share2 size={20} color={theme.primary} />
                 <Text style={styles.actionButtonText}>Generate New Invite Code</Text>
               </TouchableOpacity>
@@ -745,7 +810,12 @@ export default function ProfileScreen() {
               <Text style={styles.emptyStateText}>
                 No sponsees yet. Generate an invite code to get started.
               </Text>
-              <TouchableOpacity style={styles.actionButton} onPress={generateInviteCode}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={generateInviteCode}
+                accessibilityRole="button"
+                accessibilityLabel="Generate Invite Code"
+              >
                 <Share2 size={20} color={theme.primary} />
                 <Text style={styles.actionButtonText}>Generate Invite Code</Text>
               </TouchableOpacity>
@@ -773,7 +843,12 @@ export default function ProfileScreen() {
           ) : (
             <View>
               <Text style={styles.emptyStateText}>No sponsor connected yet</Text>
-              <TouchableOpacity style={styles.actionButton} onPress={handleShowInviteCodeSheet}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleShowInviteCodeSheet}
+                accessibilityRole="button"
+                accessibilityLabel="Enter Invite Code"
+              >
                 <QrCode size={20} color={theme.primary} />
                 <Text style={styles.actionButtonText}>Enter Invite Code</Text>
               </TouchableOpacity>
@@ -783,7 +858,12 @@ export default function ProfileScreen() {
 
         {sponsorRelationships.length > 0 && (
           <View style={styles.section}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleShowInviteCodeSheet}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleShowInviteCodeSheet}
+              accessibilityRole="button"
+              accessibilityLabel="Connect to Another Sponsor"
+            >
               <QrCode size={20} color={theme.primary} />
               <Text style={styles.actionButtonText}>Connect to Another Sponsor</Text>
             </TouchableOpacity>

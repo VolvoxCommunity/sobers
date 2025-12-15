@@ -416,6 +416,8 @@ export default function TasksScreen() {
                       <TouchableOpacity
                         style={styles.completeButton}
                         onPress={() => handleCompleteTask(task)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Complete task ${task.title}`}
                       >
                         <CheckCircle size={20} color={theme.primary} />
                         <Text style={styles.completeButtonText}>Complete</Text>
@@ -432,6 +434,9 @@ export default function TasksScreen() {
                 <TouchableOpacity
                   style={styles.sectionHeader}
                   onPress={() => setShowCompletedTasks(!showCompletedTasks)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${showCompletedTasks ? 'Hide' : 'Show'} completed tasks`}
+                  accessibilityState={{ expanded: showCompletedTasks }}
                 >
                   <Text style={styles.sectionTitle}>
                     Completed ({getMyTasksByStatus('completed').length})
@@ -591,6 +596,9 @@ export default function TasksScreen() {
               <TouchableOpacity
                 style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
                 onPress={() => setFilterStatus('all')}
+                accessibilityRole="button"
+                accessibilityLabel="Show all tasks"
+                accessibilityState={{ selected: filterStatus === 'all' }}
               >
                 <Text
                   style={[
@@ -604,6 +612,9 @@ export default function TasksScreen() {
               <TouchableOpacity
                 style={[styles.filterChip, filterStatus === 'assigned' && styles.filterChipActive]}
                 onPress={() => setFilterStatus('assigned')}
+                accessibilityRole="button"
+                accessibilityLabel="Show assigned tasks"
+                accessibilityState={{ selected: filterStatus === 'assigned' }}
               >
                 <Text
                   style={[
@@ -617,6 +628,9 @@ export default function TasksScreen() {
               <TouchableOpacity
                 style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
                 onPress={() => setFilterStatus('completed')}
+                accessibilityRole="button"
+                accessibilityLabel="Show completed tasks"
+                accessibilityState={{ selected: filterStatus === 'completed' }}
               >
                 <Text
                   style={[
@@ -644,6 +658,9 @@ export default function TasksScreen() {
                     selectedSponseeFilter === 'all' && styles.filterChipActive,
                   ]}
                   onPress={() => setSelectedSponseeFilter('all')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Show all sponsees"
+                  accessibilityState={{ selected: selectedSponseeFilter === 'all' }}
                 >
                   <Text
                     style={[
@@ -662,6 +679,9 @@ export default function TasksScreen() {
                       selectedSponseeFilter === sponsee.id && styles.filterChipActive,
                     ]}
                     onPress={() => setSelectedSponseeFilter(sponsee.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show tasks for ${formatProfileName(sponsee)}`}
+                    accessibilityState={{ selected: selectedSponseeFilter === sponsee.id }}
                   >
                     <Text
                       style={[
@@ -732,6 +752,8 @@ export default function TasksScreen() {
                           setPreselectedSponseeId(sponseeId);
                           taskSheetRef.current?.present();
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
                       >
                         <Plus size={20} color={theme.primary} />
                       </TouchableOpacity>
@@ -800,6 +822,9 @@ export default function TasksScreen() {
                             <TouchableOpacity
                               style={styles.deleteButton}
                               onPress={() => handleDeleteTask(task.id, task.title)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Delete task ${task.title}`}
+                              testID={`delete-task-${task.id}`}
                             >
                               <Trash2 size={16} color="#ef4444" />
                             </TouchableOpacity>
@@ -821,6 +846,8 @@ export default function TasksScreen() {
                 setPreselectedSponseeId(undefined);
                 taskSheetRef.current?.present();
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Create new task"
             >
               <Plus size={24} color="#ffffff" />
             </TouchableOpacity>
