@@ -13,7 +13,6 @@
 
 // Mock react-native-url-polyfill before anything else
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
@@ -106,6 +105,7 @@ describe('Supabase Module', () => {
     describe('getItem', () => {
       it('returns null in SSR environment (no window)', async () => {
         jest.resetModules();
+        (Platform as any).OS = 'web';
         // Simulate SSR by removing window
         const originalWindow = global.window;
         // @ts-expect-error - Intentionally setting window to undefined for SSR test
@@ -114,7 +114,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -130,6 +133,8 @@ describe('Supabase Module', () => {
       it('uses SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const SecureStore = require('expo-secure-store');
         (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('stored-value');
 
         // Ensure window is defined for client environment
@@ -138,7 +143,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -169,7 +177,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -184,6 +195,7 @@ describe('Supabase Module', () => {
     describe('setItem', () => {
       it('resolves to undefined in SSR environment', async () => {
         jest.resetModules();
+        (Platform as any).OS = 'web';
         const originalWindow = global.window;
         // @ts-expect-error - Intentionally setting window to undefined for SSR test
         delete global.window;
@@ -191,7 +203,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -206,13 +221,18 @@ describe('Supabase Module', () => {
       it('stores value in SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const SecureStore = require('expo-secure-store');
         (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
         global.window = {} as Window & typeof globalThis;
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -227,17 +247,25 @@ describe('Supabase Module', () => {
         (Platform as any).OS = 'ios';
         global.window = {} as Window & typeof globalThis;
 
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const SecureStore = require('expo-secure-store');
+
         // Simulate iOS SecureStore throwing when attempting to store >2048 bytes.
-        (SecureStore.setItemAsync as jest.Mock).mockImplementation(async (_key: string, value: string) => {
-          if (value.length > 2048) {
-            throw new Error('SecureStore value too large');
+        (SecureStore.setItemAsync as jest.Mock).mockImplementation(
+          async (_key: string, value: string) => {
+            if (value.length > 2048) {
+              throw new Error('SecureStore value too large');
+            }
           }
-        });
+        );
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -249,7 +277,9 @@ describe('Supabase Module', () => {
           expect(SecureStore.setItemAsync).not.toHaveBeenCalledWith('test-key', largeValue);
 
           // We should have stored multiple smaller values instead.
-          const storedValues = (SecureStore.setItemAsync as jest.Mock).mock.calls.map((call) => call[1]);
+          const storedValues = (SecureStore.setItemAsync as jest.Mock).mock.calls.map(
+            (call) => call[1]
+          );
           expect(storedValues.length).toBeGreaterThan(1);
           storedValues.forEach((v) => expect(v.length).toBeLessThanOrEqual(2048));
         }
@@ -274,7 +304,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -288,6 +321,7 @@ describe('Supabase Module', () => {
     describe('removeItem', () => {
       it('resolves to undefined in SSR environment', async () => {
         jest.resetModules();
+        (Platform as any).OS = 'web';
         const originalWindow = global.window;
         // @ts-expect-error - Intentionally setting window to undefined for SSR test
         delete global.window;
@@ -295,7 +329,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -310,13 +347,18 @@ describe('Supabase Module', () => {
       it('removes value from SecureStore on native platform', async () => {
         jest.resetModules();
         (Platform as any).OS = 'ios';
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const SecureStore = require('expo-secure-store');
         (SecureStore.deleteItemAsync as jest.Mock).mockResolvedValue(undefined);
         global.window = {} as Window & typeof globalThis;
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
@@ -345,7 +387,10 @@ describe('Supabase Module', () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createClient } = require('@supabase/supabase-js');
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require('@/lib/supabase');
+        const { supabase } = require('@/lib/supabase');
+
+        // Trigger lazy initialization so the storage adapter is passed to createClient
+        supabase.auth;
 
         const storageAdapter = (createClient as jest.Mock).mock.calls[0]?.[2]?.auth?.storage;
 
