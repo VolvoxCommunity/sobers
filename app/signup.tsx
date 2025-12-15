@@ -142,6 +142,8 @@ export default function SignupScreen() {
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="email"
+              textContentType="emailAddress"
             />
           </View>
 
@@ -159,6 +161,8 @@ export default function SignupScreen() {
               returnKeyType="next"
               onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="password-new"
+              textContentType="newPassword"
             />
           </View>
 
@@ -175,6 +179,8 @@ export default function SignupScreen() {
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleSignup}
+              autoComplete="password-new"
+              textContentType="newPassword"
             />
           </View>
 

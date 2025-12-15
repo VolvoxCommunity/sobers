@@ -12,6 +12,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import TasksScreen from '@/app/(tabs)/tasks';
 import { Task, Profile } from '@/types/database';
+import { Platform } from 'react-native';
 
 // =============================================================================
 // Mocks
@@ -1352,6 +1353,208 @@ describe('TasksScreen', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Overdue')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Web Platform', () => {
+    let originalPlatform: typeof Platform.OS;
+
+    beforeAll(() => {
+      originalPlatform = Platform.OS;
+    });
+
+    beforeEach(() => {
+      Platform.OS = 'web';
+      global.window = {
+        alert: jest.fn(),
+        confirm: jest.fn(() => true)
+      } as any;
+    });
+
+    afterEach(() => {
+      Platform.OS = originalPlatform;
+      delete (global as any).window;
+    });
+
+    it('uses window.alert for task completion success', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      // Ensure mock success
+      supabase.from.mockImplementation((table: string) => {
+         if (table === 'tasks') {
+             return {
+                 select: jest.fn().mockReturnValue({
+                     eq: jest.fn().mockReturnValue({
+                         order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                         neq: jest.fn().mockReturnValue({
+                             limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null })
+                         })
+                     })
+                 }),
+                 update: jest.fn().mockReturnValue({
+                     eq: jest.fn().mockResolvedValue({ error: null })
+                 })
+             };
+         }
+         if (table === 'notifications') {
+             return { insert: jest.fn().mockResolvedValue({ error: null }) };
+         }
+         return {
+             select: jest.fn().mockReturnThis(),
+             eq: jest.fn().mockReturnThis(),
+             order: jest.fn().mockResolvedValue({ data: [], error: null })
+         };
+      });
+
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Complete')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Complete'));
+      fireEvent.press(screen.getByText('Mark Complete'));
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Task marked as completed!');
+      });
+    });
+
+    it('uses window.alert for task completion failure', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase');
+
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                    neq: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null }),
+                    }),
+                  };
+                }
+                return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: new Error('Web DB error') }),
+            }),
+          };
+        }
+        return {
+             select: jest.fn().mockReturnThis(),
+             eq: jest.fn().mockReturnThis(),
+             order: jest.fn().mockResolvedValue({ data: [], error: null })
+        };
+      });
+
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Complete')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Complete'));
+      fireEvent.press(screen.getByText('Mark Complete'));
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Failed to complete task');
+      });
+    });
+
+    it('uses window.confirm and alert for task deletion', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase');
+
+      const localSponsees = [
+        {
+          id: 'sponsee-1',
+          display_name: 'Jane D.',
+          sobriety_date: '2024-06-01',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+      const localManageTasks = [
+        {
+          id: 'manage-task-1',
+          sponsor_id: 'user-123',
+          sponsee_id: 'sponsee-1',
+          title: 'Delete Me Web',
+          description: 'Task to delete',
+          status: 'assigned',
+          due_date: null,
+          step_number: null,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+          sponsee: localSponsees[0],
+        },
+      ];
+
+      // Reset pending to empty to force Manage view
+      mockPendingTasks = [];
+
+      supabase.from.mockImplementation((table: string) => {
+         if (table === 'sponsor_sponsee_relationships') {
+             return {
+                 select: jest.fn().mockReturnValue({
+                     eq: jest.fn().mockReturnValue({
+                         eq: jest.fn().mockResolvedValue({
+                             data: localSponsees.map(s => ({ sponsee: s })),
+                             error: null
+                         })
+                     })
+                 })
+             };
+         }
+         if (table === 'tasks') {
+             return {
+                 select: jest.fn().mockReturnValue({
+                     eq: jest.fn().mockImplementation((field) => {
+                         if (field === 'sponsee_id') {
+                             // Initialize view check
+                             return {
+                                 neq: jest.fn().mockReturnValue({
+                                     limit: jest.fn().mockResolvedValue({ data: [], error: null })
+                                 }),
+                                 order: jest.fn().mockResolvedValue({ data: [], error: null })
+                             };
+                         }
+                         if (field === 'sponsor_id') {
+                             return {
+                                 order: jest.fn().mockResolvedValue({ data: localManageTasks, error: null })
+                             };
+                         }
+                         return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+                     })
+                 }),
+                 delete: jest.fn().mockReturnValue({
+                     eq: jest.fn().mockResolvedValue({ error: null })
+                 })
+             };
+         }
+         return {
+             select: jest.fn().mockReturnThis(),
+             eq: jest.fn().mockReturnThis(),
+             order: jest.fn().mockResolvedValue({ data: [], error: null })
+         };
+      });
+
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete Me Web')).toBeTruthy();
+      });
+
+      const deleteButton = screen.getByTestId('delete-task-manage-task-1');
+      fireEvent.press(deleteButton);
+
+      expect(window.confirm).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Task deleted successfully');
       });
     });
   });
