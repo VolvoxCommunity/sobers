@@ -253,7 +253,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(screen.getByText('Creating account...')).toBeTruthy();
+        expect(screen.getByLabelText('Creating account')).toBeTruthy();
       });
     });
   });
@@ -277,7 +277,7 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
     });
 

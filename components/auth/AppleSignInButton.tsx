@@ -120,7 +120,15 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
       }
 
       // Track successful Apple sign in
-      trackEvent(AnalyticsEvents.AUTH_LOGIN, { method: 'apple' });
+      try {
+        trackEvent(AnalyticsEvents.AUTH_LOGIN, { method: 'apple' });
+      } catch (e) {
+        // Analytics failures should not block authentication
+        logger.warn('Failed to track Apple Sign In event', {
+          category: LogCategory.ANALYTICS,
+          error: e,
+        });
+      }
 
       // If we have name data, also update user_metadata for future reference
       // (e.g., if profile is recreated later)

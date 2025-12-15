@@ -1,5 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -124,6 +133,7 @@ export default function SignupScreen() {
               ref={emailRef}
               style={styles.input}
               placeholder="your@email.com"
+              accessibilityLabel="Email address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -141,6 +151,7 @@ export default function SignupScreen() {
               ref={passwordRef}
               style={styles.input}
               placeholder="••••••••"
+              accessibilityLabel="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -157,6 +168,7 @@ export default function SignupScreen() {
               ref={confirmPasswordRef}
               style={styles.input}
               placeholder="••••••••"
+              accessibilityLabel="Confirm Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -170,10 +182,15 @@ export default function SignupScreen() {
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleSignup}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={loading ? 'Creating account' : 'Create Account'}
+            accessibilityState={{ busy: loading, disabled: loading || googleLoading }}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.buttonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -186,11 +203,18 @@ export default function SignupScreen() {
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={googleLoading ? 'Signing in with Google' : 'Continue with Google'}
+            accessibilityState={{ busy: googleLoading, disabled: loading || googleLoading }}
           >
-            {!googleLoading && <GoogleLogo size={20} />}
-            <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
-            </Text>
+            {googleLoading ? (
+              <ActivityIndicator size="small" color={theme.text} />
+            ) : (
+              <>
+                <GoogleLogo size={20} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Apple Sign In - only renders on iOS */}

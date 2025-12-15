@@ -162,7 +162,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
 
       // Cleanup
@@ -197,7 +197,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
 
       // Cleanup
@@ -347,7 +347,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
     });
 
@@ -405,7 +405,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
 
       // Google button should exist but be disabled
@@ -427,7 +427,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
 
       // Sign In button should exist

@@ -378,5 +378,16 @@ describe('Supabase Module', () => {
         })
       );
     });
+
+    it('throws error if environment variables are missing', () => {
+      jest.resetModules();
+      process.env.EXPO_PUBLIC_SUPABASE_URL = '';
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = '';
+
+      expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/lib/supabase');
+      }).toThrow('Missing Supabase environment variables');
+    });
   });
 });
