@@ -1,7 +1,9 @@
 import 'react-native-url-polyfill/auto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { logger, LogCategory } from '@/lib/logger';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -22,38 +24,65 @@ interface AuthStorage {
   removeItem: (key: string) => Promise<void>;
 }
 
-const SupabaseStorageAdapter: AuthStorage = {
-  getItem: (key: string) => {
+export const SupabaseStorageAdapter: AuthStorage = {
+  getItem: async (key: string) => {
     if (!isClient) {
       // During SSR, return null (no session)
-      return Promise.resolve(null);
+      return null;
     }
     if (Platform.OS === 'web') {
-      return Promise.resolve(localStorage.getItem(key));
+      return localStorage.getItem(key);
     }
-    return AsyncStorage.getItem(key);
+
+    // Try SecureStore first (new secure storage)
+    const secureValue = await SecureStore.getItemAsync(key);
+    if (secureValue) {
+      return secureValue;
+    }
+
+    // Fallback to AsyncStorage for migration (legacy insecure storage)
+    const asyncValue = await AsyncStorage.getItem(key);
+    if (asyncValue) {
+      // Migrate to SecureStore
+      try {
+        await SecureStore.setItemAsync(key, asyncValue);
+        // Only remove from AsyncStorage after successful SecureStore write
+        await AsyncStorage.removeItem(key);
+      } catch (error) {
+        // Log error but continue with the value we found
+        const err = error instanceof Error ? error : new Error(String(error));
+        logger.error('Failed to migrate session to SecureStore', err, {
+          category: LogCategory.AUTH,
+        });
+      }
+      return asyncValue;
+    }
+
+    return null;
   },
-  setItem: (key: string, value: string) => {
+  setItem: async (key: string, value: string) => {
     if (!isClient) {
       // During SSR, no-op
-      return Promise.resolve();
+      return;
     }
     if (Platform.OS === 'web') {
       localStorage.setItem(key, value);
-      return Promise.resolve();
+      return;
     }
-    return AsyncStorage.setItem(key, value);
+    await SecureStore.setItemAsync(key, value);
   },
-  removeItem: (key: string) => {
+  removeItem: async (key: string) => {
     if (!isClient) {
       // During SSR, no-op
-      return Promise.resolve();
+      return;
     }
     if (Platform.OS === 'web') {
       localStorage.removeItem(key);
-      return Promise.resolve();
+      return;
     }
-    return AsyncStorage.removeItem(key);
+    await SecureStore.deleteItemAsync(key);
+    // Ensure legacy storage is also cleared
+    await AsyncStorage.removeItem(key);
   },
 };
 
