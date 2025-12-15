@@ -335,6 +335,8 @@ export default function OnboardingScreen() {
                   value={displayName}
                   onChangeText={setDisplayName}
                   autoCapitalize="words"
+                  autoComplete="name"
+                  textContentType="name"
                   returnKeyType="done"
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
                 />

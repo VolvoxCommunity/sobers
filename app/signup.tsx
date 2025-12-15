@@ -138,6 +138,8 @@ export default function SignupScreen() {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
+              textContentType="emailAddress"
               editable={!loading}
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
@@ -155,6 +157,8 @@ export default function SignupScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoComplete="password-new"
+              textContentType="newPassword"
               editable={!loading}
               returnKeyType="next"
               onSubmitEditing={() => confirmPasswordRef.current?.focus()}
@@ -172,6 +176,8 @@ export default function SignupScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+              autoComplete="password-new"
+              textContentType="newPassword"
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleSignup}
