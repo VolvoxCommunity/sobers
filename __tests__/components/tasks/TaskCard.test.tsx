@@ -96,74 +96,37 @@ const mockTask: Task = {
 describe('TaskCard', () => {
   describe('My Task Variant', () => {
     it('renders task title', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('Complete Step 1')).toBeTruthy();
     });
 
     it('renders task description', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('Read and reflect on Step 1')).toBeTruthy();
     });
 
     it('renders step number badge', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('Step 1')).toBeTruthy();
     });
 
     it('renders due date', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText(/Due/)).toBeTruthy();
     });
 
     it('renders sponsor name', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('From: Sponsor Name')).toBeTruthy();
     });
 
     it('renders complete button for non-completed tasks', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-          isCompleted={false}
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" isCompleted={false} />);
 
       expect(screen.getByText('Complete')).toBeTruthy();
     });
@@ -172,12 +135,7 @@ describe('TaskCard', () => {
       const mockOnComplete = jest.fn();
 
       render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-          onComplete={mockOnComplete}
-        />
+        <TaskCard task={mockTask} theme={mockTheme} variant="my-task" onComplete={mockOnComplete} />
       );
 
       fireEvent.press(screen.getByText('Complete'));
@@ -185,14 +143,7 @@ describe('TaskCard', () => {
     });
 
     it('does not render complete button for completed tasks', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-          isCompleted={true}
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" isCompleted={true} />);
 
       expect(screen.queryByText('Complete')).toBeNull();
     });
@@ -205,12 +156,7 @@ describe('TaskCard', () => {
       };
 
       render(
-        <TaskCard
-          task={completedTask}
-          theme={mockTheme}
-          variant="my-task"
-          isCompleted={true}
-        />
+        <TaskCard task={completedTask} theme={mockTheme} variant="my-task" isCompleted={true} />
       );
 
       expect(screen.getByText(/Completed/)).toBeTruthy();
@@ -222,42 +168,23 @@ describe('TaskCard', () => {
         completion_notes: 'This was very insightful',
       };
 
-      render(
-        <TaskCard
-          task={taskWithNotes}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithNotes} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('Your Notes:')).toBeTruthy();
       expect(screen.getByText('This was very insightful')).toBeTruthy();
     });
 
     it('renders created date for non-completed tasks', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-          isCompleted={false}
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" isCompleted={false} />);
 
-      // Should show created date
-      expect(screen.getByText(/\d{1,2}\/\d{1,2}\/\d{4}/)).toBeTruthy();
+      // Should show created date - may match multiple date patterns
+      expect(screen.getAllByText(/\d{1,2}\/\d{1,2}\/\d{4}/).length).toBeGreaterThan(0);
     });
   });
 
   describe('Managed Task Variant', () => {
     it('renders task title', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.getByText('Complete Step 1')).toBeTruthy();
     });
@@ -268,26 +195,14 @@ describe('TaskCard', () => {
         description: 'Very long description that should be truncated'.repeat(10),
       };
 
-      render(
-        <TaskCard
-          task={taskWithLongDescription}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={taskWithLongDescription} theme={mockTheme} variant="managed-task" />);
 
       // Description should be present
       expect(screen.getByText(/Very long description/)).toBeTruthy();
     });
 
     it('renders status badge', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.getByText('Assigned')).toBeTruthy();
     });
@@ -295,13 +210,7 @@ describe('TaskCard', () => {
     it('renders "In Progress" status', () => {
       const taskInProgress = { ...mockTask, status: 'in_progress' as const };
 
-      render(
-        <TaskCard
-          task={taskInProgress}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={taskInProgress} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.getByText('In Progress')).toBeTruthy();
     });
@@ -309,25 +218,13 @@ describe('TaskCard', () => {
     it('renders "Completed" status', () => {
       const completedTask = { ...mockTask, status: 'completed' as const };
 
-      render(
-        <TaskCard
-          task={completedTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={completedTask} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.getByText('Completed')).toBeTruthy();
     });
 
     it('renders delete button for non-completed tasks', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="managed-task" />);
 
       const deleteButton = screen.getByTestId('delete-task-task-123');
       expect(deleteButton).toBeTruthy();
@@ -336,13 +233,7 @@ describe('TaskCard', () => {
     it('does not render delete button for completed tasks', () => {
       const completedTask = { ...mockTask, status: 'completed' as const };
 
-      render(
-        <TaskCard
-          task={completedTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={completedTask} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.queryByTestId('delete-task-task-123')).toBeNull();
     });
@@ -367,12 +258,7 @@ describe('TaskCard', () => {
 
     it('shows overdue indicator', () => {
       render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="managed-task"
-          isOverdue={true}
-        />
+        <TaskCard task={mockTask} theme={mockTheme} variant="managed-task" isOverdue={true} />
       );
 
       // Overdue styling is applied via styles, verify text content
@@ -385,13 +271,7 @@ describe('TaskCard', () => {
         completion_notes: 'Sponsee reflection notes',
       };
 
-      render(
-        <TaskCard
-          task={taskWithNotes}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={taskWithNotes} theme={mockTheme} variant="managed-task" />);
 
       expect(screen.getByText('Completion Notes:')).toBeTruthy();
       expect(screen.getByText('Sponsee reflection notes')).toBeTruthy();
@@ -403,13 +283,7 @@ describe('TaskCard', () => {
         completion_notes: 'Very long notes '.repeat(50),
       };
 
-      render(
-        <TaskCard
-          task={taskWithLongNotes}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={taskWithLongNotes} theme={mockTheme} variant="managed-task" />);
 
       // Notes should be present
       expect(screen.getByText(/Very long notes/)).toBeTruthy();
@@ -418,17 +292,17 @@ describe('TaskCard', () => {
 
   describe('Task Without Step Number', () => {
     it('does not render step badge when step_number is null', () => {
-      const taskWithoutStep = { ...mockTask, step_number: undefined };
+      // Use a task without "Step" in the title to test badge absence
+      const taskWithoutStep = {
+        ...mockTask,
+        title: 'Daily Reflection',
+        step_number: undefined,
+      };
 
-      render(
-        <TaskCard
-          task={taskWithoutStep}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithoutStep} theme={mockTheme} variant="my-task" />);
 
-      expect(screen.queryByText(/Step/)).toBeNull();
+      // Should not have step badge (note: mockTask title has "Step" in it)
+      expect(screen.queryByText(/^Step \d+$/)).toBeNull();
     });
   });
 
@@ -436,13 +310,7 @@ describe('TaskCard', () => {
     it('does not render due date when due_date is null', () => {
       const taskWithoutDueDate = { ...mockTask, due_date: undefined };
 
-      render(
-        <TaskCard
-          task={taskWithoutDueDate}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithoutDueDate} theme={mockTheme} variant="my-task" />);
 
       expect(screen.queryByText(/Due/)).toBeNull();
     });
@@ -450,26 +318,14 @@ describe('TaskCard', () => {
 
   describe('Accessibility', () => {
     it('sets accessibility label for complete button', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
 
       const completeButton = screen.getByLabelText('Complete task Complete Step 1');
       expect(completeButton).toBeTruthy();
     });
 
     it('sets accessibility label for delete button', () => {
-      render(
-        <TaskCard
-          task={mockTask}
-          theme={mockTheme}
-          variant="managed-task"
-        />
-      );
+      render(<TaskCard task={mockTask} theme={mockTheme} variant="managed-task" />);
 
       const deleteButton = screen.getByLabelText('Delete task Complete Step 1');
       expect(deleteButton).toBeTruthy();
@@ -480,13 +336,7 @@ describe('TaskCard', () => {
     it('handles task with no sponsor profile', () => {
       const taskWithoutSponsor = { ...mockTask, sponsor: undefined };
 
-      render(
-        <TaskCard
-          task={taskWithoutSponsor}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithoutSponsor} theme={mockTheme} variant="my-task" />);
 
       expect(screen.getByText('From: ?')).toBeTruthy();
     });
@@ -497,15 +347,11 @@ describe('TaskCard', () => {
         title: 'Very Long Task Title That Should Be Displayed Completely',
       };
 
-      render(
-        <TaskCard
-          task={taskWithLongTitle}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithLongTitle} theme={mockTheme} variant="my-task" />);
 
-      expect(screen.getByText('Very Long Task Title That Should Be Displayed Completely')).toBeTruthy();
+      expect(
+        screen.getByText('Very Long Task Title That Should Be Displayed Completely')
+      ).toBeTruthy();
     });
 
     it('handles empty completion notes', () => {
@@ -514,13 +360,7 @@ describe('TaskCard', () => {
         completion_notes: '',
       };
 
-      render(
-        <TaskCard
-          task={taskWithEmptyNotes}
-          theme={mockTheme}
-          variant="my-task"
-        />
-      );
+      render(<TaskCard task={taskWithEmptyNotes} theme={mockTheme} variant="my-task" />);
 
       // Empty notes should not render the notes section
       expect(screen.queryByText('Your Notes:')).toBeNull();

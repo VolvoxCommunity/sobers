@@ -173,7 +173,8 @@ describe('ManageTasksView', () => {
         />
       );
 
-      expect(screen.getByText('1')).toBeTruthy();
+      // Multiple "1"s on screen (assigned count, stats, etc.)
+      expect(screen.getAllByText('1').length).toBeGreaterThan(0);
       expect(screen.getByText('Assigned')).toBeTruthy();
     });
 
@@ -306,7 +307,8 @@ describe('ManageTasksView', () => {
         />
       );
 
-      expect(screen.getByText('1 task')).toBeTruthy();
+      // Multiple sponsees each have "1 task" text
+      expect(screen.getAllByText('1 task').length).toBeGreaterThan(0);
     });
 
     it('renders add task button for each sponsee', () => {

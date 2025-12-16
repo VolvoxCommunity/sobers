@@ -88,7 +88,7 @@ describe('TaskCompletionModal', () => {
     });
 
     it('does not render when visible is false', () => {
-      const { container } = render(
+      render(
         <TaskCompletionModal
           visible={false}
           task={mockTask}
@@ -101,8 +101,8 @@ describe('TaskCompletionModal', () => {
         />
       );
 
-      // Modal should not be visible
-      expect(container).toBeTruthy();
+      // Modal content should not be visible when visible=false
+      expect(screen.queryByText('Complete Task')).toBeNull();
     });
   });
 
@@ -142,7 +142,12 @@ describe('TaskCompletionModal', () => {
     });
 
     it('does not render step badge when step_number is null', () => {
-      const taskWithoutStep = { ...mockTask, step_number: undefined };
+      // Use a task without "Step" in the title to test badge absence
+      const taskWithoutStep = {
+        ...mockTask,
+        title: 'Daily Reflection',
+        step_number: undefined,
+      };
 
       render(
         <TaskCompletionModal
@@ -157,7 +162,8 @@ describe('TaskCompletionModal', () => {
         />
       );
 
-      expect(screen.queryByText(/Step/)).toBeNull();
+      // Check for step badge pattern (not title text)
+      expect(screen.queryByText(/^Step \d+$/)).toBeNull();
     });
 
     it('does not render task info when task is null', () => {
@@ -496,7 +502,9 @@ describe('TaskCompletionModal', () => {
         />
       );
 
-      expect(screen.getByText('Very Long Task Title That Should Still Be Displayed Correctly')).toBeTruthy();
+      expect(
+        screen.getByText('Very Long Task Title That Should Still Be Displayed Correctly')
+      ).toBeTruthy();
     });
   });
 });

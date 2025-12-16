@@ -34,7 +34,11 @@ jest.mock('@/components/tasks/TaskCard', () => {
   return {
     __esModule: true,
     default: ({ task, variant, isCompleted }: any) =>
-      React.createElement(Text, null, `${task.title} (${variant}${isCompleted ? ', completed' : ''})`),
+      React.createElement(
+        Text,
+        null,
+        `${task.title} (${variant}${isCompleted ? ', completed' : ''})`
+      ),
   };
 });
 
@@ -100,8 +104,10 @@ describe('MyTasksView', () => {
         />
       );
 
-      expect(screen.getByText('1')).toBeTruthy();
+      // Check that Pending label exists and stats show "1"
       expect(screen.getByText('Pending')).toBeTruthy();
+      // There are multiple "1"s on screen (pending count and completed count potentially)
+      expect(screen.getAllByText('1')).toHaveLength(2); // 1 pending, 1 completed
     });
 
     it('renders completed tasks count', () => {
@@ -139,7 +145,8 @@ describe('MyTasksView', () => {
         />
       );
 
-      expect(screen.getByText('0')).toBeTruthy();
+      // Both pending and completed should show 0
+      expect(screen.getAllByText('0')).toHaveLength(2);
     });
   });
 
