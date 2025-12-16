@@ -655,7 +655,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.primary,
     },
     errorContainer: {
-      backgroundColor: '#fee2e2',
+      backgroundColor: theme.dangerLight,
       padding: 12,
       borderRadius: 8,
       marginBottom: 16,
@@ -663,7 +663,7 @@ const createStyles = (theme: ThemeColors) =>
     errorText: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
-      color: '#ef4444',
+      color: theme.error,
     },
     modalFooter: {
       flexDirection: 'row',
@@ -697,7 +697,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     buttonDisabled: {
       opacity: 0.6,
