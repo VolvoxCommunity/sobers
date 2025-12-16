@@ -134,6 +134,40 @@ describe('Unified Analytics Module', () => {
       await Promise.all([call1, call2]);
     });
 
+    it('logs debug message when concurrent initialization is in progress with debug mode', async () => {
+      const mockLoggerDebug = jest.fn();
+      const { logger } = jest.requireMock('@/lib/logger');
+      logger.debug = mockLoggerDebug;
+
+      mockIsDebugMode.mockReturnValue(true);
+
+      // Create a deferred promise to control timing
+      let resolveInit: () => void;
+      const initPromise = new Promise<void>((resolve) => {
+        resolveInit = resolve;
+      });
+      mockInitializePlatformAnalytics.mockReturnValue(initPromise);
+
+      // Start first initialization (sets state to pending)
+      const call1 = initializeAnalytics();
+
+      // Clear debug calls from first init setup
+      mockLoggerDebug.mockClear();
+
+      // Start second concurrent initialization - should trigger debug log
+      const call2 = initializeAnalytics();
+
+      // Verify debug message about waiting was logged
+      expect(mockLoggerDebug).toHaveBeenCalledWith(
+        'Analytics initialization in progress, waiting...',
+        expect.objectContaining({ category: 'ANALYTICS' })
+      );
+
+      // Resolve and wait for both
+      resolveInit!();
+      await Promise.all([call1, call2]);
+    });
+
     it('allows retry after initialization failure', async () => {
       // First call fails
       mockInitializePlatformAnalytics.mockRejectedValueOnce(new Error('Init failed'));
@@ -147,6 +181,32 @@ describe('Unified Analytics Module', () => {
       await initializeAnalytics();
 
       expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    it('warns about missing Firebase config on web platform', async () => {
+      // Mock Platform.OS as 'web'
+      const { Platform } = jest.requireMock('react-native');
+      const originalOS = Platform.OS;
+      Platform.OS = 'web';
+
+      try {
+        await initializeAnalytics();
+
+        // Should warn about missing config (env vars are empty in test)
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
+          'Firebase config incomplete - some required values are missing',
+          expect.objectContaining({
+            category: 'ANALYTICS',
+            hasApiKey: expect.any(Boolean),
+            hasProjectId: expect.any(Boolean),
+            hasAppId: expect.any(Boolean),
+            hasMeasurementId: expect.any(Boolean),
+          })
+        );
+      } finally {
+        // Restore Platform.OS
+        Platform.OS = originalOS;
+      }
     });
   });
 
@@ -229,6 +289,24 @@ describe('Unified Analytics Module', () => {
     it('re-exports calculateDaysSoberBucket', () => {
       expect(calculateDaysSoberBucket).toBeDefined();
       expect(typeof calculateDaysSoberBucket).toBe('function');
+    });
+  });
+
+  describe('__resetForTesting', () => {
+    it('throws error when called outside test environment', () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      try {
+        // Temporarily set NODE_ENV to non-test value
+        process.env.NODE_ENV = 'production';
+
+        // Call the actual function - it should throw because NODE_ENV is not 'test'
+        expect(() => {
+          __resetForTesting();
+        }).toThrow('__resetForTesting should only be called in test environments');
+      } finally {
+        // Restore NODE_ENV
+        process.env.NODE_ENV = originalNodeEnv;
+      }
     });
   });
 });

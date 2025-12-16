@@ -11,7 +11,6 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 import LoginScreen from '@/app/login';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
@@ -22,6 +21,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 const mockSignIn = jest.fn();
 const mockSignInWithGoogle = jest.fn();
 const mockPush = jest.fn();
+const mockShowAlert = jest.fn();
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -47,6 +47,10 @@ jest.mock('@/lib/logger', () => ({
   LogCategory: {
     AUTH: 'auth',
   },
+}));
+
+jest.mock('@/lib/alert', () => ({
+  showAlert: (...args: any[]) => mockShowAlert(...args),
 }));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -162,7 +166,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
 
       // Cleanup
@@ -197,7 +201,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
 
       // Cleanup
@@ -247,7 +251,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
       });
     });
 
@@ -261,7 +265,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
       });
     });
   });
@@ -282,7 +286,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Invalid credentials');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Invalid credentials');
       });
     });
 
@@ -296,7 +300,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google auth failed');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Google auth failed');
       });
     });
 
@@ -314,7 +318,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to sign in');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to sign in');
       });
     });
 
@@ -327,7 +331,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to sign in with Google');
+        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to sign in with Google');
       });
     });
   });
@@ -347,7 +351,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
     });
 
@@ -405,7 +409,7 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in')).toBeTruthy();
       });
 
       // Google button should exist but be disabled
@@ -427,7 +431,7 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
 
       // Sign In button should exist

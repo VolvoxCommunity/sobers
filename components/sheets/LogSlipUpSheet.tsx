@@ -16,7 +16,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  Alert,
 } from 'react-native';
 import {
   BottomSheetScrollView,
@@ -30,6 +29,7 @@ import { X, Calendar, Heart } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
+import { showAlert, showConfirm } from '@/lib/alert';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import type { Profile } from '@/types/database';
 
@@ -199,19 +199,13 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
         return;
       }
 
-      const confirmMessage =
-        'Recording this will restart your journey counter. Your sponsor will be notified so they can support you. Ready to continue?';
-
-      const confirmed = await new Promise<boolean>((resolve) => {
-        if (Platform.OS === 'web') {
-          resolve(window.confirm(confirmMessage));
-        } else {
-          Alert.alert('Ready to Record?', confirmMessage, [
-            { text: 'Not Yet', style: 'cancel', onPress: () => resolve(false) },
-            { text: 'Yes, Continue', style: 'default', onPress: () => resolve(true) },
-          ]);
-        }
-      });
+      const confirmed = await showConfirm(
+        'Ready to Record?',
+        'Recording this will restart your journey counter. Your sponsor will be notified so they can support you. Ready to continue?',
+        'Yes, Continue',
+        'Not Yet',
+        false
+      );
 
       if (!confirmed) return;
 
@@ -273,11 +267,10 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
         handlePressClose();
 
         // Show success message
-        if (Platform.OS === 'web') {
-          window.alert(
-            "Your setback has been recorded. This took real courage. Remember: every day is a fresh start, and you're not alone on this journey."
-          );
-        }
+        showAlert(
+          'Setback Recorded',
+          "Your setback has been recorded. This took real courage. Remember: every day is a fresh start, and you're not alone on this journey."
+        );
       } catch (err) {
         logger.error('Slip-up logging failed', err as Error, {
           category: LogCategory.DATABASE,

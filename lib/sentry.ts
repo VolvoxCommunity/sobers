@@ -71,7 +71,7 @@ export function initializeSentry(): void {
       enableLogs: true,
 
       // Release tracking
-      release: Constants.expoConfig?.version || '1.0.0',
+      release: Constants.expoConfig?.version || '1.1.0',
       dist: Constants.expoConfig?.extra?.eas?.buildNumber,
 
       // Adds more context data to events (IP address, cookies, user, etc.)

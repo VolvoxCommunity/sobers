@@ -1,5 +1,6 @@
 // Initialize Sentry before anything else using centralized configuration
 import { initializeSentry, navigationIntegration, wrapRootComponent } from '@/lib/sentry';
+import { logger, LogCategory } from '@/lib/logger';
 
 // Initialize Sentry once with centralized configuration from lib/sentry.ts
 // This handles environment detection, privacy hooks, and all integrations
@@ -14,8 +15,13 @@ if (typeof window !== 'undefined') {
     .then((analytics) => analytics.initializeAnalytics())
     .catch((error) => {
       // Log but don't crash - analytics is non-critical
-      // eslint-disable-next-line no-console
-      console.error('[Analytics] Failed to initialize:', error);
+      logger.error(
+        'Failed to initialize analytics',
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          category: LogCategory.ANALYTICS,
+        }
+      );
     });
 }
 import { useEffect, useRef } from 'react';
@@ -193,8 +199,8 @@ function RootLayoutNav() {
     return (
       <>
         {seoHead}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator testID="loading-indicator" size="large" color="#10b981" />
+        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+          <ActivityIndicator testID="loading-indicator" size="large" color={theme.successAlt} />
         </View>
       </>
     );
@@ -288,6 +294,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
   },
 });

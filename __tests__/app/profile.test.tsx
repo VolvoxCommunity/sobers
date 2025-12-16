@@ -268,7 +268,7 @@ jest.mock('expo-device', () => ({
 // Mock expo-application (required by SettingsSheet)
 jest.mock('expo-application', () => ({
   nativeBuildVersion: '1',
-  nativeApplicationVersion: '1.0.0',
+  nativeApplicationVersion: '1.1.0',
 }));
 
 // Mock useAppUpdates hook (required by SettingsSheet)
@@ -1126,7 +1126,8 @@ describe('ProfileScreen', () => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Confirm Disconnection',
           expect.stringContaining('Bob S.'),
-          expect.any(Array)
+          expect.any(Array),
+          expect.anything()
         );
       });
     });
@@ -1203,7 +1204,8 @@ describe('ProfileScreen', () => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Confirm Disconnection',
           expect.stringContaining('Jane D.'),
-          expect.any(Array)
+          expect.any(Array),
+          expect.anything()
         );
       });
     });
@@ -1441,7 +1443,11 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Generate Invite Code'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to generate invite code');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Error',
+          'Failed to generate invite code',
+          undefined
+        );
       });
     });
   });
@@ -1576,6 +1582,187 @@ describe('ProfileScreen', () => {
 
       consoleSpy.mockRestore();
     });
+
+    it('handles sponsee relationships fetch error from database', async () => {
+      jest.clearAllMocks();
+      mockSponsorRelationships = [];
+      mockSponseeRelationships = [];
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({
+                      data: null,
+                      error: { message: 'Failed to fetch sponsee relationships' },
+                    }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }
+                return { eq: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                in: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+
+      render(<ProfileScreen />);
+
+      // Should render without crashing
+      await waitFor(() => {
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('handles sponsor relationships fetch error from database', async () => {
+      jest.clearAllMocks();
+      mockSponsorRelationships = [];
+      mockSponseeRelationships = [];
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({
+                      data: null,
+                      error: { message: 'Failed to fetch sponsor relationships' },
+                    }),
+                  };
+                }
+                return { eq: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                in: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+
+      render(<ProfileScreen />);
+
+      // Should render without crashing
+      await waitFor(() => {
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('handles task statistics fetch error from database', async () => {
+      jest.clearAllMocks();
+      mockSponsorRelationships = [];
+      // Need to have sponsee relationships to trigger the task stats fetch
+      mockSponseeRelationships = [
+        {
+          id: 'rel-1',
+          sponsor_id: 'user-123',
+          sponsee_id: 'sponsee-1',
+          status: 'active',
+          sponsee: {
+            id: 'sponsee-1',
+            display_name: 'Test Sponsee',
+            sobriety_date: '2024-01-01',
+          },
+        },
+      ];
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({
+                      data: mockSponsorRelationships,
+                      error: null,
+                    }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    eq: jest.fn().mockResolvedValue({
+                      data: mockSponseeRelationships,
+                      error: null,
+                    }),
+                  };
+                }
+                return { eq: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                in: jest.fn().mockResolvedValue({
+                  data: null,
+                  error: { message: 'Failed to fetch task statistics' },
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+
+      render(<ProfileScreen />);
+
+      // Should render without crashing
+      await waitFor(() => {
+        const nameElements = screen.getAllByText('John D.');
+        expect(nameElements.length).toBeGreaterThan(0);
+      });
+    });
   });
 
   // Note: Join with Invite Code - Already Connected, Relationship Creation Error, Network Error
@@ -1672,7 +1859,8 @@ describe('ProfileScreen', () => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Confirm Disconnection',
           expect.stringContaining('Jane D.'),
-          expect.any(Array)
+          expect.any(Array),
+          expect.anything()
         );
       });
     });
@@ -1698,7 +1886,7 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Disconnect'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Successfully disconnected');
+        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Successfully disconnected', undefined);
       });
     });
   });
@@ -1793,7 +1981,8 @@ describe('ProfileScreen', () => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Confirm Disconnection',
           expect.stringContaining('Bob S.'),
-          expect.any(Array)
+          expect.any(Array),
+          expect.anything()
         );
       });
     });
@@ -1891,7 +2080,7 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Disconnect'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to disconnect.');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to disconnect.', undefined);
       });
     });
   });
@@ -2138,7 +2327,11 @@ describe('ProfileScreen', () => {
         await capturedOnSubmit!('TEST1234');
 
         // Should show success alert
-        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Connected with Test Sponsor');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Success',
+          'Connected with Test Sponsor',
+          undefined
+        );
       });
     });
 

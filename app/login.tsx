@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ import { Heart } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
+import { showAlert } from '@/lib/alert';
 
 /**
  * Render the app's login screen and manage email/password, Google, and Apple sign-in flows.
@@ -41,11 +42,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      if (Platform.OS === 'web') {
-        window.alert('Please fill in all fields');
-      } else {
-        Alert.alert('Error', 'Please fill in all fields');
-      }
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
@@ -55,11 +52,7 @@ export default function LoginScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in');
       logger.error('Sign in failed', err, { category: LogCategory.AUTH, email });
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + err.message);
-      } else {
-        Alert.alert('Error', err.message);
-      }
+      showAlert('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -72,17 +65,13 @@ export default function LoginScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
       logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + err.message);
-      } else {
-        Alert.alert('Error', err.message);
-      }
+      showAlert('Error', err.message);
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <KeyboardAvoidingView
@@ -92,7 +81,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Heart size={48} color="#007AFF" fill="#007AFF" />
+            <Heart size={48} color={theme.primary} fill={theme.primary} />
           </View>
           <Text style={styles.title}>Sobriety Waypoint</Text>
           <Text style={styles.subtitle}>Your journey to recovery</Text>
@@ -104,6 +93,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="your@email.com"
+              accessibilityLabel="Email address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -112,6 +102,8 @@ export default function LoginScreen() {
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="email"
+              textContentType="emailAddress"
             />
           </View>
 
@@ -121,12 +113,15 @@ export default function LoginScreen() {
               ref={passwordRef}
               style={styles.input}
               placeholder="••••••••"
+              accessibilityLabel="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
+              autoComplete="password"
+              textContentType="password"
             />
           </View>
 
@@ -134,8 +129,15 @@ export default function LoginScreen() {
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={loading ? 'Signing in' : 'Sign In'}
+            accessibilityState={{ busy: loading, disabled: loading || googleLoading }}
           >
-            <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={theme.white} />
+            ) : (
+              <Text style={styles.buttonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -148,19 +150,25 @@ export default function LoginScreen() {
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={googleLoading ? 'Signing in with Google' : 'Continue with Google'}
+            accessibilityState={{ busy: googleLoading, disabled: loading || googleLoading }}
           >
-            {!googleLoading && <GoogleLogo size={20} />}
-            <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
-            </Text>
+            {googleLoading ? (
+              <ActivityIndicator size="small" color={theme.text} />
+            ) : (
+              <>
+                <GoogleLogo size={20} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Apple Sign In - only renders on iOS */}
           <AppleSignInButton
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
-              // AppleSignInButton only renders on iOS, so Alert.alert is safe here
-              Alert.alert('Error', error.message);
+              showAlert('Error', error.message);
             }}
           />
 
@@ -168,6 +176,8 @@ export default function LoginScreen() {
             style={styles.secondaryButton}
             onPress={() => router.push('/signup')}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Create New Account"
           >
             <Text style={styles.secondaryButtonText}>Create New Account</Text>
           </TouchableOpacity>
@@ -233,7 +243,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     button: {
-      backgroundColor: '#007AFF',
+      backgroundColor: theme.primary,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
@@ -243,7 +253,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.6,
     },
     buttonText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',

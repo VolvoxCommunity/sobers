@@ -193,22 +193,37 @@ export default function TaskCreationModal({
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Assign New Task</Text>
-              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <Text style={styles.modalTitle} accessibilityRole="header">
+                Assign New Task
+              </Text>
+              <TouchableOpacity
+                onPress={handleClose}
+                style={styles.closeButton}
+                accessibilityLabel="Close"
+                accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <X size={24} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               {error ? (
-                <View style={styles.errorContainer}>
+                <View style={styles.errorContainer} accessibilityLiveRegion="polite">
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               ) : null}
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Sponsee *</Text>
-                <TouchableOpacity style={styles.dropdown} onPress={() => toggleDropdown('sponsee')}>
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() => toggleDropdown('sponsee')}
+                  accessibilityRole="combobox"
+                  accessibilityLabel="Select sponsee"
+                  accessibilityHint="Double tap to choose a sponsee"
+                  accessibilityState={{ expanded: activeDropdown === 'sponsee' }}
+                >
                   <Text style={[styles.dropdownText, !selectedSponseeId && styles.placeholderText]}>
                     {selectedSponseeId
                       ? (sponsees.find((s) => s.id === selectedSponseeId)?.display_name ??
@@ -230,6 +245,8 @@ export default function TaskCreationModal({
                           setSelectedSponseeId(sponsee.id);
                           closeAllDropdowns();
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={sponsee?.display_name ?? 'Unknown sponsee'}
                       >
                         <Text style={styles.dropdownItemText}>
                           {sponsee?.display_name ?? 'Unknown sponsee'}
@@ -242,7 +259,13 @@ export default function TaskCreationModal({
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Step Number (Optional)</Text>
-                <TouchableOpacity style={styles.dropdown} onPress={() => toggleDropdown('step')}>
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() => toggleDropdown('step')}
+                  accessibilityRole="combobox"
+                  accessibilityLabel="Select step number"
+                  accessibilityState={{ expanded: activeDropdown === 'step' }}
+                >
                   <Text
                     style={[styles.dropdownText, !selectedStepNumber && styles.placeholderText]}
                   >
@@ -264,6 +287,8 @@ export default function TaskCreationModal({
                         setCustomDescription('');
                         closeAllDropdowns();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel="No specific step"
                     >
                       <Text style={[styles.dropdownItemText, { fontStyle: 'italic' }]}>
                         No specific step
@@ -280,6 +305,8 @@ export default function TaskCreationModal({
                           setCustomDescription('');
                           closeAllDropdowns();
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Step ${step}`}
                       >
                         <Text style={styles.dropdownItemText}>Step {step}</Text>
                       </TouchableOpacity>
@@ -298,6 +325,15 @@ export default function TaskCreationModal({
                     }
                   }}
                   disabled={!selectedStepNumber}
+                  accessibilityRole="combobox"
+                  accessibilityLabel="Select task template"
+                  accessibilityState={{
+                    expanded: activeDropdown === 'template',
+                    disabled: !selectedStepNumber,
+                  }}
+                  accessibilityHint={
+                    !selectedStepNumber ? 'Select a step first to enable templates' : ''
+                  }
                 >
                   <Text
                     style={[
@@ -330,6 +366,9 @@ export default function TaskCreationModal({
                           key={template.id}
                           style={styles.dropdownItem}
                           onPress={() => handleTemplateSelect(template)}
+                          accessibilityRole="button"
+                          accessibilityLabel={template.title}
+                          accessibilityHint="Applies this template"
                         >
                           <Text style={styles.dropdownItemTextBold}>{template.title}</Text>
                           <Text style={styles.dropdownItemTextSmall} numberOfLines={2}>
@@ -350,6 +389,7 @@ export default function TaskCreationModal({
                   onChangeText={setCustomTitle}
                   placeholder="Enter task title"
                   placeholderTextColor={theme.textTertiary}
+                  accessibilityLabel="Task Title"
                 />
               </View>
 
@@ -364,6 +404,7 @@ export default function TaskCreationModal({
                   multiline
                   numberOfLines={6}
                   textAlignVertical="top"
+                  accessibilityLabel="Task Description"
                 />
               </View>
 
@@ -386,12 +427,17 @@ export default function TaskCreationModal({
                       color: theme.text,
                       width: '100%',
                     }}
+                    aria-label="Due Date"
                   />
                 ) : (
                   <>
                     <TouchableOpacity
                       style={styles.dateButton}
                       onPress={() => setShowDatePicker(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Set due date"
+                      accessibilityHint="Opens date picker"
+                      accessibilityValue={{ text: dueDate ? dueDate.toLocaleDateString() : 'None' }}
                     >
                       <Calendar size={20} color={theme.textSecondary} />
                       <Text style={styles.dateButtonText}>
@@ -408,6 +454,9 @@ export default function TaskCreationModal({
                       <TouchableOpacity
                         style={styles.clearDateButton}
                         onPress={() => setDueDate(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Clear Date"
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         <Text style={styles.clearDateText}>Clear Date</Text>
                       </TouchableOpacity>
@@ -434,6 +483,9 @@ export default function TaskCreationModal({
                 style={styles.cancelButton}
                 onPress={handleClose}
                 disabled={isSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+                accessibilityState={{ disabled: isSubmitting }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -441,6 +493,9 @@ export default function TaskCreationModal({
                 style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Assign Task"
+                accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
               >
                 {isSubmitting ? (
                   <ActivityIndicator size="small" color={theme.white} />
@@ -528,7 +583,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 12,
       marginBottom: 20,
       marginHorizontal: 20,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 12,
@@ -600,7 +655,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.primary,
     },
     errorContainer: {
-      backgroundColor: '#fee2e2',
+      backgroundColor: theme.dangerLight,
       padding: 12,
       borderRadius: 8,
       marginBottom: 16,
@@ -608,7 +663,7 @@ const createStyles = (theme: ThemeColors) =>
     errorText: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
-      color: '#ef4444',
+      color: theme.error,
     },
     modalFooter: {
       flexDirection: 'row',
@@ -642,7 +697,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     buttonDisabled: {
       opacity: 0.6,

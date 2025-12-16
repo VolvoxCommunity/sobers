@@ -1,7 +1,9 @@
 import 'react-native-url-polyfill/auto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { logger, LogCategory } from '@/lib/logger';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -22,38 +24,98 @@ interface AuthStorage {
   removeItem: (key: string) => Promise<void>;
 }
 
-const SupabaseStorageAdapter: AuthStorage = {
-  getItem: (key: string) => {
+export const SupabaseStorageAdapter: AuthStorage = {
+  getItem: async (key: string) => {
     if (!isClient) {
       // During SSR, return null (no session)
-      return Promise.resolve(null);
+      return null;
     }
     if (Platform.OS === 'web') {
-      return Promise.resolve(localStorage.getItem(key));
+      return localStorage.getItem(key);
     }
-    return AsyncStorage.getItem(key);
+
+    // Try SecureStore first (new secure storage)
+    try {
+      const secureValue = await SecureStore.getItemAsync(key);
+      if (secureValue) {
+        return secureValue;
+      }
+    } catch (error) {
+      // Log error but continue to check AsyncStorage - preserves session if SecureStore has issues
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error('Failed to read session from SecureStore - checking legacy storage', err, {
+        category: LogCategory.AUTH,
+      });
+    }
+
+    // Fallback to AsyncStorage for migration (legacy insecure storage)
+    const asyncValue = await AsyncStorage.getItem(key);
+    if (asyncValue) {
+      // Migrate to SecureStore
+      try {
+        await SecureStore.setItemAsync(key, asyncValue);
+        // Only remove from AsyncStorage after successful SecureStore write
+        await AsyncStorage.removeItem(key);
+      } catch (error) {
+        // Log error but continue with the value we found
+        const err = error instanceof Error ? error : new Error(String(error));
+        logger.error(
+          'Session migration to secure storage failed - session will remain functional but may use less secure storage until next login',
+          err,
+          {
+            category: LogCategory.AUTH,
+          }
+        );
+      }
+      return asyncValue;
+    }
+
+    return null;
   },
-  setItem: (key: string, value: string) => {
+  setItem: async (key: string, value: string) => {
     if (!isClient) {
       // During SSR, no-op
-      return Promise.resolve();
+      return;
     }
     if (Platform.OS === 'web') {
       localStorage.setItem(key, value);
-      return Promise.resolve();
+      return;
     }
-    return AsyncStorage.setItem(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      // Log error but don't throw - session will be lost on restart but app continues
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error('Failed to save session to SecureStore', err, {
+        category: LogCategory.AUTH,
+      });
+    }
   },
-  removeItem: (key: string) => {
+  removeItem: async (key: string) => {
     if (!isClient) {
       // During SSR, no-op
-      return Promise.resolve();
+      return;
     }
     if (Platform.OS === 'web') {
       localStorage.removeItem(key);
-      return Promise.resolve();
+      return;
     }
-    return AsyncStorage.removeItem(key);
+    // Remove from both storages independently to ensure cleanup even if one fails
+    const results = await Promise.allSettled([
+      SecureStore.deleteItemAsync(key),
+      AsyncStorage.removeItem(key),
+    ]);
+    // Log any failures but don't throw - logout should still proceed
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const store = index === 0 ? 'SecureStore' : 'AsyncStorage';
+        const err =
+          result.reason instanceof Error ? result.reason : new Error(String(result.reason));
+        logger.error(`Failed to remove item from ${store}`, err, {
+          category: LogCategory.AUTH,
+        });
+      }
+    });
   },
 };
 

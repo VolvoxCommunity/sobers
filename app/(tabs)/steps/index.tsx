@@ -150,7 +150,7 @@ export default function StepsScreen() {
                   </Text>
                   {isCompleted && (
                     <View style={styles.completedBadge}>
-                      <CheckCircle size={14} color="#10b981" />
+                      <CheckCircle size={14} color={theme.successAlt} />
                       <Text style={styles.completedText}>Completed</Text>
                     </View>
                   )}
@@ -198,7 +198,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 16,
       padding: 16,
       marginBottom: 12,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
@@ -206,7 +206,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     stepCardCompleted: {
       borderWidth: 2,
-      borderColor: '#10b981',
+      borderColor: theme.successAlt,
     },
     stepNumber: {
       width: 48,
@@ -218,13 +218,13 @@ const createStyles = (theme: ThemeColors) =>
       marginRight: 16,
     },
     stepNumberCompleted: {
-      backgroundColor: '#10b981',
+      backgroundColor: theme.successAlt,
     },
     stepNumberText: {
       fontSize: 20,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
-      color: '#ffffff',
+      color: theme.white,
     },
     stepContent: {
       flex: 1,
@@ -257,7 +257,7 @@ const createStyles = (theme: ThemeColors) =>
     errorText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
-      color: '#ef4444',
+      color: theme.danger,
       textAlign: 'center',
       marginBottom: 16,
     },
@@ -277,7 +277,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     completedBadge: {
       flexDirection: 'row',
@@ -288,7 +288,7 @@ const createStyles = (theme: ThemeColors) =>
     completedText: {
       fontSize: 12,
       fontFamily: theme.fontRegular,
-      color: '#10b981',
+      color: theme.successAlt,
       fontWeight: '600',
     },
   });

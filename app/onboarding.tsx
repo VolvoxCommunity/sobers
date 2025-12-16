@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Platform,
   TextInput,
   Linking,
@@ -15,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { validateDisplayName } from '@/lib/validation';
+import { showAlert } from '@/lib/alert';
 import { Calendar, LogOut, Info, Square, CheckSquare } from 'lucide-react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
@@ -56,11 +56,11 @@ const VALIDATION_DEBOUNCE_MS = 300;
 // =============================================================================
 
 /**
- * Render the onboarding screen shown after authentication to collect the user's display name and sobriety date.
+ * Renders the onboarding screen displayed after authentication to collect the user's display name and sobriety date.
  *
  * Updates the user's profile with the provided values, refreshes profile state, and navigates to the main app when the profile is complete.
  *
- * @returns The React element representing the onboarding screen
+ * @returns The React element for the onboarding screen
  */
 export default function OnboardingScreen() {
   const { theme } = useTheme();
@@ -143,10 +143,9 @@ export default function OnboardingScreen() {
       if (awaitingProfileUpdate) {
         setAwaitingProfileUpdate(false);
         setLoading(false);
-        Alert.alert(
+        showAlert(
           'Profile Update Timeout',
-          'Your profile update is taking longer than expected. Please try again.',
-          [{ text: 'OK' }]
+          'Your profile update is taking longer than expected. Please try again.'
         );
       }
     }, 10000); // 10 second timeout
@@ -195,9 +194,9 @@ export default function OnboardingScreen() {
       router.replace('/login');
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Error', error.message);
+        showAlert('Error', error.message);
       } else {
-        Alert.alert('Error', 'An unknown error occurred');
+        showAlert('Error', 'An unknown error occurred');
       }
     }
   };
@@ -265,11 +264,7 @@ export default function OnboardingScreen() {
       setAwaitingProfileUpdate(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update profile';
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + message);
-      } else {
-        Alert.alert('Error', message);
-      }
+      showAlert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -337,6 +332,7 @@ export default function OnboardingScreen() {
                   autoCapitalize="words"
                   returnKeyType="done"
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
+                  accessibilityLabel="Display Name"
                 />
                 <View style={styles.inputFooter}>
                   <Text
@@ -352,7 +348,13 @@ export default function OnboardingScreen() {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.infoButton} onPress={() => setShowInfo(!showInfo)}>
+              <TouchableOpacity
+                style={styles.infoButton}
+                onPress={() => setShowInfo(!showInfo)}
+                accessibilityRole="button"
+                accessibilityLabel={showInfo ? 'Hide information' : 'Show information'}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Info size={16} color={theme.textSecondary} />
                 <Text style={styles.infoText}>How you&apos;ll appear to others</Text>
               </TouchableOpacity>
@@ -372,7 +374,12 @@ export default function OnboardingScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
 
-              <TouchableOpacity style={styles.dateDisplay} onPress={() => setShowDatePicker(true)}>
+              <TouchableOpacity
+                style={styles.dateDisplay}
+                onPress={() => setShowDatePicker(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Select sobriety date"
+              >
                 <Calendar size={32} color={theme.primary} />
                 <View style={styles.dateTextContainer}>
                   <Text style={styles.dateLabel}>Sobriety Date</Text>
@@ -473,6 +480,9 @@ export default function OnboardingScreen() {
                 style={[styles.button, (!isFormValid || loading) && styles.buttonDisabled]}
                 onPress={handleComplete}
                 disabled={!isFormValid || loading}
+                accessibilityRole="button"
+                accessibilityLabel="Complete Setup"
+                accessibilityState={{ busy: loading, disabled: !isFormValid || loading }}
               >
                 <Text style={styles.buttonText}>
                   {loading ? 'Setting up...' : 'Complete Setup'}
@@ -481,7 +491,12 @@ export default function OnboardingScreen() {
             </View>
 
             {/* Sign Out Button - Inside ScrollView to avoid keyboard overlap */}
-            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={handleSignOut}
+              accessibilityRole="button"
+              accessibilityLabel="Sign Out"
+            >
               <LogOut size={16} color={theme.textSecondary} />
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
@@ -533,7 +548,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 24,
       padding: 24,
       marginBottom: 24,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.05,
       shadowRadius: 12,

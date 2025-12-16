@@ -1,5 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +15,7 @@ import { Heart, ArrowLeft } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
+import { showAlert } from '@/lib/alert';
 
 /**
  * Renders the sign-up screen with fields and actions to create a new account.
@@ -34,29 +42,17 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!email || !password || !confirmPassword) {
-      if (Platform.OS === 'web') {
-        window.alert('Please fill in all fields');
-      } else {
-        Alert.alert('Error', 'Please fill in all fields');
-      }
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      if (Platform.OS === 'web') {
-        window.alert('Passwords do not match');
-      } else {
-        Alert.alert('Error', 'Passwords do not match');
-      }
+      showAlert('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      if (Platform.OS === 'web') {
-        window.alert('Password must be at least 6 characters');
-      } else {
-        Alert.alert('Error', 'Password must be at least 6 characters');
-      }
+      showAlert('Error', 'Password must be at least 6 characters');
       return;
     }
 
@@ -67,11 +63,7 @@ export default function SignupScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to create account');
       logger.error('Sign up failed', err, { category: LogCategory.AUTH });
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + err.message);
-      } else {
-        Alert.alert('Error', err.message);
-      }
+      showAlert('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -84,17 +76,13 @@ export default function SignupScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
       logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + err.message);
-      } else {
-        Alert.alert('Error', err.message);
-      }
+      showAlert('Error', err.message);
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>
@@ -105,13 +93,14 @@ export default function SignupScreen() {
           testID="back-button"
           accessibilityLabel="Go back"
           accessibilityRole="button"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
 
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Heart size={48} color="#007AFF" fill="#007AFF" />
+            <Heart size={48} color={theme.primary} fill={theme.primary} />
           </View>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Begin your recovery journey</Text>
@@ -124,6 +113,7 @@ export default function SignupScreen() {
               ref={emailRef}
               style={styles.input}
               placeholder="your@email.com"
+              accessibilityLabel="Email address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -132,6 +122,8 @@ export default function SignupScreen() {
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="email"
+              textContentType="emailAddress"
             />
           </View>
 
@@ -141,6 +133,7 @@ export default function SignupScreen() {
               ref={passwordRef}
               style={styles.input}
               placeholder="••••••••"
+              accessibilityLabel="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -148,6 +141,8 @@ export default function SignupScreen() {
               returnKeyType="next"
               onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="password-new"
+              textContentType="newPassword"
             />
           </View>
 
@@ -157,12 +152,15 @@ export default function SignupScreen() {
               ref={confirmPasswordRef}
               style={styles.input}
               placeholder="••••••••"
+              accessibilityLabel="Confirm Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleSignup}
+              autoComplete="password-new"
+              textContentType="newPassword"
             />
           </View>
 
@@ -170,10 +168,15 @@ export default function SignupScreen() {
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleSignup}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={loading ? 'Creating account' : 'Create Account'}
+            accessibilityState={{ busy: loading, disabled: loading || googleLoading }}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Text>
+            {loading ? (
+              <ActivityIndicator size="small" color={theme.white} />
+            ) : (
+              <Text style={styles.buttonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -186,19 +189,25 @@ export default function SignupScreen() {
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel={googleLoading ? 'Signing in with Google' : 'Continue with Google'}
+            accessibilityState={{ busy: googleLoading, disabled: loading || googleLoading }}
           >
-            {!googleLoading && <GoogleLogo size={20} />}
-            <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
-            </Text>
+            {googleLoading ? (
+              <ActivityIndicator size="small" color={theme.text} />
+            ) : (
+              <>
+                <GoogleLogo size={20} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Apple Sign In - only renders on iOS */}
           <AppleSignInButton
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
-              // AppleSignInButton only renders on iOS, so Alert.alert is safe here
-              Alert.alert('Error', error.message);
+              showAlert('Error', error.message);
             }}
           />
 
@@ -281,7 +290,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     button: {
-      backgroundColor: '#007AFF',
+      backgroundColor: theme.primary,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
@@ -291,7 +300,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.6,
     },
     buttonText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
@@ -340,7 +349,7 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
     },
     loginLinkBold: {
-      color: '#007AFF',
+      color: theme.primary,
       fontWeight: '600',
     },
   });

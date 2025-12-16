@@ -1,16 +1,10 @@
 /**
- * Analytics implementation for web platform.
+ * Firebase Analytics implementation for web platform.
  *
  * This file is automatically selected by Metro bundler on web.
- * Supports both Firebase Analytics and Vercel Analytics with centralized event dispatching.
+ * Uses Firebase Analytics exclusively for consistency with native platforms.
  *
  * @module lib/analytics/platform.web
- *
- * @todo PRODUCT DECISION REQUIRED: Determine analytics strategy:
- *   - Option 1: Use Firebase Analytics only (current default)
- *   - Option 2: Use Vercel Analytics only (for Vercel-hosted deployments)
- *   - Option 3: Use both Firebase and Vercel (requires deduplication logic)
- *   Configure via EXPO_PUBLIC_ANALYTICS_PROVIDER: 'firebase' | 'vercel' | 'both' | 'none'
  */
 
 // =============================================================================
@@ -33,45 +27,18 @@ import { logger, LogCategory } from '@/lib/logger';
 // =============================================================================
 // Types & Interfaces
 // =============================================================================
-/**
- * Analytics provider configuration.
- */
-type AnalyticsProvider = 'firebase' | 'vercel' | 'both' | 'none';
-
-/**
- * Vercel Analytics API (if available).
- */
-interface VercelAnalytics {
-  track: (eventName: string, properties?: Record<string, unknown>) => void;
-}
+// No additional types needed - Firebase types imported above
 
 // =============================================================================
 // Constants
 // =============================================================================
-/**
- * Analytics provider configuration from environment.
- * Defaults to 'firebase' for backward compatibility.
- */
-const ANALYTICS_PROVIDER: AnalyticsProvider =
-  (process.env.EXPO_PUBLIC_ANALYTICS_PROVIDER as AnalyticsProvider) || 'firebase';
-
-/**
- * Whether Firebase Analytics is enabled.
- */
-const IS_FIREBASE_ENABLED: boolean =
-  ANALYTICS_PROVIDER === 'firebase' || ANALYTICS_PROVIDER === 'both';
-
-/**
- * Whether Vercel Analytics is enabled.
- */
-const IS_VERCEL_ENABLED: boolean = ANALYTICS_PROVIDER === 'vercel' || ANALYTICS_PROVIDER === 'both';
+// Firebase Analytics is always enabled on web
 
 // =============================================================================
 // Module State
 // =============================================================================
 let analytics: Analytics | null = null;
 let app: FirebaseApp | null = null;
-let vercelAnalytics: VercelAnalytics | null = null;
 
 /**
  * Initialization state to prevent race conditions.
@@ -109,11 +76,8 @@ const SAFE_USER_PROPERTY_KEYS: readonly (keyof UserProperties)[] = [
   'sign_in_method',
 ] as const;
 
-/**
- * Reserved logger keys that should not be overwritten by user params.
- * These keys are used internally by the logger for error information.
- */
-const RESERVED_LOGGER_KEYS = ['error_message', 'error_stack', 'error_name'] as const;
+// Note: LOGGER_RESERVED_KEYS (defined above) is used for both purposes:
+// sanitizing user properties and sanitizing event params.
 
 /**
  * PII-prone keys that should be redacted from logs.
@@ -232,19 +196,10 @@ async function hashUserId(input: string | null): Promise<string | null> {
 }
 
 /**
- * Sanitizes event params for safe logging by:
- * 1. Removing reserved logger keys to prevent overwrites
- * 2. Redacting PII-prone keys to prevent data leaks
- * 3. Returning a sanitized object suitable for nested logging
- * 4. Handling circular references gracefully
+ * Create a logger-safe copy of event parameters with reserved keys removed and sensitive values redacted.
  *
- * The `ancestors` WeakSet tracks objects in the current recursion path only.
- * This correctly handles shared objects that appear in multiple non-circular positions
- * (e.g., the same config object used as values for different keys).
- *
- * @param params - The original event params to sanitize
- * @param ancestors - WeakSet tracking objects in current recursion path (ancestors only)
- * @returns Sanitized params object with PII redacted and reserved keys removed
+ * @param ancestors - WeakSet used to track objects in the current recursion path to detect circular references
+ * @returns An object suitable for logging where logger-reserved keys are omitted, PII-prone values are replaced with `"[Filtered]"`, and circular references are marked `"[Circular]"`
  */
 function sanitizeParamsForLogging(
   params?: EventParams,
@@ -258,7 +213,7 @@ function sanitizeParamsForLogging(
 
   for (const [key, value] of Object.entries(params)) {
     // Skip reserved logger keys to prevent overwrites
-    if (RESERVED_LOGGER_KEYS.includes(key as (typeof RESERVED_LOGGER_KEYS)[number])) {
+    if (LOGGER_RESERVED_KEYS.includes(key as (typeof LOGGER_RESERVED_KEYS)[number])) {
       continue;
     }
 
@@ -287,78 +242,27 @@ function sanitizeParamsForLogging(
   return sanitized;
 }
 /**
- * Initializes Vercel Analytics if enabled and available.
+ * Sends an event to Firebase Analytics.
  *
- * @returns Promise that resolves when initialization is complete
- */
-async function initializeVercelAnalytics(): Promise<void> {
-  if (!IS_VERCEL_ENABLED) {
-    return;
-  }
-
-  try {
-    // Dynamic import to avoid build errors if @vercel/analytics is not installed
-    // TypeScript will error here if the package isn't installed, but that's expected
-    // The try-catch handles the runtime case where the package doesn't exist
-    // @ts-ignore - @vercel/analytics is optional and may not be installed
-    // eslint-disable-next-line import/no-unresolved
-    const vercelModule = await import('@vercel/analytics');
-    // @ts-ignore - Dynamic import type is unknown
-    const track = vercelModule.track as (
-      eventName: string,
-      properties?: Record<string, unknown>
-    ) => void;
-    vercelAnalytics = { track };
-
-    if (isDebugMode()) {
-      logger.info('Vercel Analytics initialized for web', {
-        category: LogCategory.ANALYTICS,
-      });
-    }
-  } catch (error) {
-    // @vercel/analytics not installed or failed to load - log warning but don't fail
-    if (isDebugMode()) {
-      logger.warn('Vercel Analytics not available (package may not be installed)', {
-        category: LogCategory.ANALYTICS,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-    vercelAnalytics = null;
-  }
-}
-
-/**
- * Centralized event dispatcher that sends events to configured providers.
- * Prevents duplicate events when multiple providers are enabled.
+ * If the analytics instance has not been initialized the call returns without sending.
+ * SDK errors are caught and logged under the `ANALYTICS` category.
  *
  * @param eventName - The name of the event
  * @param params - Optional event parameters
  */
 function dispatchEvent(eventName: string, params?: EventParams): void {
-  // Send to Firebase if enabled
-  if (IS_FIREBASE_ENABLED && analytics) {
-    try {
-      logEvent(analytics, eventName, params);
-    } catch (error) {
-      logger.error(
-        `Failed to track event ${eventName} in Firebase`,
-        error instanceof Error ? error : new Error(String(error)),
-        { category: LogCategory.ANALYTICS }
-      );
-    }
+  if (!analytics) {
+    return;
   }
 
-  // Send to Vercel if enabled
-  if (IS_VERCEL_ENABLED && vercelAnalytics) {
-    try {
-      vercelAnalytics.track(eventName, params as Record<string, unknown>);
-    } catch (error) {
-      logger.error(
-        `Failed to track event ${eventName} in Vercel Analytics`,
-        error instanceof Error ? error : new Error(String(error)),
-        { category: LogCategory.ANALYTICS }
-      );
-    }
+  try {
+    logEvent(analytics, eventName, params);
+  } catch (error) {
+    logger.error(
+      `Failed to track event ${eventName} in Firebase`,
+      error instanceof Error ? error : new Error(String(error)),
+      { category: LogCategory.ANALYTICS }
+    );
   }
 }
 
@@ -367,71 +271,55 @@ function dispatchEvent(eventName: string, params?: EventParams): void {
 // =============================================================================
 
 /**
- * Internal initialization logic. Called by initializePlatformAnalytics wrapper.
- * This function performs the actual work and may throw on critical errors.
+ * Initialize Firebase Analytics for the web if supported and not already initialized.
  *
- * @param config - Firebase configuration
- * @throws Error if Firebase initialization fails critically
+ * Attempts to obtain or create a Firebase app and Analytics instance using the provided config.
+ * If the runtime does not support Firebase Analytics, this function performs no initialization.
+ * Initialization errors are logged for monitoring and do not propagate to the caller.
+ *
+ * @param config - Firebase configuration (apiKey, projectId, appId, measurementId)
  */
 async function doInitialize(config: AnalyticsConfig): Promise<void> {
-  let firebaseError: Error | null = null;
-
-  // Initialize Firebase if enabled
-  if (IS_FIREBASE_ENABLED) {
-    try {
-      const supported = await isSupported();
-      if (!supported) {
-        if (isDebugMode()) {
-          logger.warn('Firebase Analytics not supported in this browser', {
-            category: LogCategory.ANALYTICS,
-          });
-        }
-      } else {
-        if (getApps().length > 0) {
-          // Retrieve existing app and analytics instance
-          app = getApp();
-          analytics = getAnalytics(app);
-          if (isDebugMode()) {
-            logger.info('Firebase app already initialized, retrieved existing instance', {
-              category: LogCategory.ANALYTICS,
-            });
-          }
-        } else {
-          app = initializeApp({
-            apiKey: config.apiKey,
-            projectId: config.projectId,
-            appId: config.appId,
-            measurementId: config.measurementId,
-          });
-
-          analytics = getAnalytics(app);
-
-          if (isDebugMode()) {
-            logger.info('Firebase Analytics initialized for web', {
-              category: LogCategory.ANALYTICS,
-            });
-          }
-        }
+  try {
+    const supported = await isSupported();
+    if (!supported) {
+      if (isDebugMode()) {
+        logger.warn('Firebase Analytics not supported in this browser', {
+          category: LogCategory.ANALYTICS,
+        });
       }
-    } catch (error) {
-      // Capture error but don't return - still initialize Vercel if enabled
-      firebaseError = error instanceof Error ? error : new Error(String(error));
-      logger.error('Failed to initialize Firebase Analytics', firebaseError, {
-        category: LogCategory.ANALYTICS,
-      });
+      return;
     }
-  }
 
-  // Initialize Vercel Analytics if enabled - independent of Firebase success/failure
-  await initializeVercelAnalytics();
+    if (getApps().length > 0) {
+      // Retrieve existing app and analytics instance
+      app = getApp();
+      analytics = getAnalytics(app);
+      if (isDebugMode()) {
+        logger.info('Firebase app already initialized, retrieved existing instance', {
+          category: LogCategory.ANALYTICS,
+        });
+      }
+    } else {
+      app = initializeApp({
+        apiKey: config.apiKey,
+        projectId: config.projectId,
+        appId: config.appId,
+        measurementId: config.measurementId,
+      });
 
-  if (isDebugMode()) {
-    logger.info('Analytics initialization complete', {
+      analytics = getAnalytics(app);
+
+      if (isDebugMode()) {
+        logger.info('Firebase Analytics initialized for web', {
+          category: LogCategory.ANALYTICS,
+        });
+      }
+    }
+  } catch (error) {
+    const firebaseError = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to initialize Firebase Analytics', firebaseError, {
       category: LogCategory.ANALYTICS,
-      provider: ANALYTICS_PROVIDER,
-      firebaseEnabled: IS_FIREBASE_ENABLED && analytics !== null,
-      vercelEnabled: IS_VERCEL_ENABLED && vercelAnalytics !== null,
-      firebaseError: firebaseError ? firebaseError.message : null,
     });
   }
 
@@ -441,23 +329,12 @@ async function doInitialize(config: AnalyticsConfig): Promise<void> {
 }
 
 /**
- * Initialize configured analytics providers for the web platform.
+ * Initialize Firebase Analytics for the web platform and manage a single shared initialization lifecycle.
  *
- * This function uses a Promise-based pattern to prevent race conditions:
- * - Concurrent calls during initialization will await the same Promise
- * - Once completed, subsequent calls return immediately
- * - On failure, retry is allowed (state is reset)
+ * Concurrent callers will share the same in-progress initialization; once initialization completes
+ * subsequent calls return immediately. If initialization fails the state is reset to allow retries.
  *
- * Firebase and Vercel Analytics are initialized independently - a Firebase failure
- * will not prevent Vercel Analytics from initializing when provider is 'both'.
- *
- * Initialization errors are handled gracefully and logged. Analytics failures do not
- * throw exceptions since they are not critical to app functionality.
- *
- * @param config - Firebase configuration required when Firebase analytics is enabled.
- *   If Firebase is enabled but config is missing or invalid (empty apiKey, projectId, or appId),
- *   Firebase initialization will fail and be logged. If Vercel is also enabled (provider='both'),
- *   Vercel Analytics will still be initialized.
+ * @param config - Firebase configuration; missing or invalid fields (e.g., empty apiKey, projectId, or appId) may cause initialization to fail and will be logged.
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   // Already completed successfully - return immediately
@@ -498,24 +375,20 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
 }
 
 /**
- * Tracks an analytics event.
+ * Record an analytics event with optional parameters; when initialized the event is sent to Firebase Analytics.
  *
- * Events are dispatched to all enabled analytics providers (Firebase, Vercel, or both).
- * Uses centralized dispatcher to prevent duplicate events.
+ * If analytics is not initialized the event is not sent. In debug mode the event and sanitized parameters are logged.
  *
  * @param eventName - The name of the event
  * @param params - Optional event parameters
  */
 export function trackEventPlatform(eventName: string, params?: EventParams): void {
-  // Check if any provider is initialized
-  const hasProvider = (IS_FIREBASE_ENABLED && analytics) || (IS_VERCEL_ENABLED && vercelAnalytics);
-
-  if (!hasProvider) {
+  if (!analytics) {
     if (isDebugMode()) {
       const sanitizedParams = sanitizeParamsForLogging(params);
       logger.debug(`Event (not sent - no provider initialized): ${eventName}`, {
         category: LogCategory.ANALYTICS,
-        provider: ANALYTICS_PROVIDER,
+        provider: 'firebase',
         event_params: sanitizedParams,
       });
     }
@@ -534,15 +407,12 @@ export function trackEventPlatform(eventName: string, params?: EventParams): voi
 }
 
 /**
- * Sets the user ID for analytics.
+ * Set the analytics user identifier used by Firebase; pass `null` to clear it.
  *
- * Note: Vercel Analytics does not support user ID setting.
- * Only Firebase Analytics will receive the user ID.
- *
- * @param userId - The user ID or null to clear
+ * @param userId - The user identifier to set, or `null` to clear the current user ID
  */
 export function setUserIdPlatform(userId: string | null): void {
-  if (!IS_FIREBASE_ENABLED || !analytics) {
+  if (!analytics) {
     if (isDebugMode()) {
       // Hash userId for privacy-safe logging (fire-and-forget)
       hashUserId(userId).then((hashed) => {
@@ -583,18 +453,17 @@ export function setUserIdPlatform(userId: string | null): void {
 }
 
 /**
- * Sets user properties for analytics.
+ * Set user properties on the analytics backend.
  *
- * Note: Vercel Analytics does not support user properties.
- * Only Firebase Analytics will receive the user properties.
+ * Sanitizes and sends the provided user properties to Firebase Analytics. Undefined values are ignored and only string or boolean property values are applied. If the analytics subsystem is not initialized, the properties are not sent.
  *
- * @param properties - The user properties to set
+ * @param properties - User properties to apply; undefined values are ignored and only string or boolean values will be forwarded to Firebase
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   // Sanitize properties for safe logging (whitelist non-PII, avoid reserved keys)
   const sanitizedMetadata = sanitizeUserPropertiesForLogging(properties);
 
-  if (!IS_FIREBASE_ENABLED || !analytics) {
+  if (!analytics) {
     if (isDebugMode()) {
       logger.debug('setUserProperties (not sent - Firebase not initialized)', {
         category: LogCategory.ANALYTICS,
@@ -640,7 +509,7 @@ export function trackScreenViewPlatform(screenName: string, screenClass?: string
 /**
  * Reset analytics state for the current user.
  *
- * Clears the Firebase Analytics user ID and user properties. No-op for Vercel Analytics because it does not expose a reset API.
+ * Clears the Firebase Analytics user ID.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
   if (isDebugMode()) {
@@ -656,7 +525,8 @@ export async function resetAnalyticsPlatform(): Promise<void> {
 /**
  * Reset the module's analytics initialization state for tests.
  *
- * Clears the internal initialization state and removes stored Firebase and Vercel analytics instances so the module can be re-initialized in a test.
+ * Clears the internal initialization state and removes stored Firebase analytics
+ * instance so the module can be re-initialized in a test.
  *
  * @throws Will throw an Error if called when NODE_ENV is not 'test'.
  * @internal
@@ -669,7 +539,6 @@ export function __resetForTesting(): void {
   initializationPromise = null;
   analytics = null;
   app = null;
-  vercelAnalytics = null;
 }
 
 // =============================================================================

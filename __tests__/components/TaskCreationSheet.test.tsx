@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { Platform } from 'react-native';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
 import { ThemeColors } from '@/contexts/ThemeContext';
@@ -533,6 +534,67 @@ describe('TaskCreationSheet', () => {
       // Verify template title is now shown
       await waitFor(() => {
         expect(screen.getByText('Test Template')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('web platform', () => {
+    const originalPlatform = Platform.OS;
+
+    afterEach(() => {
+      Platform.OS = originalPlatform;
+    });
+
+    it('renders native date input on web', () => {
+      Platform.OS = 'web';
+      render(<TaskCreationSheet {...defaultProps} />);
+
+      // On web, the "Set due date" button text should not be present
+      expect(screen.queryByText('Set due date')).toBeNull();
+    });
+  });
+
+  describe('notification error', () => {
+    it('logs warning but succeeds if notification fails', async () => {
+      // Mock insert to return error for notifications table
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      // We need to override the mock implementation for this specific test
+      const originalMock = supabase.from.getMockImplementation();
+
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'notifications') {
+          return {
+            insert: jest.fn().mockResolvedValue({ error: { message: 'Notification failed' } }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            insert: mockInsert.mockResolvedValue({ error: null }),
+          };
+        }
+        // Fallback to original or default behavior for other tables if needed
+        return originalMock ? originalMock(table) : { insert: jest.fn() };
+      });
+
+      const onTaskCreated = jest.fn();
+      render(
+        <TaskCreationSheet
+          {...defaultProps}
+          preselectedSponseeId="sponsee-1"
+          onTaskCreated={onTaskCreated}
+        />
+      );
+
+      const titleInput = screen.getByPlaceholderText('Enter task title');
+      fireEvent.changeText(titleInput, 'Task with notification error');
+      const descInput = screen.getByPlaceholderText('Enter task description');
+      fireEvent.changeText(descInput, 'Description');
+
+      fireEvent.press(screen.getByText('Assign Task'));
+
+      await waitFor(() => {
+        expect(mockInsert).toHaveBeenCalled(); // Task inserted
+        expect(onTaskCreated).toHaveBeenCalled(); // Success callback called
       });
     });
   });

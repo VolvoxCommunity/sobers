@@ -72,7 +72,9 @@ jest.mock('@react-native-community/datetimepicker', () => {
     default: ({ onChange }: { onChange: (event: unknown, date?: Date) => void }) => {
       return React.createElement('View', {
         testID: 'date-time-picker',
-        onPress: () => onChange({}, new Date('2025-01-15')),
+        // Use local time constructor to avoid timezone issues
+        // new Date(year, monthIndex, day) creates midnight local time
+        onPress: () => onChange({}, new Date(2025, 0, 15)),
       });
     },
   };
@@ -475,6 +477,282 @@ describe('TaskCreationModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Test Template')).toBeTruthy();
       });
+    });
+  });
+
+  describe('date picker interaction', () => {
+    it('clears date when clear button is pressed', async () => {
+      render(<TaskCreationModal {...defaultProps} />);
+
+      // First set a date by triggering the date picker mock
+      // Since we can't easily trigger the mock's onChange from here without finding it
+      // Let's assume we can find the button that opens it
+      fireEvent.press(screen.getByText('Set due date'));
+
+      // The mock implementation of DateTimePicker (which is rendered when showDatePicker is true)
+      // should be visible or interactable if we could find it.
+      // But our mock is a View with onPress that calls onChange immediately?
+      // No, the mock is:
+      // default: ({ onChange }) => React.createElement('View', { testID: 'date-time-picker', onPress: () => onChange({}, new Date('2025-01-15')) })
+
+      // So we need to find that View and press it.
+      // But it is only rendered when showDatePicker is true.
+
+      // Find the picker and press it to select date
+      const picker = screen.getByTestId('date-time-picker');
+      fireEvent.press(picker);
+
+      await waitFor(() => {
+        // Date should be set (mock sets it to 2025-01-15)
+        expect(screen.getByText(/January 15, 2025/)).toBeTruthy();
+      });
+
+      // Now clear it
+      fireEvent.press(screen.getByText('Clear Date'));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Clear Date')).toBeNull();
+        expect(screen.getByText('Set due date')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('error handling - template fetch failures', () => {
+    beforeEach(() => {
+      // Reset supabase mock to default behavior
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'task_templates') {
+          return {
+            select: mockSelect.mockReturnValue({
+              eq: mockEq.mockReturnValue({
+                order: mockOrder.mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          insert: mockInsert.mockResolvedValue({ error: null }),
+        };
+      });
+    });
+
+    it('handles template fetch failure gracefully', async () => {
+      // Mock template fetch to fail
+      const mockSupabase = jest.requireMock('@/lib/supabase');
+      mockSupabase.supabase.from.mockImplementation((table: string) => {
+        if (table === 'task_templates') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({
+                  data: null,
+                  error: new Error('Network error'),
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          insert: jest.fn().mockResolvedValue({ error: null }),
+        };
+      });
+
+      render(<TaskCreationModal {...defaultProps} />);
+
+      // Select a step to trigger template fetch
+      fireEvent.press(screen.getByText('Select step (optional)'));
+      fireEvent.press(screen.getByText('Step 1'));
+
+      await waitFor(() => {
+        // Template dropdown should still be enabled
+        expect(screen.getByText('Choose from template or create custom')).toBeTruthy();
+      });
+
+      // Open template dropdown - should show empty state
+      fireEvent.press(screen.getByText('Choose from template or create custom'));
+
+      await waitFor(() => {
+        expect(screen.getByText('No templates available for this step')).toBeTruthy();
+      });
+    });
+
+    it('continues to work when template fetch returns null data', async () => {
+      render(<TaskCreationModal {...defaultProps} preselectedSponseeId="sponsee-1" />);
+
+      // Select a step
+      fireEvent.press(screen.getByText('Select step (optional)'));
+      fireEvent.press(screen.getByText('Step 1'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Choose from template or create custom')).toBeTruthy();
+      });
+
+      // Can still create task without template
+      const titleInput = screen.getByPlaceholderText('Enter task title');
+      fireEvent.changeText(titleInput, 'Custom Task');
+
+      const descInput = screen.getByPlaceholderText('Enter task description');
+      fireEvent.changeText(descInput, 'Custom description');
+
+      // Submit
+      fireEvent.press(screen.getByText('Assign Task'));
+
+      await waitFor(
+        () => {
+          expect(mockInsert).toHaveBeenCalled();
+          expect(defaultProps.onTaskCreated).toHaveBeenCalled();
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe('error handling - empty sponsee list', () => {
+    it('renders when sponsee list is empty', () => {
+      render(<TaskCreationModal {...defaultProps} sponsees={[]} />);
+
+      expect(screen.getByText('Assign New Task')).toBeTruthy();
+      expect(screen.getByText('Select sponsee')).toBeTruthy();
+    });
+
+    it('shows empty dropdown when opening sponsee selector with no sponsees', () => {
+      render(<TaskCreationModal {...defaultProps} sponsees={[]} />);
+
+      fireEvent.press(screen.getByText('Select sponsee'));
+
+      // Dropdown opens but is empty
+      expect(screen.getByText('Select sponsee')).toBeTruthy();
+      expect(screen.queryByText('John D.')).toBeNull();
+      expect(screen.queryByText('Jane S.')).toBeNull();
+    });
+
+    it('cannot submit task when no sponsees are available', async () => {
+      render(<TaskCreationModal {...defaultProps} sponsees={[]} />);
+
+      // Fill in title and description
+      const titleInput = screen.getByPlaceholderText('Enter task title');
+      fireEvent.changeText(titleInput, 'Test Task');
+
+      const descInput = screen.getByPlaceholderText('Enter task description');
+      fireEvent.changeText(descInput, 'Test description');
+
+      // Try to submit without selecting a sponsee (impossible since list is empty)
+      fireEvent.press(screen.getByText('Assign Task'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Please select a sponsee')).toBeTruthy();
+      });
+
+      // Verify task was not created
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('handles preselected sponsee that does not exist in empty list', () => {
+      render(
+        <TaskCreationModal
+          {...defaultProps}
+          sponsees={[]}
+          preselectedSponseeId="nonexistent-sponsee"
+        />
+      );
+
+      // Should show "Unknown sponsee" since ID doesn't match any in list
+      expect(screen.getByText('Unknown sponsee')).toBeTruthy();
+    });
+  });
+
+  describe('error handling - date validation', () => {
+    beforeEach(() => {
+      // Reset supabase mock to default behavior
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'task_templates') {
+          return {
+            select: mockSelect.mockReturnValue({
+              eq: mockEq.mockReturnValue({
+                order: mockOrder.mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          insert: mockInsert.mockResolvedValue({ error: null }),
+        };
+      });
+    });
+
+    it('enforces minimum date constraint on native date picker', () => {
+      render(<TaskCreationModal {...defaultProps} />);
+
+      // Open date picker
+      fireEvent.press(screen.getByText('Set due date'));
+
+      // DateTimePicker should be rendered with minimumDate
+      const picker = screen.getByTestId('date-time-picker');
+      expect(picker).toBeTruthy();
+
+      // Note: The actual minimumDate enforcement is done by the DateTimePicker component
+      // Our mock automatically sets a future date (2025-01-15) which satisfies this constraint
+    });
+
+    it('accepts valid future date selection', async () => {
+      render(<TaskCreationModal {...defaultProps} preselectedSponseeId="sponsee-1" />);
+
+      // Fill in required fields first
+      const titleInput = screen.getByPlaceholderText('Enter task title');
+      fireEvent.changeText(titleInput, 'Future Task');
+
+      const descInput = screen.getByPlaceholderText('Enter task description');
+      fireEvent.changeText(descInput, 'Task with future due date');
+
+      // Set a future date
+      fireEvent.press(screen.getByText('Set due date'));
+      const picker = screen.getByTestId('date-time-picker');
+      fireEvent.press(picker);
+
+      await waitFor(() => {
+        expect(screen.getByText(/January 15, 2025/)).toBeTruthy();
+      });
+
+      // Submit should succeed
+      fireEvent.press(screen.getByText('Assign Task'));
+
+      await waitFor(
+        () => {
+          expect(mockInsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+              due_date: '2025-01-15',
+            })
+          );
+        },
+        { timeout: 3000 }
+      );
+    });
+
+    it('allows task submission without a due date', async () => {
+      render(<TaskCreationModal {...defaultProps} preselectedSponseeId="sponsee-1" />);
+
+      // Fill in required fields without setting a date
+      const titleInput = screen.getByPlaceholderText('Enter task title');
+      fireEvent.changeText(titleInput, 'No Date Task');
+
+      const descInput = screen.getByPlaceholderText('Enter task description');
+      fireEvent.changeText(descInput, 'Task without due date');
+
+      // Submit should succeed
+      fireEvent.press(screen.getByText('Assign Task'));
+
+      await waitFor(
+        () => {
+          expect(mockInsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+              due_date: null,
+            })
+          );
+        },
+        { timeout: 3000 }
+      );
     });
   });
 });

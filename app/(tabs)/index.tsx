@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +28,7 @@ import { useRouter } from 'expo-router';
 import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
+import { showAlert, showConfirm } from '@/lib/alert';
 
 /**
  * Render the home dashboard that displays sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
@@ -55,29 +55,51 @@ export default function HomeScreen() {
   const fetchData = useCallback(async () => {
     if (!profile) return;
 
-    const { data: asSponsor } = await supabase
+    const { data: asSponsor, error: asSponsorError } = await supabase
       .from('sponsor_sponsee_relationships')
       .select('*, sponsee:sponsee_id(*)')
       .eq('sponsor_id', profile.id)
       .eq('status', 'active');
 
-    const { data: asSponsee } = await supabase
+    if (asSponsorError) {
+      logger.error('Failed to fetch sponsor relationships', asSponsorError as Error, {
+        category: LogCategory.DATABASE,
+      });
+      return;
+    }
+
+    const { data: asSponsee, error: asSponseeError } = await supabase
       .from('sponsor_sponsee_relationships')
       .select('*, sponsor:sponsor_id(*)')
       .eq('sponsee_id', profile.id)
       .eq('status', 'active');
 
+    if (asSponseeError) {
+      logger.error('Failed to fetch sponsee relationships', asSponseeError as Error, {
+        category: LogCategory.DATABASE,
+      });
+      return;
+    }
+
     setRelationships([...(asSponsor || []), ...(asSponsee || [])]);
     const profiles = (asSponsor || []).map((rel) => rel.sponsee).filter(Boolean) as Profile[];
     setSponseeProfiles(profiles);
 
-    const { data: tasksData } = await supabase
+    const { data: tasksData, error: tasksError } = await supabase
       .from('tasks')
       .select('*')
       .eq('sponsee_id', profile.id)
       .eq('status', 'assigned')
       .order('created_at', { ascending: false })
       .limit(3);
+
+    if (tasksError) {
+      logger.error('Failed to fetch tasks', tasksError as Error, {
+        category: LogCategory.DATABASE,
+      });
+      return;
+    }
+
     setTasks(tasksData || []);
   }, [profile]);
 
@@ -100,23 +122,13 @@ export default function HomeScreen() {
       ? `Disconnect from ${otherUserName}? This will end the sponsee relationship.`
       : `Disconnect from ${otherUserName}? This will end the sponsor relationship.`;
 
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm(confirmMessage)
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert('Confirm Disconnection', confirmMessage, [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => resolve(false),
-              },
-              {
-                text: 'Disconnect',
-                style: 'destructive',
-                onPress: () => resolve(true),
-              },
-            ]);
-          });
+    const confirmed = await showConfirm(
+      'Confirm Disconnection',
+      confirmMessage,
+      'Disconnect',
+      'Cancel',
+      true
+    );
 
     if (!confirmed) return;
 
@@ -151,21 +163,13 @@ export default function HomeScreen() {
 
       await fetchData();
 
-      if (Platform.OS === 'web') {
-        window.alert('Successfully disconnected');
-      } else {
-        Alert.alert('Success', 'Successfully disconnected');
-      }
+      showAlert('Success', 'Successfully disconnected');
     } catch (error: unknown) {
       logger.error('Relationship disconnect failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to disconnect.';
-      if (Platform.OS === 'web') {
-        window.alert(message);
-      } else {
-        Alert.alert('Error', message);
-      }
+      showAlert('Error', message);
     }
   };
 
@@ -173,18 +177,18 @@ export default function HomeScreen() {
     if (days >= 365)
       return {
         text: `${Math.floor(days / 365)} Year${Math.floor(days / 365) > 1 ? 's' : ''}`,
-        color: '#007AFF',
+        color: theme.primary,
       };
-    if (days >= 180) return { text: '6 Months', color: '#007AFF' };
-    if (days >= 90) return { text: '90 Days', color: '#007AFF' };
-    if (days >= 30) return { text: '30 Days', color: '#007AFF' };
-    if (days >= 7) return { text: '1 Week', color: '#007AFF' };
-    if (days >= 1) return { text: '24 Hours', color: '#007AFF' };
-    return { text: '< 24 Hours', color: '#6b7280' };
+    if (days >= 180) return { text: '6 Months', color: theme.primary };
+    if (days >= 90) return { text: '90 Days', color: theme.primary };
+    if (days >= 30) return { text: '30 Days', color: theme.primary };
+    if (days >= 7) return { text: '1 Week', color: theme.primary };
+    if (days >= 1) return { text: '24 Hours', color: theme.primary };
+    return { text: '< 24 Hours', color: theme.textSecondary };
   };
 
   const milestone = getMilestone(daysSober);
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
     <ScrollView
@@ -223,11 +227,15 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-        <View style={styles.daysSoberContainer}>
+        <View
+          style={styles.daysSoberContainer}
+          accessible={true}
+          accessibilityLabel={`${loadingDaysSober ? 'Loading' : daysSober} days sober, milestone: ${milestone.text}`}
+        >
           <Text style={styles.daysSoberCount}>{loadingDaysSober ? '...' : daysSober}</Text>
           <Text style={styles.daysSoberLabel}>Days Sober</Text>
           <View style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}>
-            <Award size={16} color="#ffffff" />
+            <Award size={16} color={theme.white} />
             <Text style={styles.milestoneText}>{milestone.text}</Text>
           </View>
         </View>
@@ -256,12 +264,14 @@ export default function HomeScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.disconnectButton}
+                  accessibilityRole="button"
                   accessibilityLabel={`Disconnect from ${rel.sponsor?.display_name ?? 'sponsor'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() =>
                     handleDisconnect(rel.id, false, rel.sponsor?.display_name ?? 'sponsor')
                   }
                 >
-                  <UserMinus size={16} color="#ef4444" />
+                  <UserMinus size={16} color={theme.danger} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -293,6 +303,9 @@ export default function HomeScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.assignTaskButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Assign task to ${rel.sponsee?.display_name ?? 'sponsee'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() => {
                     setSelectedSponseeId(rel.sponsee_id);
                     taskSheetRef.current?.present();
@@ -302,12 +315,14 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.disconnectButton}
+                  accessibilityRole="button"
                   accessibilityLabel={`Disconnect from ${rel.sponsee?.display_name ?? 'sponsee'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() =>
                     handleDisconnect(rel.id, true, rel.sponsee?.display_name ?? 'sponsee')
                   }
                 >
-                  <UserMinus size={16} color="#ef4444" />
+                  <UserMinus size={16} color={theme.danger} />
                 </TouchableOpacity>
               </View>
             ))
@@ -337,6 +352,8 @@ export default function HomeScreen() {
               key={task.id}
               style={styles.taskItem}
               onPress={() => router.push('/tasks')}
+              accessibilityRole="button"
+              accessibilityLabel={`Task: ${task.title}, Step ${task.step_number}, Status: New`}
             >
               <View style={styles.taskInfo}>
                 <Text style={styles.taskTitle}>{task.title}</Text>
@@ -347,19 +364,34 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/tasks')}>
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => router.push('/tasks')}
+            accessibilityRole="button"
+            accessibilityLabel="View All Tasks"
+          >
             <Text style={styles.viewAllText}>View All Tasks</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/steps')}>
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => router.push('/steps')}
+          accessibilityRole="button"
+          accessibilityLabel="Open 12 Steps, Learn and Reflect"
+        >
           <BookOpen size={32} color={theme.primary} />
           <Text style={styles.actionTitle}>12 Steps</Text>
           <Text style={styles.actionSubtitle}>Learn & Reflect</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/tasks')}>
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => router.push('/tasks')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Manage Tasks, Guide Progress"
+        >
           <ClipboardList size={32} color={theme.primary} />
           <Text style={styles.actionTitle}>Manage Tasks</Text>
           <Text style={styles.actionSubtitle}>Guide Progress</Text>
@@ -448,7 +480,7 @@ const createStyles = (theme: ThemeColors) =>
       marginTop: 16,
     },
     milestoneText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
@@ -497,7 +529,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 20,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     relationshipInfo: {
       marginLeft: 12,
@@ -554,7 +586,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     viewAllButton: {
       marginTop: 12,
@@ -610,7 +642,7 @@ const createStyles = (theme: ThemeColors) =>
       padding: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
   });

@@ -36,7 +36,7 @@ jest.mock('@sentry/react-native', () => ({
 
 jest.mock('expo-constants', () => ({
   expoConfig: {
-    version: '1.0.0',
+    version: '1.1.0',
     extra: {
       eas: {
         buildNumber: '123',

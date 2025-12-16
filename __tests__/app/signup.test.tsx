@@ -12,6 +12,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import SignupScreen from '@/app/signup';
+import { Platform } from 'react-native';
 
 // =============================================================================
 // Mocks
@@ -253,7 +254,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(screen.getByText('Creating account...')).toBeTruthy();
+        expect(screen.getByLabelText('Creating account')).toBeTruthy();
       });
     });
   });
@@ -277,7 +278,7 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(screen.getByText('Signing in with Google...')).toBeTruthy();
+        expect(screen.getByLabelText('Signing in with Google')).toBeTruthy();
       });
     });
 
@@ -290,7 +291,7 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google auth failed');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google auth failed', undefined);
       });
     });
 
@@ -303,7 +304,11 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to sign in with Google');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Error',
+          'Failed to sign in with Google',
+          undefined
+        );
       });
     });
   });
@@ -321,7 +326,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
       });
     });
 
@@ -339,7 +344,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
       });
     });
 
@@ -357,7 +362,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
       });
     });
 
@@ -376,7 +381,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Passwords do not match');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Passwords do not match', undefined);
       });
     });
 
@@ -395,7 +400,11 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Password must be at least 6 characters');
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Error',
+          'Password must be at least 6 characters',
+          undefined
+        );
       });
     });
   });
@@ -418,7 +427,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Email already registered');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Email already registered', undefined);
       });
     });
 
@@ -439,7 +448,7 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to create account');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to create account', undefined);
       });
     });
   });
@@ -463,6 +472,100 @@ describe('SignupScreen', () => {
 
       expect(passwordInputs[0].props.value).toBe('secretpass');
       expect(passwordInputs[1].props.value).toBe('secretpass');
+    });
+  });
+
+  describe('Web Platform', () => {
+    let originalPlatform: typeof Platform.OS;
+
+    beforeAll(() => {
+      originalPlatform = Platform.OS;
+    });
+
+    beforeEach(() => {
+      Platform.OS = 'web';
+      global.window = {
+        alert: jest.fn(),
+        confirm: jest.fn(),
+      } as any;
+    });
+
+    afterEach(() => {
+      Platform.OS = originalPlatform;
+      delete (global as any).window;
+    });
+
+    it('uses window.alert for validation errors', () => {
+      render(<SignupScreen />);
+
+      const buttons = screen.getAllByText('Create Account');
+      fireEvent.press(buttons[buttons.length - 1]);
+
+      expect(window.alert).toHaveBeenCalledWith('Error: Please fill in all fields');
+    });
+
+    it('uses window.alert for password mismatch', () => {
+      render(<SignupScreen />);
+
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(passwordInputs[0], 'password123');
+      fireEvent.changeText(passwordInputs[1], 'mismatch');
+
+      const buttons = screen.getAllByText('Create Account');
+      fireEvent.press(buttons[buttons.length - 1]);
+
+      expect(window.alert).toHaveBeenCalledWith('Error: Passwords do not match');
+    });
+
+    it('uses window.alert for short password', () => {
+      render(<SignupScreen />);
+
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(passwordInputs[0], '123');
+      fireEvent.changeText(passwordInputs[1], '123');
+
+      const buttons = screen.getAllByText('Create Account');
+      fireEvent.press(buttons[buttons.length - 1]);
+
+      expect(window.alert).toHaveBeenCalledWith('Error: Password must be at least 6 characters');
+    });
+
+    it('uses window.alert for sign up error', async () => {
+      mockSignUp.mockRejectedValueOnce(new Error('Web error'));
+
+      render(<SignupScreen />);
+
+      const emailInput = screen.getByPlaceholderText('your@email.com');
+      const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+
+      fireEvent.changeText(emailInput, 'test@example.com');
+      fireEvent.changeText(passwordInputs[0], 'password123');
+      fireEvent.changeText(passwordInputs[1], 'password123');
+
+      const buttons = screen.getAllByText('Create Account');
+      fireEvent.press(buttons[buttons.length - 1]);
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Error: Web error');
+      });
+    });
+
+    it('uses window.alert for Google sign in error', async () => {
+      mockSignInWithGoogle.mockRejectedValueOnce(new Error('Web Google error'));
+
+      render(<SignupScreen />);
+
+      fireEvent.press(screen.getByText('Continue with Google'));
+
+      await waitFor(() => {
+        expect(window.alert).toHaveBeenCalledWith('Error: Web Google error');
+      });
     });
   });
 });

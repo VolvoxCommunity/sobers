@@ -51,6 +51,8 @@ export default function WebTopNav({ items }: WebTopNavProps): React.ReactElement
               onPress={() => router.push(item.route as never)}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
+              accessibilityLabel={item.label}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <IconComponent size={20} color={active ? theme.primary : theme.textSecondary} />
               <Text

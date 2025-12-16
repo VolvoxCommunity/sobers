@@ -883,4 +883,672 @@ describe('AuthContext', () => {
       expect(mockUnsubscribe).toHaveBeenCalled();
     });
   });
+
+  describe('analytics and Sentry integration', () => {
+    it('sets analytics user ID when profile exists with sobriety_date', async () => {
+      const mockProfile = {
+        id: 'analytics-user',
+        email: 'analytics@example.com',
+        display_name: 'Analytics User',
+        sobriety_date: '2024-01-01',
+      };
+
+      mockFrom.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+      }));
+
+      mockOnAuthStateChange.mockImplementation(
+        (
+          callback: (event: string, session: { user: { id: string; email: string } } | null) => void
+        ) => {
+          setTimeout(() => {
+            callback('SIGNED_IN', {
+              user: { id: 'analytics-user', email: 'analytics@example.com' },
+            });
+          }, 10);
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.profile).not.toBeNull();
+      });
+
+      const { setUserId, setUserProperties } = require('@/lib/analytics');
+      expect(setUserId).toHaveBeenCalledWith('analytics-user');
+      expect(setUserProperties).toHaveBeenCalled();
+    });
+
+    it('clears Sentry user when profile is null', async () => {
+      mockOnAuthStateChange.mockImplementation(
+        (callback: (event: string, session: null) => void) => {
+          setTimeout(() => {
+            callback('SIGNED_OUT', null);
+          }, 10);
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const { clearSentryUser } = require('@/lib/sentry');
+      expect(clearSentryUser).toHaveBeenCalled();
+    });
+  });
+
+  describe('deep link handling', () => {
+    it('handles deep links with OAuth tokens', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=test-token&refresh_token=test-refresh'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'oauth-user', email: 'oauth@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // The deep link handling should attempt to set session
+      expect(mockSetSession).toHaveBeenCalled();
+    });
+
+    it('ignores URLs without OAuth tokens', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      mockGetInitialURL.mockResolvedValueOnce('sobrietywaypoint://some-other-path');
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not try to set session for non-OAuth URLs
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles INITIAL_SESSION event', async () => {
+      const mockProfile = {
+        id: 'session-user',
+        email: 'session@example.com',
+        display_name: 'Session User',
+      };
+
+      mockFrom.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+      }));
+
+      mockOnAuthStateChange.mockImplementation(
+        (
+          callback: (
+            event: string,
+            session: {
+              user: { id: string; email: string; user_metadata?: Record<string, unknown> };
+            } | null
+          ) => void
+        ) => {
+          setTimeout(() => {
+            callback('INITIAL_SESSION', {
+              user: {
+                id: 'session-user',
+                email: 'session@example.com',
+                user_metadata: {},
+              },
+            });
+          }, 10);
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.user).not.toBeNull();
+      });
+
+      expect(result.current.user?.id).toBe('session-user');
+    });
+  });
+
+  describe('Google OAuth flow', () => {
+    it('handles successful OAuth with session from deep link', async () => {
+      mockSignInWithOAuth.mockResolvedValue({
+        data: { url: 'https://accounts.google.com/oauth' },
+        error: null,
+      });
+
+      // Mock successful session already exists
+      mockGetSession
+        .mockResolvedValueOnce({ data: { session: null }, error: null })
+        .mockResolvedValueOnce({
+          data: { session: { user: { id: 'google-user', email: 'google@test.com' } } },
+          error: null,
+        });
+
+      const WebBrowser = require('expo-web-browser');
+      WebBrowser.openAuthSessionAsync.mockResolvedValue({
+        type: 'success',
+        url: 'sobrietywaypoint://auth/callback#access_token=token&refresh_token=refresh',
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Try signing in with Google
+      await result.current.signInWithGoogle().catch(() => {
+        // May throw in test environment due to Platform.OS
+      });
+
+      // OAuth was initiated
+      expect(mockSignInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'google',
+        })
+      );
+    });
+
+    it('handles OAuth cancellation', async () => {
+      mockSignInWithOAuth.mockResolvedValue({
+        data: { url: 'https://accounts.google.com/oauth' },
+        error: null,
+      });
+
+      const WebBrowser = require('expo-web-browser');
+      WebBrowser.openAuthSessionAsync.mockResolvedValue({ type: 'cancel' });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Try signing in with Google (should not throw for cancellation)
+      await result.current.signInWithGoogle().catch(() => {
+        // May error in test environment
+      });
+
+      expect(mockSignInWithOAuth).toHaveBeenCalled();
+    });
+  });
+
+  describe('token extraction', () => {
+    // Note: Token extraction is an internal function, but we test it via the createSessionFromUrl behavior
+
+    it('handles URL with tokens in hash fragment', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=hash-access&refresh_token=hash-refresh'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'hash-user', email: 'hash@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(mockSetSession).toHaveBeenCalledWith({
+        access_token: 'hash-access',
+        refresh_token: 'hash-refresh',
+      });
+    });
+
+    it('handles URL with tokens in query params (PKCE flow)', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback?access_token=query-access&refresh_token=query-refresh'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'query-user', email: 'query@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(mockSetSession).toHaveBeenCalledWith({
+        access_token: 'query-access',
+        refresh_token: 'query-refresh',
+      });
+    });
+
+    it('handles session creation error gracefully', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=test&refresh_token=test'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: null },
+        error: new Error('Session creation failed'),
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not crash, error is logged
+      const { logger } = require('@/lib/logger');
+      expect(logger.error).toHaveBeenCalled();
+    });
+  });
+
+  describe('OAuth URL parsing edge cases', () => {
+    it('handles malformed URL gracefully', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Malformed URL - not a valid URL structure
+      mockGetInitialURL.mockResolvedValueOnce('not-a-valid-url-at-all');
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not crash or attempt to create session
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles URL with missing access_token', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Only refresh_token, no access_token
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#refresh_token=only-refresh'
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to create session without both tokens
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles URL with missing refresh_token', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Only access_token, no refresh_token
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=only-access'
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to create session without both tokens
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles URL with empty access_token value', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Empty access_token
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=&refresh_token=valid-refresh'
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to create session with empty token
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles URL with empty refresh_token value', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Empty refresh_token
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=valid-access&refresh_token='
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to create session with empty token
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('prioritizes hash fragment tokens over query params when both exist', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Both hash and query params - hash should take precedence
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback?access_token=query-access&refresh_token=query-refresh#access_token=hash-access&refresh_token=hash-refresh'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'precedence-user', email: 'precedence@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should use hash tokens (Supabase's default for implicit grant)
+      expect(mockSetSession).toHaveBeenCalledWith({
+        access_token: 'hash-access',
+        refresh_token: 'hash-refresh',
+      });
+    });
+
+    it('falls back to query params when hash has only partial tokens', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Hash has only access_token, query has both - should fall back to query
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback?access_token=query-access&refresh_token=query-refresh#access_token=hash-access'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'fallback-user', email: 'fallback@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should fall back to query params when hash doesn't have both tokens
+      expect(mockSetSession).toHaveBeenCalledWith({
+        access_token: 'query-access',
+        refresh_token: 'query-refresh',
+      });
+    });
+
+    it('handles URL with OAuth error parameter', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // OAuth error response
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#error=access_denied&error_description=User+denied+access'
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to create session when error is present
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles URL with special characters in tokens', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Tokens with URL-encoded special characters
+      mockGetInitialURL.mockResolvedValueOnce(
+        'sobrietywaypoint://auth/callback#access_token=token%2Bwith%2Fspecial%3Dchars&refresh_token=refresh%2Btoken%3D%3D'
+      );
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'special-user', email: 'special@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should decode and use the special characters correctly
+      expect(mockSetSession).toHaveBeenCalledWith({
+        access_token: 'token+with/special=chars',
+        refresh_token: 'refresh+token==',
+      });
+    });
+
+    it('handles URL without any OAuth-related parameters', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      // Regular deep link without OAuth params
+      mockGetInitialURL.mockResolvedValueOnce('sobrietywaypoint://profile/view');
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not attempt to process as OAuth callback
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles duplicate URL processing by ignoring second attempt', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      const duplicateUrl =
+        'sobrietywaypoint://auth/callback#access_token=duplicate&refresh_token=duplicate';
+
+      mockGetInitialURL.mockResolvedValueOnce(duplicateUrl);
+
+      mockSetSession.mockResolvedValue({
+        data: { session: { user: { id: 'dup-user', email: 'dup@test.com' } } },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // First call should succeed
+      expect(mockSetSession).toHaveBeenCalledTimes(1);
+
+      mockSetSession.mockClear();
+
+      // Simulate the same URL being processed again via addEventListener.
+      // We access the internal URL event handler to test the duplicate-processing guard.
+      // This is necessary because we can't trigger another getInitialURL call after mount,
+      // and we need to verify that the same URL isn't processed twice even when received
+      // through different channels (initial URL vs event listener).
+      const Linking = require('expo-linking');
+      const addEventListenerCalls = Linking.addEventListener.mock.calls;
+      const lastCall = addEventListenerCalls[addEventListenerCalls.length - 1];
+      const urlEventHandler = lastCall[1];
+
+      // Trigger the same URL again
+      await urlEventHandler({ url: duplicateUrl });
+
+      // Should not call setSession again (URL already processed)
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+
+    it('handles concurrent OAuth processing by preventing race conditions', async () => {
+      const mockGetInitialURL = require('expo-linking').getInitialURL;
+      const oauthUrl =
+        'sobrietywaypoint://auth/callback#access_token=concurrent&refresh_token=concurrent';
+
+      mockGetInitialURL.mockResolvedValueOnce(oauthUrl);
+
+      // Make setSession slow to simulate race condition
+      mockSetSession.mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  data: {
+                    session: { user: { id: 'concurrent-user', email: 'concurrent@test.com' } },
+                  },
+                  error: null,
+                }),
+              100
+            )
+          )
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      // Wait for initial processing to start
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Try to process the same URL while first is still in progress
+      const Linking = require('expo-linking');
+      const addEventListenerCalls = Linking.addEventListener.mock.calls;
+      const lastCall = addEventListenerCalls[addEventListenerCalls.length - 1];
+      const urlEventHandler = lastCall[1];
+
+      // Trigger URL while first is processing (won't await it to simulate concurrency)
+      urlEventHandler({ url: oauthUrl });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should only call setSession once despite concurrent attempts
+      expect(mockSetSession).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('storeAppleNameInMetadata', () => {
+    it('handles updateUser error gracefully', async () => {
+      mockPendingAppleName = {
+        firstName: 'Error',
+        familyName: 'User',
+        displayName: 'Error U.',
+        fullName: 'Error User',
+      };
+
+      mockUpdateUser.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Update failed' },
+      });
+
+      mockOnAuthStateChange.mockImplementation(
+        (
+          callback: (
+            event: string,
+            session: {
+              user: { id: string; email: string; user_metadata?: Record<string, unknown> };
+            } | null
+          ) => void
+        ) => {
+          setTimeout(() => {
+            callback('SIGNED_IN', {
+              user: {
+                id: 'error-user',
+                email: 'error@example.com',
+                user_metadata: {},
+              },
+            });
+          }, 10);
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should not throw, error is logged
+      const { logger } = require('@/lib/logger');
+      expect(logger.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('profile effect edge cases', () => {
+    it('sets Sentry context when profile has email', async () => {
+      const mockProfile = {
+        id: 'sentry-user',
+        email: 'sentry@example.com',
+        display_name: 'Sentry User',
+      };
+
+      mockFrom.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+      }));
+
+      resetSupabaseMock({
+        session: { user: { id: 'sentry-user', email: 'sentry@example.com' } },
+        profile: mockProfile,
+      });
+
+      mockOnAuthStateChange.mockImplementation(
+        (
+          callback: (event: string, session: { user: { id: string; email: string } } | null) => void
+        ) => {
+          setTimeout(() => {
+            callback('SIGNED_IN', { user: { id: 'sentry-user', email: 'sentry@example.com' } });
+          }, 10);
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.profile).not.toBeNull();
+      });
+
+      const { setSentryUser, setSentryContext } = require('@/lib/sentry');
+      expect(setSentryUser).toHaveBeenCalledWith('sentry-user');
+      expect(setSentryContext).toHaveBeenCalledWith('profile', { email: 'sentry@example.com' });
+    });
+  });
 });

@@ -389,4 +389,16 @@ describe('JourneyScreen', () => {
       expect(screen.getByText('5 Tasks Completed')).toBeTruthy();
     });
   });
+
+  it('handles null profile gracefully', async () => {
+    // Override to return null profile
+    (useAuth as jest.Mock).mockReturnValue({ profile: null });
+
+    render(<JourneyScreen />);
+
+    // Should render without crashing even without a profile
+    await waitFor(() => {
+      expect(screen.getByText('Your Journey')).toBeTruthy();
+    });
+  });
 });

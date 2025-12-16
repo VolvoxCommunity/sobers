@@ -468,18 +468,15 @@ describe('Web Analytics - New Functionality', () => {
       expect(getAnalytics).toHaveBeenCalled();
     });
 
-    it('logs completion with provider information in debug mode', async () => {
+    it('logs success message in debug mode', async () => {
       mockIsDebugMode.mockReturnValue(true);
 
       await initializeWebAnalytics(mockConfig);
 
       expect(mockLoggerInfo).toHaveBeenCalledWith(
-        'Analytics initialization complete',
+        'Firebase Analytics initialized for web',
         expect.objectContaining({
           category: 'ANALYTICS',
-          provider: expect.any(String),
-          firebaseEnabled: expect.any(Boolean),
-          vercelEnabled: expect.any(Boolean),
         })
       );
     });

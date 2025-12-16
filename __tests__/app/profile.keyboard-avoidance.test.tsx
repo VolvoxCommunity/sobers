@@ -278,7 +278,7 @@ jest.mock('expo-device', () => ({
 // Mock expo-application (required by SettingsSheet)
 jest.mock('expo-application', () => ({
   nativeBuildVersion: '1',
-  nativeApplicationVersion: '1.0.0',
+  nativeApplicationVersion: '1.1.0',
 }));
 
 // Mock useAppUpdates hook (required by SettingsSheet)

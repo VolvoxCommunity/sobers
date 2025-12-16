@@ -1,14 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  Alert,
-  Platform,
-} from 'react-native';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +9,7 @@ import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreati
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
+import { showAlert, showConfirm } from '@/lib/alert';
 
 /**
  * Screen component for viewing, filtering, and managing tasks assigned to a sponsor's sponsees.
@@ -41,22 +33,36 @@ export default function ManageTasksScreen() {
   const fetchData = useCallback(async () => {
     if (!profile) return;
 
-    const { data: sponseeData } = await supabase
+    const { data: sponseeData, error: sponseeError } = await supabase
       .from('sponsor_sponsee_relationships')
       .select('*, sponsee:sponsee_id(*)')
       .eq('sponsor_id', profile.id)
       .eq('status', 'active');
+
+    if (sponseeError) {
+      logger.error('Failed to fetch sponsee relationships', sponseeError as Error, {
+        category: LogCategory.DATABASE,
+      });
+      return;
+    }
 
     const sponseeProfiles = (sponseeData || [])
       .map((rel) => rel.sponsee)
       .filter(Boolean) as Profile[];
     setSponsees(sponseeProfiles);
 
-    const { data: taskData } = await supabase
+    const { data: taskData, error: taskError } = await supabase
       .from('tasks')
       .select('*, sponsee:sponsee_id(*)')
       .eq('sponsor_id', profile.id)
       .order('created_at', { ascending: false });
+
+    if (taskError) {
+      logger.error('Failed to fetch tasks', taskError as Error, {
+        category: LogCategory.DATABASE,
+      });
+      return;
+    }
 
     setTasks(taskData || []);
   }, [profile]);
@@ -72,25 +78,13 @@ export default function ManageTasksScreen() {
   };
 
   const handleDeleteTask = async (taskId: string, taskTitle: string) => {
-    const confirmMessage = `Delete task "${taskTitle}"? This cannot be undone.`;
-
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm(confirmMessage)
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert('Confirm Delete', confirmMessage, [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-                onPress: () => resolve(false),
-              },
-              {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: () => resolve(true),
-              },
-            ]);
-          });
+    const confirmed = await showConfirm(
+      'Confirm Delete',
+      `Delete task "${taskTitle}"? This cannot be undone.`,
+      'Delete',
+      'Cancel',
+      true
+    );
 
     if (!confirmed) return;
 
@@ -101,21 +95,13 @@ export default function ManageTasksScreen() {
 
       await fetchData();
 
-      if (Platform.OS === 'web') {
-        window.alert('Task deleted successfully');
-      } else {
-        Alert.alert('Success', 'Task deleted successfully');
-      }
+      showAlert('Success', 'Task deleted successfully');
     } catch (error: unknown) {
       logger.error('Task deletion failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to delete task.';
-      if (Platform.OS === 'web') {
-        window.alert(message);
-      } else {
-        Alert.alert('Error', message);
-      }
+      showAlert('Error', message);
     }
   };
 
@@ -165,7 +151,7 @@ export default function ManageTasksScreen() {
   const now = new Date();
   const stats = getTaskStats(now);
   const filteredTasks = getFilteredTasks();
-  const styles = createStyles(theme);
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const groupTasksBySponsee = () => {
     const grouped: { [key: string]: Task[] } = {};
@@ -183,26 +169,28 @@ export default function ManageTasksScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Tasks</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Manage Tasks
+        </Text>
         <Text style={styles.headerSubtitle}>Track and assign sponsee tasks</Text>
       </View>
 
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        <View style={styles.statCard} accessibilityLabel={`${stats.total} Total Tasks`}>
           <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={styles.statCard} accessibilityLabel={`${stats.assigned} Assigned Tasks`}>
           <Text style={[styles.statValue, { color: theme.primary }]}>{stats.assigned}</Text>
           <Text style={styles.statLabel}>Assigned</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.completed}</Text>
+        <View style={styles.statCard} accessibilityLabel={`${stats.completed} Completed Tasks`}>
+          <Text style={[styles.statValue, { color: theme.success }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         {stats.overdue > 0 && (
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.overdue}</Text>
+          <View style={styles.statCard} accessibilityLabel={`${stats.overdue} Overdue Tasks`}>
+            <Text style={[styles.statValue, { color: theme.error }]}>{stats.overdue}</Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
         )}
@@ -217,6 +205,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
             onPress={() => setFilterStatus('all')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'all' }}
+            accessibilityLabel="Filter by All Tasks"
           >
             <Text
               style={[styles.filterChipText, filterStatus === 'all' && styles.filterChipTextActive]}
@@ -227,6 +218,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'assigned' && styles.filterChipActive]}
             onPress={() => setFilterStatus('assigned')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'assigned' }}
+            accessibilityLabel="Filter by Assigned Tasks"
           >
             <Text
               style={[
@@ -240,6 +234,9 @@ export default function ManageTasksScreen() {
           <TouchableOpacity
             style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
             onPress={() => setFilterStatus('completed')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filterStatus === 'completed' }}
+            accessibilityLabel="Filter by Completed Tasks"
           >
             <Text
               style={[
@@ -266,6 +263,9 @@ export default function ManageTasksScreen() {
                 selectedSponseeFilter === 'all' && styles.filterChipActive,
               ]}
               onPress={() => setSelectedSponseeFilter('all')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedSponseeFilter === 'all' }}
+              accessibilityLabel="Filter by All Sponsees"
             >
               <Text
                 style={[
@@ -284,6 +284,9 @@ export default function ManageTasksScreen() {
                   selectedSponseeFilter === sponsee.id && styles.filterChipActive,
                 ]}
                 onPress={() => setSelectedSponseeFilter(sponsee.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedSponseeFilter === sponsee.id }}
+                accessibilityLabel={`Filter by sponsee ${formatProfileName(sponsee)}`}
               >
                 <Text
                   style={[
@@ -330,7 +333,7 @@ export default function ManageTasksScreen() {
             return (
               <View key={sponseeId} style={styles.sponseeSection}>
                 <View style={styles.sponseeHeader}>
-                  <View style={styles.sponseeAvatar}>
+                  <View style={styles.sponseeAvatar} accessibilityRole="image">
                     <Text style={styles.sponseeAvatarText}>
                       {(sponsee?.display_name?.[0] || '?').toUpperCase()}
                     </Text>
@@ -348,81 +351,102 @@ export default function ManageTasksScreen() {
                       setPreselectedSponseeId(sponseeId);
                       taskSheetRef.current?.present();
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
                   >
                     <Plus size={20} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
 
-                {sponseeTasks.map((task) => (
-                  <View
-                    key={task.id}
-                    style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
-                  >
-                    <View style={styles.taskHeader}>
-                      <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
+                {sponseeTasks.map((task) => {
+                  const statusLabel =
+                    task.status === 'assigned'
+                      ? 'Assigned'
+                      : task.status === 'in_progress'
+                        ? 'In Progress'
+                        : 'Completed';
+                  const overdueLabel = isOverdue(task, now) ? ', Overdue' : '';
+                  const taskLabel = `Task: ${task.title}, Step ${task.step_number || 'None'}, Status: ${statusLabel}${overdueLabel}`;
+
+                  return (
+                    <View
+                      key={task.id}
+                      style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
+                      accessibilityLabel={taskLabel}
+                    >
+                      <View style={styles.taskHeader}>
+                        <View style={styles.stepBadge}>
+                          <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
+                        </View>
+                        {task.status === 'completed' ? (
+                          <CheckCircle
+                            size={20}
+                            color={theme.success}
+                            accessibilityLabel="Completed"
+                          />
+                        ) : isOverdue(task, now) ? (
+                          <Clock size={20} color={theme.error} accessibilityLabel="Overdue" />
+                        ) : (
+                          <Clock size={20} color={theme.textSecondary} />
+                        )}
                       </View>
-                      {task.status === 'completed' ? (
-                        <CheckCircle size={20} color="#10b981" />
-                      ) : isOverdue(task, now) ? (
-                        <Clock size={20} color="#ef4444" />
-                      ) : (
-                        <Clock size={20} color={theme.textSecondary} />
+
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <Text style={styles.taskDescription} numberOfLines={2}>
+                        {task.description}
+                      </Text>
+
+                      {task.due_date && (
+                        <View style={styles.taskMeta}>
+                          <Calendar
+                            size={14}
+                            color={isOverdue(task, now) ? theme.error : theme.textSecondary}
+                          />
+                          <Text
+                            style={[
+                              styles.taskMetaText,
+                              isOverdue(task, now) && styles.taskMetaTextOverdue,
+                            ]}
+                          >
+                            Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
+                          </Text>
+                        </View>
                       )}
-                    </View>
 
-                    <Text style={styles.taskTitle}>{task.title}</Text>
-                    <Text style={styles.taskDescription} numberOfLines={2}>
-                      {task.description}
-                    </Text>
-
-                    {task.due_date && (
-                      <View style={styles.taskMeta}>
-                        <Calendar
-                          size={14}
-                          color={isOverdue(task, now) ? '#ef4444' : theme.textSecondary}
-                        />
-                        <Text
-                          style={[
-                            styles.taskMetaText,
-                            isOverdue(task, now) && styles.taskMetaTextOverdue,
-                          ]}
-                        >
-                          Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-
-                    {task.status === 'completed' && task.completion_notes && (
-                      <View style={styles.completionNotesContainer}>
-                        <Text style={styles.completionNotesLabel}>Completion Notes:</Text>
-                        <Text style={styles.completionNotesText} numberOfLines={3}>
-                          {task.completion_notes}
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={styles.taskActions}>
-                      <View style={styles.statusBadge}>
-                        <Text style={styles.statusBadgeText}>
-                          {task.status === 'assigned'
-                            ? 'Assigned'
-                            : task.status === 'in_progress'
-                              ? 'In Progress'
-                              : 'Completed'}
-                        </Text>
-                      </View>
-                      {task.status !== 'completed' && (
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => handleDeleteTask(task.id, task.title)}
-                        >
-                          <Trash2 size={16} color="#ef4444" />
-                        </TouchableOpacity>
+                      {task.status === 'completed' && task.completion_notes && (
+                        <View style={styles.completionNotesContainer}>
+                          <Text style={styles.completionNotesLabel}>Completion Notes:</Text>
+                          <Text style={styles.completionNotesText} numberOfLines={3}>
+                            {task.completion_notes}
+                          </Text>
+                        </View>
                       )}
+
+                      <View style={styles.taskActions}>
+                        <View style={styles.statusBadge}>
+                          <Text style={styles.statusBadgeText}>
+                            {task.status === 'assigned'
+                              ? 'Assigned'
+                              : task.status === 'in_progress'
+                                ? 'In Progress'
+                                : 'Completed'}
+                          </Text>
+                        </View>
+                        {task.status !== 'completed' && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDeleteTask(task.id, task.title)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Delete task ${task.title}`}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          >
+                            <Trash2 size={16} color={theme.error} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             );
           })
@@ -436,8 +460,11 @@ export default function ManageTasksScreen() {
             setPreselectedSponseeId(undefined);
             taskSheetRef.current?.present();
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Assign new task"
+          accessibilityHint="Opens the task assignment sheet"
         >
-          <Plus size={24} color="#ffffff" />
+          <Plus size={24} color={theme.white} />
         </TouchableOpacity>
       )}
 
@@ -540,7 +567,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     filterChipTextActive: {
-      color: '#ffffff',
+      color: theme.textOnPrimary,
     },
     content: {
       flex: 1,
@@ -566,7 +593,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 18,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     sponseeInfo: {
       marginLeft: 12,
@@ -601,7 +628,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     taskCardOverdue: {
       borderLeftWidth: 4,
-      borderLeftColor: '#ef4444',
+      borderLeftColor: theme.error,
     },
     taskHeader: {
       flexDirection: 'row',
@@ -619,7 +646,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     taskTitle: {
       fontSize: 16,
@@ -647,7 +674,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.textSecondary,
     },
     taskMetaTextOverdue: {
-      color: '#ef4444',
+      color: theme.error,
       fontWeight: '600',
     },
     completionNotesContainer: {
@@ -692,8 +719,8 @@ const createStyles = (theme: ThemeColors) =>
       padding: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
     emptyState: {
       alignItems: 'center',

@@ -308,17 +308,17 @@ export default function StepDetailScreen() {
           >
             {togglingCompletion ? (
               <>
-                <ActivityIndicator size="small" color="#ffffff" />
+                <ActivityIndicator size="small" color={theme.white} />
                 <Text style={styles.completeButtonText}>Updating...</Text>
               </>
             ) : isCompleted ? (
               <>
-                <CheckCircle size={20} color="#ffffff" />
+                <CheckCircle size={20} color={theme.white} />
                 <Text style={styles.completeButtonText}>Marked as Complete</Text>
               </>
             ) : (
               <>
-                <Circle size={20} color="#ffffff" />
+                <Circle size={20} color={theme.white} />
                 <Text style={styles.completeButtonText}>Mark as Complete</Text>
               </>
             )}
@@ -536,7 +536,7 @@ const createStyles = (theme: ThemeColors, insets: { top: number }, tabBarPadding
       gap: 8,
     },
     completeButtonActive: {
-      backgroundColor: theme.success,
+      backgroundColor: theme.successAlt,
     },
     completeButtonDisabled: {
       opacity: 0.7,
