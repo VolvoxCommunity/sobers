@@ -548,7 +548,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 24,
       padding: 24,
       marginBottom: 24,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.05,
       shadowRadius: 12,

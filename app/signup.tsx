@@ -100,7 +100,7 @@ export default function SignupScreen() {
 
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Heart size={48} color="#007AFF" fill="#007AFF" />
+            <Heart size={48} color={theme.primary} fill={theme.primary} />
           </View>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Begin your recovery journey</Text>
@@ -173,7 +173,7 @@ export default function SignupScreen() {
             accessibilityState={{ busy: loading, disabled: loading || googleLoading }}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <ActivityIndicator size="small" color={theme.white} />
             ) : (
               <Text style={styles.buttonText}>Create Account</Text>
             )}
@@ -290,7 +290,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     button: {
-      backgroundColor: '#007AFF',
+      backgroundColor: theme.primary,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
@@ -300,7 +300,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.6,
     },
     buttonText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
@@ -349,7 +349,7 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
     },
     loginLinkBold: {
-      color: '#007AFF',
+      color: theme.primary,
       fontWeight: '600',
     },
   });

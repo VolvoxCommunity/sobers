@@ -76,14 +76,14 @@ export function GlassView({
           borderWidth: 1,
           borderColor: theme.glassBorder,
           // Subtle shadow for depth (replaces blur's natural depth)
-          shadowColor: '#000',
+          shadowColor: theme.shadow,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 8,
           elevation: 4, // Android shadow
         },
       }),
-    [theme.glassFallback, theme.glassBorder]
+    [theme.glassFallback, theme.glassBorder, theme.shadow]
   );
 
   if (supportsGlass) {

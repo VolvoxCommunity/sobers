@@ -67,7 +67,7 @@ function ErrorFallback({ onReset }: { onReset: () => void }) {
         style={[styles.button, { backgroundColor: theme.primary }]}
         onPress={onReset}
       >
-        <Text style={styles.buttonText}>Try Again</Text>
+        <Text style={[styles.buttonText, { color: theme.white }]}>Try Again</Text>
       </TouchableOpacity>
     </View>
   );
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

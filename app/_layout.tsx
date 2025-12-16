@@ -199,8 +199,8 @@ function RootLayoutNav() {
     return (
       <>
         {seoHead}
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator testID="loading-indicator" size="large" color="#10b981" />
+        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+          <ActivityIndicator testID="loading-indicator" size="large" color={theme.successAlt} />
         </View>
       </>
     );
@@ -294,6 +294,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
   },
 });

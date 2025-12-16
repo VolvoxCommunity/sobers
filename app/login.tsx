@@ -81,7 +81,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Heart size={48} color="#007AFF" fill="#007AFF" />
+            <Heart size={48} color={theme.primary} fill={theme.primary} />
           </View>
           <Text style={styles.title}>Sobriety Waypoint</Text>
           <Text style={styles.subtitle}>Your journey to recovery</Text>
@@ -134,7 +134,7 @@ export default function LoginScreen() {
             accessibilityState={{ busy: loading, disabled: loading || googleLoading }}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <ActivityIndicator size="small" color={theme.white} />
             ) : (
               <Text style={styles.buttonText}>Sign In</Text>
             )}
@@ -243,7 +243,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     button: {
-      backgroundColor: '#007AFF',
+      backgroundColor: theme.primary,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
@@ -253,7 +253,7 @@ const createStyles = (theme: ThemeColors) =>
       opacity: 0.6,
     },
     buttonText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',

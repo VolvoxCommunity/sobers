@@ -177,14 +177,14 @@ export default function HomeScreen() {
     if (days >= 365)
       return {
         text: `${Math.floor(days / 365)} Year${Math.floor(days / 365) > 1 ? 's' : ''}`,
-        color: '#007AFF',
+        color: theme.primary,
       };
-    if (days >= 180) return { text: '6 Months', color: '#007AFF' };
-    if (days >= 90) return { text: '90 Days', color: '#007AFF' };
-    if (days >= 30) return { text: '30 Days', color: '#007AFF' };
-    if (days >= 7) return { text: '1 Week', color: '#007AFF' };
-    if (days >= 1) return { text: '24 Hours', color: '#007AFF' };
-    return { text: '< 24 Hours', color: '#6b7280' };
+    if (days >= 180) return { text: '6 Months', color: theme.primary };
+    if (days >= 90) return { text: '90 Days', color: theme.primary };
+    if (days >= 30) return { text: '30 Days', color: theme.primary };
+    if (days >= 7) return { text: '1 Week', color: theme.primary };
+    if (days >= 1) return { text: '24 Hours', color: theme.primary };
+    return { text: '< 24 Hours', color: theme.textSecondary };
   };
 
   const milestone = getMilestone(daysSober);
@@ -235,7 +235,7 @@ export default function HomeScreen() {
           <Text style={styles.daysSoberCount}>{loadingDaysSober ? '...' : daysSober}</Text>
           <Text style={styles.daysSoberLabel}>Days Sober</Text>
           <View style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}>
-            <Award size={16} color="#ffffff" />
+            <Award size={16} color={theme.white} />
             <Text style={styles.milestoneText}>{milestone.text}</Text>
           </View>
         </View>
@@ -271,7 +271,7 @@ export default function HomeScreen() {
                     handleDisconnect(rel.id, false, rel.sponsor?.display_name ?? 'sponsor')
                   }
                 >
-                  <UserMinus size={16} color="#ef4444" />
+                  <UserMinus size={16} color={theme.danger} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -322,7 +322,7 @@ export default function HomeScreen() {
                     handleDisconnect(rel.id, true, rel.sponsee?.display_name ?? 'sponsee')
                   }
                 >
-                  <UserMinus size={16} color="#ef4444" />
+                  <UserMinus size={16} color={theme.danger} />
                 </TouchableOpacity>
               </View>
             ))
@@ -480,7 +480,7 @@ const createStyles = (theme: ThemeColors) =>
       marginTop: 16,
     },
     milestoneText: {
-      color: '#ffffff',
+      color: theme.white,
       fontSize: 14,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
@@ -529,7 +529,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 20,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     relationshipInfo: {
       marginLeft: 12,
@@ -586,7 +586,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     viewAllButton: {
       marginTop: 12,
@@ -642,7 +642,7 @@ const createStyles = (theme: ThemeColors) =>
       padding: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
   });

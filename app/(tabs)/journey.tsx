@@ -177,7 +177,7 @@ export default function JourneyScreen() {
         title: 'Slip Up',
         description: slipUp.notes || 'Recovery journey restarted',
         icon: 'refresh',
-        color: '#f59e0b',
+        color: theme.warning,
         metadata: slipUp,
       });
     });
@@ -192,7 +192,7 @@ export default function JourneyScreen() {
           title: `Step ${progress.step_number} Completed`,
           description: progress.notes || `Completed Step ${progress.step_number}`,
           icon: 'check',
-          color: '#10b981',
+          color: theme.successAlt,
           metadata: progress,
         });
       }
@@ -208,7 +208,7 @@ export default function JourneyScreen() {
           title: task.title,
           description: task.completion_notes || task.description,
           icon: 'check-square',
-          color: '#3b82f6', // blue
+          color: theme.info,
           metadata: {
             taskId: task.id,
             stepNumber: task.step_number,
@@ -235,7 +235,7 @@ export default function JourneyScreen() {
             title: `${milestoneCount} Tasks Completed`,
             description: `Reached ${milestoneCount} task completion milestone`,
             icon: 'award',
-            color: '#f59e0b', // amber/gold
+            color: theme.warning,
             metadata: { milestoneCount },
           });
         }
@@ -275,7 +275,7 @@ export default function JourneyScreen() {
             title: label,
             description: `Reached ${label} milestone`,
             icon: 'award',
-            color: '#8b5cf6',
+            color: theme.award,
           });
         }
       });
@@ -397,7 +397,7 @@ export default function JourneyScreen() {
                 accessible={true}
                 accessibilityLabel={`${events.filter((e) => e.type === 'step_completion').length} Steps Completed`}
               >
-                <CheckCircle size={18} color="#10b981" />
+                <CheckCircle size={18} color={theme.successAlt} />
                 <Text style={styles.statValue}>
                   {events.filter((e) => e.type === 'step_completion').length}
                 </Text>
@@ -408,7 +408,7 @@ export default function JourneyScreen() {
                 accessible={true}
                 accessibilityLabel={`${events.filter((e) => e.type === 'task_completion').length} Tasks Completed`}
               >
-                <ListChecks size={18} color="#3b82f6" />
+                <ListChecks size={18} color={theme.info} />
                 <Text style={styles.statValue}>
                   {events.filter((e) => e.type === 'task_completion').length}
                 </Text>
@@ -419,7 +419,7 @@ export default function JourneyScreen() {
                 accessible={true}
                 accessibilityLabel={`${events.filter((e) => e.type === 'milestone' || e.type === 'task_milestone').length} Milestones`}
               >
-                <Award size={18} color="#8b5cf6" />
+                <Award size={18} color={theme.award} />
                 <Text style={styles.statValue}>
                   {
                     events.filter((e) => e.type === 'milestone' || e.type === 'task_milestone')
@@ -521,7 +521,7 @@ const createStyles = (theme: ThemeColors) =>
     errorText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
-      color: '#ef4444',
+      color: theme.danger,
       textAlign: 'center',
     },
     statsCard: {
@@ -529,7 +529,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 16,
       padding: 20,
       marginBottom: 24,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
@@ -643,7 +643,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 12,
       padding: 16,
       borderLeftWidth: 4,
-      shadowColor: '#000',
+      shadowColor: theme.shadow,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 4,
