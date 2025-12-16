@@ -190,8 +190,10 @@ describe('OnboardingScreen', () => {
     const displayNameInput = screen.getByPlaceholderText('e.g. John D.');
     fireEvent.changeText(displayNameInput, 'John D.');
 
-    // Wait for validation
-    await waitFor(() => {}, { timeout: 500 });
+    // Wait for validation to complete (character count updates)
+    await waitFor(() => {
+      expect(screen.getByText('7/30 characters')).toBeTruthy();
+    });
 
     // Accept terms and submit
     fireEvent.press(screen.getByText(/I agree to the/));

@@ -130,17 +130,15 @@ export default function ManageTasksView({
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const stats: ManageStats = useMemo(() => {
-    const now = new Date();
     return {
       total: tasks.length,
       assigned: tasks.filter((t) => t.status === 'assigned').length,
       inProgress: tasks.filter((t) => t.status === 'in_progress').length,
       completed: tasks.filter((t) => t.status === 'completed').length,
-      overdue: tasks.filter(
-        (t) => t.due_date && new Date(t.due_date) < now && t.status !== 'completed'
-      ).length,
+      // Use the same isOverdue function for consistency with TaskCard visual indicators
+      overdue: tasks.filter((t) => isOverdue(t)).length,
     };
-  }, [tasks]);
+  }, [tasks, isOverdue]);
 
   return (
     <>
@@ -202,51 +200,53 @@ export default function ManageTasksView({
             </Text>
           </View>
         ) : (
-          Object.keys(groupedTasks).map((sponseeId) => {
-            const sponsee = sponsees.find((s) => s.id === sponseeId);
-            const sponseeTasks = groupedTasks[sponseeId];
+          Object.keys(groupedTasks)
+            .sort()
+            .map((sponseeId) => {
+              const sponsee = sponsees.find((s) => s.id === sponseeId);
+              const sponseeTasks = groupedTasks[sponseeId];
 
-            return (
-              <View key={sponseeId} style={styles.sponseeSection}>
-                {/* Sponsee Header */}
-                <View style={styles.sponseeHeader}>
-                  <View style={styles.sponseeAvatar}>
-                    <Text style={styles.sponseeAvatarText}>
-                      {formatProfileName(sponsee)[0].toUpperCase()}
-                    </Text>
+              return (
+                <View key={sponseeId} style={styles.sponseeSection}>
+                  {/* Sponsee Header */}
+                  <View style={styles.sponseeHeader}>
+                    <View style={styles.sponseeAvatar}>
+                      <Text style={styles.sponseeAvatarText}>
+                        {formatProfileName(sponsee)[0].toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={styles.sponseeInfo}>
+                      <Text style={styles.sponseeName}>{formatProfileName(sponsee)}</Text>
+                      <Text style={styles.sponseeMeta}>
+                        {sponseeTasks.length} task{sponseeTasks.length !== 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addTaskButton}
+                      onPress={() => onAddTaskForSponsee(sponseeId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Plus size={20} color={theme.primary} />
+                    </TouchableOpacity>
                   </View>
-                  <View style={styles.sponseeInfo}>
-                    <Text style={styles.sponseeName}>{formatProfileName(sponsee)}</Text>
-                    <Text style={styles.sponseeMeta}>
-                      {sponseeTasks.length} task{sponseeTasks.length !== 1 ? 's' : ''}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.addTaskButton}
-                    onPress={() => onAddTaskForSponsee(sponseeId)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Plus size={20} color={theme.primary} />
-                  </TouchableOpacity>
+
+                  {/* Sponsee Tasks */}
+                  {sponseeTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      theme={theme}
+                      variant="managed-task"
+                      isCompleted={task.status === 'completed'}
+                      isOverdue={isOverdue(task)}
+                      onDelete={onDeleteTask}
+                    />
+                  ))}
                 </View>
-
-                {/* Sponsee Tasks */}
-                {sponseeTasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    theme={theme}
-                    variant="managed-task"
-                    isCompleted={task.status === 'completed'}
-                    isOverdue={isOverdue(task)}
-                    onDelete={onDeleteTask}
-                  />
-                ))}
-              </View>
-            );
-          })
+              );
+            })
         )}
       </ScrollView>
 

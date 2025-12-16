@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import type { useTheme } from '@/contexts/ThemeContext';
+import type { ThemeColors } from '@/contexts/ThemeContext';
 
 // =============================================================================
 // Types & Interfaces
@@ -15,7 +15,7 @@ interface ProfileHeaderProps {
   /** User's email address */
   email: string | undefined;
   /** Theme object from ThemeContext */
-  theme: ReturnType<typeof useTheme>['theme'];
+  theme: ThemeColors;
 }
 
 // =============================================================================
@@ -59,7 +59,7 @@ export default function ProfileHeader({
 // Styles
 // =============================================================================
 
-const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       alignItems: 'center',

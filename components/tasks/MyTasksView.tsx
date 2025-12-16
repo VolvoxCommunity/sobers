@@ -90,9 +90,10 @@ export default function MyTasksView({
 }: MyTasksViewProps): JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
+  // Use pre-filtered arrays to avoid redundant filtering on each render
   const stats: TaskStats = {
-    pending: tasks.filter((t) => t.status !== 'completed').length,
-    completed: tasks.filter((t) => t.status === 'completed').length,
+    pending: assignedTasks.length,
+    completed: completedTasks.length,
   };
 
   return (

@@ -46,6 +46,11 @@ describe('useDaysSober', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
 
+    // Reset mockProfile to default values to ensure test isolation
+    // This prevents state leakage between tests that mutate sobriety_date
+    mockProfile.sobriety_date = '2024-01-01';
+    mockProfile.timezone = 'America/New_York';
+
     // Default mock: no slip-ups
     mockSupabaseFrom.mockImplementation(() => ({
       select: jest.fn().mockReturnThis(),

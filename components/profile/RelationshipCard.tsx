@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Heart, UserMinus, CheckCircle } from 'lucide-react-native';
-import type { useTheme } from '@/contexts/ThemeContext';
+import type { ThemeColors } from '@/contexts/ThemeContext';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import type { Profile } from '@/types/database';
 
@@ -32,7 +32,7 @@ interface RelationshipCardProps {
   /** Type of relationship: 'sponsor' or 'sponsee' */
   relationshipType: 'sponsor' | 'sponsee';
   /** Theme object from ThemeContext */
-  theme: ReturnType<typeof useTheme>['theme'];
+  theme: ThemeColors;
   /** Callback when disconnect button is pressed */
   onDisconnect: () => void;
   /** Optional task statistics (only shown for sponsees) */
@@ -130,7 +130,7 @@ export default function RelationshipCard({
 // Styles
 // =============================================================================
 
-const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
       backgroundColor: theme.card,

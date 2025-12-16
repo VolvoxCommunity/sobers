@@ -191,8 +191,11 @@ export default function ProfileScreen() {
       showAlert('Error', 'Failed to generate invite code');
     } else {
       if (Platform.OS === 'web') {
-        const shouldCopy = window.confirm(
-          `Your invite code is: ${code}\n\nShare this with your sponsee to connect.\n\nClick OK to copy to clipboard.`
+        const shouldCopy = await showConfirm(
+          'Invite Code Generated',
+          `Your invite code is: ${code}\n\nShare this with your sponsee to connect.`,
+          'Copy to Clipboard',
+          'Cancel'
         );
         if (shouldCopy) {
           navigator.clipboard.writeText(code);
@@ -607,6 +610,7 @@ export default function ProfileScreen() {
             isEmpty={sponsorRelationships.length === 0}
             emptyMessage="No sponsor connected yet"
             primaryButtonLabel="Enter Invite Code"
+            primaryButtonIcon="qr"
             theme={theme}
             onPrimaryAction={handleShowInviteCodeSheet}
             onSecondaryAction={

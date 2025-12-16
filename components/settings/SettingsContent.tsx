@@ -189,14 +189,15 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
     setIsDeleting(true);
     try {
-      // Dismiss container first to avoid navigation conflicts
-      onDismiss?.();
       await deleteAccount();
-      // Auth guard in _layout.tsx handles redirect to /login
+      // Show success message before dismiss to ensure user sees it
       showAlert(
         'Account Deleted',
         'Your account has been deleted. We wish you well on your journey.'
       );
+      // Dismiss after alert to ensure user sees confirmation
+      // Auth guard in _layout.tsx handles redirect to /login
+      onDismiss?.();
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Unknown error occurred');
       logger.error('Account deletion failed in settings', err, {

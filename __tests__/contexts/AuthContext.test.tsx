@@ -1389,7 +1389,11 @@ describe('AuthContext', () => {
 
       mockSetSession.mockClear();
 
-      // Simulate the same URL being processed again via addEventListener
+      // Simulate the same URL being processed again via addEventListener.
+      // We access the internal URL event handler to test the duplicate-processing guard.
+      // This is necessary because we can't trigger another getInitialURL call after mount,
+      // and we need to verify that the same URL isn't processed twice even when received
+      // through different channels (initial URL vs event listener).
       const Linking = require('expo-linking');
       const addEventListenerCalls = Linking.addEventListener.mock.calls;
       const lastCall = addEventListenerCalls[addEventListenerCalls.length - 1];

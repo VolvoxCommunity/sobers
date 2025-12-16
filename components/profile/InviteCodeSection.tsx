@@ -1,11 +1,16 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Share2, QrCode } from 'lucide-react-native';
-import type { useTheme } from '@/contexts/ThemeContext';
+import type { ThemeColors } from '@/contexts/ThemeContext';
 
 // =============================================================================
 // Types & Interfaces
 // =============================================================================
+
+/**
+ * Icon variant for the primary button.
+ */
+type IconVariant = 'generate' | 'qr';
 
 /**
  * Props for the InviteCodeSection component.
@@ -19,10 +24,12 @@ interface InviteCodeSectionProps {
   emptyMessage: string;
   /** Primary button label */
   primaryButtonLabel: string;
+  /** Icon variant for the primary button: 'generate' shows Share2 icon, 'qr' shows QrCode icon */
+  primaryButtonIcon?: IconVariant;
   /** Whether to show the primary button as "Generate New" variant */
   showGenerateNew?: boolean;
   /** Theme object from ThemeContext */
-  theme: ReturnType<typeof useTheme>['theme'];
+  theme: ThemeColors;
   /** Callback when primary button is pressed */
   onPrimaryAction: () => void;
   /** Callback when secondary button is pressed (optional, for sponsor section) */
@@ -50,6 +57,7 @@ export default function InviteCodeSection({
   isEmpty,
   emptyMessage,
   primaryButtonLabel,
+  primaryButtonIcon = 'generate',
   showGenerateNew = false,
   theme,
   onPrimaryAction,
@@ -70,7 +78,7 @@ export default function InviteCodeSection({
             accessibilityRole="button"
             accessibilityLabel={primaryButtonLabel}
           >
-            {primaryButtonLabel.includes('Generate') ? (
+            {primaryButtonIcon === 'generate' ? (
               <Share2 size={20} color={theme.primary} />
             ) : (
               <QrCode size={20} color={theme.primary} />
@@ -113,7 +121,7 @@ export default function InviteCodeSection({
 // Styles
 // =============================================================================
 
-const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
+const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     section: {
       padding: 16,
