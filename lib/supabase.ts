@@ -69,7 +69,15 @@ export const SupabaseStorageAdapter: AuthStorage = {
       localStorage.setItem(key, value);
       return;
     }
-    await SecureStore.setItemAsync(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      // Log error but don't throw - session will be lost on restart but app continues
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error('Failed to save session to SecureStore', err, {
+        category: LogCategory.AUTH,
+      });
+    }
   },
   removeItem: async (key: string) => {
     if (!isClient) {
@@ -80,9 +88,22 @@ export const SupabaseStorageAdapter: AuthStorage = {
       localStorage.removeItem(key);
       return;
     }
-    await SecureStore.deleteItemAsync(key);
-    // Ensure legacy storage is also cleared
-    await AsyncStorage.removeItem(key);
+    // Remove from both storages independently to ensure cleanup even if one fails
+    const results = await Promise.allSettled([
+      SecureStore.deleteItemAsync(key),
+      AsyncStorage.removeItem(key),
+    ]);
+    // Log any failures but don't throw - logout should still proceed
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const store = index === 0 ? 'SecureStore' : 'AsyncStorage';
+        const err =
+          result.reason instanceof Error ? result.reason : new Error(String(result.reason));
+        logger.error(`Failed to remove item from ${store}`, err, {
+          category: LogCategory.AUTH,
+        });
+      }
+    });
   },
 };
 
