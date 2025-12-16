@@ -151,6 +151,7 @@ function resetMocks() {
   mockGetUser.mockResolvedValue({ data: { user: { id: 'mock-user-id' } } });
   mockProfileUpdateEq.mockResolvedValue({ error: null });
   mockRefreshProfile.mockResolvedValue(undefined);
+  mockTrackEvent.mockReturnValue(undefined);
 }
 
 // =============================================================================
@@ -1271,9 +1272,7 @@ describe('AppleSignInButton', () => {
   // Analytics Edge Cases
   // ---------------------------------------------------------------------------
 
-  // TODO: Fix these tests - they were added by CodeRabbit but are not working
-  // The async flow is not completing properly. Need to investigate mock setup.
-  describe.skip('Analytics tracking edge cases', () => {
+  describe('Analytics tracking edge cases', () => {
     it('tracks analytics before calling onSuccess', async () => {
       const callOrder: string[] = [];
       const onSuccess = jest.fn(() => callOrder.push('onSuccess'));
@@ -1321,9 +1320,7 @@ describe('AppleSignInButton', () => {
   // Profile Update Edge Cases
   // ---------------------------------------------------------------------------
 
-  // TODO: Fix these tests - they were added by CodeRabbit but are not working
-  // The async flow is not completing properly. Need to investigate mock setup.
-  describe.skip('Profile update edge cases', () => {
+  describe('Profile update edge cases', () => {
     it('queries the profile using correct user ID', async () => {
       mockSignInAsync.mockResolvedValueOnce({
         identityToken: 'mock-identity-token',
