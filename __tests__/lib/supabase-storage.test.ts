@@ -104,6 +104,23 @@ describe('SupabaseStorageAdapter', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should log error and return value when migration to SecureStore fails (native)', async () => {
+      const key = 'test-key';
+      const value = 'legacy-value';
+
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(value);
+      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
+        new Error('SecureStore write failed')
+      );
+
+      const result = await SupabaseStorageAdapter.getItem(key);
+
+      expect(result).toBe(value);
+      // Verify AsyncStorage.removeItem was NOT called since SecureStore write failed
+      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+    });
   });
 
   describe('setItem', () => {
