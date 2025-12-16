@@ -114,6 +114,7 @@ export default function SignupScreen() {
           testID="back-button"
           accessibilityLabel="Go back"
           accessibilityRole="button"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>

@@ -18,7 +18,12 @@ jest.mock('expo-router', () => ({
 const mockRefreshProfile = jest.fn();
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    profile: { id: 'user-123', display_name: 'John D.', email: 'test@example.com', sobriety_date: '2024-01-01' },
+    profile: {
+      id: 'user-123',
+      display_name: 'John D.',
+      email: 'test@example.com',
+      sobriety_date: '2024-01-01',
+    },
     user: { id: 'user-123' },
     refreshProfile: mockRefreshProfile,
   }),
@@ -27,10 +32,21 @@ jest.mock('@/contexts/AuthContext', () => ({
 jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({
     theme: {
-      primary: '#007AFF', background: '#fff', text: '#000', card: '#fff', border: '#ccc',
-      fontRegular: 'System', fontBold: 'System-Bold', danger: 'red', success: 'green',
-      primaryLight: '#eef', dangerBorder: 'red', dangerLight: '#fee', surface: '#fff',
-      textSecondary: '#666', white: '#fff'
+      primary: '#007AFF',
+      background: '#fff',
+      text: '#000',
+      card: '#fff',
+      border: '#ccc',
+      fontRegular: 'System',
+      fontBold: 'System-Bold',
+      danger: 'red',
+      success: 'green',
+      primaryLight: '#eef',
+      dangerBorder: 'red',
+      dangerLight: '#fee',
+      surface: '#fff',
+      textSecondary: '#666',
+      white: '#fff',
     },
   }),
 }));
@@ -40,13 +56,22 @@ jest.mock('@/hooks/useDaysSober', () => ({
 }));
 
 jest.mock('lucide-react-native', () => ({
-  Heart: () => null, Share2: () => null, QrCode: () => null, UserMinus: () => null,
-  Edit2: () => null, CheckCircle: () => null, Settings: () => null,
+  Heart: () => null,
+  Share2: () => null,
+  QrCode: () => null,
+  UserMinus: () => null,
+  Edit2: () => null,
+  CheckCircle: () => null,
+  Settings: () => null,
 }));
 
 jest.mock('@react-native-community/datetimepicker', () => {
   const React = require('react');
-  return { __esModule: true, default: (props: any) => React.createElement('input', { ...props, 'data-testid': 'date-picker' }) };
+  return {
+    __esModule: true,
+    default: (props: any) =>
+      React.createElement('input', { ...props, 'data-testid': 'date-picker' }),
+  };
 });
 
 jest.mock('@/lib/date', () => ({
@@ -61,143 +86,143 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/components/SettingsSheet', () => {
-    const React = require('react');
-    const Component = React.forwardRef((props: any, ref: any) => {
-      React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
-      return null;
-    });
-    Component.displayName = 'SettingsSheet';
-    return Component;
+  const React = require('react');
+  const Component = React.forwardRef((props: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
+    return null;
+  });
+  Component.displayName = 'SettingsSheet';
+  return Component;
 });
 jest.mock('@/components/sheets/LogSlipUpSheet', () => {
-    const React = require('react');
-    const Component = React.forwardRef((props: any, ref: any) => {
-      React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
-      return null;
-    });
-    Component.displayName = 'LogSlipUpSheet';
-    return Component;
+  const React = require('react');
+  const Component = React.forwardRef((props: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
+    return null;
+  });
+  Component.displayName = 'LogSlipUpSheet';
+  return Component;
 });
 jest.mock('@/components/sheets/EnterInviteCodeSheet', () => {
-    const React = require('react');
-    const Component = React.forwardRef((props: any, ref: any) => {
-      React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
-      return null;
-    });
-    Component.displayName = 'EnterInviteCodeSheet';
-    return Component;
+  const React = require('react');
+  const Component = React.forwardRef((props: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({ present: jest.fn() }));
+    return null;
+  });
+  Component.displayName = 'EnterInviteCodeSheet';
+  return Component;
 });
 jest.mock('@/hooks/useTabBarPadding', () => ({
-    useTabBarPadding: () => 0,
+  useTabBarPadding: () => 0,
 }));
 
 const createBuilder = (overrides = {}) => ({
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    update: jest.fn().mockResolvedValue({ error: null }),
-    insert: jest.fn().mockResolvedValue({ error: null }),
-    delete: jest.fn().mockResolvedValue({ error: null }),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    then: jest.fn((resolve) => Promise.resolve({ data: [], error: null }).then(resolve)),
-    ...overrides
+  select: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  in: jest.fn().mockReturnThis(),
+  order: jest.fn().mockReturnThis(),
+  update: jest.fn().mockResolvedValue({ error: null }),
+  insert: jest.fn().mockResolvedValue({ error: null }),
+  delete: jest.fn().mockResolvedValue({ error: null }),
+  single: jest.fn().mockResolvedValue({ data: null, error: null }),
+  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  then: jest.fn((resolve) => Promise.resolve({ data: [], error: null }).then(resolve)),
+  ...overrides,
 });
 
 describe('ProfileScreen Web', () => {
-    let originalPlatform: typeof Platform.OS;
+  let originalPlatform: typeof Platform.OS;
 
-    beforeAll(() => {
-        originalPlatform = Platform.OS;
+  beforeAll(() => {
+    originalPlatform = Platform.OS;
+  });
+
+  beforeEach(() => {
+    Platform.OS = 'web';
+    global.window = {
+      alert: jest.fn(),
+      confirm: jest.fn(() => true),
+    } as any;
+
+    const { supabase } = jest.requireMock('@/lib/supabase');
+    supabase.from.mockImplementation(() => createBuilder());
+  });
+
+  afterEach(() => {
+    Platform.OS = originalPlatform;
+    delete (global as any).window;
+    jest.clearAllMocks();
+  });
+
+  it('uses window.confirm and alert for update sobriety date success', async () => {
+    const { supabase } = jest.requireMock('@/lib/supabase');
+    supabase.from.mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return createBuilder({
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ error: null }),
+          }),
+        });
+      }
+      return createBuilder();
     });
 
-    beforeEach(() => {
-        Platform.OS = 'web';
-        global.window = {
-            alert: jest.fn(),
-            confirm: jest.fn(() => true),
-        } as any;
+    render(<ProfileScreen />);
 
-        const { supabase } = jest.requireMock('@/lib/supabase');
-        supabase.from.mockImplementation(() => createBuilder());
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit sobriety date')).toBeTruthy();
     });
 
-    afterEach(() => {
-        Platform.OS = originalPlatform;
-        delete (global as any).window;
-        jest.clearAllMocks();
+    fireEvent.press(screen.getByLabelText('Edit sobriety date'));
+
+    await waitFor(() => {
+      // Check for modal
+      expect(screen.getByText('Edit Sobriety Date')).toBeTruthy();
     });
 
-    it('uses window.confirm and alert for update sobriety date success', async () => {
-        const { supabase } = jest.requireMock('@/lib/supabase');
-        supabase.from.mockImplementation((table: string) => {
-            if (table === 'profiles') {
-                return createBuilder({
-                    update: jest.fn().mockReturnValue({
-                        eq: jest.fn().mockResolvedValue({ error: null })
-                    })
-                });
-            }
-            return createBuilder();
+    // Find Update button in the modal
+    const updateButton = screen.getByText('Update');
+    fireEvent.press(updateButton);
+
+    expect(window.confirm).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Sobriety date updated successfully');
+    });
+  });
+
+  it('shows error alert for update sobriety date failure', async () => {
+    const { supabase } = jest.requireMock('@/lib/supabase');
+    supabase.from.mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        return createBuilder({
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ error: new Error('Update Failed') }),
+          }),
         });
-
-        render(<ProfileScreen />);
-
-        await waitFor(() => {
-            expect(screen.getByLabelText('Edit sobriety date')).toBeTruthy();
-        });
-
-        fireEvent.press(screen.getByLabelText('Edit sobriety date'));
-
-        await waitFor(() => {
-            // Check for modal
-            expect(screen.getByText('Edit Sobriety Date')).toBeTruthy();
-        });
-
-        // Find Update button in the modal
-        const updateButton = screen.getByText('Update');
-        fireEvent.press(updateButton);
-
-        expect(window.confirm).toHaveBeenCalled();
-
-        await waitFor(() => {
-            expect(window.alert).toHaveBeenCalledWith('Sobriety date updated successfully');
-        });
+      }
+      return createBuilder();
     });
 
-    it('shows error alert for update sobriety date failure', async () => {
-        const { supabase } = jest.requireMock('@/lib/supabase');
-        supabase.from.mockImplementation((table: string) => {
-            if (table === 'profiles') {
-                return createBuilder({
-                    update: jest.fn().mockReturnValue({
-                        eq: jest.fn().mockResolvedValue({ error: new Error('Update Failed') })
-                    })
-                });
-            }
-            return createBuilder();
-        });
+    render(<ProfileScreen />);
 
-        render(<ProfileScreen />);
-
-        await waitFor(() => {
-            expect(screen.getByLabelText('Edit sobriety date')).toBeTruthy();
-        });
-
-        fireEvent.press(screen.getByLabelText('Edit sobriety date'));
-
-        await waitFor(() => {
-            expect(screen.getByText('Edit Sobriety Date')).toBeTruthy();
-        });
-
-        const updateButton = screen.getByText('Update');
-        fireEvent.press(updateButton);
-
-        expect(window.confirm).toHaveBeenCalled();
-
-        await waitFor(() => {
-            expect(window.alert).toHaveBeenCalledWith('Update Failed');
-        });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Edit sobriety date')).toBeTruthy();
     });
+
+    fireEvent.press(screen.getByLabelText('Edit sobriety date'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Sobriety Date')).toBeTruthy();
+    });
+
+    const updateButton = screen.getByText('Update');
+    fireEvent.press(updateButton);
+
+    expect(window.confirm).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Update Failed');
+    });
+  });
 });

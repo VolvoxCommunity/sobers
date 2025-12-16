@@ -18,16 +18,12 @@ describe('lib/supabase', () => {
 
   it('throws error if EXPO_PUBLIC_SUPABASE_URL is missing', () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = '';
-    expect(() => require('@/lib/supabase')).toThrow(
-      'Missing Supabase environment variables'
-    );
+    expect(() => require('@/lib/supabase')).toThrow('Missing Supabase environment variables');
   });
 
   it('throws error if EXPO_PUBLIC_SUPABASE_ANON_KEY is missing', () => {
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = '';
-    expect(() => require('@/lib/supabase')).toThrow(
-      'Missing Supabase environment variables'
-    );
+    expect(() => require('@/lib/supabase')).toThrow('Missing Supabase environment variables');
   });
 
   describe('Supabase Client Initialization', () => {
@@ -57,18 +53,18 @@ describe('lib/supabase', () => {
     let storageAdapter: any;
 
     const getStorageAdapter = () => {
-        const { createClient } = require('@supabase/supabase-js');
-        const { supabase } = require('@/lib/supabase');
-        const _ = supabase.auth; // Trigger init
-        const call = createClient.mock.calls.find((call: any[]) => call[0] === 'https://example.com');
-        return call[2].auth.storage;
+      const { createClient } = require('@supabase/supabase-js');
+      const { supabase } = require('@/lib/supabase');
+      const _ = supabase.auth; // Trigger init
+      const call = createClient.mock.calls.find((call: any[]) => call[0] === 'https://example.com');
+      return call[2].auth.storage;
     };
 
     it('handles storage operations correctly during SSR (node env)', async () => {
       const AsyncStorage = require('@react-native-async-storage/async-storage');
 
       jest.isolateModules(() => {
-         storageAdapter = getStorageAdapter();
+        storageAdapter = getStorageAdapter();
       });
 
       await expect(storageAdapter.getItem('key')).resolves.toBeNull();
@@ -79,88 +75,88 @@ describe('lib/supabase', () => {
     });
 
     it('uses AsyncStorage on Native Client', async () => {
-        const AsyncStorage = require('@react-native-async-storage/async-storage');
-        const { Platform } = require('react-native');
+      const AsyncStorage = require('@react-native-async-storage/async-storage');
+      const { Platform } = require('react-native');
 
-        global.window = {} as any;
-        Platform.OS = 'ios';
+      global.window = {} as any;
+      Platform.OS = 'ios';
 
-        jest.isolateModules(() => {
-             storageAdapter = getStorageAdapter();
-        });
+      jest.isolateModules(() => {
+        storageAdapter = getStorageAdapter();
+      });
 
-        (AsyncStorage.getItem as jest.Mock).mockResolvedValue('stored-value');
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('stored-value');
 
-        await expect(storageAdapter.getItem('key')).resolves.toBe('stored-value');
-        expect(AsyncStorage.getItem).toHaveBeenCalledWith('key');
+      await expect(storageAdapter.getItem('key')).resolves.toBe('stored-value');
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith('key');
 
-        await storageAdapter.setItem('key', 'value');
-        expect(AsyncStorage.setItem).toHaveBeenCalledWith('key', 'value');
+      await storageAdapter.setItem('key', 'value');
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('key', 'value');
 
-        await storageAdapter.removeItem('key');
-        expect(AsyncStorage.removeItem).toHaveBeenCalledWith('key');
+      await storageAdapter.removeItem('key');
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('key');
 
-        delete (global as any).window;
+      delete (global as any).window;
     });
 
     it('uses localStorage on Web Client', async () => {
-        const { Platform } = require('react-native');
-        const mockLocalStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn(),
-            removeItem: jest.fn(),
-        };
-        global.window = {} as any;
-        global.localStorage = mockLocalStorage as any;
+      const { Platform } = require('react-native');
+      const mockLocalStorage = {
+        getItem: jest.fn(),
+        setItem: jest.fn(),
+        removeItem: jest.fn(),
+      };
+      global.window = {} as any;
+      global.localStorage = mockLocalStorage as any;
 
-        Platform.OS = 'web';
+      Platform.OS = 'web';
 
-        jest.isolateModules(() => {
-             storageAdapter = getStorageAdapter();
-        });
+      jest.isolateModules(() => {
+        storageAdapter = getStorageAdapter();
+      });
 
-        mockLocalStorage.getItem.mockReturnValue('web-stored');
+      mockLocalStorage.getItem.mockReturnValue('web-stored');
 
-        await expect(storageAdapter.getItem('key')).resolves.toBe('web-stored');
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith('key');
+      await expect(storageAdapter.getItem('key')).resolves.toBe('web-stored');
+      expect(mockLocalStorage.getItem).toHaveBeenCalledWith('key');
 
-        await storageAdapter.setItem('key', 'value');
-        expect(mockLocalStorage.setItem).toHaveBeenCalledWith('key', 'value');
+      await storageAdapter.setItem('key', 'value');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('key', 'value');
 
-        await storageAdapter.removeItem('key');
-        expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('key');
+      await storageAdapter.removeItem('key');
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('key');
 
-        delete (global as any).window;
-        delete (global as any).localStorage;
+      delete (global as any).window;
+      delete (global as any).localStorage;
     });
   });
 
   describe('Proxy Behavior', () => {
-      it('proxies function calls binding context', () => {
-           const { createClient } = require('@supabase/supabase-js');
+    it('proxies function calls binding context', () => {
+      const { createClient } = require('@supabase/supabase-js');
 
-           const mockSignOut = jest.fn();
-           createClient.mockReturnValue({
-               auth: {
-                   signOut: mockSignOut
-               }
-           });
-
-           const { supabase } = require('@/lib/supabase');
-
-           supabase.auth.signOut();
-           expect(mockSignOut).toHaveBeenCalled();
+      const mockSignOut = jest.fn();
+      createClient.mockReturnValue({
+        auth: {
+          signOut: mockSignOut,
+        },
       });
 
-      it('proxies property access', () => {
-           const { createClient } = require('@supabase/supabase-js');
-           createClient.mockReturnValue({
-               someProp: 123
-           });
+      const { supabase } = require('@/lib/supabase');
 
-           const { supabase } = require('@/lib/supabase');
+      supabase.auth.signOut();
+      expect(mockSignOut).toHaveBeenCalled();
+    });
 
-           expect((supabase as any).someProp).toBe(123);
+    it('proxies property access', () => {
+      const { createClient } = require('@supabase/supabase-js');
+      createClient.mockReturnValue({
+        someProp: 123,
       });
+
+      const { supabase } = require('@/lib/supabase');
+
+      expect((supabase as any).someProp).toBe(123);
+    });
   });
 });

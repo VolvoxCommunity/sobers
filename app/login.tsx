@@ -114,6 +114,8 @@ export default function LoginScreen() {
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
+              autoComplete="email"
+              textContentType="emailAddress"
             />
           </View>
 
@@ -130,6 +132,8 @@ export default function LoginScreen() {
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
+              autoComplete="password"
+              textContentType="password"
             />
           </View>
 
@@ -185,6 +189,8 @@ export default function LoginScreen() {
             style={styles.secondaryButton}
             onPress={() => router.push('/signup')}
             disabled={loading || googleLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Create New Account"
           >
             <Text style={styles.secondaryButtonText}>Create New Account</Text>
           </TouchableOpacity>

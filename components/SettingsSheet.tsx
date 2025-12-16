@@ -1180,6 +1180,8 @@ const SettingsSheet = forwardRef<SettingsSheetRef>((props, ref) => {
                   setIsEditNameModalVisible(false);
                   setNameValidationError(null);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel name editing"
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
@@ -1188,6 +1190,9 @@ const SettingsSheet = forwardRef<SettingsSheetRef>((props, ref) => {
                 style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
                 onPress={handleSaveName}
                 disabled={isSavingName}
+                accessibilityRole="button"
+                accessibilityLabel="Save display name"
+                accessibilityState={{ busy: isSavingName, disabled: isSavingName }}
               >
                 {isSavingName ? (
                   <ActivityIndicator size="small" color={theme.white} />

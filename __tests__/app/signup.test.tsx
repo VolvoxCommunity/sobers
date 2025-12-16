@@ -478,7 +478,7 @@ describe('SignupScreen', () => {
       Platform.OS = 'web';
       global.window = {
         alert: jest.fn(),
-        confirm: jest.fn()
+        confirm: jest.fn(),
       } as any;
     });
 
@@ -512,7 +512,7 @@ describe('SignupScreen', () => {
       expect(window.alert).toHaveBeenCalledWith('Passwords do not match');
     });
 
-     it('uses window.alert for short password', () => {
+    it('uses window.alert for short password', () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -556,7 +556,7 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-         expect(window.alert).toHaveBeenCalledWith('Error: Web Google error');
+        expect(window.alert).toHaveBeenCalledWith('Error: Web Google error');
       });
     });
   });

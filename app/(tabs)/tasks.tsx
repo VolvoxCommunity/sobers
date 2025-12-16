@@ -419,6 +419,7 @@ export default function TasksScreen() {
                         onPress={() => handleCompleteTask(task)}
                         accessibilityRole="button"
                         accessibilityLabel={`Complete task ${task.title}`}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         <CheckCircle size={20} color={theme.primary} />
                         <Text style={styles.completeButtonText}>Complete</Text>
@@ -495,6 +496,9 @@ export default function TasksScreen() {
                   <TouchableOpacity
                     onPress={() => setShowCompleteModal(false)}
                     style={styles.closeButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <X size={24} color={theme.textSecondary} />
                   </TouchableOpacity>
@@ -540,6 +544,8 @@ export default function TasksScreen() {
                     style={styles.cancelButton}
                     onPress={() => setShowCompleteModal(false)}
                     disabled={isSubmitting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel task completion"
                   >
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
@@ -547,6 +553,9 @@ export default function TasksScreen() {
                     style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
                     onPress={submitTaskCompletion}
                     disabled={isSubmitting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Submit task completion"
+                    accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
                   >
                     {isSubmitting ? (
                       <ActivityIndicator size="small" color={theme.white} />
@@ -753,6 +762,7 @@ export default function TasksScreen() {
                         }}
                         accessibilityRole="button"
                         accessibilityLabel={`Assign task to ${formatProfileName(sponsee)}`}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         <Plus size={20} color={theme.primary} />
                       </TouchableOpacity>
@@ -823,6 +833,7 @@ export default function TasksScreen() {
                               onPress={() => handleDeleteTask(task.id, task.title)}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete task ${task.title}`}
+                              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                               testID={`delete-task-${task.id}`}
                             >
                               <Trash2 size={16} color="#ef4444" />

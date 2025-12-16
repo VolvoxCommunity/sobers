@@ -223,7 +223,11 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-        <View style={styles.daysSoberContainer}>
+        <View
+          style={styles.daysSoberContainer}
+          accessible={true}
+          accessibilityLabel={`${loadingDaysSober ? 'Loading' : daysSober} days sober, milestone: ${milestone.text}`}
+        >
           <Text style={styles.daysSoberCount}>{loadingDaysSober ? '...' : daysSober}</Text>
           <Text style={styles.daysSoberLabel}>Days Sober</Text>
           <View style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}>
@@ -256,7 +260,9 @@ export default function HomeScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.disconnectButton}
+                  accessibilityRole="button"
                   accessibilityLabel={`Disconnect from ${rel.sponsor?.display_name ?? 'sponsor'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() =>
                     handleDisconnect(rel.id, false, rel.sponsor?.display_name ?? 'sponsor')
                   }
@@ -293,6 +299,9 @@ export default function HomeScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.assignTaskButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Assign task to ${rel.sponsee?.display_name ?? 'sponsee'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() => {
                     setSelectedSponseeId(rel.sponsee_id);
                     taskSheetRef.current?.present();
@@ -302,7 +311,9 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.disconnectButton}
+                  accessibilityRole="button"
                   accessibilityLabel={`Disconnect from ${rel.sponsee?.display_name ?? 'sponsee'}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   onPress={() =>
                     handleDisconnect(rel.id, true, rel.sponsee?.display_name ?? 'sponsee')
                   }
@@ -337,6 +348,8 @@ export default function HomeScreen() {
               key={task.id}
               style={styles.taskItem}
               onPress={() => router.push('/tasks')}
+              accessibilityRole="button"
+              accessibilityLabel={`Task: ${task.title}, Step ${task.step_number}, Status: New`}
             >
               <View style={styles.taskInfo}>
                 <Text style={styles.taskTitle}>{task.title}</Text>
@@ -347,19 +360,34 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.viewAllButton} onPress={() => router.push('/tasks')}>
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => router.push('/tasks')}
+            accessibilityRole="button"
+            accessibilityLabel="View All Tasks"
+          >
             <Text style={styles.viewAllText}>View All Tasks</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/steps')}>
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => router.push('/steps')}
+          accessibilityRole="button"
+          accessibilityLabel="Open 12 Steps, Learn and Reflect"
+        >
           <BookOpen size={32} color={theme.primary} />
           <Text style={styles.actionTitle}>12 Steps</Text>
           <Text style={styles.actionSubtitle}>Learn & Reflect</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/tasks')}>
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => router.push('/tasks')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Manage Tasks, Guide Progress"
+        >
           <ClipboardList size={32} color={theme.primary} />
           <Text style={styles.actionTitle}>Manage Tasks</Text>
           <Text style={styles.actionSubtitle}>Guide Progress</Text>

@@ -337,6 +337,7 @@ export default function OnboardingScreen() {
                   autoCapitalize="words"
                   returnKeyType="done"
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
+                  accessibilityLabel="Display Name"
                 />
                 <View style={styles.inputFooter}>
                   <Text
@@ -352,7 +353,13 @@ export default function OnboardingScreen() {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.infoButton} onPress={() => setShowInfo(!showInfo)}>
+              <TouchableOpacity
+                style={styles.infoButton}
+                onPress={() => setShowInfo(!showInfo)}
+                accessibilityRole="button"
+                accessibilityLabel={showInfo ? 'Hide information' : 'Show information'}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Info size={16} color={theme.textSecondary} />
                 <Text style={styles.infoText}>How you&apos;ll appear to others</Text>
               </TouchableOpacity>
@@ -372,7 +379,12 @@ export default function OnboardingScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
 
-              <TouchableOpacity style={styles.dateDisplay} onPress={() => setShowDatePicker(true)}>
+              <TouchableOpacity
+                style={styles.dateDisplay}
+                onPress={() => setShowDatePicker(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Select sobriety date"
+              >
                 <Calendar size={32} color={theme.primary} />
                 <View style={styles.dateTextContainer}>
                   <Text style={styles.dateLabel}>Sobriety Date</Text>
@@ -473,6 +485,9 @@ export default function OnboardingScreen() {
                 style={[styles.button, (!isFormValid || loading) && styles.buttonDisabled]}
                 onPress={handleComplete}
                 disabled={!isFormValid || loading}
+                accessibilityRole="button"
+                accessibilityLabel="Complete Setup"
+                accessibilityState={{ busy: loading, disabled: !isFormValid || loading }}
               >
                 <Text style={styles.buttonText}>
                   {loading ? 'Setting up...' : 'Complete Setup'}
@@ -481,7 +496,12 @@ export default function OnboardingScreen() {
             </View>
 
             {/* Sign Out Button - Inside ScrollView to avoid keyboard overlap */}
-            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={handleSignOut}
+              accessibilityRole="button"
+              accessibilityLabel="Sign Out"
+            >
               <LogOut size={16} color={theme.textSecondary} />
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>

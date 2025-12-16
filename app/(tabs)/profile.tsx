@@ -896,6 +896,8 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     style={styles.modalCancelButton}
                     onPress={() => setShowSobrietyDatePicker(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel date selection"
                   >
                     <Text style={styles.modalCancelText}>Cancel</Text>
                   </TouchableOpacity>
@@ -905,6 +907,8 @@ export default function ProfileScreen() {
                       updateSobrietyDate(selectedSobrietyDate);
                       setShowSobrietyDatePicker(false);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Update sobriety date"
                   >
                     <Text style={styles.modalConfirmText}>Update</Text>
                   </TouchableOpacity>
@@ -935,12 +939,16 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     style={styles.modalCancelButton}
                     onPress={() => handleSobrietyDateConfirm(undefined)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel date selection"
                   >
                     <Text style={styles.modalCancelText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.modalConfirmButton}
                     onPress={() => handleSobrietyDateConfirm(selectedSobrietyDate)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Update sobriety date"
                   >
                     <Text style={styles.modalConfirmText}>Update</Text>
                   </TouchableOpacity>

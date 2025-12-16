@@ -1368,7 +1368,7 @@ describe('TasksScreen', () => {
       Platform.OS = 'web';
       global.window = {
         alert: jest.fn(),
-        confirm: jest.fn(() => true)
+        confirm: jest.fn(() => true),
       } as any;
     });
 
@@ -1381,29 +1381,29 @@ describe('TasksScreen', () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
       // Ensure mock success
       supabase.from.mockImplementation((table: string) => {
-         if (table === 'tasks') {
-             return {
-                 select: jest.fn().mockReturnValue({
-                     eq: jest.fn().mockReturnValue({
-                         order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
-                         neq: jest.fn().mockReturnValue({
-                             limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null })
-                         })
-                     })
-                 }),
-                 update: jest.fn().mockReturnValue({
-                     eq: jest.fn().mockResolvedValue({ error: null })
-                 })
-             };
-         }
-         if (table === 'notifications') {
-             return { insert: jest.fn().mockResolvedValue({ error: null }) };
-         }
-         return {
-             select: jest.fn().mockReturnThis(),
-             eq: jest.fn().mockReturnThis(),
-             order: jest.fn().mockResolvedValue({ data: [], error: null })
-         };
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                neq: jest.fn().mockReturnValue({
+                  limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null }),
+                }),
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'notifications') {
+          return { insert: jest.fn().mockResolvedValue({ error: null }) };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
       });
 
       render(<TasksScreen />);
@@ -1445,9 +1445,9 @@ describe('TasksScreen', () => {
           };
         }
         return {
-             select: jest.fn().mockReturnThis(),
-             eq: jest.fn().mockReturnThis(),
-             order: jest.fn().mockResolvedValue({ data: [], error: null })
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
         };
       });
 
@@ -1497,49 +1497,49 @@ describe('TasksScreen', () => {
       mockPendingTasks = [];
 
       supabase.from.mockImplementation((table: string) => {
-         if (table === 'sponsor_sponsee_relationships') {
-             return {
-                 select: jest.fn().mockReturnValue({
-                     eq: jest.fn().mockReturnValue({
-                         eq: jest.fn().mockResolvedValue({
-                             data: localSponsees.map(s => ({ sponsee: s })),
-                             error: null
-                         })
-                     })
-                 })
-             };
-         }
-         if (table === 'tasks') {
-             return {
-                 select: jest.fn().mockReturnValue({
-                     eq: jest.fn().mockImplementation((field) => {
-                         if (field === 'sponsee_id') {
-                             // Initialize view check
-                             return {
-                                 neq: jest.fn().mockReturnValue({
-                                     limit: jest.fn().mockResolvedValue({ data: [], error: null })
-                                 }),
-                                 order: jest.fn().mockResolvedValue({ data: [], error: null })
-                             };
-                         }
-                         if (field === 'sponsor_id') {
-                             return {
-                                 order: jest.fn().mockResolvedValue({ data: localManageTasks, error: null })
-                             };
-                         }
-                         return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
-                     })
-                 }),
-                 delete: jest.fn().mockReturnValue({
-                     eq: jest.fn().mockResolvedValue({ error: null })
-                 })
-             };
-         }
-         return {
-             select: jest.fn().mockReturnThis(),
-             eq: jest.fn().mockReturnThis(),
-             order: jest.fn().mockResolvedValue({ data: [], error: null })
-         };
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: localSponsees.map((s) => ({ sponsee: s })),
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field) => {
+                if (field === 'sponsee_id') {
+                  // Initialize view check
+                  return {
+                    neq: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+                    }),
+                    order: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: localManageTasks, error: null }),
+                  };
+                }
+                return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
       });
 
       render(<TasksScreen />);
