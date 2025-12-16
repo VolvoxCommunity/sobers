@@ -95,13 +95,13 @@ export default function ManageTasksScreen() {
 
       await fetchData();
 
-      await showAlert('Success', 'Task deleted successfully');
+      showAlert('Success', 'Task deleted successfully');
     } catch (error: unknown) {
       logger.error('Task deletion failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to delete task.';
-      await showAlert('Error', message);
+      showAlert('Error', message);
     }
   };
 
@@ -185,12 +185,12 @@ export default function ManageTasksScreen() {
           <Text style={styles.statLabel}>Assigned</Text>
         </View>
         <View style={styles.statCard} accessibilityLabel={`${stats.completed} Completed Tasks`}>
-          <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.completed}</Text>
+          <Text style={[styles.statValue, { color: theme.success }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         {stats.overdue > 0 && (
           <View style={styles.statCard} accessibilityLabel={`${stats.overdue} Overdue Tasks`}>
-            <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.overdue}</Text>
+            <Text style={[styles.statValue, { color: theme.error }]}>{stats.overdue}</Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
         )}
@@ -369,9 +369,9 @@ export default function ManageTasksScreen() {
                         <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
                       </View>
                       {task.status === 'completed' ? (
-                        <CheckCircle size={20} color="#10b981" accessibilityLabel="Completed" />
+                        <CheckCircle size={20} color={theme.success} accessibilityLabel="Completed" />
                       ) : isOverdue(task, now) ? (
-                        <Clock size={20} color="#ef4444" accessibilityLabel="Overdue" />
+                        <Clock size={20} color={theme.error} accessibilityLabel="Overdue" />
                       ) : (
                         <Clock size={20} color={theme.textSecondary} />
                       )}
@@ -386,7 +386,7 @@ export default function ManageTasksScreen() {
                       <View style={styles.taskMeta}>
                         <Calendar
                           size={14}
-                          color={isOverdue(task, now) ? '#ef4444' : theme.textSecondary}
+                          color={isOverdue(task, now) ? theme.error : theme.textSecondary}
                         />
                         <Text
                           style={[
@@ -426,7 +426,7 @@ export default function ManageTasksScreen() {
                           accessibilityLabel={`Delete task ${task.title}`}
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                          <Trash2 size={16} color="#ef4444" />
+                          <Trash2 size={16} color={theme.error} />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -449,7 +449,7 @@ export default function ManageTasksScreen() {
           accessibilityLabel="Assign new task"
           accessibilityHint="Opens the task assignment sheet"
         >
-          <Plus size={24} color="#ffffff" />
+          <Plus size={24} color={theme.white} />
         </TouchableOpacity>
       )}
 
@@ -552,7 +552,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     filterChipTextActive: {
-      color: '#ffffff',
+      color: theme.textOnPrimary,
     },
     content: {
       flex: 1,
@@ -578,7 +578,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 18,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     sponseeInfo: {
       marginLeft: 12,
@@ -613,7 +613,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     taskCardOverdue: {
       borderLeftWidth: 4,
-      borderLeftColor: '#ef4444',
+      borderLeftColor: theme.error,
     },
     taskHeader: {
       flexDirection: 'row',
@@ -631,7 +631,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     taskTitle: {
       fontSize: 16,
@@ -659,7 +659,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.textSecondary,
     },
     taskMetaTextOverdue: {
-      color: '#ef4444',
+      color: theme.error,
       fontWeight: '600',
     },
     completionNotesContainer: {
@@ -704,8 +704,8 @@ const createStyles = (theme: ThemeColors) =>
       padding: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
     emptyState: {
       alignItems: 'center',
