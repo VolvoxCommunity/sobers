@@ -68,10 +68,12 @@ export default function SobrietyStats({
       <Text
         style={styles.daysSober}
         accessibilityRole="text"
-        accessibilityLabel={loading ? 'Loading days sober' : `${daysSober} Days Sober`}
+        accessibilityLabel={
+          loading ? 'Loading days sober' : `${daysSober} ${daysSober === 1 ? 'Day' : 'Days'} Sober`
+        }
         accessibilityLiveRegion="polite"
       >
-        {loading ? '...' : `${daysSober} Days`}
+        {loading ? '...' : `${daysSober} ${daysSober === 1 ? 'Day' : 'Days'}`}
       </Text>
 
       <View style={styles.dateContainer}>

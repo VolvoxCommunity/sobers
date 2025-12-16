@@ -94,9 +94,14 @@ export default function RelationshipCard({
           <Text style={styles.name}>{displayName}</Text>
           <Text style={styles.meta}>Connected {formattedDate}</Text>
           {profile?.sobriety_date && (
-            <View style={styles.sobrietyInfo} accessibilityLabel={`${daysSober} days sober`}>
+            <View
+              style={styles.sobrietyInfo}
+              accessibilityLabel={`${daysSober} ${daysSober === 1 ? 'day' : 'days'} sober`}
+            >
               <Heart size={14} color={theme.primary} fill={theme.primary} />
-              <Text style={styles.sobrietyText}>{daysSober} days sober</Text>
+              <Text style={styles.sobrietyText}>
+                {daysSober} {daysSober === 1 ? 'day' : 'days'} sober
+              </Text>
             </View>
           )}
           {taskStats && relationshipType === 'sponsee' && (

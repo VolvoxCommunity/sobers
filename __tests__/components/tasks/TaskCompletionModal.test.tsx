@@ -35,6 +35,12 @@ jest.mock('lucide-react-native', () => ({
   X: 'X',
 }));
 
+// Mock Platform for consistent test behavior
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios',
+  select: (options: { ios?: unknown; android?: unknown }) => options.ios,
+}));
+
 // Mock KeyboardAvoidingView from react-native-keyboard-controller
 jest.mock('react-native-keyboard-controller', () => ({
   KeyboardAvoidingView: ({ children }: { children: React.ReactNode }) => children,
@@ -371,7 +377,7 @@ describe('TaskCompletionModal', () => {
       // Disabled state is set via prop
     });
 
-    it('does not call onSubmit when disabled', () => {
+    it('renders submit button in disabled state when isSubmitting', () => {
       render(
         <TaskCompletionModal
           visible={true}
@@ -385,9 +391,11 @@ describe('TaskCompletionModal', () => {
         />
       );
 
-      // Submit button should be disabled, but we can't easily test this in RNTL
-      // The button has disabled prop set
-      expect(mockOnSubmit).not.toHaveBeenCalled();
+      // Verify submit button is present with busy/disabled accessibility state
+      const submitButton = screen.getByLabelText('Submit task completion');
+      expect(submitButton).toBeTruthy();
+      // The button should show ActivityIndicator (loading state) instead of "Mark Complete"
+      expect(screen.queryByText('Mark Complete')).toBeNull();
     });
   });
 

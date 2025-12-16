@@ -173,9 +173,11 @@ describe('ManageTasksView', () => {
         />
       );
 
-      // Multiple "1"s on screen (assigned count, stats, etc.)
+      // Check for assigned count label
+      const assignedLabels = screen.getAllByText('Assigned');
+      expect(assignedLabels.length).toBeGreaterThan(0);
+      // Verify at least one "1" appears (assigned task count may appear multiple times)
       expect(screen.getAllByText('1').length).toBeGreaterThan(0);
-      expect(screen.getByText('Assigned')).toBeTruthy();
     });
 
     it('renders completed tasks count', () => {

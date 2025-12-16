@@ -94,6 +94,10 @@ const mockTask: Task = {
 // =============================================================================
 
 describe('TaskCard', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('My Task Variant', () => {
     it('renders task title', () => {
       render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);

@@ -437,7 +437,7 @@ describe('SobrietyStats', () => {
         />
       );
 
-      expect(screen.getByText('1 Days')).toBeTruthy();
+      expect(screen.getByText('1 Day')).toBeTruthy();
     });
 
     it('handles negative days gracefully', () => {
