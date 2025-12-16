@@ -374,73 +374,77 @@ export default function ManageTasksScreen() {
                       style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
                       accessibilityLabel={taskLabel}
                     >
-                    <View style={styles.taskHeader}>
-                      <View style={styles.stepBadge}>
-                        <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
+                      <View style={styles.taskHeader}>
+                        <View style={styles.stepBadge}>
+                          <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
+                        </View>
+                        {task.status === 'completed' ? (
+                          <CheckCircle
+                            size={20}
+                            color={theme.success}
+                            accessibilityLabel="Completed"
+                          />
+                        ) : isOverdue(task, now) ? (
+                          <Clock size={20} color={theme.error} accessibilityLabel="Overdue" />
+                        ) : (
+                          <Clock size={20} color={theme.textSecondary} />
+                        )}
                       </View>
-                      {task.status === 'completed' ? (
-                        <CheckCircle size={20} color={theme.success} accessibilityLabel="Completed" />
-                      ) : isOverdue(task, now) ? (
-                        <Clock size={20} color={theme.error} accessibilityLabel="Overdue" />
-                      ) : (
-                        <Clock size={20} color={theme.textSecondary} />
+
+                      <Text style={styles.taskTitle}>{task.title}</Text>
+                      <Text style={styles.taskDescription} numberOfLines={2}>
+                        {task.description}
+                      </Text>
+
+                      {task.due_date && (
+                        <View style={styles.taskMeta}>
+                          <Calendar
+                            size={14}
+                            color={isOverdue(task, now) ? theme.error : theme.textSecondary}
+                          />
+                          <Text
+                            style={[
+                              styles.taskMetaText,
+                              isOverdue(task, now) && styles.taskMetaTextOverdue,
+                            ]}
+                          >
+                            Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
+                          </Text>
+                        </View>
                       )}
-                    </View>
 
-                    <Text style={styles.taskTitle}>{task.title}</Text>
-                    <Text style={styles.taskDescription} numberOfLines={2}>
-                      {task.description}
-                    </Text>
-
-                    {task.due_date && (
-                      <View style={styles.taskMeta}>
-                        <Calendar
-                          size={14}
-                          color={isOverdue(task, now) ? theme.error : theme.textSecondary}
-                        />
-                        <Text
-                          style={[
-                            styles.taskMetaText,
-                            isOverdue(task, now) && styles.taskMetaTextOverdue,
-                          ]}
-                        >
-                          Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-
-                    {task.status === 'completed' && task.completion_notes && (
-                      <View style={styles.completionNotesContainer}>
-                        <Text style={styles.completionNotesLabel}>Completion Notes:</Text>
-                        <Text style={styles.completionNotesText} numberOfLines={3}>
-                          {task.completion_notes}
-                        </Text>
-                      </View>
-                    )}
-
-                    <View style={styles.taskActions}>
-                      <View style={styles.statusBadge}>
-                        <Text style={styles.statusBadgeText}>
-                          {task.status === 'assigned'
-                            ? 'Assigned'
-                            : task.status === 'in_progress'
-                              ? 'In Progress'
-                              : 'Completed'}
-                        </Text>
-                      </View>
-                      {task.status !== 'completed' && (
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => handleDeleteTask(task.id, task.title)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Delete task ${task.title}`}
-                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                          <Trash2 size={16} color={theme.error} />
-                        </TouchableOpacity>
+                      {task.status === 'completed' && task.completion_notes && (
+                        <View style={styles.completionNotesContainer}>
+                          <Text style={styles.completionNotesLabel}>Completion Notes:</Text>
+                          <Text style={styles.completionNotesText} numberOfLines={3}>
+                            {task.completion_notes}
+                          </Text>
+                        </View>
                       )}
+
+                      <View style={styles.taskActions}>
+                        <View style={styles.statusBadge}>
+                          <Text style={styles.statusBadgeText}>
+                            {task.status === 'assigned'
+                              ? 'Assigned'
+                              : task.status === 'in_progress'
+                                ? 'In Progress'
+                                : 'Completed'}
+                          </Text>
+                        </View>
+                        {task.status !== 'completed' && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDeleteTask(task.id, task.title)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Delete task ${task.title}`}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          >
+                            <Trash2 size={16} color={theme.error} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
-                  </View>
                   );
                 })}
               </View>
