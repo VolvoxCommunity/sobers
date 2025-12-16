@@ -193,7 +193,7 @@ const createStyles = (theme: ThemeColors) =>
       borderRadius: 16,
       padding: 16,
       marginBottom: 12,
-      shadowColor: '#000',
+      shadowColor: theme.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
@@ -257,7 +257,7 @@ const createStyles = (theme: ThemeColors) =>
     completeButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#f0fdf4',
+      backgroundColor: theme.successLight,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 12,
