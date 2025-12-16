@@ -36,25 +36,14 @@ interface InviteCodeSectionProps {
 // =============================================================================
 
 /**
- * Displays a section for managing invite codes with title, relationships list,
- * and action buttons for generating/entering codes.
+ * Render a titled section for invite-code management that supports both empty and populated states.
  *
- * @param props - Component props
- * @returns The invite code section component
+ * When `isEmpty` is true, displays `emptyMessage` and a primary action button whose icon is `Share2` if
+ * `primaryButtonLabel` contains "Generate", otherwise `QrCode`. When `isEmpty` is false, renders `children`
+ * and optionally a primary "Generate New" button (when `showGenerateNew` is true) and a secondary
+ * "Connect to Another Sponsor" button when `onSecondaryAction` is provided.
  *
- * @example
- * ```tsx
- * <InviteCodeSection
- *   title="Your Sponsees"
- *   isEmpty={false}
- *   emptyMessage="No sponsees yet"
- *   primaryButtonLabel="Generate Invite Code"
- *   theme={theme}
- *   onPrimaryAction={() => {}}
- * >
- *   <RelationshipCard ... />
- * </InviteCodeSection>
- * ```
+ * @returns A React element representing the invite code section.
  */
 export default function InviteCodeSection({
   title,

@@ -56,11 +56,11 @@ const VALIDATION_DEBOUNCE_MS = 300;
 // =============================================================================
 
 /**
- * Render the onboarding screen shown after authentication to collect the user's display name and sobriety date.
+ * Renders the onboarding screen displayed after authentication to collect the user's display name and sobriety date.
  *
  * Updates the user's profile with the provided values, refreshes profile state, and navigates to the main app when the profile is complete.
  *
- * @returns The React element representing the onboarding screen
+ * @returns The React element for the onboarding screen
  */
 export default function OnboardingScreen() {
   const { theme } = useTheme();

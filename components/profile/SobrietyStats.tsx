@@ -35,25 +35,16 @@ interface SobrietyStatsProps {
 // =============================================================================
 
 /**
- * Displays the user's sobriety statistics including days sober, journey start date,
- * current streak information, and action buttons for editing date and logging slip-ups.
+ * Render a card showing sobriety metrics (days sober, journey start, current streak) with edit and slip-up actions.
  *
- * @param props - Component props
- * @returns The sobriety stats component
- *
- * @example
- * ```tsx
- * <SobrietyStats
- *   daysSober={180}
- *   journeyStartDate="2024-01-01"
- *   currentStreakStartDate="2024-01-01"
- *   hasSlipUps={false}
- *   loading={false}
- *   theme={theme}
- *   onEditSobrietyDate={() => {}}
- *   onLogSlipUp={() => {}}
- * />
- * ```
+ * @param daysSober - Total days the user has been sober
+ * @param journeyStartDate - ISO date string of when the journey started, or `null` if unknown
+ * @param currentStreakStartDate - ISO date string marking the start of the current streak, or `null`
+ * @param hasSlipUps - Whether the user has recorded any slip-ups (controls current streak visibility)
+ * @param loading - If `true`, replaces the days counter with a loading placeholder
+ * @param onEditSobrietyDate - Callback invoked when the edit sobriety date control is pressed
+ * @param onLogSlipUp - Callback invoked when the "Record a Setback" button is pressed
+ * @returns The SobrietyStats UI component
  */
 export default function SobrietyStats({
   daysSober,
