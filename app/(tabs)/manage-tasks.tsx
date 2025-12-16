@@ -358,12 +358,22 @@ export default function ManageTasksScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {sponseeTasks.map((task) => (
-                  <View
-                    key={task.id}
-                    style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
-                    accessibilityLabel={`Task: ${task.title}, Step ${task.step_number || 'None'}, Status: ${task.status === 'assigned' ? 'Assigned' : task.status === 'in_progress' ? 'In Progress' : 'Completed'}${isOverdue(task, now) ? ', Overdue' : ''}`}
-                  >
+                {sponseeTasks.map((task) => {
+                  const statusLabel =
+                    task.status === 'assigned'
+                      ? 'Assigned'
+                      : task.status === 'in_progress'
+                        ? 'In Progress'
+                        : 'Completed';
+                  const overdueLabel = isOverdue(task, now) ? ', Overdue' : '';
+                  const taskLabel = `Task: ${task.title}, Step ${task.step_number || 'None'}, Status: ${statusLabel}${overdueLabel}`;
+
+                  return (
+                    <View
+                      key={task.id}
+                      style={[styles.taskCard, isOverdue(task, now) && styles.taskCardOverdue]}
+                      accessibilityLabel={taskLabel}
+                    >
                     <View style={styles.taskHeader}>
                       <View style={styles.stepBadge}>
                         <Text style={styles.stepBadgeText}>Step {task.step_number}</Text>
@@ -431,7 +441,8 @@ export default function ManageTasksScreen() {
                       )}
                     </View>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             );
           })
