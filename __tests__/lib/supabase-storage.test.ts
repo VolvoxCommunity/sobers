@@ -24,6 +24,13 @@ describe('SupabaseStorageAdapter', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementations to default resolved values
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
+    (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
+    (SecureStore.deleteItemAsync as jest.Mock).mockResolvedValue(undefined);
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+    (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
     // Default to iOS for these tests
     Platform.OS = 'ios';
   });

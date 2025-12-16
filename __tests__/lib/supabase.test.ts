@@ -74,7 +74,8 @@ describe('lib/supabase', () => {
       expect(AsyncStorage.getItem).not.toHaveBeenCalled();
     });
 
-    it('uses AsyncStorage on Native Client', async () => {
+    it('uses SecureStore on Native Client', async () => {
+      const SecureStore = require('expo-secure-store');
       const AsyncStorage = require('@react-native-async-storage/async-storage');
       const { Platform } = require('react-native');
 
@@ -85,15 +86,19 @@ describe('lib/supabase', () => {
         storageAdapter = getStorageAdapter();
       });
 
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('stored-value');
+      // SecureStore.getItemAsync returns null, so it falls back to AsyncStorage migration
+      // For this test, we simulate value found in SecureStore
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('stored-value');
 
       await expect(storageAdapter.getItem('key')).resolves.toBe('stored-value');
-      expect(AsyncStorage.getItem).toHaveBeenCalledWith('key');
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('key');
 
       await storageAdapter.setItem('key', 'value');
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith('key', 'value');
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('key', 'value');
 
       await storageAdapter.removeItem('key');
+      // removeItem now uses Promise.allSettled to attempt both
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('key');
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('key');
 
       delete (global as any).window;
