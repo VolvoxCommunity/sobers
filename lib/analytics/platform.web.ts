@@ -76,11 +76,8 @@ const SAFE_USER_PROPERTY_KEYS: readonly (keyof UserProperties)[] = [
   'sign_in_method',
 ] as const;
 
-/**
- * Reserved logger keys that should not be overwritten by user params.
- * These keys are used internally by the logger for error information.
- */
-const RESERVED_LOGGER_KEYS = ['error_message', 'error_stack', 'error_name'] as const;
+// Note: LOGGER_RESERVED_KEYS (defined above) is used for both purposes:
+// sanitizing user properties and sanitizing event params.
 
 /**
  * PII-prone keys that should be redacted from logs.
@@ -216,7 +213,7 @@ function sanitizeParamsForLogging(
 
   for (const [key, value] of Object.entries(params)) {
     // Skip reserved logger keys to prevent overwrites
-    if (RESERVED_LOGGER_KEYS.includes(key as (typeof RESERVED_LOGGER_KEYS)[number])) {
+    if (LOGGER_RESERVED_KEYS.includes(key as (typeof LOGGER_RESERVED_KEYS)[number])) {
       continue;
     }
 

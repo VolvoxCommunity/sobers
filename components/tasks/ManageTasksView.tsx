@@ -155,12 +155,12 @@ export default function ManageTasksView({
           <Text style={styles.statLabel}>Assigned</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.completed}</Text>
+          <Text style={[styles.statValue, { color: theme.success }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         {stats.overdue > 0 && (
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.overdue}</Text>
+            <Text style={[styles.statValue, { color: theme.error }]}>{stats.overdue}</Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
         )}
@@ -258,7 +258,7 @@ export default function ManageTasksView({
           accessibilityRole="button"
           accessibilityLabel="Create new task"
         >
-          <Plus size={24} color="#ffffff" />
+          <Plus size={24} color={theme.white} />
         </TouchableOpacity>
       )}
     </>
@@ -343,7 +343,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 18,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     sponseeInfo: {
       marginLeft: 12,

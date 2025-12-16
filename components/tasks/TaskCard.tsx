@@ -80,9 +80,9 @@ export default function TaskCard({
         )}
         {variant === 'my-task' && isCompleted && <CheckCircle size={20} color={theme.primary} />}
         {variant === 'managed-task' && task.status === 'completed' && (
-          <CheckCircle size={20} color="#10b981" />
+          <CheckCircle size={20} color={theme.success} />
         )}
-        {variant === 'managed-task' && isOverdue && <Clock size={20} color="#ef4444" />}
+        {variant === 'managed-task' && isOverdue && <Clock size={20} color={theme.error} />}
         {variant === 'managed-task' && !isCompleted && !isOverdue && (
           <Clock size={20} color={theme.textSecondary} />
         )}
@@ -108,7 +108,7 @@ export default function TaskCard({
       )}
       {task.due_date && variant === 'managed-task' && (
         <View style={styles.taskMeta}>
-          <Calendar size={14} color={isOverdue ? '#ef4444' : theme.textSecondary} />
+          <Calendar size={14} color={isOverdue ? theme.error : theme.textSecondary} />
           <Text style={[styles.taskMetaText, isOverdue && styles.taskMetaTextOverdue]}>
             Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
           </Text>
@@ -174,7 +174,7 @@ export default function TaskCard({
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               testID={`delete-task-${task.id}`}
             >
-              <Trash2 size={16} color="#ef4444" />
+              <Trash2 size={16} color={theme.error} />
             </TouchableOpacity>
           )}
         </View>
@@ -201,7 +201,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     taskCardOverdue: {
       borderLeftWidth: 4,
-      borderLeftColor: '#ef4444',
+      borderLeftColor: theme.error,
     },
     completedCard: {
       opacity: 0.7,
@@ -222,7 +222,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     taskDate: {
       fontSize: 12,
@@ -320,7 +320,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.textSecondary,
     },
     taskMetaTextOverdue: {
-      color: '#ef4444',
+      color: theme.error,
       fontWeight: '600',
     },
     taskActions: {
@@ -345,7 +345,7 @@ const createStyles = (theme: ThemeColors) =>
       padding: 8,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: '#fee2e2',
-      backgroundColor: '#fef2f2',
+      borderColor: theme.dangerBorder,
+      backgroundColor: theme.dangerLight,
     },
   });

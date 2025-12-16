@@ -208,6 +208,6 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
     },
     filterChipTextActive: {
-      color: '#ffffff',
+      color: theme.textOnPrimary,
     },
   });

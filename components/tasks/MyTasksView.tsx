@@ -104,7 +104,7 @@ export default function MyTasksView({
           <Text style={styles.statLabel}>Pending</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.completed}</Text>
+          <Text style={[styles.statValue, { color: theme.success }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
       </View>
@@ -156,7 +156,7 @@ export default function MyTasksView({
         {/* Empty State */}
         {tasks.length === 0 && (
           <View style={styles.emptyState}>
-            <Circle size={64} color="#d1d5db" />
+            <Circle size={64} color={theme.textTertiary} />
             <Text style={styles.emptyTitle}>No tasks yet</Text>
             <Text style={styles.emptyText}>
               Your sponsor will assign tasks to help you progress through the 12 steps

@@ -212,7 +212,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     taskSummaryTitle: {
       fontSize: 18,
@@ -282,7 +282,7 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       fontWeight: '600',
-      color: '#ffffff',
+      color: theme.white,
     },
     buttonDisabled: {
       opacity: 0.6,
