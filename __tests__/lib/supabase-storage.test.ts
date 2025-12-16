@@ -130,6 +130,37 @@ describe('SupabaseStorageAdapter', () => {
       // Verify AsyncStorage.removeItem was NOT called since SecureStore write failed
       expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
     });
+
+    it('falls back to AsyncStorage when SecureStore read fails (native)', async () => {
+      const key = 'test-key';
+      const value = 'legacy-value';
+
+      (SecureStore.getItemAsync as jest.Mock).mockRejectedValue(
+        new Error('SecureStore read failed')
+      );
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(value);
+
+      const result = await SupabaseStorageAdapter.getItem(key);
+
+      expect(result).toBe(value);
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
+    });
+
+    it('returns null when both SecureStore read fails and AsyncStorage is empty (native)', async () => {
+      const key = 'test-key';
+
+      (SecureStore.getItemAsync as jest.Mock).mockRejectedValue(
+        new Error('SecureStore read failed')
+      );
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+
+      const result = await SupabaseStorageAdapter.getItem(key);
+
+      expect(result).toBeNull();
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
+    });
   });
 
   describe('setItem', () => {
