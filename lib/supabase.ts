@@ -51,9 +51,13 @@ export const SupabaseStorageAdapter: AuthStorage = {
       } catch (error) {
         // Log error but continue with the value we found
         const err = error instanceof Error ? error : new Error(String(error));
-        logger.error('Failed to migrate session to SecureStore', err, {
-          category: LogCategory.AUTH,
-        });
+        logger.error(
+          'Session migration to secure storage failed - session will remain functional but may use less secure storage until next login',
+          err,
+          {
+            category: LogCategory.AUTH,
+          }
+        );
       }
       return asyncValue;
     }
