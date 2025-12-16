@@ -72,7 +72,9 @@ jest.mock('@react-native-community/datetimepicker', () => {
     default: ({ onChange }: { onChange: (event: unknown, date?: Date) => void }) => {
       return React.createElement('View', {
         testID: 'date-time-picker',
-        onPress: () => onChange({}, new Date('2025-01-15')),
+        // Use local time constructor to avoid timezone issues
+        // new Date(year, monthIndex, day) creates midnight local time
+        onPress: () => onChange({}, new Date(2025, 0, 15)),
       });
     },
   };
