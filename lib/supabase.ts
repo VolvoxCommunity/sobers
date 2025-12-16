@@ -35,9 +35,17 @@ export const SupabaseStorageAdapter: AuthStorage = {
     }
 
     // Try SecureStore first (new secure storage)
-    const secureValue = await SecureStore.getItemAsync(key);
-    if (secureValue) {
-      return secureValue;
+    try {
+      const secureValue = await SecureStore.getItemAsync(key);
+      if (secureValue) {
+        return secureValue;
+      }
+    } catch (error) {
+      // Log error but continue to check AsyncStorage - preserves session if SecureStore has issues
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error('Failed to read session from SecureStore - checking legacy storage', err, {
+        category: LogCategory.AUTH,
+      });
     }
 
     // Fallback to AsyncStorage for migration (legacy insecure storage)
