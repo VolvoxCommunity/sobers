@@ -168,6 +168,28 @@ describe('alert utilities', () => {
 
         expect(window.confirm).not.toHaveBeenCalled();
       });
+
+      it('returns false when alert is dismissed (Android back button)', async () => {
+        (Alert.alert as jest.Mock).mockImplementation((_title, _message, _buttons, options) => {
+          // Simulate Android back button dismissing the alert
+          options?.onDismiss?.();
+        });
+
+        const result = await showConfirm('Delete', 'Are you sure?');
+
+        expect(result).toBe(false);
+      });
+
+      it('passes cancelable: true to Alert.alert', async () => {
+        (Alert.alert as jest.Mock).mockImplementation((_title, _message, buttons, options) => {
+          expect(options?.cancelable).toBe(true);
+          buttons[0].onPress?.();
+        });
+
+        await showConfirm('Title', 'Message');
+
+        expect(Alert.alert).toHaveBeenCalled();
+      });
     });
 
     describe('on web', () => {

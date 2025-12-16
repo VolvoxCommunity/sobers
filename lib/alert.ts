@@ -60,13 +60,21 @@ export async function showConfirm(
   }
 
   return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: cancelText, style: 'cancel', onPress: () => resolve(false) },
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: cancelText, style: 'cancel', onPress: () => resolve(false) },
+        {
+          text: confirmText,
+          style: destructive ? 'destructive' : 'default',
+          onPress: () => resolve(true),
+        },
+      ],
       {
-        text: confirmText,
-        style: destructive ? 'destructive' : 'default',
-        onPress: () => resolve(true),
-      },
-    ]);
+        cancelable: true,
+        onDismiss: () => resolve(false),
+      }
+    );
   });
 }
