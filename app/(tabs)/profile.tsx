@@ -516,7 +516,7 @@ export default function ProfileScreen() {
     inviteCodeSheetRef.current?.present();
   };
 
-  const styles = createStyles(theme, insets);
+  const styles = useMemo(() => createStyles(theme, insets), [theme, insets]);
 
   return (
     <KeyboardAwareScrollView
