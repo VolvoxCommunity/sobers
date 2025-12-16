@@ -199,19 +199,10 @@ async function hashUserId(input: string | null): Promise<string | null> {
 }
 
 /**
- * Sanitizes event params for safe logging by:
- * 1. Removing reserved logger keys to prevent overwrites
- * 2. Redacting PII-prone keys to prevent data leaks
- * 3. Returning a sanitized object suitable for nested logging
- * 4. Handling circular references gracefully
+ * Create a logger-safe copy of event parameters with reserved keys removed and sensitive values redacted.
  *
- * The `ancestors` WeakSet tracks objects in the current recursion path only.
- * This correctly handles shared objects that appear in multiple non-circular positions
- * (e.g., the same config object used as values for different keys).
- *
- * @param params - The original event params to sanitize
- * @param ancestors - WeakSet tracking objects in current recursion path (ancestors only)
- * @returns Sanitized params object with PII redacted and reserved keys removed
+ * @param ancestors - WeakSet used to track objects in the current recursion path to detect circular references
+ * @returns An object suitable for logging where logger-reserved keys are omitted, PII-prone values are replaced with `"[Filtered]"`, and circular references are marked `"[Circular]"`
  */
 function sanitizeParamsForLogging(
   params?: EventParams,
@@ -254,7 +245,10 @@ function sanitizeParamsForLogging(
   return sanitized;
 }
 /**
- * Dispatches an event to Firebase Analytics.
+ * Sends an event to Firebase Analytics.
+ *
+ * If the analytics instance has not been initialized the call returns without sending.
+ * SDK errors are caught and logged under the `ANALYTICS` category.
  *
  * @param eventName - The name of the event
  * @param params - Optional event parameters
@@ -280,11 +274,13 @@ function dispatchEvent(eventName: string, params?: EventParams): void {
 // =============================================================================
 
 /**
- * Internal initialization logic. Called by initializePlatformAnalytics wrapper.
- * This function performs the actual work and may throw on critical errors.
+ * Initialize Firebase Analytics for the web if supported and not already initialized.
  *
- * @param config - Firebase configuration
- * @throws Error if Firebase initialization fails critically
+ * Attempts to obtain or create a Firebase app and Analytics instance using the provided config.
+ * If the runtime does not support Firebase Analytics, this function performs no initialization.
+ * Initialization errors are logged for monitoring and do not propagate to the caller.
+ *
+ * @param config - Firebase configuration (apiKey, projectId, appId, measurementId)
  */
 async function doInitialize(config: AnalyticsConfig): Promise<void> {
   try {
@@ -336,18 +332,12 @@ async function doInitialize(config: AnalyticsConfig): Promise<void> {
 }
 
 /**
- * Initialize Firebase Analytics for the web platform.
+ * Initialize Firebase Analytics for the web platform and manage a single shared initialization lifecycle.
  *
- * This function uses a Promise-based pattern to prevent race conditions:
- * - Concurrent calls during initialization will await the same Promise
- * - Once completed, subsequent calls return immediately
- * - On failure, retry is allowed (state is reset)
+ * Concurrent callers will share the same in-progress initialization; once initialization completes
+ * subsequent calls return immediately. If initialization fails the state is reset to allow retries.
  *
- * Initialization errors are handled gracefully and logged. Analytics failures do not
- * throw exceptions since they are not critical to app functionality.
- *
- * @param config - Firebase configuration. If config is missing or invalid (empty apiKey,
- *   projectId, or appId), Firebase initialization will fail and be logged.
+ * @param config - Firebase configuration; missing or invalid fields (e.g., empty apiKey, projectId, or appId) may cause initialization to fail and will be logged.
  */
 export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
   // Already completed successfully - return immediately
@@ -388,9 +378,9 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
 }
 
 /**
- * Tracks an analytics event.
+ * Record an analytics event with optional parameters; when initialized the event is sent to Firebase Analytics.
  *
- * Events are dispatched to Firebase Analytics.
+ * If analytics is not initialized the event is not sent. In debug mode the event and sanitized parameters are logged.
  *
  * @param eventName - The name of the event
  * @param params - Optional event parameters
@@ -420,9 +410,9 @@ export function trackEventPlatform(eventName: string, params?: EventParams): voi
 }
 
 /**
- * Sets the user ID for analytics.
+ * Set the analytics user identifier used by Firebase; pass `null` to clear it.
  *
- * @param userId - The user ID or null to clear
+ * @param userId - The user identifier to set, or `null` to clear the current user ID
  */
 export function setUserIdPlatform(userId: string | null): void {
   if (!analytics) {
@@ -466,9 +456,11 @@ export function setUserIdPlatform(userId: string | null): void {
 }
 
 /**
- * Sets user properties for analytics.
+ * Set user properties on the analytics backend.
  *
- * @param properties - The user properties to set
+ * Sanitizes and sends the provided user properties to Firebase Analytics. Undefined values are ignored and only string or boolean property values are applied. If the analytics subsystem is not initialized, the properties are not sent.
+ *
+ * @param properties - User properties to apply; undefined values are ignored and only string or boolean values will be forwarded to Firebase
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   // Sanitize properties for safe logging (whitelist non-PII, avoid reserved keys)

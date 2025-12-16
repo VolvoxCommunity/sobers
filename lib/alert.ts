@@ -19,27 +19,11 @@ export interface AlertButton {
 // =============================================================================
 
 /**
- * Shows a platform-appropriate alert dialog.
- * Uses window.alert() on web, Alert.alert() on native.
+ * Displays an alert dialog appropriate for the current platform.
  *
- * @param title - Alert title (used on native, prepended to message on web)
- * @param message - Optional alert message body
- * @param buttons - Optional button configuration (native only, web ignores this)
- *
- * @example
- * ```ts
- * // Simple alert
- * showAlert('Success', 'Your profile has been updated');
- *
- * // Error alert
- * showAlert('Error', 'Failed to save changes');
- *
- * // With custom buttons (native only)
- * showAlert('Warning', 'Are you sure?', [
- *   { text: 'Cancel', style: 'cancel' },
- *   { text: 'OK', onPress: () => handleOk() }
- * ]);
- * ```
+ * @param title - Dialog title; on web the title is prepended to the message
+ * @param message - Optional body text shown in the dialog
+ * @param buttons - Optional button configurations; applied on native platforms and ignored on web
  */
 export function showAlert(title: string, message?: string, buttons?: AlertButton[]): void {
   if (Platform.OS === 'web') {
@@ -53,33 +37,14 @@ export function showAlert(title: string, message?: string, buttons?: AlertButton
 }
 
 /**
- * Shows a confirmation dialog with Cancel/Confirm buttons.
- * Returns a promise that resolves to true if confirmed, false if cancelled.
+ * Display a confirmation dialog with Cancel and Confirm options.
  *
- * @param title - Confirmation dialog title
- * @param message - Confirmation dialog message
- * @param confirmText - Text for confirm button (default: 'Confirm')
- * @param cancelText - Text for cancel button (default: 'Cancel')
- * @param destructive - Whether confirm action is destructive (default: false)
- * @returns Promise resolving to true if confirmed, false if cancelled
- *
- * @example
- * ```ts
- * // Simple confirmation
- * const confirmed = await showConfirm('Delete Task', 'Are you sure?');
- * if (confirmed) {
- *   await deleteTask();
- * }
- *
- * // Destructive confirmation
- * const confirmed = await showConfirm(
- *   'Delete Account',
- *   'This action cannot be undone.',
- *   'Delete',
- *   'Cancel',
- *   true
- * );
- * ```
+ * @param title - Dialog title
+ * @param message - Dialog message body
+ * @param confirmText - Label for the confirm button (default: 'Confirm')
+ * @param cancelText - Label for the cancel button (default: 'Cancel')
+ * @param destructive - If true, style the confirm button as destructive (default: false)
+ * @returns `true` if the user confirms, `false` otherwise.
  */
 export async function showConfirm(
   title: string,

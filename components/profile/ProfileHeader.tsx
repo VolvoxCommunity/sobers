@@ -23,22 +23,12 @@ interface ProfileHeaderProps {
 // =============================================================================
 
 /**
- * Displays the user's profile header with avatar, name, and email.
+ * Render a centered profile header with a circular avatar initial, display name, and email.
  *
- * Shows a circular avatar with the user's first initial, their display name,
- * and email address in a centered vertical layout.
- *
- * @param props - Component props
- * @returns The profile header component
- *
- * @example
- * ```tsx
- * <ProfileHeader
- *   displayName="John D."
- *   email="john@example.com"
- *   theme={theme}
- * />
- * ```
+ * @param displayName - The user's display name; if null/undefined a `'?'` placeholder is shown.
+ * @param email - The user's email address (may be undefined).
+ * @param theme - Theme object used to derive component styles.
+ * @returns A React element containing the profile header UI
  */
 export default function ProfileHeader({
   displayName,

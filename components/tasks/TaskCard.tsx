@@ -38,22 +38,16 @@ interface TaskCardProps {
 // =============================================================================
 
 /**
- * TaskCard displays an individual task with its details.
+ * Renders a task card showing task details, status, and contextual actions.
  *
- * @remarks
- * This component supports two variants:
- * - `my-task`: Shows task assigned to the current user with Complete action
- * - `managed-task`: Shows task assigned to sponsee with Delete action
- *
- * @example
- * ```tsx
- * <TaskCard
- *   task={task}
- *   theme={theme}
- *   variant="my-task"
- *   onComplete={handleComplete}
- * />
- * ```
+ * @param task - The task to display; may include sponsor or sponsee profiles.
+ * @param theme - Theme colors used for styling the card.
+ * @param variant - Display mode: `"my-task"` shows actions for the current user, `"managed-task"` shows manager-facing controls.
+ * @param isCompleted - Whether the task is considered completed; affects visual state and available actions.
+ * @param isOverdue - Whether the task is overdue; affects visual state and date coloring.
+ * @param onComplete - Optional callback invoked with the task when the user completes it (used by `"my-task"`).
+ * @param onDelete - Optional callback invoked with the task id and title when deleting the task (used by `"managed-task"`).
+ * @returns A JSX element that presents the task with appropriate icons, dates, notes, and action controls for the chosen variant.
  */
 export default function TaskCard({
   task,

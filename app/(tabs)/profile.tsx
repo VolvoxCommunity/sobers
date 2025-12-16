@@ -34,11 +34,8 @@ import RelationshipCard from '@/components/profile/RelationshipCard';
 import InviteCodeSection from '@/components/profile/InviteCodeSection';
 
 /**
- * Render the authenticated user's profile, sobriety journey, and sponsor/sponsee management UI.
- *
- * Provides controls to edit sobriety date, log slip-ups, generate or join invite codes, and
- * disconnect relationships; handles relationship/task fetching, timezone-aware date handling,
- * and creation of related notifications.
+ * Render the authenticated user's profile, sobriety stats, and sponsor/sponsee management interface,
+ * including controls to edit sobriety date, log slip-ups, manage invite codes, and disconnect relationships.
  *
  * @returns A React element representing the profile screen
  */
