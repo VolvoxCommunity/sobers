@@ -90,7 +90,9 @@ describe('SupabaseStorageAdapter', () => {
 
       (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(value);
-      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(new Error('SecureStore write failed'));
+      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
+        new Error('SecureStore write failed')
+      );
 
       const result = await SupabaseStorageAdapter.getItem(key);
 
@@ -159,7 +161,9 @@ describe('SupabaseStorageAdapter', () => {
       const key = 'test-key';
       const value = 'test-value';
 
-      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(new Error('SecureStore write failed'));
+      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
+        new Error('SecureStore write failed')
+      );
 
       // Should not throw
       await expect(SupabaseStorageAdapter.setItem(key, value)).resolves.toBeUndefined();
