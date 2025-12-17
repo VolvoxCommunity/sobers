@@ -1,7 +1,8 @@
 # Sobers - Supabase Configuration
 # A way out of the maze.
 
-project_id = "vzwdsjphpabtxhmffous"
+[project]
+id = "vzwdsjphpabtxhmffous"
 
 # API Configuration
 [api]
@@ -67,3 +68,4 @@ secret = "env(GOOGLE_SECRET)"
 [auth.external.apple]
 enabled = true
 client_id = "env(APPLE_CLIENT_ID)"
+secret = "env(APPLE_SECRET)"
