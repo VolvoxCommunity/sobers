@@ -210,7 +210,7 @@ export default function ProfileScreen() {
               text: 'Share',
               onPress: () =>
                 Share.share({
-                  message: `Join me on Sobriety Waypoint! Use invite code: ${code}`,
+                  message: `Join me on Sobers! Use invite code: ${code}`,
                 }),
             },
             { text: 'OK' },
