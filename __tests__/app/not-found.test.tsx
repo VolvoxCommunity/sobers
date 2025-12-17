@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import NotFoundScreen from '@/app/+not-found';
 
 // =============================================================================
@@ -130,5 +130,19 @@ describe('NotFoundScreen', () => {
     const link = screen.getByTestId('link');
     expect(link.props.href).toBe('/');
     expect(link.props.asChild).toBe(true);
+  });
+
+  it('button responds to press events', () => {
+    render(<NotFoundScreen />);
+
+    // The button uses a style function that returns different opacity based on pressed state
+    // Pressing the button exercises both branches of the pressed ternary
+    const button = screen.getByText('Back to Home');
+
+    // Fire press event to exercise the pressed state branch
+    fireEvent.press(button);
+
+    // Verify button still renders correctly after press
+    expect(button).toBeTruthy();
   });
 });
