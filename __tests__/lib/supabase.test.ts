@@ -86,11 +86,17 @@ describe('lib/supabase', () => {
         storageAdapter = getStorageAdapter();
       });
 
-      // SecureStore.getItemAsync returns null, so it falls back to AsyncStorage migration
-      // For this test, we simulate value found in SecureStore
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('stored-value');
+      // Mock SecureStore to handle chunked storage logic:
+      // - Return null for chunk count key (key_chunk_count) to indicate non-chunked value
+      // - Return 'stored-value' for the actual key
+      (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+        if (k.endsWith('_chunk_count')) return null; // Not chunked
+        if (k === 'key') return 'stored-value';
+        return null;
+      });
 
       await expect(storageAdapter.getItem('key')).resolves.toBe('stored-value');
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith('key_chunk_count');
       expect(SecureStore.getItemAsync).toHaveBeenCalledWith('key');
 
       await storageAdapter.setItem('key', 'value');

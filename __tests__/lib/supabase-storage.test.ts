@@ -8,6 +8,26 @@ import { Platform } from 'react-native';
 // Unmock lib/supabase so we get the real adapter logic
 jest.unmock('@/lib/supabase');
 
+// =============================================================================
+// Constants (must match lib/supabase.ts)
+// =============================================================================
+const CHUNK_SIZE = 2000;
+const CHUNK_COUNT_SUFFIX = '_chunk_count';
+
+/**
+ * Helper to generate chunk key (matches lib/supabase.ts)
+ */
+function getChunkKey(baseKey: string, index: number): string {
+  return `${baseKey}_chunk_${index}`;
+}
+
+/**
+ * Helper to create a string of specified length
+ */
+function createLargeValue(length: number): string {
+  return 'x'.repeat(length);
+}
+
 describe('SupabaseStorageAdapter', () => {
   let SupabaseStorageAdapter: any;
 
@@ -57,11 +77,16 @@ describe('SupabaseStorageAdapter', () => {
       const key = 'test-key';
       const value = 'secure-value';
 
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(value);
+      (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+        if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return null; // Not chunked
+        if (k === key) return value;
+        return null;
+      });
 
       const result = await SupabaseStorageAdapter.getItem(key);
 
       expect(result).toBe(value);
+      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`);
       expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.getItem).not.toHaveBeenCalled();
     });
@@ -76,10 +101,9 @@ describe('SupabaseStorageAdapter', () => {
       const result = await SupabaseStorageAdapter.getItem(key);
 
       expect(result).toBe(value);
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
 
-      // Verification of migration
+      // Verification of migration - small value stored directly
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(key, value);
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith(key);
     });
@@ -97,7 +121,6 @@ describe('SupabaseStorageAdapter', () => {
       const result = await SupabaseStorageAdapter.getItem(key);
 
       expect(result).toBe(value);
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
       // AsyncStorage.removeItem should NOT be called since SecureStore write failed
       expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
@@ -114,23 +137,6 @@ describe('SupabaseStorageAdapter', () => {
       expect(result).toBeNull();
     });
 
-    it('should log error and return value when migration to SecureStore fails (native)', async () => {
-      const key = 'test-key';
-      const value = 'legacy-value';
-
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(value);
-      (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
-        new Error('SecureStore write failed')
-      );
-
-      const result = await SupabaseStorageAdapter.getItem(key);
-
-      expect(result).toBe(value);
-      // Verify AsyncStorage.removeItem was NOT called since SecureStore write failed
-      expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
-    });
-
     it('falls back to AsyncStorage when SecureStore read fails (native)', async () => {
       const key = 'test-key';
       const value = 'legacy-value';
@@ -143,7 +149,6 @@ describe('SupabaseStorageAdapter', () => {
       const result = await SupabaseStorageAdapter.getItem(key);
 
       expect(result).toBe(value);
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
     });
 
@@ -158,7 +163,6 @@ describe('SupabaseStorageAdapter', () => {
       const result = await SupabaseStorageAdapter.getItem(key);
 
       expect(result).toBeNull();
-      expect(SecureStore.getItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.getItem).toHaveBeenCalledWith(key);
     });
   });
@@ -179,12 +183,13 @@ describe('SupabaseStorageAdapter', () => {
       setItemSpy.mockRestore();
     });
 
-    it('uses SecureStore on native', async () => {
+    it('uses SecureStore on native for small values', async () => {
       const key = 'test-key';
       const value = 'test-value';
 
       await SupabaseStorageAdapter.setItem(key, value);
 
+      // Small value stored directly (after cleanup check)
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(key, value);
     });
 
@@ -253,6 +258,244 @@ describe('SupabaseStorageAdapter', () => {
       // Both should still be called via Promise.allSettled
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(key);
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith(key);
+    });
+  });
+
+  // =============================================================================
+  // Chunked Storage Tests
+  // =============================================================================
+
+  describe('chunked storage (values > 2000 bytes)', () => {
+    describe('setItem with large values', () => {
+      it('chunks large values into multiple SecureStore entries', async () => {
+        const key = 'large-key';
+        // Create a value that requires 3 chunks (5500 bytes / 2000 = 2.75, rounds up to 3)
+        const value = createLargeValue(5500);
+
+        await SupabaseStorageAdapter.setItem(key, value);
+
+        // Should store chunk count
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`, '3');
+
+        // Should store 3 chunks
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 0),
+          value.slice(0, CHUNK_SIZE)
+        );
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 1),
+          value.slice(CHUNK_SIZE, CHUNK_SIZE * 2)
+        );
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 2),
+          value.slice(CHUNK_SIZE * 2)
+        );
+      });
+
+      it('stores values exactly at CHUNK_SIZE without chunking', async () => {
+        const key = 'exact-key';
+        const value = createLargeValue(CHUNK_SIZE);
+
+        await SupabaseStorageAdapter.setItem(key, value);
+
+        // Should store directly without chunking
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(key, value);
+        // Should NOT store chunk count
+        expect(SecureStore.setItemAsync).not.toHaveBeenCalledWith(
+          `${key}${CHUNK_COUNT_SUFFIX}`,
+          expect.any(String)
+        );
+      });
+
+      it('chunks values just over CHUNK_SIZE', async () => {
+        const key = 'just-over-key';
+        const value = createLargeValue(CHUNK_SIZE + 1);
+
+        await SupabaseStorageAdapter.setItem(key, value);
+
+        // Should store chunk count of 2
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`, '2');
+        // Should store 2 chunks
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 0),
+          value.slice(0, CHUNK_SIZE)
+        );
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 1),
+          value.slice(CHUNK_SIZE)
+        );
+      });
+
+      it('cleans up existing chunks before storing new value', async () => {
+        const key = 'overwrite-key';
+        const smallValue = 'small';
+
+        // Simulate existing chunked value with 2 chunks
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return '2';
+          return null;
+        });
+
+        await SupabaseStorageAdapter.setItem(key, smallValue);
+
+        // Should delete old chunks
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(getChunkKey(key, 0));
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(getChunkKey(key, 1));
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`);
+
+        // Should store new small value directly
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(key, smallValue);
+      });
+    });
+
+    describe('getItem with chunked values', () => {
+      it('reassembles chunked values from multiple SecureStore entries', async () => {
+        const key = 'chunked-key';
+        const chunk0 = createLargeValue(CHUNK_SIZE);
+        const chunk1 = createLargeValue(CHUNK_SIZE);
+        const chunk2 = createLargeValue(500);
+        const expectedValue = chunk0 + chunk1 + chunk2;
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return '3';
+          if (k === getChunkKey(key, 0)) return chunk0;
+          if (k === getChunkKey(key, 1)) return chunk1;
+          if (k === getChunkKey(key, 2)) return chunk2;
+          return null;
+        });
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBe(expectedValue);
+      });
+
+      it('returns null if a chunk is missing', async () => {
+        const key = 'missing-chunk-key';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return '3';
+          if (k === getChunkKey(key, 0)) return 'chunk0';
+          if (k === getChunkKey(key, 1)) return null; // Missing chunk!
+          if (k === getChunkKey(key, 2)) return 'chunk2';
+          return null;
+        });
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBeNull();
+      });
+
+      it('returns null for invalid chunk count', async () => {
+        const key = 'invalid-count-key';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return 'not-a-number';
+          return null;
+        });
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBeNull();
+      });
+
+      it('returns null for zero chunk count', async () => {
+        const key = 'zero-count-key';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return '0';
+          return null;
+        });
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBeNull();
+      });
+
+      it('reads legacy non-chunked values correctly', async () => {
+        const key = 'legacy-key';
+        const value = 'legacy-value';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return null; // No chunk count
+          if (k === key) return value;
+          return null;
+        });
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBe(value);
+      });
+    });
+
+    describe('removeItem with chunked values', () => {
+      it('removes all chunks when removing a chunked value', async () => {
+        const key = 'chunked-remove-key';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return '3';
+          return null;
+        });
+
+        await SupabaseStorageAdapter.removeItem(key);
+
+        // Should delete all 3 chunks + chunk count + base key
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(getChunkKey(key, 0));
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(getChunkKey(key, 1));
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(getChunkKey(key, 2));
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`);
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(key);
+        // Should also remove from AsyncStorage
+        expect(AsyncStorage.removeItem).toHaveBeenCalledWith(key);
+      });
+
+      it('removes legacy non-chunked values correctly', async () => {
+        const key = 'legacy-remove-key';
+
+        (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (k: string) => {
+          if (k === `${key}${CHUNK_COUNT_SUFFIX}`) return null; // Not chunked
+          return null;
+        });
+
+        await SupabaseStorageAdapter.removeItem(key);
+
+        // Should delete base key + AsyncStorage
+        expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(key);
+        expect(AsyncStorage.removeItem).toHaveBeenCalledWith(key);
+      });
+    });
+
+    describe('migration of large values from AsyncStorage', () => {
+      it('migrates large values from AsyncStorage with chunking', async () => {
+        const key = 'migrate-large-key';
+        const largeValue = createLargeValue(4500); // Requires 3 chunks
+
+        (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
+        (AsyncStorage.getItem as jest.Mock).mockResolvedValue(largeValue);
+
+        const result = await SupabaseStorageAdapter.getItem(key);
+
+        expect(result).toBe(largeValue);
+
+        // Should store chunk count
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(`${key}${CHUNK_COUNT_SUFFIX}`, '3');
+
+        // Should store 3 chunks
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 0),
+          largeValue.slice(0, CHUNK_SIZE)
+        );
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 1),
+          largeValue.slice(CHUNK_SIZE, CHUNK_SIZE * 2)
+        );
+        expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+          getChunkKey(key, 2),
+          largeValue.slice(CHUNK_SIZE * 2)
+        );
+
+        // Should remove from AsyncStorage after successful migration
+        expect(AsyncStorage.removeItem).toHaveBeenCalledWith(key);
+      });
     });
   });
 });

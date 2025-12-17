@@ -24,6 +24,144 @@ interface AuthStorage {
   removeItem: (key: string) => Promise<void>;
 }
 
+// =============================================================================
+// Chunked SecureStore Utilities
+// =============================================================================
+
+/**
+ * Maximum chunk size for SecureStore values.
+ * iOS SecureStore has a 2048 byte limit. We use 2000 to leave margin for
+ * encoding overhead and ensure we stay under the limit.
+ */
+const CHUNK_SIZE = 2000;
+
+/**
+ * Suffix for the metadata key that stores the chunk count.
+ */
+const CHUNK_COUNT_SUFFIX = '_chunk_count';
+
+/**
+ * Generates the key for a specific chunk index.
+ *
+ * @param baseKey - The original storage key
+ * @param index - The chunk index (0-based)
+ * @returns The chunk key in format `{baseKey}_chunk_{index}`
+ */
+function getChunkKey(baseKey: string, index: number): string {
+  return `${baseKey}_chunk_${index}`;
+}
+
+/**
+ * Reads a potentially chunked value from SecureStore.
+ * Handles both legacy non-chunked values and new chunked format.
+ *
+ * @param key - The storage key
+ * @returns The reassembled value, or null if not found
+ */
+async function getChunkedSecureStoreValue(key: string): Promise<string | null> {
+  // First, check if this is a chunked value by looking for the chunk count
+  const chunkCountStr = await SecureStore.getItemAsync(`${key}${CHUNK_COUNT_SUFFIX}`);
+
+  if (chunkCountStr) {
+    // This is a chunked value - reassemble from chunks
+    const chunkCount = parseInt(chunkCountStr, 10);
+    if (isNaN(chunkCount) || chunkCount <= 0) {
+      logger.warn('Invalid chunk count in SecureStore', {
+        category: LogCategory.STORAGE,
+        key,
+        chunkCountStr,
+      });
+      return null;
+    }
+
+    const chunks: string[] = [];
+    for (let i = 0; i < chunkCount; i++) {
+      const chunk = await SecureStore.getItemAsync(getChunkKey(key, i));
+      if (chunk === null) {
+        logger.warn('Missing chunk in SecureStore', {
+          category: LogCategory.STORAGE,
+          key,
+          chunkIndex: i,
+          totalChunks: chunkCount,
+        });
+        return null;
+      }
+      chunks.push(chunk);
+    }
+
+    return chunks.join('');
+  }
+
+  // Not chunked - try to read as a single value (legacy format)
+  return SecureStore.getItemAsync(key);
+}
+
+/**
+ * Stores a value in SecureStore, chunking if necessary.
+ * Values <= CHUNK_SIZE are stored directly; larger values are split into chunks.
+ *
+ * @param key - The storage key
+ * @param value - The value to store
+ */
+async function setChunkedSecureStoreValue(key: string, value: string): Promise<void> {
+  // First, clean up any existing chunks to prevent orphaned data
+  await removeChunkedSecureStoreValue(key);
+
+  if (value.length <= CHUNK_SIZE) {
+    // Small enough to store directly
+    await SecureStore.setItemAsync(key, value);
+    return;
+  }
+
+  // Split into chunks
+  const chunks: string[] = [];
+  for (let i = 0; i < value.length; i += CHUNK_SIZE) {
+    chunks.push(value.slice(i, i + CHUNK_SIZE));
+  }
+
+  // Store the chunk count first
+  await SecureStore.setItemAsync(`${key}${CHUNK_COUNT_SUFFIX}`, chunks.length.toString());
+
+  // Store each chunk
+  await Promise.all(
+    chunks.map((chunk, index) => SecureStore.setItemAsync(getChunkKey(key, index), chunk))
+  );
+}
+
+/**
+ * Removes a value from SecureStore, including all chunks if chunked.
+ *
+ * @param key - The storage key
+ */
+async function removeChunkedSecureStoreValue(key: string): Promise<void> {
+  // Check if this is a chunked value
+  const chunkCountStr = await SecureStore.getItemAsync(`${key}${CHUNK_COUNT_SUFFIX}`);
+
+  if (chunkCountStr) {
+    const chunkCount = parseInt(chunkCountStr, 10);
+    if (!isNaN(chunkCount) && chunkCount > 0) {
+      // Remove all chunks
+      const deletePromises = [];
+      for (let i = 0; i < chunkCount; i++) {
+        deletePromises.push(SecureStore.deleteItemAsync(getChunkKey(key, i)));
+      }
+      deletePromises.push(SecureStore.deleteItemAsync(`${key}${CHUNK_COUNT_SUFFIX}`));
+      await Promise.allSettled(deletePromises);
+    }
+  }
+
+  // Also try to delete the key itself (handles legacy non-chunked values)
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    // Ignore - key may not exist
+  }
+}
+
+// =============================================================================
+// Supabase Storage Adapter
+// =============================================================================
+
 export const SupabaseStorageAdapter: AuthStorage = {
   getItem: async (key: string) => {
     if (!isClient) {
@@ -34,9 +172,9 @@ export const SupabaseStorageAdapter: AuthStorage = {
       return localStorage.getItem(key);
     }
 
-    // Try SecureStore first (new secure storage)
+    // Try SecureStore first (with chunking support)
     try {
-      const secureValue = await SecureStore.getItemAsync(key);
+      const secureValue = await getChunkedSecureStoreValue(key);
       if (secureValue) {
         return secureValue;
       }
@@ -51,9 +189,9 @@ export const SupabaseStorageAdapter: AuthStorage = {
     // Fallback to AsyncStorage for migration (legacy insecure storage)
     const asyncValue = await AsyncStorage.getItem(key);
     if (asyncValue) {
-      // Migrate to SecureStore
+      // Migrate to SecureStore (with chunking support)
       try {
-        await SecureStore.setItemAsync(key, asyncValue);
+        await setChunkedSecureStoreValue(key, asyncValue);
         // Only remove from AsyncStorage after successful SecureStore write
         await AsyncStorage.removeItem(key);
       } catch (error) {
@@ -82,7 +220,7 @@ export const SupabaseStorageAdapter: AuthStorage = {
       return;
     }
     try {
-      await SecureStore.setItemAsync(key, value);
+      await setChunkedSecureStoreValue(key, value);
     } catch (error) {
       // Log error but don't throw - session will be lost on restart but app continues
       const err = error instanceof Error ? error : new Error(String(error));
@@ -102,7 +240,7 @@ export const SupabaseStorageAdapter: AuthStorage = {
     }
     // Remove from both storages independently to ensure cleanup even if one fails
     const results = await Promise.allSettled([
-      SecureStore.deleteItemAsync(key),
+      removeChunkedSecureStoreValue(key),
       AsyncStorage.removeItem(key),
     ]);
     // Log any failures but don't throw - logout should still proceed
