@@ -57,7 +57,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: coverage/
@@ -83,7 +83,7 @@ jobs:
           EXPO_PUBLIC_FACEBOOK_APP_ID: ${{ secrets.EXPO_PUBLIC_FACEBOOK_APP_ID }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: web-build
           path: dist/
