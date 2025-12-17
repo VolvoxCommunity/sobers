@@ -99,7 +99,7 @@ scheme: 'sobers',
 
 The redirect URI for native platforms is constructed as:
 
-```
+```text
 sobers://auth/callback
 ```
 
