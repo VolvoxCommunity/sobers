@@ -1,5 +1,5 @@
 /**
- * Unified Firebase Analytics module for Sobriety Waypoint.
+ * Unified Firebase Analytics module for Sobers.
  *
  * This is the ONLY module that app code should import for analytics.
  * Metro automatically selects the correct platform implementation:

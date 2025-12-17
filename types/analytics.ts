@@ -1,6 +1,6 @@
 // types/analytics.ts
 /**
- * Firebase Analytics type definitions for Sobriety Waypoint.
+ * Firebase Analytics type definitions for Sobers.
  *
  * These types define the contract for analytics events and user properties
  * tracked across all platforms (iOS, Android, web).
