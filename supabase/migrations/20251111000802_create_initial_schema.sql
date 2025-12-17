@@ -232,11 +232,8 @@ CREATE POLICY "Users can update invite codes when using them"
   USING (expires_at > now() AND used_by IS NULL)
   WITH CHECK (used_by = auth.uid());
 
-DROP POLICY IF EXISTS "Enable update for claiming invite codes" ON public.invite_codes;
-CREATE POLICY "Enable update for claiming invite codes"
-  ON public.invite_codes FOR UPDATE TO authenticated
-  USING (true)
-  WITH CHECK (used_by = auth.uid());
+-- Note: Removed redundant "Enable update for claiming invite codes" policy
+-- that used USING (true). The policy above properly handles claiming codes.
 
 -- RLS Policies: steps_content
 DROP POLICY IF EXISTS "Anyone can view steps content" ON public.steps_content;
