@@ -4,6 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { logger, LogCategory } from '@/lib/logger';
+import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
+
+// Re-export constants for backward compatibility
+export { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -27,18 +31,6 @@ interface AuthStorage {
 // =============================================================================
 // Chunked SecureStore Utilities
 // =============================================================================
-
-/**
- * Maximum chunk size for SecureStore values.
- * iOS SecureStore has a 2048 byte limit. We use 2000 to leave margin for
- * encoding overhead and ensure we stay under the limit.
- */
-const CHUNK_SIZE = 2000;
-
-/**
- * Suffix for the metadata key that stores the chunk count.
- */
-const CHUNK_COUNT_SUFFIX = '_chunk_count';
 
 /**
  * Generates the key for a specific chunk index.

@@ -4,15 +4,10 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 
 // Unmock lib/supabase so we get the real adapter logic
 jest.unmock('@/lib/supabase');
-
-// =============================================================================
-// Constants (must match lib/supabase.ts)
-// =============================================================================
-const CHUNK_SIZE = 2000;
-const CHUNK_COUNT_SUFFIX = '_chunk_count';
 
 /**
  * Helper to generate chunk key (matches lib/supabase.ts)
