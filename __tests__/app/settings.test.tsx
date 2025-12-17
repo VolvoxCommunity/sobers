@@ -636,7 +636,7 @@ describe('SettingsScreen', () => {
       fireEvent.press(screen.getByText('Privacy Policy'));
 
       await waitFor(() => {
-        expect(Linking.openURL).toHaveBeenCalledWith('https://www.volvoxdev.com/privacy');
+        expect(Linking.openURL).toHaveBeenCalledWith('https://www.sobers.app/privacy');
       });
     });
 
@@ -648,7 +648,7 @@ describe('SettingsScreen', () => {
       fireEvent.press(screen.getByText('Terms of Service'));
 
       await waitFor(() => {
-        expect(Linking.openURL).toHaveBeenCalledWith('https://sobers.app/terms');
+        expect(Linking.openURL).toHaveBeenCalledWith('https://www.sobers.app/terms');
       });
     });
 

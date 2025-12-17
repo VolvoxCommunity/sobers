@@ -6,8 +6,8 @@
  * External URLs for legal documents and social links.
  */
 export const EXTERNAL_LINKS = {
-  PRIVACY_POLICY: 'https://www.volvoxdev.com/privacy',
-  TERMS_OF_SERVICE: 'https://sobers.app/terms',
+  PRIVACY_POLICY: 'https://www.sobers.app/privacy',
+  TERMS_OF_SERVICE: 'https://www.sobers.app/terms',
   SOURCE_CODE: 'https://github.com/VolvoxCommunity/Sobriety-Waypoint',
   DEVELOPER: 'https://billchirico.dev',
 } as const;

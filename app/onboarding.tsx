@@ -291,14 +291,14 @@ export default function OnboardingScreen() {
    * Opens the privacy policy URL in the default browser.
    */
   const openPrivacyPolicy = useCallback(() => {
-    Linking.openURL('https://www.volvoxdev.com/privacy');
+    Linking.openURL('https://www.sobers.app/privacy');
   }, []);
 
   /**
    * Opens the terms of service URL in the default browser.
    */
   const openTermsOfService = useCallback(() => {
-    Linking.openURL('https://www.volvoxdev.com/terms');
+    Linking.openURL('https://www.sobers.app/terms');
   }, []);
 
   const styles = useMemo(() => createStyles(theme), [theme]);
