@@ -1,8 +1,9 @@
 name: Deploy Production
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   fingerprint:

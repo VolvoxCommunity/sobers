@@ -1,8 +1,9 @@
 name: Deploy Web
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build_and_deploy_web:
