@@ -217,9 +217,9 @@ export default wrapRootComponent(function RootLayout() {
             </ThemeProvider>
           </BottomSheetModalProvider>
         </KeyboardProvider>
+        {/* Vercel Analytics - web only, inside ErrorBoundary for safety */}
+        {Platform.OS === 'web' && <Analytics />}
       </ErrorBoundary>
-      {/* Vercel Analytics - web only */}
-      {Platform.OS === 'web' && <Analytics />}
     </GestureHandlerRootView>
   );
 });
