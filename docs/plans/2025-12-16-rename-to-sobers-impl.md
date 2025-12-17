@@ -889,4 +889,10 @@ git commit -m "docs(plans): mark rename design as implemented"
 2. Update `app.config.ts` with new projectId
 3. Rename Sentry project in dashboard
 4. Update OAuth redirect URLs in Supabase, Google, Apple
-5. Ensure sobers.app domain is configured
+5. Configure sobers.app domain:
+   - Register domain and configure DNS (A/AAAA records)
+   - Provision SSL certificate (via Vercel/hosting provider)
+   - Deploy privacy policy page at `/privacy`
+   - Deploy terms of service page at `/terms`
+   - Deploy Open Graph banner image at `/assets/images/banner.png`
+   - Verify domain resolves correctly via `curl -I https://sobers.app`
