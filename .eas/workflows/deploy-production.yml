@@ -2,7 +2,7 @@ name: Deploy Production
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   fingerprint:
