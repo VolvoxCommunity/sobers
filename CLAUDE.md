@@ -449,7 +449,7 @@ Only skip visual verification for changes that have NO runtime impact:
   2. Authenticated without profile → `/onboarding`
   3. Fully onboarded → `/(tabs)` (main app)
 - Route groups: `(tabs)/` contains the authenticated tab-based navigation
-- Deep linking: `sobrietywaypoint://` scheme
+- Deep linking: `sobers://` scheme
 
 **State Management:**
 
@@ -647,7 +647,7 @@ EXPO_TOKEN=xxx                      # For EAS builds
 EXPO_PUBLIC_SENTRY_DSN=xxx
 SENTRY_AUTH_TOKEN=xxx
 SENTRY_ORG=volvox
-SENTRY_PROJECT=sobriety-waypoint
+SENTRY_PROJECT=sobers
 ```
 
 **Naming Convention:**
