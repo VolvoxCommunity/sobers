@@ -52,11 +52,13 @@ function getChunkKey(baseKey: string, index: number): string {
 }
 
 /**
- * Reads a potentially chunked value from SecureStore.
- * Handles both legacy non-chunked values and new chunked format.
+ * Retrieve a possibly chunked string value from SecureStore.
+ *
+ * If the key uses the chunked format, validates the chunk count and concatenates all chunks in order;
+ * otherwise returns the legacy single-value entry.
  *
  * @param key - The storage key
- * @returns The reassembled value, or null if not found
+ * @returns The assembled string value, or `null` if not found or if chunks are invalid/missing
  */
 async function getChunkedSecureStoreValue(key: string): Promise<string | null> {
   // First, check if this is a chunked value by looking for the chunk count
@@ -97,11 +99,12 @@ async function getChunkedSecureStoreValue(key: string): Promise<string | null> {
 }
 
 /**
- * Stores a value in SecureStore, chunking if necessary.
- * Values <= CHUNK_SIZE are stored directly; larger values are split into chunks.
+ * Store a string in SecureStore under the given key, splitting it into fixed-size chunks when the value length exceeds CHUNK_SIZE.
  *
- * @param key - The storage key
- * @param value - The value to store
+ * Removes any existing chunked entries for the key before writing. When chunking is used, the number of chunks is stored at `key + CHUNK_COUNT_SUFFIX` and each chunk is stored at `getChunkKey(key, index)`.
+ *
+ * @param key - The base storage key to write to
+ * @param value - The string value to store
  */
 async function setChunkedSecureStoreValue(key: string, value: string): Promise<void> {
   // First, clean up any existing chunks to prevent orphaned data
@@ -129,9 +132,11 @@ async function setChunkedSecureStoreValue(key: string, value: string): Promise<v
 }
 
 /**
- * Removes a value from SecureStore, including all chunks if chunked.
+ * Removes a value stored in SecureStore, deleting all chunked parts if present and the legacy single entry.
  *
- * @param key - The storage key
+ * Attempts to remove chunk count metadata and each chunk when the key is stored in multiple parts; also removes the base key. Missing entries are ignored and individual deletion errors are not propagated.
+ *
+ * @param key - Storage key whose value (chunked or non-chunked) should be removed
  */
 async function removeChunkedSecureStoreValue(key: string): Promise<void> {
   // Check if this is a chunked value

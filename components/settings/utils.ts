@@ -60,10 +60,10 @@ export function getBuildInfo(): BuildInfo {
 }
 
 /**
- * Formats all build information as a copyable string for debugging/support.
+ * Format build and environment information into a human-readable string suitable for copying to support or logs.
  *
- * @param buildInfo - The build info object to format
- * @returns Formatted string with all build details
+ * @param buildInfo - Aggregated build metadata and environment details
+ * @returns A newline-separated string containing labeled app version, device, OS, update, and build system details
  */
 export function formatBuildInfoForCopy(buildInfo: BuildInfo): string {
   const lines: string[] = [

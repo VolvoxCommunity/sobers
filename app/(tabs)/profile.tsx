@@ -34,10 +34,11 @@ import RelationshipCard from '@/components/profile/RelationshipCard';
 import InviteCodeSection from '@/components/profile/InviteCodeSection';
 
 /**
- * Render the authenticated user's profile, sobriety stats, and sponsor/sponsee management interface,
- * including controls to edit sobriety date, log slip-ups, manage invite codes, and disconnect relationships.
+ * Renders the authenticated user's profile view, sobriety statistics, and sponsor/sponsee management UI.
  *
- * @returns A React element representing the profile screen
+ * Includes controls to edit the sobriety date, log slip-ups, generate or enter invite codes, and disconnect relationships.
+ *
+ * @returns A React element for the profile screen
  */
 export default function ProfileScreen() {
   const { user, profile, refreshProfile } = useAuth();

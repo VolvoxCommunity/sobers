@@ -20,13 +20,9 @@ import { logger, LogCategory } from '@/lib/logger';
 import { showAlert } from '@/lib/alert';
 
 /**
- * Render the app's login screen and manage email/password, Google, and Apple sign-in flows.
+ * Displays the app's login screen with email/password inputs, Google and Apple sign-in options, and navigation to account creation.
  *
- * Renders inputs for email and password, primary sign-in and Google/Apple sign-in buttons,
- * validation alerts for missing credentials, error alerts on sign-in failures, and a
- * navigation control to the sign-up screen.
- *
- * @returns The login screen JSX with credential inputs, sign-in actions, and account creation navigation
+ * @returns The login screen React element containing email and password inputs, primary and social sign-in controls, and a navigation control to create a new account
  */
 export default function LoginScreen() {
   const { theme } = useTheme();
