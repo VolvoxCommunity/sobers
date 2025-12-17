@@ -223,7 +223,7 @@ describe('OnboardingScreen', () => {
     it('renders page title and subtitle', () => {
       render(<OnboardingScreen />);
 
-      expect(screen.getByText('Welcome to Sobriety Waypoint')).toBeTruthy();
+      expect(screen.getByText('Welcome to Sobers')).toBeTruthy();
       expect(screen.getByText("Let's set up your profile.")).toBeTruthy();
     });
 

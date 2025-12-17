@@ -313,7 +313,7 @@ export default function OnboardingScreen() {
         >
           <OnboardingStep>
             <View style={styles.headerContainer}>
-              <Text style={styles.title}>Welcome to Sobriety Waypoint</Text>
+              <Text style={styles.title}>Welcome to Sobers</Text>
               <Text style={styles.subtitle}>Let&apos;s set up your profile.</Text>
             </View>
 
