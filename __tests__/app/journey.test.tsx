@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, waitFor, screen } from '@testing-library/react-native';
-import JourneyScreen from '@/app/(tabs)/journey';
+import JourneyScreen from '@/app/(app)/(tabs)/journey';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useDaysSober } from '@/hooks/useDaysSober';

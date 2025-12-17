@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
-import HomeScreen from '@/app/(tabs)/index';
+import HomeScreen from '@/app/(app)/(tabs)/index';
 import { Task, SponsorSponseeRelationship, Profile } from '@/types/database';
 
 // =============================================================================

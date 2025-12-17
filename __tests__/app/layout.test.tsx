@@ -3,13 +3,15 @@
  *
  * Tests the root layout including:
  * - Font loading behavior
- * - Auth-based routing guards
- * - Loading state display
+ * - Stack navigator always renders immediately
  * - Theme-based status bar
+ * - Screen view tracking
+ *
+ * Note: Auth guards are handled in app/(app)/_layout.tsx and tested separately.
  */
 
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 // =============================================================================
 // Mocks
@@ -29,9 +31,6 @@ const mockReplace = jest.fn();
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 
-// These need to be prefixed with "mock" to be accessible in jest.mock
-let mockSegments: string[] = [];
-let mockRootNavigationState: { key: string } | null = { key: 'test-key' };
 let mockPathname = '/';
 
 jest.mock('expo-router', () => {
@@ -43,10 +42,9 @@ jest.mock('expo-router', () => {
       push: mockPush,
       back: mockBack,
     }),
-    useSegments: () => mockSegments,
+    useSegments: () => [],
     usePathname: () => mockPathname,
     useNavigationContainerRef: () => ({ current: null }),
-    useRootNavigationState: () => mockRootNavigationState,
     SplashScreen: {
       preventAutoHideAsync: jest.fn(),
       hideAsync: jest.fn(),
@@ -55,23 +53,8 @@ jest.mock('expo-router', () => {
       ({ children }: { children: React.ReactNode }) =>
         React.createElement(View, { testID: 'stack-navigator' }, children),
       {
-        Screen: ({
-          name,
-          options,
-        }: {
-          name: string;
-          options?: {
-            headerLeft?: () => React.ReactNode;
-            headerRight?: () => React.ReactNode;
-          };
-        }) =>
-          React.createElement(
-            View,
-            { testID: `screen-${name}` },
-            // Render headerLeft and headerRight if provided to ensure coverage
-            options?.headerLeft?.(),
-            options?.headerRight?.()
-          ),
+        Screen: ({ name }: { name: string }) =>
+          React.createElement(View, { testID: `screen-${name}` }),
       }
     ),
   };
@@ -109,8 +92,6 @@ jest.mock('@/hooks/useFrameworkReady', () => ({
 }));
 
 // Mock Platform module for consistent cross-environment behavior
-// This ensures tests run with the same platform assumption (iOS by default)
-// regardless of the actual test runner environment
 jest.mock('react-native/Libraries/Utilities/Platform', () => ({
   OS: 'ios',
   select: jest.fn((options: Record<string, unknown>) => options.ios ?? options.default),
@@ -123,16 +104,12 @@ jest.mock('react-native/Libraries/Utilities/Platform', () => ({
   },
 }));
 
-// Mock AuthContext
-let mockUser: { id: string } | null = null;
-let mockProfile: { display_name: string | null; sobriety_date: string | null } | null = null;
-let mockLoading = false;
-
+// Mock AuthContext - root layout provides it but doesn't consume auth state
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: mockUser,
-    profile: mockProfile,
-    loading: mockLoading,
+    user: null,
+    profile: null,
+    loading: false,
     session: null,
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -155,16 +132,6 @@ jest.mock('@/components/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-// Mock lucide-react-native
-jest.mock('lucide-react-native', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    X: (props: Record<string, unknown>) =>
-      React.createElement(View, { testID: 'x-icon', ...props }),
-  };
-});
-
 // Mock analytics module
 jest.mock('@/lib/analytics', () => ({
   initializeAnalytics: jest.fn().mockResolvedValue(undefined),
@@ -186,14 +153,9 @@ const getLayout = () => require('@/app/_layout').default;
 describe('RootLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUser = null;
-    mockProfile = null;
-    mockLoading = false;
     mockFontsLoaded = true;
     mockFontError = null;
-    mockSegments = [];
     mockPathname = '/';
-    mockRootNavigationState = { key: 'test-key' };
   });
 
   describe('font loading', () => {
@@ -228,154 +190,22 @@ describe('RootLayout', () => {
     });
   });
 
-  describe('loading state', () => {
-    it('shows loading indicator when auth is loading', () => {
-      mockLoading = true;
-
+  describe('immediate Stack rendering', () => {
+    it('always renders Stack navigator immediately without auth checks', () => {
+      // Root layout must always render Stack per Expo Router best practices
       const RootLayout = getLayout();
       render(<RootLayout />);
 
-      // When loading, the ActivityIndicator is shown instead of the Stack navigator
-      expect(screen.getByTestId('loading-indicator')).toBeTruthy();
-      expect(screen.queryByTestId('stack-navigator')).toBeNull();
-    });
-  });
-
-  describe('routing guards', () => {
-    it('redirects to login when no user and in protected route', async () => {
-      mockUser = null;
-      mockProfile = null;
-      mockSegments = ['(tabs)'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/login');
-      });
+      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('redirects to login when no user and not in auth screen', async () => {
-      mockUser = null;
-      mockProfile = null;
-      mockSegments = ['some-random-route'];
-
+    it('does not show loading indicator in root layout', () => {
+      // Loading state is handled in (app)/_layout.tsx, not here
       const RootLayout = getLayout();
       render(<RootLayout />);
 
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/login');
-      });
-    });
-
-    it('does not redirect when user is on login screen', async () => {
-      mockUser = null;
-      mockProfile = null;
-      mockSegments = ['login'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      // Wait a tick to ensure no redirects happen
-      await waitFor(
-        () => {
-          expect(mockReplace).not.toHaveBeenCalled();
-        },
-        { timeout: 100 }
-      );
-    });
-
-    it('does not redirect when user is on signup screen', async () => {
-      mockUser = null;
-      mockProfile = null;
-      mockSegments = ['signup'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(
-        () => {
-          expect(mockReplace).not.toHaveBeenCalled();
-        },
-        { timeout: 100 }
-      );
-    });
-
-    it('redirects to tabs when user has complete profile on auth screen', async () => {
-      mockUser = { id: 'user-123' };
-      mockProfile = {
-        display_name: 'John D.',
-        sobriety_date: '2024-01-01',
-      };
-      mockSegments = ['login'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
-      });
-    });
-
-    it('redirects to onboarding when user has incomplete profile', async () => {
-      mockUser = { id: 'user-123' };
-      mockProfile = {
-        display_name: null,
-        sobriety_date: null,
-      };
-      mockSegments = ['(tabs)'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/onboarding');
-      });
-    });
-
-    it('redirects to onboarding when user has no profile', async () => {
-      mockUser = { id: 'user-123' };
-      mockProfile = null;
-      mockSegments = ['(tabs)'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/onboarding');
-      });
-    });
-
-    it('does not redirect when already on onboarding', async () => {
-      mockUser = { id: 'user-123' };
-      mockProfile = null;
-      mockSegments = ['onboarding'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(
-        () => {
-          expect(mockReplace).not.toHaveBeenCalled();
-        },
-        { timeout: 100 }
-      );
-    });
-
-    it('does not redirect when navigator is not ready', async () => {
-      mockRootNavigationState = null;
-      mockUser = null;
-      mockSegments = ['(tabs)'];
-
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      await waitFor(
-        () => {
-          expect(mockReplace).not.toHaveBeenCalled();
-        },
-        { timeout: 100 }
-      );
+      expect(screen.queryByTestId('loading-indicator')).toBeNull();
+      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
   });
 
@@ -389,16 +219,28 @@ describe('RootLayout', () => {
   });
 
   describe('screen configuration', () => {
-    it('renders stack screens', () => {
+    it('renders correct stack screens for new architecture', () => {
       const RootLayout = getLayout();
       render(<RootLayout />);
 
+      // Public routes at root level
       expect(screen.getByTestId('screen-login')).toBeTruthy();
       expect(screen.getByTestId('screen-signup')).toBeTruthy();
       expect(screen.getByTestId('screen-onboarding')).toBeTruthy();
-      expect(screen.getByTestId('screen-(tabs)')).toBeTruthy();
-      expect(screen.getByTestId('screen-settings')).toBeTruthy();
+
+      // Protected routes are in (app) group
+      expect(screen.getByTestId('screen-(app)')).toBeTruthy();
+
+      // Error fallback
       expect(screen.getByTestId('screen-+not-found')).toBeTruthy();
+    });
+
+    it('does not include settings at root level (moved to (app))', () => {
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Settings is now inside (app)/_layout.tsx, not root
+      expect(screen.queryByTestId('screen-settings')).toBeNull();
     });
   });
 
@@ -456,27 +298,8 @@ describe('RootLayout', () => {
     });
   });
 
-  describe('settings close button', () => {
-    it('calls router.back when settings close button is pressed', () => {
-      const RootLayout = getLayout();
-      render(<RootLayout />);
-
-      // The settings screen renders with headerRight that includes a close button
-      const closeButton = screen.getByLabelText('Close settings');
-      fireEvent.press(closeButton);
-
-      expect(mockBack).toHaveBeenCalled();
-    });
-  });
-
   describe('page title routing (web)', () => {
-    // Note: These tests verify the component renders without errors for various routes.
-    // The actual page title values are generated by the internal getPageTitle function,
-    // which would require a more complex mock setup to capture.
-    // Since Head is a web-only feature, these tests ensure routing doesn't break rendering.
-
     it('renders without error when pathname is null', () => {
-      // This tests the early return guard in getPageTitle
       mockPathname = null as unknown as string;
 
       const RootLayout = getLayout();
@@ -485,7 +308,7 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('renders without error for root path (Home title)', () => {
+    it('renders without error for root path', () => {
       mockPathname = '/';
 
       const RootLayout = getLayout();
@@ -494,7 +317,7 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('renders without error for steps route (Steps title)', () => {
+    it('renders without error for steps route', () => {
       mockPathname = '/steps';
 
       const RootLayout = getLayout();
@@ -503,8 +326,7 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('renders without error for dynamic step detail routes (Step Details title)', () => {
-      // Step routes use UUIDs, not step numbers
+    it('renders without error for dynamic step detail routes', () => {
       mockPathname = '/steps/abc-123-uuid';
 
       const RootLayout = getLayout();
@@ -513,7 +335,7 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('renders without error for unknown routes (default fallback title)', () => {
+    it('renders without error for unknown routes', () => {
       mockPathname = '/unknown-route';
 
       const RootLayout = getLayout();

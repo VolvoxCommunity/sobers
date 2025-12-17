@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import ManageTasksScreen from '@/app/(tabs)/manage-tasks';
+import ManageTasksScreen from '@/app/(app)/(tabs)/manage-tasks';
 import { Task, Profile } from '@/types/database';
 
 // =============================================================================

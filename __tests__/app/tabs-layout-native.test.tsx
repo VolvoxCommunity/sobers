@@ -22,7 +22,7 @@ import { render, screen } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
 // Import after mocks are set up
-import TabsLayout from '@/app/(tabs)/_layout';
+import TabsLayout from '@/app/(app)/(tabs)/_layout';
 
 jest.mock('@/assets/icons/home.svg', () => 'mock-home-icon');
 jest.mock('@/assets/icons/book-open.svg', () => 'mock-book-icon');

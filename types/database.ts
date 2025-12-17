@@ -33,7 +33,6 @@ export interface Profile {
    * Null until explicitly set.
    */
   display_name: string | null;
-  phone?: string;
   avatar_url?: string;
   /**
    * The date when the user's recovery journey began (YYYY-MM-DD format).

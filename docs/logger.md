@@ -166,6 +166,7 @@ export enum LogCategory {
   NOTIFICATION = 'notification', // Push notifications
   SYNC = 'sync', // Data synchronization
   ERROR = 'error', // General errors
+  ANALYTICS = 'analytics', // Analytics and tracking events
 }
 ```
 
@@ -385,8 +386,14 @@ const handlePress = () => {
 
 ### Storage Operations
 
+The app uses a layered storage approach:
+
+- **AsyncStorage**: Non-sensitive data (theme preferences)
+- **SecureStore**: Sensitive data like auth tokens (mobile only, with chunking for large values)
+- **localStorage**: Web platform storage
+
 ```typescript
-// Theme preference loading
+// Theme preference loading (AsyncStorage - non-sensitive)
 try {
   const saved = await AsyncStorage.getItem('theme_mode');
   if (saved) {
@@ -397,6 +404,23 @@ try {
     category: LogCategory.STORAGE,
   });
 }
+
+// Auth token storage errors (SecureStore - sensitive)
+// Note: The SupabaseStorageAdapter handles this automatically
+try {
+  await SecureStore.setItemAsync(key, token);
+} catch (error) {
+  logger.error('Failed to save session to SecureStore', error as Error, {
+    category: LogCategory.AUTH,
+  });
+}
+
+// Storage migration logging (legacy AsyncStorage → SecureStore)
+logger.error(
+  'Session migration to secure storage failed - session will remain functional but may use less secure storage until next login',
+  error as Error,
+  { category: LogCategory.AUTH }
+);
 ```
 
 ## Privacy & Security
@@ -592,6 +616,8 @@ If you're migrating existing console calls:
 - `lib/logger.test.ts` - Logger tests
 - `lib/sentry.ts` - Sentry initialization
 - `lib/sentry-privacy.ts` - Privacy scrubbing rules
+- `lib/supabase.ts` - SupabaseStorageAdapter with auth logging
+- `contexts/ThemeContext.tsx` - Theme storage logging example
 - `eslint.config.js` - ESLint no-console rule
 - `jest.setup.js` - Test mocks for Sentry
 

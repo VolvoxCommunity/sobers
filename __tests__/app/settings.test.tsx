@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import SettingsScreen from '@/app/settings';
+import SettingsScreen from '@/app/(app)/settings';
 
 // =============================================================================
 // Mocks

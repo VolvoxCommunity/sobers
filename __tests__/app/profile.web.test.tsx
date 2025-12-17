@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import ProfileScreen from '@/app/(tabs)/profile';
+import ProfileScreen from '@/app/(app)/(tabs)/profile';
 import { Platform } from 'react-native';
 
 // Mocks

@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import TasksScreen from '@/app/(tabs)/tasks';
+import TasksScreen from '@/app/(app)/(tabs)/tasks';
 import { Task, Profile } from '@/types/database';
 import { Platform } from 'react-native';
 

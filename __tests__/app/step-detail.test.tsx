@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
-import StepDetailScreen from '@/app/(tabs)/steps/[id]';
+import StepDetailScreen from '@/app/(app)/(tabs)/steps/[id]';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================

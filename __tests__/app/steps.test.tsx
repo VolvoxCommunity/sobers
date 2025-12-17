@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import StepsScreen from '@/app/(tabs)/steps/index';
+import StepsScreen from '@/app/(app)/(tabs)/steps/index';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================

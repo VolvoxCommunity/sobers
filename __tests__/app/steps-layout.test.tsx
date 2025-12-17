@@ -11,7 +11,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
-import StepsLayout from '@/app/(tabs)/steps/_layout';
+import StepsLayout from '@/app/(app)/(tabs)/steps/_layout';
 
 // =============================================================================
 // Mocks

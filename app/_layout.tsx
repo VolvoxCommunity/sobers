@@ -25,24 +25,15 @@ if (typeof window !== 'undefined') {
     });
 }
 import { useEffect, useRef } from 'react';
-import {
-  Stack,
-  useRouter,
-  useSegments,
-  usePathname,
-  SplashScreen,
-  useNavigationContainerRef,
-  useRootNavigationState,
-} from 'expo-router';
+import { Stack, usePathname, SplashScreen, useNavigationContainerRef } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { Analytics } from '@vercel/analytics/react';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { X } from 'lucide-react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -60,27 +51,19 @@ import { trackScreenView } from '@/lib/analytics';
 SplashScreen.preventAutoHideAsync();
 
 /**
- * Controls app routing and renders the root navigation UI based on authentication and profile state.
+ * Root navigation component that always renders the Stack immediately.
  *
- * Observes authentication, profile completeness, and current route segments to perform routing guards
- * (redirecting to `/login`, `/onboarding`, or `/(tabs)` as appropriate). While auth state is loading,
- * displays a centered loading indicator. When not loading, renders the app's Stack navigator and StatusBar.
+ * Per Expo Router best practices, the root layout must mount the navigator
+ * immediately without any conditional logic blocking it. Auth guards and
+ * loading states are handled in nested layouts like `(app)/_layout.tsx`.
  *
- * @returns The root navigation JSX element containing the app's Stack and StatusBar
+ * @returns The root Stack navigator with all top-level routes
  */
-function RootLayoutNav() {
-  const { user, profile, loading } = useAuth();
-  const { isDark, theme } = useTheme();
-  const segments = useSegments();
-  const router = useRouter();
+function RootLayoutNav(): React.ReactElement {
+  const { isDark } = useTheme();
   const navigationRef = useNavigationContainerRef();
-  const rootNavigationState = useRootNavigationState();
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
-
-  // Check if the navigator is ready before attempting navigation
-  // This prevents "action was not handled by any navigator" warnings
-  const navigatorReady = rootNavigationState?.key != null;
 
   // Register navigation container with Sentry
   useEffect(() => {
@@ -147,33 +130,6 @@ function RootLayoutNav() {
 
   const pageTitle = getPageTitle();
 
-  useEffect(() => {
-    // Wait for both auth loading to complete AND navigator to be ready
-    if (loading || !navigatorReady) return;
-
-    const inAuthGroup = segments[0] === '(tabs)';
-    const inOnboarding = segments[0] === 'onboarding';
-    const inAuthScreen = segments[0] === 'login' || segments[0] === 'signup';
-
-    // Profile is complete when user has provided their display name and sobriety date during onboarding.
-    // Check for non-empty trimmed values to guard against whitespace-only or empty strings.
-    const hasDisplayName = !!profile?.display_name?.trim();
-    const hasSobrietyDate = !!profile?.sobriety_date;
-    const isProfileComplete = hasDisplayName && hasSobrietyDate;
-
-    if (!user && inAuthGroup) {
-      router.replace('/login');
-    } else if (!user && !inAuthScreen) {
-      router.replace('/login');
-    } else if (user && profile && isProfileComplete && (inAuthScreen || inOnboarding)) {
-      router.replace('/(tabs)');
-    } else if (user && profile && !isProfileComplete && !inOnboarding) {
-      router.replace('/onboarding');
-    } else if (user && !profile && !inOnboarding) {
-      router.replace('/onboarding');
-    }
-  }, [user, profile, segments, loading, router, navigatorReady]);
-
   // SEO meta tags rendered unconditionally for search engine and social media crawlers
   // Title updates dynamically based on current route for better browser tab UX
   const seoHead = (
@@ -196,53 +152,19 @@ function RootLayoutNav() {
     </Head>
   );
 
-  if (loading) {
-    return (
-      <>
-        {seoHead}
-        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-          <ActivityIndicator testID="loading-indicator" size="large" color={theme.successAlt} />
-        </View>
-      </>
-    );
-  }
-
+  // IMPORTANT: Root layout must always render the Stack immediately per Expo Router docs.
+  // Auth guards and loading states are handled in nested layouts like (app)/_layout.tsx.
+  // This prevents "navigation before mounting" errors and follows best practices.
   return (
     <>
       {seoHead}
       <Stack screenOptions={{ headerShown: false }}>
+        {/* Public routes - accessible without authentication */}
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(tabs)" />
-        {/* Settings route kept as fallback - primary access via bottom sheet in profile.tsx */}
-        <Stack.Screen
-          name="settings"
-          options={{
-            presentation: 'formSheet',
-            gestureEnabled: true,
-            headerShown: true,
-            title: 'Settings',
-            headerStyle: { backgroundColor: theme.surface },
-            headerTintColor: theme.text,
-            headerTitleStyle: {
-              fontFamily: 'JetBrainsMono-SemiBold',
-              fontSize: 18,
-            },
-            headerLeft: () => null,
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                accessibilityLabel="Close settings"
-                accessibilityRole="button"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <X size={22} color={theme.textSecondary} strokeWidth={2} />
-              </TouchableOpacity>
-            ),
-            contentStyle: { backgroundColor: theme.background },
-          }}
-        />
+        {/* Protected routes - auth guard in (app)/_layout.tsx */}
+        <Stack.Screen name="(app)" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -250,6 +172,19 @@ function RootLayoutNav() {
   );
 }
 
+/**
+ * Root layout component that sets up providers and renders the app.
+ *
+ * This is the entry point for navigation. It wraps the entire app with:
+ * - GestureHandlerRootView for gesture handling
+ * - ErrorBoundary for crash reporting
+ * - KeyboardProvider for keyboard-aware views
+ * - BottomSheetModalProvider for bottom sheets
+ * - ThemeProvider for theming
+ * - AuthProvider for authentication state
+ *
+ * Font loading is handled here, showing splash screen until fonts are ready.
+ */
 export default wrapRootComponent(function RootLayout() {
   useFrameworkReady();
 
@@ -292,10 +227,5 @@ export default wrapRootComponent(function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
