@@ -36,11 +36,12 @@ import {
 } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
+import { Analytics } from '@vercel/analytics/react';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { X } from 'lucide-react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -282,6 +283,8 @@ export default wrapRootComponent(function RootLayout() {
           </BottomSheetModalProvider>
         </KeyboardProvider>
       </ErrorBoundary>
+      {/* Vercel Analytics - web only */}
+      {Platform.OS === 'web' && <Analytics />}
     </GestureHandlerRootView>
   );
 });

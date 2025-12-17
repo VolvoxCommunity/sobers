@@ -41,6 +41,7 @@
     "@sentry/cli": "^2.58.4",
     "@sentry/react-native": "7.2.0",
     "@supabase/supabase-js": "^2.88.0",
+    "@vercel/analytics": "^1.6.1",
     "date-fns": "^4.1.0",
     "expo": "~54.0.29",
     "expo-apple-authentication": "~8.0.8",
