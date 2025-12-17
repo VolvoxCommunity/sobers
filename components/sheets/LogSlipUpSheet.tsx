@@ -339,6 +339,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
             testID="close-icon-button"
             accessibilityLabel="Close"
             accessibilityRole="button"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <X size={24} color={theme.textSecondary} />
           </TouchableOpacity>
@@ -380,7 +381,17 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
               />
             ) : (
               <>
-                <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Date: ${slipUpDate.toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}`}
+                  accessibilityHint="Double tap to change date"
+                >
                   <Calendar size={20} color={theme.textSecondary} />
                   <Text style={styles.dateButtonText}>
                     {slipUpDate.toLocaleDateString('en-US', {
