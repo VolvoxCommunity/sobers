@@ -361,7 +361,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               accessibilityState={{ checked: themeMode === 'light' }}
               accessibilityLabel="Light theme"
             >
-              <Sun size={24} color={themeMode === 'light' ? theme.primary : theme.textSecondary} />
+              <Sun
+                key={`sun-${themeMode}`}
+                size={24}
+                color={themeMode === 'light' ? theme.primary : theme.textSecondary}
+              />
               <Text
                 style={[
                   styles.themeOptionText,
@@ -379,7 +383,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               accessibilityState={{ checked: themeMode === 'dark' }}
               accessibilityLabel="Dark theme"
             >
-              <Moon size={24} color={themeMode === 'dark' ? theme.primary : theme.textSecondary} />
+              <Moon
+                key={`moon-${themeMode}`}
+                size={24}
+                color={themeMode === 'dark' ? theme.primary : theme.textSecondary}
+              />
               <Text
                 style={[
                   styles.themeOptionText,
@@ -398,6 +406,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               accessibilityLabel="System theme"
             >
               <Monitor
+                key={`monitor-${themeMode}`}
                 size={24}
                 color={themeMode === 'system' ? theme.primary : theme.textSecondary}
               />
