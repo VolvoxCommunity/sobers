@@ -61,10 +61,9 @@ enable_confirmations = false
 # External OAuth providers (configured via Supabase dashboard)
 [auth.external.google]
 enabled = true
-client_id = "542346725045-bkd33vl2ghnern2ojn9tgb22u33ds664.apps.googleusercontent.com"
+client_id = "env(GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_SECRET)"
 
 [auth.external.apple]
 enabled = true
-client_id = "com.volvox.sobrietywaypoint,host.exp.Exponent"
-secret = "env(APPLE_SECRET)"
+client_id = "env(APPLE_CLIENT_ID)"
