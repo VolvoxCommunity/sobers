@@ -1,8 +1,8 @@
 name: Deploy Web
 
 on:
-  push:
-    branches: ['main']
+  release:
+    types: [created]
 
 jobs:
   build_and_deploy_web:
