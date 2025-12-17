@@ -27,7 +27,7 @@
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
     "release:major": "npm version major",
-    "version": "sed -i '' \"s/version: '[0-9]*\\.[0-9]*\\.[0-9]*'/version: '$npm_package_version'/\" app.config.ts && git add app.config.ts CHANGELOG.md",
+    "version": "node -e \"const fs=require('fs');const f='app.config.ts';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/version: '[0-9]+\\.[0-9]+\\.[0-9]+'/,\\\"version: '$npm_package_version'\\\"))\" && git add app.config.ts CHANGELOG.md",
     "postversion": "git push origin HEAD --tags"
   },
   "dependencies": {
