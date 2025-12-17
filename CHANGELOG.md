@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `pnpm release:patch`, `pnpm release:minor`, `pnpm release:major` scripts for automated releases
+- Add npm lifecycle hooks (`version`, `postversion`) to automate version sync, commit, tag, and push
+
+### Fixed
+
+- Fix EAS workflow triggers: replace invalid `release` trigger with `push.tags` pattern (EAS Workflows only supports `push` triggers)
+
+### Changed
+
+- Added mandatory CHANGELOG.md update requirement to development workflow in CLAUDE.md
+- Updated release checklist to clarify [Unreleased] → version transition process
+- Added dedicated "CHANGELOG Maintenance (CRITICAL)" section with comprehensive guidelines based on [Keep a Changelog v1.1.0](https://keepachangelog.com/en/1.1.0/), including all 6 change categories (Added, Changed, Deprecated, Removed, Fixed, Security), guiding principles, and anti-patterns to avoid
+- Simplified release checklist from 6 manual steps to 4 steps with automated release command
+
 ## [1.0.1] - 2025-12-17
 
 ### Added

@@ -14,6 +14,11 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 pnpm test                         # All tests (80% coverage required)
 pnpm test -- path/to/file.test.ts # Single file
 pnpm test -- -t "pattern"         # By name
+
+# Release (after updating CHANGELOG.md)
+pnpm release:patch                # Bug fixes (1.0.0 → 1.0.1)
+pnpm release:minor                # New features (1.0.0 → 1.1.0)
+pnpm release:major                # Breaking changes (1.0.0 → 2.0.0)
 ```
 
 ## Code Quality Requirements
@@ -23,9 +28,73 @@ pnpm test -- -t "pattern"         # By name
 1. Write/update tests (TDD: RED → GREEN → REFACTOR)
 2. Run: `pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test`
 3. Visual verification for UI changes (use Chrome DevTools MCP)
-4. Commit with conventional commits: `<type>(<scope>): <description>`
+4. **Update CHANGELOG.md** - Add entry under `[Unreleased]` section (Added/Changed/Fixed/Removed)
+5. Commit with conventional commits: `<type>(<scope>): <description>`
 
 **TDD is required** - write failing test first, then implementation.
+
+## CHANGELOG Maintenance (CRITICAL)
+
+**⚠️ AUTOMATIC UPDATE REQUIRED: After completing ANY task, IMMEDIATELY update CHANGELOG.md**
+
+The `[Unreleased]` section MUST be kept current at all times. This is non-negotiable.
+
+**Reference:** [Keep a Changelog v1.1.0](https://keepachangelog.com/en/1.1.0/)
+
+### Guiding Principles
+
+- **For humans, not machines** - Write clear, readable entries (not commit messages)
+- **Every change documented** - No selective recording; all changes matter
+- **Reverse chronological** - Newest entries at the top
+- **ISO 8601 dates** - Use `YYYY-MM-DD` format (e.g., 2025-12-17)
+
+### Change Categories
+
+```markdown
+## [Unreleased]
+
+### Added
+
+- New features, capabilities, components, files
+
+### Changed
+
+- Modifications to existing functionality, refactors, updates
+
+### Deprecated
+
+- Features marked for removal in upcoming releases
+
+### Removed
+
+- Deleted features, removed files, eliminated functionality
+
+### Fixed
+
+- Bug fixes, error corrections, issue resolutions
+
+### Security
+
+- Vulnerability patches, security improvements
+```
+
+### What to Avoid
+
+- ❌ Copying git commit messages verbatim
+- ❌ Omitting deprecation warnings
+- ❌ Using ambiguous date formats (MM/DD/YY)
+- ❌ Skipping "minor" changes
+
+### Examples of Good Entries
+
+- `- Add user authentication with Google Sign-In`
+- `- Update profile screen to display days sober count`
+- `- Deprecate legacy API v1 endpoints (removal in v3.0)`
+- `- Fix navigation crash on Android back button press`
+- `- Remove unused utility functions from helpers module`
+- `- Security: Migrate auth tokens to SecureStore`
+
+**Never skip this step.** The changelog is the project's memory of all changes.
 
 ## Architecture
 
@@ -86,7 +155,7 @@ EXPO_PUBLIC_SENTRY_DSN=xxx        # Production
 
 ## Release Checklist
 
-Before creating a release, complete this checklist in order:
+Before creating a release, complete these 4 steps:
 
 ### 1. Verify All Changes Committed
 
@@ -103,66 +172,51 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 
 All must pass with no errors.
 
-### 3. Bump Version (Automatic)
+### 3. Update CHANGELOG.md
 
-Use semantic versioning (MAJOR.MINOR.PATCH):
+Move all entries from `[Unreleased]` to the new version section:
 
-- **PATCH** (1.1.0 → 1.1.1): Bug fixes, minor updates
-- **MINOR** (1.1.0 → 1.2.0): New features, backward-compatible
-- **MAJOR** (1.1.0 → 2.0.0): Breaking changes
-
-```bash
-# Automatically bump version in package.json AND app.config.ts:
-# For patch release:
-npm version patch --no-git-tag-version && \
-  sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '$(node -p "require('./package.json').version")'/" app.config.ts
-
-# For minor release:
-npm version minor --no-git-tag-version && \
-  sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '$(node -p "require('./package.json').version")'/" app.config.ts
-
-# For major release:
-npm version major --no-git-tag-version && \
-  sed -i '' "s/version: '[0-9]*\.[0-9]*\.[0-9]*'/version: '$(node -p "require('./package.json').version")'/" app.config.ts
-```
-
-### 4. Update CHANGELOG.md
-
-Add entry at the top following this format:
+1. Create new version heading: `## [X.Y.Z] - YYYY-MM-DD`
+2. Move all content from `[Unreleased]` to the new version section
+3. Leave `[Unreleased]` section empty (ready for next cycle)
+4. Update comparison links at bottom of file
 
 ```markdown
+## [Unreleased]
+
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Added
 
-- New feature description
+- New feature description (moved from Unreleased)
 
 ### Changed
 
-- Modified behavior description
+- Modified behavior description (moved from Unreleased)
 
 ### Fixed
 
-- Bug fix description
-
-### Removed
-
-- Removed feature description
+- Bug fix description (moved from Unreleased)
 ```
 
-### 5. Create Release Commit
+### 4. Run Release Command
 
-```bash
-git add package.json app.config.ts CHANGELOG.md
-git commit -m "chore(release): bump version to X.Y.Z"
-```
+Use semantic versioning (MAJOR.MINOR.PATCH):
 
-### 6. Tag and Push
+| Type      | When to Use                       | Command              |
+| --------- | --------------------------------- | -------------------- |
+| **PATCH** | Bug fixes, minor updates          | `pnpm release:patch` |
+| **MINOR** | New features, backward-compatible | `pnpm release:minor` |
+| **MAJOR** | Breaking changes                  | `pnpm release:major` |
 
-```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin main --tags
-```
+The release command automatically:
+
+- ✅ Bumps version in `package.json`
+- ✅ Syncs version to `app.config.ts`
+- ✅ Stages `app.config.ts` and `CHANGELOG.md`
+- ✅ Creates commit: `vX.Y.Z`
+- ✅ Creates git tag: `vX.Y.Z`
+- ✅ Pushes to origin with tags
 
 ## Visual Verification (UI Changes)
 
