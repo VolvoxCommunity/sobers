@@ -110,7 +110,7 @@ function RootLayoutNav() {
   const getPageTitle = (): string => {
     // Guard against null pathname (can occur on first render before router is ready)
     if (!pathname) {
-      return 'Sobriety Waypoint';
+      return 'Sobers';
     }
 
     const titles: Record<string, string> = {
@@ -128,7 +128,7 @@ function RootLayoutNav() {
 
     // Check for exact match first
     if (titles[pathname]) {
-      return `${titles[pathname]} | Sobriety Waypoint`;
+      return `${titles[pathname]} | Sobers`;
     }
 
     // Handle dynamic routes like /steps/[id]
@@ -137,11 +137,11 @@ function RootLayoutNav() {
     // This could be enhanced in the future by adding the step number to the route params
     // or using a separate metadata API to fetch the step number for more specific titles (better for SEO).
     if (pathname.startsWith('/steps/')) {
-      return 'Step Details | Sobriety Waypoint';
+      return 'Step Details | Sobers';
     }
 
     // Default fallback
-    return 'Sobriety Waypoint';
+    return 'Sobers';
   };
 
   const pageTitle = getPageTitle();
@@ -182,16 +182,16 @@ function RootLayoutNav() {
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content="website" />
-      <meta property="og:title" content="Sobriety Waypoint" />
+      <meta property="og:title" content="Sobers" />
       <meta property="og:description" content="Your companion on the journey to recovery" />
-      <meta property="og:site_name" content="Sobriety Waypoint" />
-      <meta property="og:image" content="https://sobrietywaypoint.com/assets/images/banner.png" />
+      <meta property="og:site_name" content="Sobers" />
+      <meta property="og:image" content="https://sobers.app/assets/images/banner.png" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content="Sobriety Waypoint" />
+      <meta name="twitter:title" content="Sobers" />
       <meta name="twitter:description" content="Your companion on the journey to recovery" />
-      <meta name="twitter:image" content="https://sobrietywaypoint.com/assets/images/banner.png" />
+      <meta name="twitter:image" content="https://sobers.app/assets/images/banner.png" />
     </Head>
   );
 
