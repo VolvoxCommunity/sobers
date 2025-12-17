@@ -1,8 +1,7 @@
 # Sobers - Supabase Configuration
 # A way out of the maze.
 
-[project]
-id = "vzwdsjphpabtxhmffous"
+project_id = "vzwdsjphpabtxhmffous"
 
 # API Configuration
 [api]
