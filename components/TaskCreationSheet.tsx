@@ -8,6 +8,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useMemo,
 } from 'react';
 import {
   View,
@@ -300,7 +301,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
       sheetRef.current?.dismiss();
     };
 
-    const styles = createStyles(theme);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // ---------------------------------------------------------------------------
     // Render

@@ -10,7 +10,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { Heart } from 'lucide-react-native';
@@ -34,7 +34,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { user, signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   // Refs for field navigation
@@ -72,6 +72,11 @@ export default function LoginScreen() {
   };
 
   const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // Redirect authenticated users to the app
+  if (user) {
+    return <Redirect href="/(app)" />;
+  }
 
   return (
     <KeyboardAvoidingView

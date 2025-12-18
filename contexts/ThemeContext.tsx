@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger, LogCategory } from '@/lib/logger';
@@ -51,7 +51,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const setThemeMode = async (mode: ThemeMode) => {
+  const setThemeMode = useCallback(async (mode: ThemeMode) => {
     try {
       await AsyncStorage.setItem('theme_mode', mode);
       setThemeModeState(mode);
@@ -60,7 +60,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         category: LogCategory.STORAGE,
       });
     }
-  };
+  }, []);
 
   const getEffectiveTheme = (): ThemeColors => {
     if (themeMode === 'system') {
@@ -71,16 +71,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const isDark = themeMode === 'system' ? systemColorScheme === 'dark' : themeMode === 'dark';
 
-  return (
-    <ThemeContext.Provider
-      value={{
-        theme: getEffectiveTheme(),
-        themeMode,
-        setThemeMode,
-        isDark,
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      theme: getEffectiveTheme(),
+      themeMode,
+      setThemeMode,
+      isDark,
+    }),
+    [themeMode, systemColorScheme, setThemeMode, isDark]
   );
+
+  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
 };

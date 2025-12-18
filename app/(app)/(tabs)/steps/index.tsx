@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Platform, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,11 +86,17 @@ export default function StepsScreen() {
     }
   };
 
-  // Refetch progress when returning from detail screen
+  // Fetch steps on mount
   useEffect(() => {
     fetchSteps();
-    fetchProgress();
-  }, [fetchProgress]);
+  }, []);
+
+  // Refetch progress when screen gains focus (e.g., returning from detail screen)
+  useFocusEffect(
+    useCallback(() => {
+      fetchProgress();
+    }, [fetchProgress])
+  );
 
   /**
    * Handler for when a step is selected.

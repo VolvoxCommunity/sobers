@@ -209,13 +209,13 @@ export default wrapRootComponent(function RootLayout() {
     <GestureHandlerRootView style={styles.container}>
       <ErrorBoundary>
         <KeyboardProvider>
-          <BottomSheetModalProvider>
-            <ThemeProvider>
-              <AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <BottomSheetModalProvider>
                 <RootLayoutNav />
-              </AuthProvider>
-            </ThemeProvider>
-          </BottomSheetModalProvider>
+              </BottomSheetModalProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </KeyboardProvider>
         {/* Vercel Analytics - web only, inside ErrorBoundary for safety */}
         {Platform.OS === 'web' && <Analytics />}

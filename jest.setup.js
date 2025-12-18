@@ -212,26 +212,35 @@ global.document = {
 };
 
 // Mock expo-router
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    canGoBack: jest.fn(() => true),
-  }),
-  useNavigation: () => ({
-    setOptions: jest.fn(),
-    navigate: jest.fn(),
-    goBack: jest.fn(),
-    addListener: jest.fn(() => jest.fn()),
-  }),
-  useSegments: () => [],
-  usePathname: () => '/',
-  Link: ({ children, ...props }) => children,
-  Slot: ({ children }) => children,
-  Stack: ({ children }) => children,
-  Tabs: ({ children }) => children,
-}));
+jest.mock('expo-router', () => {
+  const React = require('react');
+  return {
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      canGoBack: jest.fn(() => true),
+    }),
+    useNavigation: () => ({
+      setOptions: jest.fn(),
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      addListener: jest.fn(() => jest.fn()),
+    }),
+    useSegments: () => [],
+    usePathname: () => '/',
+    Link: ({ children, ...props }) => children,
+    Slot: ({ children }) => children,
+    Stack: ({ children }) => children,
+    Tabs: ({ children }) => children,
+    // useFocusEffect runs the callback immediately (simulating focused state)
+    useFocusEffect: (callback) => {
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
+    },
+  };
+});
 
 // Mock expo-font
 jest.mock('expo-font', () => ({
@@ -545,3 +554,5 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }) => children,
   SafeAreaView: ({ children }) => children,
 }));
+
+// lucide-react-native is mocked via moduleNameMapper in jest.config.js

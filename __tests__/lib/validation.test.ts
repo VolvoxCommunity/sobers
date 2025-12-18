@@ -2,7 +2,13 @@
  * Tests for validation utility functions
  */
 
-import { isValidEmail, validateDisplayName } from '@/lib/validation';
+import {
+  isValidEmail,
+  validateDisplayName,
+  validatePassword,
+  checkPasswordRequirements,
+  PASSWORD_REQUIREMENTS,
+} from '@/lib/validation';
 
 describe('validation utilities', () => {
   // =============================================================================
@@ -464,6 +470,266 @@ describe('validation utilities', () => {
         expect(validateDisplayName('John\x00Doe')).toBe(
           'Display name can only contain letters, spaces, periods, and hyphens'
         );
+      });
+    });
+  });
+
+  // =============================================================================
+  // PASSWORD_REQUIREMENTS
+  // =============================================================================
+  describe('PASSWORD_REQUIREMENTS', () => {
+    it('has minimum length of 8', () => {
+      expect(PASSWORD_REQUIREMENTS.minLength).toBe(8);
+    });
+
+    it('requires uppercase letters', () => {
+      expect(PASSWORD_REQUIREMENTS.requireUppercase).toBe(true);
+    });
+
+    it('requires lowercase letters', () => {
+      expect(PASSWORD_REQUIREMENTS.requireLowercase).toBe(true);
+    });
+
+    it('requires numbers', () => {
+      expect(PASSWORD_REQUIREMENTS.requireNumber).toBe(true);
+    });
+
+    it('requires symbols', () => {
+      expect(PASSWORD_REQUIREMENTS.requireSymbol).toBe(true);
+    });
+  });
+
+  // =============================================================================
+  // checkPasswordRequirements
+  // =============================================================================
+  describe('checkPasswordRequirements', () => {
+    describe('minLength check', () => {
+      it('returns false for short passwords', () => {
+        expect(checkPasswordRequirements('Pass1').minLength).toBe(false);
+        expect(checkPasswordRequirements('1234567').minLength).toBe(false);
+      });
+
+      it('returns true for passwords with 8+ characters', () => {
+        expect(checkPasswordRequirements('12345678').minLength).toBe(true);
+        expect(checkPasswordRequirements('Password1').minLength).toBe(true);
+        expect(checkPasswordRequirements('VeryLongPassword123').minLength).toBe(true);
+      });
+    });
+
+    describe('hasUppercase check', () => {
+      it('returns false for lowercase only', () => {
+        expect(checkPasswordRequirements('password1').hasUppercase).toBe(false);
+        expect(checkPasswordRequirements('test1234').hasUppercase).toBe(false);
+      });
+
+      it('returns true when uppercase present', () => {
+        expect(checkPasswordRequirements('Password1').hasUppercase).toBe(true);
+        expect(checkPasswordRequirements('pASSWORD').hasUppercase).toBe(true);
+        expect(checkPasswordRequirements('A').hasUppercase).toBe(true);
+      });
+    });
+
+    describe('hasLowercase check', () => {
+      it('returns false for uppercase only', () => {
+        expect(checkPasswordRequirements('PASSWORD1').hasLowercase).toBe(false);
+        expect(checkPasswordRequirements('TEST1234').hasLowercase).toBe(false);
+      });
+
+      it('returns true when lowercase present', () => {
+        expect(checkPasswordRequirements('Password1').hasLowercase).toBe(true);
+        expect(checkPasswordRequirements('PASSWORDa').hasLowercase).toBe(true);
+        expect(checkPasswordRequirements('a').hasLowercase).toBe(true);
+      });
+    });
+
+    describe('hasNumber check', () => {
+      it('returns false for letters only', () => {
+        expect(checkPasswordRequirements('Password').hasNumber).toBe(false);
+        expect(checkPasswordRequirements('TestPass').hasNumber).toBe(false);
+      });
+
+      it('returns true when number present', () => {
+        expect(checkPasswordRequirements('Password1').hasNumber).toBe(true);
+        expect(checkPasswordRequirements('1Password').hasNumber).toBe(true);
+        expect(checkPasswordRequirements('Pass9word').hasNumber).toBe(true);
+        expect(checkPasswordRequirements('0').hasNumber).toBe(true);
+      });
+    });
+
+    describe('hasSymbol check', () => {
+      it('returns false for alphanumeric only', () => {
+        expect(checkPasswordRequirements('Password1').hasSymbol).toBe(false);
+        expect(checkPasswordRequirements('Test1234').hasSymbol).toBe(false);
+        expect(checkPasswordRequirements('abcABC123').hasSymbol).toBe(false);
+      });
+
+      it('returns true when common symbols present', () => {
+        expect(checkPasswordRequirements('Password1!').hasSymbol).toBe(true);
+        expect(checkPasswordRequirements('Test@1234').hasSymbol).toBe(true);
+        expect(checkPasswordRequirements('Pass#word').hasSymbol).toBe(true);
+        expect(checkPasswordRequirements('$').hasSymbol).toBe(true);
+      });
+
+      it('returns true for various symbol types', () => {
+        const symbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '+', '='];
+        symbols.forEach((symbol) => {
+          expect(checkPasswordRequirements(symbol).hasSymbol).toBe(true);
+        });
+      });
+    });
+
+    describe('combined checks', () => {
+      it('all pass for strong password', () => {
+        const checks = checkPasswordRequirements('StrongPass1!');
+        expect(checks.minLength).toBe(true);
+        expect(checks.hasUppercase).toBe(true);
+        expect(checks.hasLowercase).toBe(true);
+        expect(checks.hasNumber).toBe(true);
+        expect(checks.hasSymbol).toBe(true);
+      });
+
+      it('all fail for empty string', () => {
+        const checks = checkPasswordRequirements('');
+        expect(checks.minLength).toBe(false);
+        expect(checks.hasUppercase).toBe(false);
+        expect(checks.hasLowercase).toBe(false);
+        expect(checks.hasNumber).toBe(false);
+        expect(checks.hasSymbol).toBe(false);
+      });
+
+      it('returns partial results for weak passwords', () => {
+        const checks = checkPasswordRequirements('pass');
+        expect(checks.minLength).toBe(false);
+        expect(checks.hasUppercase).toBe(false);
+        expect(checks.hasLowercase).toBe(true);
+        expect(checks.hasNumber).toBe(false);
+        expect(checks.hasSymbol).toBe(false);
+      });
+    });
+  });
+
+  // =============================================================================
+  // validatePassword
+  // =============================================================================
+  describe('validatePassword', () => {
+    describe('valid passwords', () => {
+      it('accepts passwords meeting all requirements', () => {
+        expect(validatePassword('Password1!')).toBeNull();
+        expect(validatePassword('StrongPass123@')).toBeNull();
+        expect(validatePassword('MyP4ssword#')).toBeNull();
+        expect(validatePassword('Test1234$')).toBeNull();
+      });
+
+      it('accepts passwords with various special characters', () => {
+        expect(validatePassword('Password1!')).toBeNull();
+        expect(validatePassword('Strong@Pass1')).toBeNull();
+        expect(validatePassword('Test#123Ab')).toBeNull();
+        expect(validatePassword('Secure$Pass9')).toBeNull();
+      });
+
+      it('accepts exactly 8 characters with all requirements', () => {
+        expect(validatePassword('Passw0!d')).toBeNull();
+      });
+
+      it('accepts long passwords', () => {
+        expect(validatePassword('VeryLongAndSecurePassword123!')).toBeNull();
+      });
+    });
+
+    describe('too short', () => {
+      it('rejects passwords under 8 characters', () => {
+        expect(validatePassword('Pass1')).toBe('Password must be at least 8 characters');
+        expect(validatePassword('Ab1')).toBe('Password must be at least 8 characters');
+        expect(validatePassword('1234567')).toBe('Password must be at least 8 characters');
+      });
+
+      it('rejects empty string', () => {
+        expect(validatePassword('')).toBe('Password must be at least 8 characters');
+      });
+    });
+
+    describe('missing uppercase', () => {
+      it('rejects passwords without uppercase', () => {
+        expect(validatePassword('password1')).toBe(
+          'Password must contain at least one uppercase letter'
+        );
+        expect(validatePassword('test1234')).toBe(
+          'Password must contain at least one uppercase letter'
+        );
+        expect(validatePassword('12345678')).toBe(
+          'Password must contain at least one uppercase letter'
+        );
+      });
+    });
+
+    describe('missing lowercase', () => {
+      it('rejects passwords without lowercase', () => {
+        expect(validatePassword('PASSWORD1')).toBe(
+          'Password must contain at least one lowercase letter'
+        );
+        expect(validatePassword('TEST1234')).toBe(
+          'Password must contain at least one lowercase letter'
+        );
+        expect(validatePassword('ABCD1234')).toBe(
+          'Password must contain at least one lowercase letter'
+        );
+      });
+    });
+
+    describe('missing number', () => {
+      it('rejects passwords without numbers', () => {
+        expect(validatePassword('Password!')).toBe('Password must contain at least one number');
+        expect(validatePassword('StrongPass@')).toBe('Password must contain at least one number');
+        expect(validatePassword('AbcdEfgh#')).toBe('Password must contain at least one number');
+      });
+    });
+
+    describe('missing symbol', () => {
+      it('rejects passwords without symbols', () => {
+        expect(validatePassword('Password1')).toBe('Password must contain at least one symbol');
+        expect(validatePassword('StrongPass123')).toBe('Password must contain at least one symbol');
+        expect(validatePassword('AbcdEfgh99')).toBe('Password must contain at least one symbol');
+      });
+    });
+
+    describe('error priority', () => {
+      it('reports length error first', () => {
+        expect(validatePassword('abc')).toBe('Password must be at least 8 characters');
+      });
+
+      it('reports uppercase error after length', () => {
+        expect(validatePassword('password123!')).toBe(
+          'Password must contain at least one uppercase letter'
+        );
+      });
+
+      it('reports lowercase error after uppercase', () => {
+        expect(validatePassword('PASSWORD123!')).toBe(
+          'Password must contain at least one lowercase letter'
+        );
+      });
+
+      it('reports number error after lowercase', () => {
+        expect(validatePassword('Password!')).toBe('Password must contain at least one number');
+      });
+
+      it('reports symbol error last', () => {
+        expect(validatePassword('Password1')).toBe('Password must contain at least one symbol');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('handles unicode letters', () => {
+        // Unicode lowercase and uppercase should work
+        expect(validatePassword('Pässwörd1!')).toBeNull();
+      });
+
+      it('handles spaces in password', () => {
+        expect(validatePassword('Pass word1!')).toBeNull();
+      });
+
+      it('handles all requirements met', () => {
+        expect(validatePassword('12345Aa!')).toBeNull();
       });
     });
   });

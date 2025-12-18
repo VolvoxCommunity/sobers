@@ -1,4 +1,12 @@
-import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/database';
@@ -163,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -181,13 +189,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return null;
     }
-  };
+  }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id);
     }
-  };
+  }, [user, fetchProfile]);
 
   /**
    * Stores pending Apple Sign In name data in Supabase user_metadata.
@@ -417,7 +425,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [profile]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -426,9 +434,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Track successful login
     trackEvent(AnalyticsEvents.AUTH_LOGIN, { method: 'email' });
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     if (Platform.OS === 'web') {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -498,7 +506,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     }
-  };
+  }, []);
 
   /**
    * Signs up a new user with email/password.
@@ -509,7 +517,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * @param password - User's password
    * @throws Error if signup fails
    */
-  const signUp = async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -521,7 +529,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Profile creation is handled by onboarding.tsx when user completes onboarding.
     // User will be routed to onboarding since profile doesn't exist yet.
-  };
+  }, []);
 
   /**
    * Signs out the current user and clears all local state.
@@ -532,7 +540,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    *
    * @throws Error if sign out fails for reasons other than missing session
    */
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // Track logout before clearing session
     trackEvent(AnalyticsEvents.AUTH_LOGOUT);
     await resetAnalytics();
@@ -554,7 +562,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setUser(null);
     setProfile(null);
-  };
+  }, []);
 
   /**
    * Permanently deletes the user's account from the database.
@@ -564,7 +572,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    *
    * @throws Error if the deletion fails
    */
-  const deleteAccount = async () => {
+  const deleteAccount = useCallback(async () => {
     if (!user) {
       throw new Error('No user logged in');
     }
@@ -606,7 +614,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSession(null);
     setProfile(null);
-  };
+  }, [user]);
 
   return (
     <AuthContext.Provider

@@ -6,7 +6,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Platform,
   Linking,
   ActivityIndicator,
@@ -319,7 +318,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.card}>
-          <TouchableOpacity
+          <Pressable
             style={styles.menuItem}
             testID="account-name-row"
             onPress={() => {
@@ -345,7 +344,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               color={theme.textTertiary}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -354,7 +353,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.card}>
           <View style={styles.themeOptions}>
-            <TouchableOpacity
+            <Pressable
               style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
               onPress={() => setThemeMode('light')}
               accessibilityRole="radio"
@@ -374,9 +373,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               >
                 Light
               </Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
               onPress={() => setThemeMode('dark')}
               accessibilityRole="radio"
@@ -396,9 +395,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               >
                 Dark
               </Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
               onPress={() => setThemeMode('system')}
               accessibilityRole="radio"
@@ -418,7 +417,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               >
                 System
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -427,7 +426,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.card}>
-          <TouchableOpacity
+          <Pressable
             style={styles.menuItem}
             onPress={() => handleOpenURL(EXTERNAL_LINKS.PRIVACY_POLICY)}
             accessibilityRole="link"
@@ -442,9 +441,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               color={theme.textTertiary}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
-          </TouchableOpacity>
+          </Pressable>
           <View style={styles.separator} />
-          <TouchableOpacity
+          <Pressable
             style={styles.menuItem}
             onPress={() => handleOpenURL(EXTERNAL_LINKS.TERMS_OF_SERVICE)}
             accessibilityRole="link"
@@ -459,9 +458,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               color={theme.textTertiary}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
-          </TouchableOpacity>
+          </Pressable>
           <View style={styles.separator} />
-          <TouchableOpacity
+          <Pressable
             style={styles.menuItem}
             onPress={() => handleOpenURL(EXTERNAL_LINKS.SOURCE_CODE)}
             accessibilityRole="link"
@@ -476,7 +475,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               color={theme.textTertiary}
               style={{ transform: [{ rotate: '180deg' }] }}
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -487,7 +486,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           <View style={styles.card}>
             <View style={styles.updateContainer}>
               {updateStatus === 'idle' && (
-                <TouchableOpacity
+                <Pressable
                   style={styles.updateButton}
                   onPress={checkForUpdates}
                   accessibilityRole="button"
@@ -495,7 +494,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                 >
                   <RefreshCw size={20} color={theme.primary} />
                   <Text style={styles.updateButtonText}>Check for Updates</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
 
               {(isChecking || isDownloading) && (
@@ -513,14 +512,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                   <Text style={[styles.updateStatusText, { color: theme.success }]}>
                     App is up to date
                   </Text>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.checkAgainButton}
                     onPress={checkForUpdates}
                     accessibilityRole="button"
                     accessibilityLabel="Check again for updates"
                   >
                     <Text style={styles.checkAgainText}>Check Again</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               )}
 
@@ -530,14 +529,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                     <Download size={20} color={theme.primary} />
                     <Text style={styles.updateReadyText}>Update ready to install</Text>
                   </View>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.applyUpdateButton}
                     onPress={applyUpdate}
                     accessibilityRole="button"
                     accessibilityLabel="Restart app to apply update"
                   >
                     <Text style={styles.applyUpdateText}>Restart to Update</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               )}
 
@@ -547,14 +546,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                   <Text style={[styles.updateStatusText, { color: theme.error }]}>
                     {updateError || 'Failed to check for updates'}
                   </Text>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.checkAgainButton}
                     onPress={checkForUpdates}
                     accessibilityRole="button"
                     accessibilityLabel="Try again"
                   >
                     <Text style={styles.checkAgainText}>Try Again</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               )}
             </View>
@@ -564,7 +563,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
       {/* Sign Out Section */}
       <View style={styles.section}>
-        <TouchableOpacity
+        <Pressable
           style={styles.signOutButton}
           onPress={handleSignOut}
           accessibilityRole="button"
@@ -572,12 +571,12 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         >
           <LogOut size={20} color={theme.error} />
           <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Danger Zone Section */}
       <View style={styles.section}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.dangerZoneHeader, isDangerZoneExpanded && styles.dangerZoneHeaderExpanded]}
           onPress={toggleDangerZone}
           accessibilityRole="button"
@@ -594,13 +593,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           ) : (
             <ChevronDown size={20} color={theme.danger} />
           )}
-        </TouchableOpacity>
+        </Pressable>
         <View style={{ maxHeight: isDangerZoneExpanded ? undefined : 0, overflow: 'hidden' }}>
           <View style={styles.dangerCard}>
             <Text style={styles.dangerDescription}>
               Permanently delete your account and all associated data. This action cannot be undone.
             </Text>
-            <TouchableOpacity
+            <Pressable
               style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]}
               onPress={handleDeleteAccount}
               disabled={isDeleting}
@@ -616,14 +615,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                   <Text style={styles.deleteAccountText}>Delete Account</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
 
       {/* Build Info Section */}
       <View style={styles.section}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.buildInfoHeader, isBuildInfoExpanded && styles.buildInfoHeaderExpanded]}
           onPress={toggleBuildInfo}
           accessibilityRole="button"
@@ -640,7 +639,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           ) : (
             <ChevronDown size={20} color={theme.primary} />
           )}
-        </TouchableOpacity>
+        </Pressable>
         <View style={{ maxHeight: isBuildInfoExpanded ? undefined : 0, overflow: 'hidden' }}>
           <View style={styles.buildInfoCard}>
             {/* App Version & Build Number */}
@@ -690,7 +689,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             )}
             {buildInfo.updateId != null && (
               <>
-                <TouchableOpacity
+                <Pressable
                   style={styles.buildInfoRow}
                   onPress={() => copyToClipboard(buildInfo.updateId ?? '', 'updateId')}
                   accessibilityRole="button"
@@ -707,7 +706,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                       <Copy size={14} color={theme.textTertiary} />
                     )}
                   </View>
-                </TouchableOpacity>
+                </Pressable>
                 <View style={styles.buildInfoSeparator} />
               </>
             )}
@@ -735,7 +734,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             {buildInfo.easBuildGitCommitHash != null && (
               <>
                 <View style={styles.buildInfoSeparator} />
-                <TouchableOpacity
+                <Pressable
                   style={styles.buildInfoRow}
                   onPress={() => copyToClipboard(buildInfo.easBuildGitCommitHash ?? '', 'commit')}
                   accessibilityRole="button"
@@ -752,7 +751,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                       <Copy size={14} color={theme.textTertiary} />
                     )}
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </>
             )}
 
@@ -760,7 +759,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             {buildInfo.easBuildId != null && (
               <>
                 <View style={styles.buildInfoSeparator} />
-                <TouchableOpacity
+                <Pressable
                   style={styles.buildInfoRow}
                   onPress={() => copyToClipboard(buildInfo.easBuildId ?? '', 'buildId')}
                   accessibilityRole="button"
@@ -777,7 +776,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                       <Copy size={14} color={theme.textTertiary} />
                     )}
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </>
             )}
 
@@ -799,7 +798,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
             {/* Copy All Button */}
             <View style={styles.buildInfoSeparator} />
-            <TouchableOpacity
+            <Pressable
               style={styles.copyAllButton}
               onPress={() => copyToClipboard(formatBuildInfoForCopy(buildInfo), 'all')}
               accessibilityRole="button"
@@ -816,7 +815,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                   <Text style={styles.copyAllText}>Copy All Build Info</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -825,13 +824,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       <View style={styles.footer}>
         <Text style={styles.footerText}>Sobers v{packageJson.version}</Text>
         <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={() => handleOpenURL(EXTERNAL_LINKS.DEVELOPER)}
           accessibilityRole="link"
           accessibilityLabel="Visit developer website"
         >
           <Text style={styles.footerCredit}>By Bill Chirico</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Edit Display Name Modal */}
@@ -885,7 +884,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
+              <Pressable
                 testID="cancel-name-button"
                 style={styles.modalCancelButton}
                 onPress={() => {
@@ -896,8 +895,8 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                 accessibilityLabel="Cancel name editing"
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 testID="save-name-button"
                 style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
                 onPress={handleSaveName}
@@ -911,7 +910,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                 ) : (
                   <Text style={styles.modalSaveText}>Save</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Pressable>
         </Pressable>

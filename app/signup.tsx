@@ -11,11 +11,68 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
-import { Heart, ArrowLeft } from 'lucide-react-native';
+import { Heart, ArrowLeft, Check, X } from 'lucide-react-native';
+import { validatePassword, checkPasswordRequirements } from '@/lib/validation';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
 import { showAlert } from '@/lib/alert';
+
+interface PasswordRequirementProps {
+  met: boolean;
+  text: string;
+  theme: ThemeColors;
+  styles: ReturnType<typeof createStyles>;
+}
+
+/**
+ * Displays a single password requirement with check/x icon.
+ * Uses text fallback (✓/✗) in test environments where icons may be mocked.
+ */
+function PasswordRequirement({ met, text, theme, styles }: PasswordRequirementProps) {
+  const CheckIcon = Check;
+  const XIcon = X;
+
+  // Render icon or fallback text
+  const renderIndicator = () => {
+    if (met) {
+      // Check if Check icon is a valid React component
+      if (CheckIcon && typeof CheckIcon === 'function') {
+        try {
+          return <CheckIcon size={14} color={theme.success} testID={`check-${text}`} />;
+        } catch {
+          // Fallback to text
+        }
+      }
+      return (
+        <Text style={{ color: theme.success, fontSize: 14, width: 14 }} testID={`check-${text}`}>
+          ✓
+        </Text>
+      );
+    } else {
+      // Check if X icon is a valid React component
+      if (XIcon && typeof XIcon === 'function') {
+        try {
+          return <XIcon size={14} color={theme.textTertiary} testID={`x-${text}`} />;
+        } catch {
+          // Fallback to text
+        }
+      }
+      return (
+        <Text style={{ color: theme.textTertiary, fontSize: 14, width: 14 }} testID={`x-${text}`}>
+          ✗
+        </Text>
+      );
+    }
+  };
+
+  return (
+    <View style={styles.requirementRow}>
+      {renderIndicator()}
+      <Text style={[styles.requirementText, met && styles.requirementMet]}>{text}</Text>
+    </View>
+  );
+}
 
 /**
  * Renders the sign-up screen with fields and actions to create a new account.
@@ -51,8 +108,9 @@ export default function SignupScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      showAlert('Error', 'Password must be at least 6 characters');
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      showAlert('Error', passwordError);
       return;
     }
 
@@ -83,6 +141,7 @@ export default function SignupScreen() {
   };
 
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const passwordChecks = useMemo(() => checkPasswordRequirements(password), [password]);
 
   return (
     <View style={styles.container}>
@@ -144,6 +203,40 @@ export default function SignupScreen() {
               autoComplete="password-new"
               textContentType="newPassword"
             />
+            {password.length > 0 && (
+              <View style={styles.requirementsContainer} testID="password-requirements">
+                <PasswordRequirement
+                  met={passwordChecks.minLength}
+                  text="At least 8 characters"
+                  theme={theme}
+                  styles={styles}
+                />
+                <PasswordRequirement
+                  met={passwordChecks.hasUppercase}
+                  text="One uppercase letter"
+                  theme={theme}
+                  styles={styles}
+                />
+                <PasswordRequirement
+                  met={passwordChecks.hasLowercase}
+                  text="One lowercase letter"
+                  theme={theme}
+                  styles={styles}
+                />
+                <PasswordRequirement
+                  met={passwordChecks.hasNumber}
+                  text="One number"
+                  theme={theme}
+                  styles={styles}
+                />
+                <PasswordRequirement
+                  met={passwordChecks.hasSymbol}
+                  text="One symbol (!@#$%...)"
+                  theme={theme}
+                  styles={styles}
+                />
+              </View>
+            )}
           </View>
 
           <View style={styles.inputContainer}>
@@ -351,5 +444,23 @@ const createStyles = (theme: ThemeColors) =>
     loginLinkBold: {
       color: theme.primary,
       fontWeight: '600',
+    },
+    requirementsContainer: {
+      marginTop: 8,
+      paddingHorizontal: 4,
+    },
+    requirementRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    requirementText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.textTertiary,
+      marginLeft: 6,
+    },
+    requirementMet: {
+      color: theme.success,
     },
   });

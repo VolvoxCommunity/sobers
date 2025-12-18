@@ -167,6 +167,9 @@ importers:
       react-native-svg:
         specifier: ^15.12.1
         version: 15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-toast-message:
+        specifier: ^2.3.3
+        version: 2.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native-url-polyfill:
         specifier: ^3.0.0
         version: 3.0.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
@@ -198,9 +201,6 @@ importers:
       eslint:
         specifier: ^9.39.2
         version: 9.39.2
-      eslint-config-airbnb-extended:
-        specifier: ^2.3.3
-        version: 2.3.3(eslint-plugin-import@2.32.0)(eslint-plugin-react-hooks@5.2.0(eslint@9.39.2))(eslint-plugin-react@7.37.5(eslint@9.39.2))(eslint@9.39.2)
       eslint-config-expo:
         specifier: ^10.0.0
         version: 10.0.0(eslint@9.39.2)(typescript@5.9.3)
@@ -2748,9 +2748,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  confusing-browser-globals@1.0.11:
-    resolution: {integrity: sha512-JsPKdmh8ZkmnHxDk55FZ1TqVLvEQTvoByJZRN9jzI0UjxK/QgAmsphz7PGtqgPieQZ/CQcHWXCR7ATDNhGe+YA==}
-
   connect@3.7.0:
     resolution: {integrity: sha512-ZqRXc+tZukToSNmh5C2iWMSoV3X1YUcPbqEM4DkEG5tNQXrQUZCNVGGv3IuicnkMtPfGf3Xtp8WCXs295iQ1pQ==}
     engines: {node: '>= 0.10.0'}
@@ -3031,46 +3028,6 @@ packages:
   escape-string-regexp@4.0.0:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
-
-  eslint-config-airbnb-extended@2.3.3:
-    resolution: {integrity: sha512-1p/dQedg2lzPx/PlX5EpVlIY1UvZ5eflrO18rGs9DbhmVKCRv4/47irOekmPrrEGAZhbqrcmpzJIA+DE6yzHTQ==}
-    engines: {node: '>=16.0.0'}
-    peerDependencies:
-      '@next/eslint-plugin-next': ^15.0.0 || ^16.0.0
-      '@stylistic/eslint-plugin': ^3.0.0
-      '@types/eslint-plugin-jsx-a11y': ^6.0.0
-      eslint: ^9.0.0
-      eslint-import-resolver-typescript: ^4.0.0
-      eslint-plugin-import: ^2.0.0
-      eslint-plugin-import-x: ^4.0.0
-      eslint-plugin-jsx-a11y: ^6.0.0
-      eslint-plugin-n: ^17.0.0
-      eslint-plugin-react: ^7.0.0
-      eslint-plugin-react-hooks: ^5.0.0 || ^6.0.0 || ^7.0.0
-      typescript-eslint: ^8.0.0
-    peerDependenciesMeta:
-      '@next/eslint-plugin-next':
-        optional: true
-      '@stylistic/eslint-plugin':
-        optional: true
-      '@types/eslint-plugin-jsx-a11y':
-        optional: true
-      eslint-import-resolver-typescript:
-        optional: true
-      eslint-plugin-import:
-        optional: true
-      eslint-plugin-import-x:
-        optional: true
-      eslint-plugin-jsx-a11y:
-        optional: true
-      eslint-plugin-n:
-        optional: true
-      eslint-plugin-react:
-        optional: true
-      eslint-plugin-react-hooks:
-        optional: true
-      typescript-eslint:
-        optional: true
 
   eslint-config-expo@10.0.0:
     resolution: {integrity: sha512-/XC/DvniUWTzU7Ypb/cLDhDD4DXqEio4lug1ObD/oQ9Hcx3OVOR8Mkp4u6U4iGoZSJyIQmIk3WVHe/P1NYUXKw==}
@@ -5015,6 +4972,12 @@ packages:
 
   react-native-svg@15.12.1:
     resolution: {integrity: sha512-vCuZJDf8a5aNC2dlMovEv4Z0jjEUET53lm/iILFnFewa15b4atjVxU6Wirm6O9y6dEsdjDZVD7Q3QM4T1wlI8g==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-toast-message@2.3.3:
+    resolution: {integrity: sha512-4IIUHwUPvKHu4gjD0Vj2aGQzqPATiblL1ey8tOqsxOWRPGGu52iIbL8M/mCz4uyqecvPdIcMY38AfwRuUADfQQ==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -9117,8 +9080,6 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  confusing-browser-globals@1.0.11: {}
-
   connect@3.7.0:
     dependencies:
       debug: 2.6.9
@@ -9442,16 +9403,6 @@ snapshots:
   escape-string-regexp@2.0.0: {}
 
   escape-string-regexp@4.0.0: {}
-
-  eslint-config-airbnb-extended@2.3.3(eslint-plugin-import@2.32.0)(eslint-plugin-react-hooks@5.2.0(eslint@9.39.2))(eslint-plugin-react@7.37.5(eslint@9.39.2))(eslint@9.39.2):
-    dependencies:
-      confusing-browser-globals: 1.0.11
-      eslint: 9.39.2
-      globals: 16.5.0
-    optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.50.0(eslint@9.39.2)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.2)
-      eslint-plugin-react: 7.37.5(eslint@9.39.2)
-      eslint-plugin-react-hooks: 5.2.0(eslint@9.39.2)
 
   eslint-config-expo@10.0.0(eslint@9.39.2)(typescript@5.9.3):
     dependencies:
@@ -12007,6 +11958,11 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
       warn-once: 0.1.1
+
+  react-native-toast-message@2.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
 
   react-native-url-polyfill@3.0.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)):
     dependencies:

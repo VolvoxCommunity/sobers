@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix step completion not showing in list after navigating back from detail screen by using useFocusEffect to refetch progress when screen gains focus
+- Fix theme toggle and all buttons not working in settings bottom sheet by reordering providers (ThemeProvider and AuthProvider must wrap BottomSheetModalProvider) and replacing TouchableOpacity with Pressable for proper touch handling inside BottomSheetScrollView
+- Fix login screen not redirecting to app after successful sign-in by adding Redirect component when user is authenticated
+- Fix invite code claiming RLS policy violation by recreating update policy with correct conditions
+- Fix duplicate key error when reconnecting to a previously disconnected sponsor by reactivating existing inactive relationship instead of inserting
+- Improve invite code error messages with contextual guidance (expired, already used by self, already used by others)
 - Fix EAS workflow triggers: replace invalid `release` trigger with `push.tags` pattern (EAS Workflows only supports `push` triggers)
 
 ### Changed

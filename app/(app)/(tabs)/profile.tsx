@@ -264,23 +264,19 @@ export default function ProfileScreen() {
       }
 
       if (new Date(invite.expires_at) < new Date()) {
-        throw new Error('This invite code has expired');
-      }
-
-      if (invite.used_by) {
-        throw new Error('This invite code has already been used');
+        throw new Error('This invite code has expired. Please ask your sponsor for a new one.');
       }
 
       if (invite.sponsor_id === user.id || invite.sponsor_id === profile.id) {
-        throw new Error('You cannot connect to yourself as a sponsor');
+        throw new Error('You cannot connect to yourself as a sponsor.');
       }
 
+      // Check for any existing relationship (active or inactive)
       const { data: existingRelationship, error: existingRelationshipError } = await supabase
         .from('sponsor_sponsee_relationships')
-        .select('id')
+        .select('id, status')
         .eq('sponsor_id', invite.sponsor_id)
         .eq('sponsee_id', user.id)
-        .eq('status', 'active')
         .maybeSingle();
 
       if (existingRelationshipError) {
@@ -294,26 +290,57 @@ export default function ProfileScreen() {
         throw new Error('Failed to verify existing connections');
       }
 
-      if (existingRelationship) {
-        throw new Error('You are already connected to this sponsor');
+      if (existingRelationship?.status === 'active') {
+        throw new Error('You are already connected to this sponsor.');
       }
 
-      // Use user.id for sponsee_id to satisfy RLS policy: sponsee_id = auth.uid()
-      const { error: relationshipError } = await supabase
-        .from('sponsor_sponsee_relationships')
-        .insert({
-          sponsor_id: invite.sponsor_id,
-          sponsee_id: user.id,
-          status: 'active',
-        });
-
-      if (relationshipError) {
-        logger.error('Sponsor-sponsee relationship creation failed', relationshipError as Error, {
-          category: LogCategory.DATABASE,
-        });
+      // Check if invite code has been used - provide contextual messages
+      if (invite.used_by) {
+        if (invite.used_by === user.id && existingRelationship) {
+          // User used this code before and has a relationship (now inactive)
+          throw new Error(
+            'You previously used this invite code. Please ask your sponsor for a new code to reconnect.'
+          );
+        }
+        // Code was used by someone else
         throw new Error(
-          relationshipError.message || 'Failed to connect with sponsor. Please try again.'
+          'This invite code has already been used. Please ask your sponsor for a new code.'
         );
+      }
+
+      // Reactivate existing inactive relationship or create new one
+      if (existingRelationship) {
+        // Reactivate the inactive relationship
+        const { error: reactivateError } = await supabase
+          .from('sponsor_sponsee_relationships')
+          .update({
+            status: 'active',
+            disconnected_at: null,
+          })
+          .eq('id', existingRelationship.id);
+
+        if (reactivateError) {
+          logger.error('Failed to reactivate relationship', reactivateError as Error, {
+            category: LogCategory.DATABASE,
+          });
+          throw new Error('Failed to reconnect with sponsor. Please try again.');
+        }
+      } else {
+        // Create new relationship
+        const { error: relationshipError } = await supabase
+          .from('sponsor_sponsee_relationships')
+          .insert({
+            sponsor_id: invite.sponsor_id,
+            sponsee_id: user.id,
+            status: 'active',
+          });
+
+        if (relationshipError) {
+          logger.error('Sponsor-sponsee relationship creation failed', relationshipError as Error, {
+            category: LogCategory.DATABASE,
+          });
+          throw new Error('Failed to connect with sponsor. Please try again.');
+        }
       }
 
       // Use user.id (auth.uid()) instead of profile.id to satisfy RLS policy
@@ -324,8 +351,15 @@ export default function ProfileScreen() {
         .eq('id', invite.id);
 
       if (updateError) {
+        // Log with context for debugging - relationship already created so this is non-blocking
         logger.error('Invite code update failed', updateError as Error, {
           category: LogCategory.DATABASE,
+          context: {
+            inviteId: invite.id,
+            userId: user.id,
+            errorCode: updateError.code,
+            hint: updateError.hint,
+          },
         });
       }
 

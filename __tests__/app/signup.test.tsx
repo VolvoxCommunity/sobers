@@ -18,6 +18,8 @@ import { Platform } from 'react-native';
 // Mocks
 // =============================================================================
 
+// lucide-react-native is mocked via moduleNameMapper in jest.config.js
+
 // Mock expo-router
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -208,15 +210,15 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       // Get all "Create Account" elements and press the button (second one)
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'password123');
+        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'Password123!');
       });
     });
 
@@ -227,8 +229,8 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -247,8 +249,8 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -319,8 +321,8 @@ describe('SignupScreen', () => {
       render(<SignupScreen />);
 
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -338,7 +340,7 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -356,7 +358,7 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -374,7 +376,7 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
       fireEvent.changeText(passwordInputs[1], 'differentpassword');
 
       const buttons = screen.getAllByText('Create Account');
@@ -402,7 +404,7 @@ describe('SignupScreen', () => {
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
           'Error',
-          'Password must be at least 6 characters',
+          'Password must be at least 8 characters',
           undefined
         );
       });
@@ -420,8 +422,8 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'existing@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -441,8 +443,8 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
@@ -511,7 +513,7 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
       fireEvent.changeText(passwordInputs[1], 'mismatch');
 
       const buttons = screen.getAllByText('Create Account');
@@ -533,7 +535,7 @@ describe('SignupScreen', () => {
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
 
-      expect(window.alert).toHaveBeenCalledWith('Error: Password must be at least 6 characters');
+      expect(window.alert).toHaveBeenCalledWith('Error: Password must be at least 8 characters');
     });
 
     it('uses window.alert for sign up error', async () => {
@@ -545,8 +547,8 @@ describe('SignupScreen', () => {
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
 
       fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInputs[0], 'password123');
-      fireEvent.changeText(passwordInputs[1], 'password123');
+      fireEvent.changeText(passwordInputs[0], 'Password123!');
+      fireEvent.changeText(passwordInputs[1], 'Password123!');
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);

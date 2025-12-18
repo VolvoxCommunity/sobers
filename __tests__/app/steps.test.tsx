@@ -19,13 +19,22 @@ import { StepContent, Profile } from '@/types/database';
 
 // Mock expo-router for navigation testing
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    back: jest.fn(),
-    replace: jest.fn(),
-  }),
-}));
+jest.mock('expo-router', () => {
+  const React = require('react');
+  return {
+    useRouter: () => ({
+      push: mockPush,
+      back: jest.fn(),
+      replace: jest.fn(),
+    }),
+    // useFocusEffect runs the callback immediately (simulating focused state)
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
+    },
+  };
+});
 
 // Mock supabase - simpler approach
 let mockStepsData: StepContent[] | null = null;
