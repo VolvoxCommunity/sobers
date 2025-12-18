@@ -560,12 +560,14 @@ jest.mock('react-native-safe-area-context', () => ({
 // Mock react-native-toast-message
 jest.mock('react-native-toast-message', () => {
   const React = require('react');
+  const mockToast = ({ config, position, topOffset }) =>
+    React.createElement('Toast', { config, position, topOffset });
+  mockToast.show = jest.fn();
+  mockToast.hide = jest.fn();
+
   return {
     __esModule: true,
-    default: ({ config, position, topOffset }) =>
-      React.createElement('Toast', { config, position, topOffset }),
-    show: jest.fn(),
-    hide: jest.fn(),
+    default: mockToast,
     BaseToast: ({ children, ...props }) => React.createElement('BaseToast', props, children),
   };
 });
