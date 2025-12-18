@@ -113,3 +113,7 @@ play-store-key.json
 # Git worktrees
 worktrees/
 .worktrees/
+
+# E2E auth state
+e2e/.auth/
+!e2e/.auth/.gitkeep
