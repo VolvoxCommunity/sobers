@@ -116,4 +116,4 @@ worktrees/
 
 # E2E auth state
 e2e/.auth/
-!e2e/.auth/.gitkeep
+!e2e/.auth/.gitkeepplaywright-report/
