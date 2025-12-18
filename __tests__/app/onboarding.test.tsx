@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import OnboardingScreen from '@/app/onboarding';
 
 // =============================================================================
@@ -844,23 +844,65 @@ describe('OnboardingScreen', () => {
       });
     });
 
-    it.skip('shows timeout alert when profile update takes longer than 10 seconds', async () => {
-      // NOTE: This test is skipped because fake timers don't work well with React Testing Library's
-      // async waitFor and act. The timeout logic in useEffect involves:
-      // 1. Async operations (upsert, refreshProfile) completing
-      // 2. State updates (setAwaitingProfileUpdate)
-      // 3. useEffect re-running with the new state
-      // 4. setTimeout firing inside the useEffect
-      //
-      // When we switch to fake timers mid-test, the useEffect cleanup and re-execution
-      // don't properly schedule the timeout in the fake timer system.
-      //
-      // This scenario should be verified via E2E tests (Maestro) where real timers are used
-      // and we can observe actual timeout behavior in a production-like environment.
-      //
-      // Test intent: Verify that if profile update succeeds but profile never becomes complete
-      // (e.g., refreshProfile returns but profile state doesn't have required fields),
-      // a timeout alert is shown after 10 seconds and loading state is cleared.
+    it('shows timeout alert when profile update takes longer than 10 seconds', async () => {
+      // Enable fake timers for this test
+      jest.useFakeTimers();
+
+      // Mock successful upsert
+      getMockUpsert().mockResolvedValue({ error: null });
+
+      // Mock refreshProfile to "succeed" but profile remains incomplete
+      // (no sobriety_date or display_name set in the profile object)
+      mockRefreshProfile.mockResolvedValue(undefined);
+
+      // Keep profile incomplete so navigation doesn't happen
+      const incompleteProfile = { id: 'user-123', display_name: null, sobriety_date: null };
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: incompleteProfile,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+      });
+
+      render(<OnboardingScreen />);
+
+      // Fill and submit the form
+      const displayNameInput = screen.getByPlaceholderText('e.g. John D.');
+      fireEvent.changeText(displayNameInput, 'John D.');
+
+      // Advance timers to allow validation debounce to complete
+      await act(async () => {
+        jest.advanceTimersByTime(400);
+      });
+
+      // Accept terms
+      fireEvent.press(screen.getByText(/I agree to the/));
+
+      // Submit form
+      fireEvent.press(screen.getByText('Complete Setup'));
+
+      // Allow async operations (upsert, refreshProfile) to complete
+      await act(async () => {
+        await Promise.resolve(); // Flush microtasks
+        jest.advanceTimersByTime(100); // Small advance for any immediate effects
+      });
+
+      // Verify upsert was called
+      expect(getMockUpsert()).toHaveBeenCalled();
+
+      // Now advance time by 10 seconds to trigger the timeout
+      await act(async () => {
+        jest.advanceTimersByTime(10000);
+      });
+
+      // Timeout alert should be shown
+      expect(mockShowAlert).toHaveBeenCalledWith(
+        'Profile Update Timeout',
+        'Your profile update is taking longer than expected. Please try again.'
+      );
+
+      // Restore real timers
+      jest.useRealTimers();
     });
 
     it('shows error alert when upsert fails with network error', async () => {
