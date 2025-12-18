@@ -575,7 +575,7 @@ export default function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open settings"
           accessibilityLabelledBy="profile-title"
-          testID="settings-button"
+          testID="profile-settings-button"
         >
           <Settings size={22} color={theme.text} />
         </TouchableOpacity>

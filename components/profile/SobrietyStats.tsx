@@ -66,6 +66,7 @@ export default function SobrietyStats({
       </View>
 
       <Text
+        testID="profile-days-sober"
         style={styles.daysSober}
         accessibilityRole="text"
         accessibilityLabel={
@@ -88,6 +89,7 @@ export default function SobrietyStats({
           </Text>
         )}
         <TouchableOpacity
+          testID="profile-edit-button"
           style={styles.editButton}
           onPress={onEditSobrietyDate}
           accessibilityRole="button"

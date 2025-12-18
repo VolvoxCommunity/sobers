@@ -365,7 +365,7 @@ export default function JourneyScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: tabBarHeight }}>
         {profile?.sobriety_date && (
-          <View style={styles.statsCard}>
+          <View testID="journey-current-progress" style={styles.statsCard}>
             {!hasSlipUps ? (
               // Single metric display - no slip-ups
               <View style={styles.statMain}>
@@ -441,9 +441,17 @@ export default function JourneyScreen() {
             </Text>
           </View>
         ) : (
-          <View style={styles.timeline}>
+          <View testID="journey-milestones-list" style={styles.timeline}>
             {events.map((event, index) => (
-              <View key={event.id} style={styles.timelineItem}>
+              <View
+                key={event.id}
+                testID={
+                  event.type === 'milestone' || event.type === 'task_milestone'
+                    ? `milestone-earned-${event.id}`
+                    : undefined
+                }
+                style={styles.timelineItem}
+              >
                 <View style={styles.timelineLine}>
                   <View style={[styles.timelineDot, { backgroundColor: event.color }]} />
                   {index < events.length - 1 && <View style={styles.timelineConnector} />}

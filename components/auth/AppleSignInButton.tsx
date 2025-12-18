@@ -23,6 +23,8 @@ interface AppleSignInButtonProps {
   onSuccess?: () => void;
   /** Called on authentication failure (not called on user cancellation) */
   onError?: (error: Error) => void;
+  /** Test ID for the button container */
+  testID?: string;
 }
 
 // =============================================================================
@@ -36,7 +38,7 @@ interface AppleSignInButtonProps {
  * @param onError - Called when sign-in fails; not invoked if the user cancels the Apple prompt
  * @returns A React element rendering the Apple sign-in button on iOS, or `null` on other platforms
  */
-export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps) {
+export function AppleSignInButton({ onSuccess, onError, testID }: AppleSignInButtonProps) {
   const { isDark } = useTheme();
   const { refreshProfile } = useAuth();
 
@@ -198,7 +200,7 @@ export function AppleSignInButton({ onSuccess, onError }: AppleSignInButtonProps
   };
 
   return (
-    <View style={styles.container}>
+    <View testID={testID} style={styles.container}>
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
         buttonStyle={

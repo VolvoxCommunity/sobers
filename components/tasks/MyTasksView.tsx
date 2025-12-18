@@ -112,6 +112,7 @@ export default function MyTasksView({
 
       {/* Task List */}
       <ScrollView
+        testID="tasks-list"
         style={styles.content}
         contentContainerStyle={{ paddingBottom: tabBarHeight }}
         refreshControl={

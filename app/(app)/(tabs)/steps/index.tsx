@@ -117,7 +117,11 @@ export default function StepsScreen() {
         <Text style={styles.headerSubtitle}>Your path to recovery</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: tabBarHeight }}>
+      <ScrollView
+        testID="steps-list"
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: tabBarHeight }}
+      >
         {loading && (
           <View style={styles.centerContainer}>
             <Text style={styles.loadingText}>Loading steps...</Text>
@@ -142,6 +146,7 @@ export default function StepsScreen() {
             const isCompleted = !!progress[step.step_number];
             return (
               <Pressable
+                testID={`step-card-${step.step_number}`}
                 key={step.id}
                 style={[styles.stepCard, isCompleted && styles.stepCardCompleted]}
                 onPress={() => handleStepPress(step)}
@@ -155,7 +160,7 @@ export default function StepsScreen() {
                     {step.description}
                   </Text>
                   {isCompleted && (
-                    <View style={styles.completedBadge}>
+                    <View testID="step-completed-icon" style={styles.completedBadge}>
                       <CheckCircle size={14} color={theme.successAlt} />
                       <Text style={styles.completedText}>Completed</Text>
                     </View>

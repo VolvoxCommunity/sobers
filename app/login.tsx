@@ -96,6 +96,7 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
+              testID="login-email-input"
               style={styles.input}
               placeholder="your@email.com"
               accessibilityLabel="Email address"
@@ -115,6 +116,7 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <TextInput
+              testID="login-password-input"
               ref={passwordRef}
               style={styles.input}
               placeholder="••••••••"
@@ -131,6 +133,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity
+            testID="login-submit-button"
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading || googleLoading}
@@ -152,6 +155,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity
+            testID="login-google-button"
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading || googleLoading}
@@ -171,6 +175,7 @@ export default function LoginScreen() {
 
           {/* Apple Sign In - only renders on iOS */}
           <AppleSignInButton
+            testID="login-apple-button"
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
               showAlert('Error', error.message);
@@ -178,6 +183,7 @@ export default function LoginScreen() {
           />
 
           <TouchableOpacity
+            testID="login-signup-link"
             style={styles.secondaryButton}
             onPress={() => router.push('/signup')}
             disabled={loading || googleLoading}

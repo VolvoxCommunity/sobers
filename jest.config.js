@@ -14,6 +14,8 @@ module.exports = {
     // Only ignore worktrees subdirectories under rootDir, not the worktree itself
     '<rootDir>/worktrees/',
     '<rootDir>/.worktrees/',
+    // Exclude Playwright e2e tests from Jest
+    '<rootDir>/e2e/',
   ],
   modulePathIgnorePatterns: ['<rootDir>/worktrees/', '<rootDir>/.worktrees/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],

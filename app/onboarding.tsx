@@ -325,6 +325,7 @@ export default function OnboardingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Display Name</Text>
                 <TextInput
+                  testID="onboarding-display-name-input"
                   style={[styles.input, displayNameError && styles.inputError]}
                   placeholder="e.g. John D."
                   placeholderTextColor={theme.textTertiary}
@@ -376,6 +377,7 @@ export default function OnboardingScreen() {
               <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
 
               <TouchableOpacity
+                testID="onboarding-sobriety-date-input"
                 style={styles.dateDisplay}
                 onPress={() => setShowDatePicker(true)}
                 accessibilityRole="button"
@@ -478,6 +480,7 @@ export default function OnboardingScreen() {
             {/* Complete Setup Button */}
             <View style={styles.footer}>
               <TouchableOpacity
+                testID="onboarding-next-button"
                 style={[styles.button, (!isFormValid || loading) && styles.buttonDisabled]}
                 onPress={handleComplete}
                 disabled={!isFormValid || loading}

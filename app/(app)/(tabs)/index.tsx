@@ -232,8 +232,12 @@ export default function HomeScreen() {
           accessible={true}
           accessibilityLabel={`${loadingDaysSober ? 'Loading' : daysSober} days sober, milestone: ${milestone.text}`}
         >
-          <Text style={styles.daysSoberCount}>{loadingDaysSober ? '...' : daysSober}</Text>
-          <Text style={styles.daysSoberLabel}>Days Sober</Text>
+          <Text testID="home-days-sober-count" style={styles.daysSoberCount}>
+            {loadingDaysSober ? '...' : daysSober}
+          </Text>
+          <Text testID="home-days-sober-label" style={styles.daysSoberLabel}>
+            Days Sober
+          </Text>
           <View style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}>
             <Award size={16} color={theme.white} />
             <Text style={styles.milestoneText}>{milestone.text}</Text>
@@ -342,7 +346,7 @@ export default function HomeScreen() {
       />
 
       {tasks.length > 0 && (
-        <View style={styles.card}>
+        <View testID="home-tasks-section" style={styles.card}>
           <View style={styles.cardHeader}>
             <CheckCircle size={24} color={theme.textSecondary} />
             <Text style={styles.cardTitle}>Recent Tasks</Text>
@@ -365,6 +369,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
+            testID="home-view-tasks-button"
             style={styles.viewAllButton}
             onPress={() => router.push('/tasks')}
             accessibilityRole="button"
@@ -375,7 +380,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <View style={styles.quickActions}>
+      <View testID="home-quick-actions" style={styles.quickActions}>
         <TouchableOpacity
           style={styles.actionCard}
           onPress={() => router.push('/steps')}

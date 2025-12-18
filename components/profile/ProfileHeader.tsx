@@ -45,10 +45,10 @@ export default function ProfileHeader({
       <View style={styles.avatar} accessibilityRole="image">
         <Text style={styles.avatarText}>{initial}</Text>
       </View>
-      <Text style={styles.name} accessibilityRole="header">
+      <Text testID="profile-display-name" style={styles.name} accessibilityRole="header">
         {displayName ?? '?'}
       </Text>
-      <Text style={styles.email} accessibilityRole="text">
+      <Text testID="profile-email" style={styles.email} accessibilityRole="text">
         {email}
       </Text>
     </View>
