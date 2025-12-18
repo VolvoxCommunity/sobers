@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replace success and error alerts with toast notifications for non-blocking UX using `react-native-toast-message`
+- Migrate ~30 alert calls across auth, settings, profile, and task screens to unified toast API (`showToast.success()`, `showToast.error()`)
+- Add themed toast config with platform-specific shadows and app design language
 - Refactor TaskCompletionModal to TaskCompletionSheet using GlassBottomSheet for consistent UI pattern across all modals (swipe-to-dismiss, Liquid Glass styling, imperative API)
 - Extract platform-specific alert/confirm utilities into separate modules (`lib/alert/platform.native.ts`, `lib/alert/platform.web.ts`) following Metro auto-resolution pattern for cleaner architecture
 - Added mandatory CHANGELOG.md update requirement to development workflow in CLAUDE.md
