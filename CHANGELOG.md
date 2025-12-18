@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix FAB button overlapping with tab bar on tasks screen by increasing bottom offset
 - Fix step completion not showing in list after navigating back from detail screen by using useFocusEffect to refetch progress when screen gains focus
 - Fix theme toggle and all buttons not working in settings bottom sheet by reordering providers (ThemeProvider and AuthProvider must wrap BottomSheetModalProvider) and replacing TouchableOpacity with Pressable for proper touch handling inside BottomSheetScrollView
 - Fix login screen not redirecting to app after successful sign-in by adding Redirect component when user is authenticated
