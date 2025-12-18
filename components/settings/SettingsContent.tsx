@@ -44,7 +44,8 @@ import { logger, LogCategory } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { validateDisplayName } from '@/lib/validation';
 import { hexWithAlpha } from '@/lib/format';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 import packageJson from '../../package.json';
 
 import type { SettingsContentProps } from './types';
@@ -153,7 +154,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         logger.error('Sign out failed', err, {
           category: LogCategory.AUTH,
         });
-        showAlert('Error', 'Failed to sign out: ' + err.message);
+        showToast.error('Failed to sign out: ' + err.message);
       }
     }
   };
@@ -190,10 +191,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
     try {
       await deleteAccount();
       // Show success message before dismiss to ensure user sees it
-      showAlert(
-        'Account Deleted',
-        'Your account has been deleted. We wish you well on your journey.'
-      );
+      showToast.success('Your account has been deleted. We wish you well on your journey.');
       // Dismiss after alert to ensure user sees confirmation
       // Auth guard in _layout.tsx handles redirect to /login
       onDismiss?.();
@@ -202,7 +200,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       logger.error('Account deletion failed in settings', err, {
         category: LogCategory.AUTH,
       });
-      showAlert('Error', 'Failed to delete account: ' + err.message);
+      showToast.error('Failed to delete account: ' + err.message);
     } finally {
       setIsDeleting(false);
     }
@@ -262,7 +260,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       logger.error('Name save attempted with null profile', new Error(errorMessage), {
         category: LogCategory.DATABASE,
       });
-      showAlert('Error', errorMessage);
+      showToast.error(errorMessage);
       return;
     }
 
@@ -288,7 +286,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       setIsEditNameModalVisible(false);
       setNameValidationError(null);
 
-      showAlert('Success', 'Display name updated successfully');
+      showToast.success('Display name updated successfully');
     } catch (error: unknown) {
       // Handle both Error objects and Supabase error objects with message property
       const errorMessage =
@@ -301,7 +299,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       logger.error('Display name update failed', err, {
         category: LogCategory.DATABASE,
       });
-      showAlert('Error', errorMessage);
+      showToast.error(errorMessage);
     } finally {
       setIsSavingName(false);
     }
