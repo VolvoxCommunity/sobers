@@ -9,7 +9,8 @@ import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreati
 import { formatProfileName } from '@/lib/format';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 
 /**
  * Screen component for viewing, filtering, and managing tasks assigned to a sponsor's sponsees.
@@ -95,13 +96,13 @@ export default function ManageTasksScreen() {
 
       await fetchData();
 
-      showAlert('Success', 'Task deleted successfully');
+      showToast.success('Task deleted successfully');
     } catch (error: unknown) {
       logger.error('Task deletion failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to delete task.';
-      showAlert('Error', message);
+      showToast.error(message);
     }
   };
 
