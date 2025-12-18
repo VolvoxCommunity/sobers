@@ -17,7 +17,7 @@ import { Heart } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
-import { showAlert } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 
 /**
  * Render the app's login screen and manage email/password, Google, and Apple sign-in flows.
@@ -42,7 +42,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert('Error', 'Please fill in all fields');
+      showToast.error('Please fill in all fields');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function LoginScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in');
       logger.error('Sign in failed', err, { category: LogCategory.AUTH, email });
-      showAlert('Error', err.message);
+      showToast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export default function LoginScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
       logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
-      showAlert('Error', err.message);
+      showToast.error(err.message);
     } finally {
       setGoogleLoading(false);
     }
@@ -173,7 +173,7 @@ export default function LoginScreen() {
           <AppleSignInButton
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
-              showAlert('Error', error.message);
+              showToast.error(error.message);
             }}
           />
 
