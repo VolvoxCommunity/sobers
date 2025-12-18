@@ -556,3 +556,16 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 // lucide-react-native is mocked via moduleNameMapper in jest.config.js
+
+// Mock react-native-toast-message
+jest.mock('react-native-toast-message', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: ({ config, position, topOffset }) =>
+      React.createElement('Toast', { config, position, topOffset }),
+    show: jest.fn(),
+    hide: jest.fn(),
+    BaseToast: ({ children, ...props }) => React.createElement('BaseToast', props, children),
+  };
+});
