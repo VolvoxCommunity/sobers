@@ -10,12 +10,15 @@ import { supabase } from '@/lib/supabase';
 import { Task, Profile } from '@/types/database';
 import SegmentedControl from '@/components/SegmentedControl';
 import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
+import TaskCompletionSheet, {
+  TaskCompletionSheetRef,
+} from '@/components/sheets/TaskCompletionSheet';
 import MyTasksView from '@/components/tasks/MyTasksView';
 import ManageTasksView from '@/components/tasks/ManageTasksView';
-import TaskCompletionModal from '@/components/tasks/TaskCompletionModal';
 import { logger, LogCategory } from '@/lib/logger';
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 
 // =============================================================================
 // Types & Interfaces
@@ -49,11 +52,8 @@ export default function TasksScreen() {
 
   // My Tasks state
   const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+  const taskCompletionSheetRef = useRef<TaskCompletionSheetRef>(null);
 
   // Manage state
   const [manageTasks, setManageTasks] = useState<Task[]>([]);
@@ -170,22 +170,21 @@ export default function TasksScreen() {
   // My Tasks Handlers
   // =============================================================================
 
-  const handleCompleteTask = (task: Task) => {
-    setSelectedTask(task);
-    setCompletionNotes('');
-    setShowCompleteModal(true);
-    // Track task viewed event
+  /**
+   * Opens the task completion sheet for the given task.
+   */
+  const handleCompleteTask = useCallback((task: Task) => {
     trackEvent(AnalyticsEvents.TASK_VIEWED, { task_id: task.id });
-  };
+    taskCompletionSheetRef.current?.present(task);
+  }, []);
 
-  const submitTaskCompletion = async () => {
-    if (!selectedTask) return;
-
-    setIsSubmitting(true);
-
-    try {
+  /**
+   * Handles task completion submission from the sheet.
+   */
+  const handleTaskCompleted = useCallback(
+    async (task: Task, notes: string) => {
       const completedAt = new Date();
-      const createdAt = new Date(selectedTask.created_at);
+      const createdAt = new Date(task.created_at);
       const daysToComplete = Math.floor(
         (completedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
       );
@@ -195,44 +194,40 @@ export default function TasksScreen() {
         .update({
           status: 'completed',
           completed_at: completedAt.toISOString(),
-          completion_notes: completionNotes.trim() || null,
+          completion_notes: notes.trim() || null,
         })
-        .eq('id', selectedTask.id);
+        .eq('id', task.id);
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Task completion failed', new Error(JSON.stringify(error)), {
+          category: LogCategory.DATABASE,
+        });
+        showToast.error('Failed to complete task');
+        throw error;
+      }
 
       await supabase.from('notifications').insert({
-        user_id: selectedTask.sponsor_id,
+        user_id: task.sponsor_id,
         type: 'task_completed',
         title: 'Task Completed',
-        content: `${profile?.display_name} has completed: ${selectedTask.title}`,
+        content: `${profile?.display_name} has completed: ${task.title}`,
         data: {
-          task_id: selectedTask.id,
-          step_number: selectedTask.step_number,
+          task_id: task.id,
+          step_number: task.step_number,
         },
       });
 
       // Track task completed event
       trackEvent(AnalyticsEvents.TASK_COMPLETED, {
-        task_id: selectedTask.id,
+        task_id: task.id,
         days_to_complete: daysToComplete,
       });
 
-      setShowCompleteModal(false);
-      setSelectedTask(null);
-      setCompletionNotes('');
       await fetchMyTasks();
-
-      showAlert('Success', 'Task marked as completed!');
-    } catch (error) {
-      logger.error('Task completion failed', error as Error, {
-        category: LogCategory.DATABASE,
-      });
-      showAlert('Error', 'Failed to complete task');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      showToast.success('Task marked as completed!');
+    },
+    [profile?.display_name, fetchMyTasks]
+  );
 
   // =============================================================================
   // Manage Handlers
@@ -252,12 +247,12 @@ export default function TasksScreen() {
 
       await fetchManageData();
 
-      showAlert('Success', 'Task deleted successfully');
+      showToast.success('Task deleted successfully');
     } catch (error) {
       logger.error('Task deletion failed', error as Error, {
         category: LogCategory.DATABASE,
       });
-      showAlert('Error', 'Failed to delete task');
+      showToast.error('Failed to delete task');
     }
   };
 
@@ -337,15 +332,11 @@ export default function TasksScreen() {
             onCompleteTask={handleCompleteTask}
           />
 
-          <TaskCompletionModal
-            visible={showCompleteModal}
-            task={selectedTask}
-            notes={completionNotes}
-            isSubmitting={isSubmitting}
+          <TaskCompletionSheet
+            ref={taskCompletionSheetRef}
             theme={theme}
-            onNotesChange={setCompletionNotes}
-            onClose={() => setShowCompleteModal(false)}
-            onSubmit={submitTaskCompletion}
+            onDismiss={() => {}}
+            onTaskCompleted={handleTaskCompleted}
           />
         </>
       ) : (
