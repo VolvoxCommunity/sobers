@@ -29,7 +29,8 @@ import { X, Calendar, Heart } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import type { Profile } from '@/types/database';
 
@@ -267,9 +268,8 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
         handlePressClose();
 
         // Show success message
-        showAlert(
-          'Setback Recorded',
-          "Your setback has been recorded. This took real courage. Remember: every day is a fresh start, and you're not alone on this journey."
+        showToast.success(
+          "Setback recorded. Every day is a fresh start — you're not alone on this journey."
         );
       } catch (err) {
         logger.error('Slip-up logging failed', err as Error, {
