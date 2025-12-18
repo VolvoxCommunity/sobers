@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-12-18
+
 ### Added
 
 - Add dedicated tests for SettingsContent component covering App Updates (OTA) UI states: idle, checking, downloading, ready, up-to-date, and error
 - Add `pnpm release:patch`, `pnpm release:minor`, `pnpm release:major` scripts for automated releases
 - Add npm lifecycle hooks (`version`, `postversion`) to automate version sync, commit, tag, and push
+- Add toast notification system with `showToast.success()`, `showToast.error()`, `showToast.info()` API
 
 ### Fixed
 
@@ -27,13 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Replace success and error alerts with toast notifications for non-blocking UX using `react-native-toast-message`
-- Migrate ~30 alert calls across auth, settings, profile, and task screens to unified toast API (`showToast.success()`, `showToast.error()`)
+- Migrate ~30 alert calls across auth, settings, profile, and task screens to unified toast API
 - Add themed toast config with platform-specific shadows and app design language
 - Refactor TaskCompletionModal to TaskCompletionSheet using GlassBottomSheet for consistent UI pattern across all modals (swipe-to-dismiss, Liquid Glass styling, imperative API)
 - Extract platform-specific alert/confirm utilities into separate modules (`lib/alert/platform.native.ts`, `lib/alert/platform.web.ts`) following Metro auto-resolution pattern for cleaner architecture
 - Added mandatory CHANGELOG.md update requirement to development workflow in CLAUDE.md
 - Updated release checklist to clarify [Unreleased] → version transition process
-- Added dedicated "CHANGELOG Maintenance (CRITICAL)" section with comprehensive guidelines based on [Keep a Changelog v1.1.0](https://keepachangelog.com/en/1.1.0/), including all 6 change categories (Added, Changed, Deprecated, Removed, Fixed, Security), guiding principles, and anti-patterns to avoid
+- Added dedicated "CHANGELOG Maintenance (CRITICAL)" section with comprehensive guidelines
 - Simplified release checklist from 6 manual steps to 4 steps with automated release command
 
 ## [1.0.1] - 2025-12-17
