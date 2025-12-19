@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Developer Tools section in Settings (visible only in `__DEV__` mode) with: Test Sentry Error, Verbose Logging toggle, Copy User ID, Reset Onboarding, Clear Slip-Ups, Time Travel, Offline Mode toggle, Fire Test Analytics Event, and Analytics Debug toggle
+- Add Developer Tools section in Settings (visible only in `__DEV__` mode) with: Test Sentry Error, Verbose Logging toggle, Copy User ID, Reset Onboarding, Clear Slip-Ups, Time Travel, Fire Test Analytics Event, and Analytics Debug toggle
 - Add `DevToolsContext` for managing dev tools state across the app
 - Add stateful `GlassBottomSheet` mock to `jest.setup.js` for proper modal visibility testing
 - Add `BottomSheetTextInput`, `BottomSheetFooter`, and `BottomSheetHandle` to `@gorhom/bottom-sheet` mock

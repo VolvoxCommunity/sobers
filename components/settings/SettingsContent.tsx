@@ -44,7 +44,6 @@ import {
   Bug,
   Terminal,
   Clock,
-  WifiOff,
   BarChart2,
   RotateCcw,
   Zap,
@@ -92,8 +91,6 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
     setVerboseLogging,
     timeTravelDays,
     setTimeTravelDays,
-    offlineMode,
-    setOfflineMode,
     analyticsDebug,
     setAnalyticsDebug,
   } = useDevTools();
@@ -395,28 +392,7 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
 
         <View style={styles.separator} />
 
-        {/* Network & Analytics */}
-        <Pressable
-          style={styles.menuItem}
-          onPress={() => {
-            setOfflineMode(!offlineMode);
-            showToast.info(offlineMode ? 'Offline mode disabled' : 'Offline mode enabled');
-          }}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: offlineMode }}
-          testID="toggle-offline-mode"
-        >
-          <View style={styles.menuItemLeft}>
-            <WifiOff size={20} color={offlineMode ? theme.error : theme.text} />
-            <Text style={styles.menuItemText}>Offline Mode</Text>
-          </View>
-          <View style={[styles.toggle, offlineMode && styles.toggleActive]}>
-            <Text style={styles.toggleText}>{offlineMode ? 'ON' : 'OFF'}</Text>
-          </View>
-        </Pressable>
-
-        <View style={styles.separator} />
-
+        {/* Analytics */}
         <Pressable
           style={styles.menuItem}
           onPress={handleFireTestEvent}
