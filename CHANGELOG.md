@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix Vercel deployment by upgrading @sentry/react-native to ^7.8.0 (7.2.0 was incompatible with Expo SDK 54 Metro bundler internal APIs)
+- Fix Vercel deployment by using standard Expo Metro config instead of Sentry's `getSentryExpoConfig` (Sentry Metro serializer is incompatible with Metro 0.83+ in Expo SDK 54)
 - Fix toast messages being cut off by replacing BaseToast with custom component that properly wraps text without truncation
 - Fix Reset Onboarding dev tool by clearing `display_name` and `sobriety_date` fields (update instead of delete to avoid RLS/FK constraints) and using explicit `router.replace('/onboarding')` navigation
 
