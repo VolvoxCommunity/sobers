@@ -3,6 +3,9 @@ import { SignupPage } from '../../pages';
 import { generateSignupEmail } from '../../fixtures/test-data';
 import { cleanupSignupUsers } from '../../utils/supabase-helpers';
 
+// Signup tests must run without authentication
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Signup', () => {
   let signupPage: SignupPage;
 

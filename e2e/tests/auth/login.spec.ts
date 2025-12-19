@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../pages';
 import { TEST_USERS } from '../../fixtures/test-data';
 
+// Login tests must run without authentication
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Login', () => {
   let loginPage: LoginPage;
 
