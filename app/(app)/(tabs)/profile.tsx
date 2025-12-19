@@ -28,6 +28,7 @@ import EnterInviteCodeSheet, {
 } from '@/components/sheets/EnterInviteCodeSheet';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 import { showAlert, showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import SobrietyStats from '@/components/profile/SobrietyStats';
 import RelationshipCard from '@/components/profile/RelationshipCard';
@@ -188,7 +189,7 @@ export default function ProfileScreen() {
     });
 
     if (error) {
-      showAlert('Error', 'Failed to generate invite code');
+      showToast.error('Failed to generate invite code');
     } else {
       if (Platform.OS === 'web') {
         const shouldCopy = await showConfirm(
@@ -199,7 +200,7 @@ export default function ProfileScreen() {
         );
         if (shouldCopy) {
           navigator.clipboard.writeText(code);
-          showAlert('Success', 'Invite code copied to clipboard!');
+          showToast.success('Invite code copied to clipboard!');
         }
       } else {
         showAlert(
@@ -383,7 +384,7 @@ export default function ProfileScreen() {
       await fetchRelationships();
 
       // Show success message
-      showAlert('Success', `Connected with ${sponsorProfile.display_name ?? 'Unknown'}`);
+      showToast.success(`Connected with ${sponsorProfile.display_name ?? 'Unknown'}`);
     } catch (error: unknown) {
       logger.error('Join with invite code failed', error as Error, {
         category: LogCategory.DATABASE,
@@ -448,13 +449,13 @@ export default function ProfileScreen() {
 
       await fetchRelationships();
 
-      showAlert('Success', 'Successfully disconnected');
+      showToast.success('Successfully disconnected');
     } catch (error: unknown) {
       logger.error('Disconnect relationship failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to disconnect.';
-      showAlert('Error', message);
+      showToast.error(message);
     }
   };
 
@@ -479,7 +480,7 @@ export default function ProfileScreen() {
       selectedDate.setHours(0, 0, 0, 0);
 
       if (selectedDate > today) {
-        showAlert('Invalid Date', 'Sobriety date cannot be in the future');
+        showToast.error('Sobriety date cannot be in the future');
         return;
       }
 
@@ -506,13 +507,13 @@ export default function ProfileScreen() {
 
         await refreshProfile();
 
-        showAlert('Success', 'Sobriety date updated successfully');
+        showToast.success('Sobriety date updated successfully');
       } catch (error: unknown) {
         logger.error('Sobriety date update failed', error as Error, {
           category: LogCategory.DATABASE,
         });
         const message = error instanceof Error ? error.message : 'Failed to update sobriety date.';
-        showAlert('Error', message);
+        showToast.error(message);
       }
     },
     [profile, userTimezone, refreshProfile]

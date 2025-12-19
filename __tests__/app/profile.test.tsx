@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import ProfileScreen from '@/app/(app)/(tabs)/profile';
 
 // =============================================================================
@@ -1432,8 +1433,7 @@ describe('ProfileScreen', () => {
       });
     });
 
-    it('shows error alert when invite code generation fails', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows error toast when invite code generation fails', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
@@ -1443,10 +1443,8 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Generate Invite Code'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          'Error',
-          'Failed to generate invite code',
-          undefined
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to generate invite code' })
         );
       });
     });
@@ -1886,7 +1884,9 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Disconnect'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Successfully disconnected', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Successfully disconnected' })
+        );
       });
     });
   });
@@ -2080,7 +2080,9 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Disconnect'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to disconnect.', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to disconnect.' })
+        );
       });
     });
   });
@@ -2326,11 +2328,9 @@ describe('ProfileScreen', () => {
         // Call the captured callback (simulating sheet submission)
         await capturedOnSubmit!('TEST1234');
 
-        // Should show success alert
-        expect(Alert.alert).toHaveBeenCalledWith(
-          'Success',
-          'Connected with Test Sponsor',
-          undefined
+        // Should show success toast
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Connected with Test Sponsor' })
         );
       });
     });
@@ -2353,11 +2353,13 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation(() => ({
-                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                })),
-              })),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2422,11 +2424,13 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation(() => ({
-                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                })),
-              })),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2488,11 +2492,13 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation(() => ({
-                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                })),
-              })),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2556,11 +2562,13 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation(() => ({
-                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                })),
-              })),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2624,38 +2632,16 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation((field: string) => {
-                  // Check for existing relationship query
-                  if (field === 'sponsor_id') {
-                    return {
-                      eq: jest.fn().mockImplementation((field2: string) => {
-                        if (field2 === 'sponsee_id') {
-                          return {
-                            eq: jest.fn().mockReturnValue({
-                              maybeSingle: jest.fn().mockResolvedValue({
-                                data: { id: 'existing-rel' }, // Existing relationship
-                                error: null,
-                              }),
-                            }),
-                          };
-                        }
-                        return {
-                          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                        };
-                      }),
-                    };
-                  }
-                  if (field === 'sponsee_id') {
-                    return {
-                      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                    };
-                  }
-                  return {
-                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                  };
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({
+                      data: { id: 'existing-rel', status: 'active' }, // Existing relationship
+                      error: null,
+                    }),
+                  }),
                 }),
-              })),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2719,11 +2705,13 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation(() => ({
-                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                })),
-              })),
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
             };
           }
           if (table === 'tasks') {
@@ -2787,37 +2775,16 @@ describe('ProfileScreen', () => {
           }
           if (table === 'sponsor_sponsee_relationships') {
             return {
-              select: jest.fn().mockImplementation(() => ({
-                eq: jest.fn().mockImplementation((field: string) => {
-                  if (field === 'sponsor_id') {
-                    return {
-                      eq: jest.fn().mockImplementation((field2: string) => {
-                        if (field2 === 'sponsee_id') {
-                          return {
-                            eq: jest.fn().mockReturnValue({
-                              maybeSingle: jest.fn().mockResolvedValue({
-                                data: null, // No existing relationship
-                                error: null,
-                              }),
-                            }),
-                          };
-                        }
-                        return {
-                          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                        };
-                      }),
-                    };
-                  }
-                  if (field === 'sponsee_id') {
-                    return {
-                      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                    };
-                  }
-                  return {
-                    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-                  };
+              select: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  eq: jest.fn().mockReturnValue({
+                    maybeSingle: jest.fn().mockResolvedValue({
+                      data: null, // No existing relationship
+                      error: null,
+                    }),
+                  }),
                 }),
-              })),
+              }),
               insert: jest
                 .fn()
                 .mockResolvedValue({ error: { message: 'Database constraint error' } }),
@@ -2844,7 +2811,9 @@ describe('ProfileScreen', () => {
           expect(capturedOnSubmit).not.toBeNull();
         });
 
-        await expect(capturedOnSubmit!('RELFAIL1')).rejects.toThrow('Database constraint error');
+        await expect(capturedOnSubmit!('RELFAIL1')).rejects.toThrow(
+          'Failed to connect with sponsor. Please try again.'
+        );
       });
     });
   });

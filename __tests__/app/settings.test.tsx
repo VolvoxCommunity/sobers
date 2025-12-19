@@ -12,6 +12,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import SettingsScreen from '@/app/(app)/settings';
 
+// Import Toast mock for assertions
+import Toast from 'react-native-toast-message';
+
 // =============================================================================
 // Mocks
 // =============================================================================
@@ -183,20 +186,13 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
-// Mock @/lib/alert - import actual implementation for web tests
-const mockShowAlert = jest.fn();
+// Mock @/lib/alert - only showConfirm is used for confirmations
 const mockShowConfirm = jest.fn();
 let mockUseRealAlertImplementation = false;
 
 jest.mock('@/lib/alert', () => {
   const actualAlert = jest.requireActual('@/lib/alert');
   return {
-    showAlert: (...args: unknown[]) => {
-      if (mockUseRealAlertImplementation) {
-        return actualAlert.showAlert(...args);
-      }
-      return mockShowAlert(...args);
-    },
     showConfirm: (...args: unknown[]) => {
       if (mockUseRealAlertImplementation) {
         return actualAlert.showConfirm(...args);
@@ -227,8 +223,8 @@ describe('SettingsScreen', () => {
     // Reset profile to default for each test
     mockProfile = defaultMockProfile;
     // Reset alert mocks with default behaviors
-    mockShowAlert.mockClear();
     mockShowConfirm.mockResolvedValue(true);
+    (Toast.show as jest.Mock).mockClear();
   });
 
   describe('Theme Section', () => {
@@ -481,7 +477,7 @@ describe('SettingsScreen', () => {
       });
     });
 
-    it('shows error alert when sign out fails', async () => {
+    it('shows error toast when sign out fails', async () => {
       mockSignOut.mockRejectedValueOnce(new Error('Sign out failed'));
       mockShowConfirm.mockResolvedValueOnce(true);
 
@@ -494,7 +490,9 @@ describe('SettingsScreen', () => {
       });
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to sign out: Sign out failed');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to sign out: Sign out failed' })
+        );
       });
     });
 
@@ -592,7 +590,7 @@ describe('SettingsScreen', () => {
       });
     });
 
-    it('shows error alert when delete account fails', async () => {
+    it('shows error toast when delete account fails', async () => {
       mockDeleteAccount.mockRejectedValueOnce(new Error('Deletion failed'));
       mockShowConfirm.mockResolvedValue(true);
 
@@ -607,9 +605,11 @@ describe('SettingsScreen', () => {
       fireEvent.press(screen.getByLabelText('Delete your account permanently'));
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith(
-          'Error',
-          'Failed to delete account: Deletion failed'
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'error',
+            text1: 'Failed to delete account: Deletion failed',
+          })
         );
       });
     });
@@ -943,7 +943,7 @@ describe('SettingsScreen', () => {
       });
     });
 
-    it('shows error alert on save failure', async () => {
+    it('shows error toast on save failure', async () => {
       const mockEq = jest.fn().mockResolvedValue({ error: { message: 'Database error' } });
       const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
       mockSupabaseFrom.mockReturnValue({ update: mockUpdate });
@@ -960,7 +960,9 @@ describe('SettingsScreen', () => {
       fireEvent.press(getByTestId('save-name-button'));
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Database error');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Database error' })
+        );
       });
     });
 
@@ -1314,7 +1316,7 @@ describe('SettingsScreen - Web Platform', () => {
       expect(mockSignOut).not.toHaveBeenCalled();
     });
 
-    it('shows error alert when sign out fails on web', async () => {
+    it('shows error toast when sign out fails on web', async () => {
       mockSignOut.mockRejectedValueOnce(new Error('Network error'));
 
       render(<SettingsScreen />);
@@ -1322,8 +1324,8 @@ describe('SettingsScreen - Web Platform', () => {
       fireEvent.press(screen.getByLabelText('Sign out of your account'));
 
       await waitFor(() => {
-        expect(global.window.alert).toHaveBeenCalledWith(
-          'Error: Failed to sign out: Network error'
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to sign out: Network error' })
         );
       });
     });
@@ -1349,7 +1351,7 @@ describe('SettingsScreen - Web Platform', () => {
       });
     });
 
-    it('shows success alert after account deletion on web', async () => {
+    it('shows success toast after account deletion on web', async () => {
       render(<SettingsScreen />);
 
       fireEvent.press(screen.getByLabelText('Danger Zone section'));
@@ -1361,8 +1363,11 @@ describe('SettingsScreen - Web Platform', () => {
       fireEvent.press(screen.getByLabelText('Delete your account permanently'));
 
       await waitFor(() => {
-        expect(global.window.alert).toHaveBeenCalledWith(
-          'Account Deleted: Your account has been deleted. We wish you well on your journey.'
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'success',
+            text1: 'Your account has been deleted. We wish you well on your journey.',
+          })
         );
       });
     });
@@ -1407,7 +1412,7 @@ describe('SettingsScreen - Web Platform', () => {
       expect(mockDeleteAccount).not.toHaveBeenCalled();
     });
 
-    it('shows error alert when delete fails on web', async () => {
+    it('shows error toast when delete fails on web', async () => {
       mockDeleteAccount.mockRejectedValueOnce(new Error('Delete failed'));
 
       render(<SettingsScreen />);
@@ -1421,8 +1426,11 @@ describe('SettingsScreen - Web Platform', () => {
       fireEvent.press(screen.getByLabelText('Delete your account permanently'));
 
       await waitFor(() => {
-        expect(global.window.alert).toHaveBeenCalledWith(
-          'Error: Failed to delete account: Delete failed'
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'error',
+            text1: 'Failed to delete account: Delete failed',
+          })
         );
       });
     });

@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { validateDisplayName } from '@/lib/validation';
-import { showAlert } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 import { Calendar, LogOut, Info, Square, CheckSquare } from 'lucide-react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
@@ -144,10 +144,7 @@ export default function OnboardingScreen() {
       if (awaitingProfileUpdate) {
         setAwaitingProfileUpdate(false);
         setLoading(false);
-        showAlert(
-          'Profile Update Timeout',
-          'Your profile update is taking longer than expected. Please try again.'
-        );
+        showToast.error('Your profile update is taking longer than expected. Please try again.');
       }
     }, 10000); // 10 second timeout
 
@@ -195,9 +192,9 @@ export default function OnboardingScreen() {
       router.replace('/login');
     } catch (error) {
       if (error instanceof Error) {
-        showAlert('Error', error.message);
+        showToast.error(error.message);
       } else {
-        showAlert('Error', 'An unknown error occurred');
+        showToast.error('An unknown error occurred');
       }
     }
   };
@@ -265,7 +262,7 @@ export default function OnboardingScreen() {
       setAwaitingProfileUpdate(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update profile';
-      showAlert('Error', message);
+      showToast.error(message);
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import SignupScreen from '@/app/signup';
 import { Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // =============================================================================
 // Mocks
@@ -284,8 +285,7 @@ describe('SignupScreen', () => {
       });
     });
 
-    it('shows error alert when Google sign in fails', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows error toast when Google sign in fails', async () => {
       mockSignInWithGoogle.mockRejectedValueOnce(new Error('Google auth failed'));
 
       render(<SignupScreen />);
@@ -293,12 +293,13 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google auth failed', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Google auth failed' })
+        );
       });
     });
 
     it('handles non-Error objects in Google sign in catch', async () => {
-      const { Alert } = jest.requireMock('react-native');
       mockSignInWithGoogle.mockRejectedValueOnce('string error');
 
       render(<SignupScreen />);
@@ -306,18 +307,15 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          'Error',
-          'Failed to sign in with Google',
-          undefined
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to sign in with Google' })
         );
       });
     });
   });
 
   describe('Form Validation Errors', () => {
-    it('shows alert when email is empty', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows toast when email is empty', async () => {
       render(<SignupScreen />);
 
       const passwordInputs = screen.getAllByPlaceholderText('••••••••');
@@ -328,12 +326,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+        );
       });
     });
 
-    it('shows alert when password is empty', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows toast when password is empty', async () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -346,12 +345,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+        );
       });
     });
 
-    it('shows alert when confirm password is empty', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows toast when confirm password is empty', async () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -364,12 +364,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please fill in all fields', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+        );
       });
     });
 
-    it('shows alert when passwords do not match', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows toast when passwords do not match', async () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -383,12 +384,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Passwords do not match', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Passwords do not match' })
+        );
       });
     });
 
-    it('shows alert when password is too short', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows toast when password is too short', async () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -402,18 +404,18 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          'Error',
-          'Password must be at least 8 characters',
-          undefined
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'error',
+            text1: 'Password must be at least 8 characters',
+          })
         );
       });
     });
   });
 
   describe('Sign Up Error Handling', () => {
-    it('shows error alert when sign up fails', async () => {
-      const { Alert } = jest.requireMock('react-native');
+    it('shows error toast when sign up fails', async () => {
       mockSignUp.mockRejectedValueOnce(new Error('Email already registered'));
 
       render(<SignupScreen />);
@@ -429,12 +431,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Email already registered', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Email already registered' })
+        );
       });
     });
 
     it('handles non-Error objects in sign up catch', async () => {
-      const { Alert } = jest.requireMock('react-native');
       mockSignUp.mockRejectedValueOnce('string error');
 
       render(<SignupScreen />);
@@ -450,7 +453,9 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to create account', undefined);
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to create account' })
+        );
       });
     });
   });
@@ -486,27 +491,25 @@ describe('SignupScreen', () => {
 
     beforeEach(() => {
       Platform.OS = 'web';
-      global.window = {
-        alert: jest.fn(),
-        confirm: jest.fn(),
-      } as any;
+      (Toast.show as jest.Mock).mockClear();
     });
 
     afterEach(() => {
       Platform.OS = originalPlatform;
-      delete (global as any).window;
     });
 
-    it('uses window.alert for validation errors', () => {
+    it('shows toast for validation errors on web', () => {
       render(<SignupScreen />);
 
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
 
-      expect(window.alert).toHaveBeenCalledWith('Error: Please fill in all fields');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+      );
     });
 
-    it('uses window.alert for password mismatch', () => {
+    it('shows toast for password mismatch on web', () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -519,10 +522,12 @@ describe('SignupScreen', () => {
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
 
-      expect(window.alert).toHaveBeenCalledWith('Error: Passwords do not match');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'error', text1: 'Passwords do not match' })
+      );
     });
 
-    it('uses window.alert for short password', () => {
+    it('shows toast for short password on web', () => {
       render(<SignupScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -535,10 +540,12 @@ describe('SignupScreen', () => {
       const buttons = screen.getAllByText('Create Account');
       fireEvent.press(buttons[buttons.length - 1]);
 
-      expect(window.alert).toHaveBeenCalledWith('Error: Password must be at least 8 characters');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'error', text1: 'Password must be at least 8 characters' })
+      );
     });
 
-    it('uses window.alert for sign up error', async () => {
+    it('shows toast for sign up error on web', async () => {
       mockSignUp.mockRejectedValueOnce(new Error('Web error'));
 
       render(<SignupScreen />);
@@ -554,11 +561,13 @@ describe('SignupScreen', () => {
       fireEvent.press(buttons[buttons.length - 1]);
 
       await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith('Error: Web error');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Web error' })
+        );
       });
     });
 
-    it('uses window.alert for Google sign in error', async () => {
+    it('shows toast for Google sign in error on web', async () => {
       mockSignInWithGoogle.mockRejectedValueOnce(new Error('Web Google error'));
 
       render(<SignupScreen />);
@@ -566,7 +575,9 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByText('Continue with Google'));
 
       await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith('Error: Web Google error');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Web Google error' })
+        );
       });
     });
   });

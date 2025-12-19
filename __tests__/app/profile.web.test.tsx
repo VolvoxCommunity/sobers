@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import ProfileScreen from '@/app/(app)/(tabs)/profile';
 import { Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // Mocks
 jest.mock('@/lib/supabase', () => ({
@@ -143,6 +144,7 @@ describe('ProfileScreen Web', () => {
       alert: jest.fn(),
       confirm: jest.fn(() => true),
     } as any;
+    (Toast.show as jest.Mock).mockClear();
 
     const { supabase } = jest.requireMock('@/lib/supabase');
     supabase.from.mockImplementation(() => createBuilder());
@@ -154,7 +156,7 @@ describe('ProfileScreen Web', () => {
     jest.clearAllMocks();
   });
 
-  it('uses window.confirm and alert for update sobriety date success', async () => {
+  it('uses window.confirm and shows toast for update sobriety date success', async () => {
     const { supabase } = jest.requireMock('@/lib/supabase');
     supabase.from.mockImplementation((table: string) => {
       if (table === 'profiles') {
@@ -187,11 +189,13 @@ describe('ProfileScreen Web', () => {
     expect(window.confirm).toHaveBeenCalled();
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Success: Sobriety date updated successfully');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'success', text1: 'Sobriety date updated successfully' })
+      );
     });
   });
 
-  it('shows error alert for update sobriety date failure', async () => {
+  it('shows error toast for update sobriety date failure', async () => {
     const { supabase } = jest.requireMock('@/lib/supabase');
     supabase.from.mockImplementation((table: string) => {
       if (table === 'profiles') {
@@ -222,7 +226,9 @@ describe('ProfileScreen Web', () => {
     expect(window.confirm).toHaveBeenCalled();
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Error: Update Failed');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'error', text1: 'Update Failed' })
+      );
     });
   });
 });

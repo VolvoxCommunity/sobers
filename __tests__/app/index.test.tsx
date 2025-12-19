@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import HomeScreen from '@/app/(app)/(tabs)/index';
 import { Task, SponsorSponseeRelationship, Profile } from '@/types/database';
 
@@ -19,14 +20,13 @@ import { Task, SponsorSponseeRelationship, Profile } from '@/types/database';
 // Mocks
 // =============================================================================
 
-// Mock showAlert and showConfirm
+// Mock showConfirm
 jest.mock('@/lib/alert', () => ({
-  showAlert: jest.fn(),
   showConfirm: jest.fn(),
 }));
 
 // Import the mocked functions so we can control them in tests
-const { showAlert: mockShowAlert, showConfirm: mockShowConfirm } = jest.requireMock('@/lib/alert');
+const { showConfirm: mockShowConfirm } = jest.requireMock('@/lib/alert');
 
 // Mock data - using closures to allow per-test control
 let mockRelationshipsAsSponsor: SponsorSponseeRelationship[] = [];
@@ -268,8 +268,8 @@ const createMockTask = (): Task => ({
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockShowAlert.mockClear();
     mockShowConfirm.mockClear();
+    (Toast.show as jest.Mock).mockClear();
     mockRelationshipsAsSponsor = [];
     mockRelationshipsAsSponsee = [];
     mockTasks = [];
@@ -956,7 +956,9 @@ describe('HomeScreen', () => {
       fireEvent.press(disconnectButtons[0]);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Success', 'Successfully disconnected');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Successfully disconnected' })
+        );
       });
     });
 
@@ -976,7 +978,7 @@ describe('HomeScreen', () => {
       // Should not show success message
       await waitFor(
         () => {
-          expect(mockShowAlert).not.toHaveBeenCalledWith('Success', expect.any(String));
+          expect(Toast.show).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
         },
         { timeout: 100 }
       );
@@ -1047,7 +1049,9 @@ describe('HomeScreen', () => {
       fireEvent.press(disconnectButtons[0]);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Database error');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Database error' })
+        );
       });
     });
   });

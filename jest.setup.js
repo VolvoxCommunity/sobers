@@ -443,6 +443,54 @@ jest.mock('@/lib/supabase', () => {
   };
 });
 
+// Mock @/lib/alert platform module
+// Uses React Native Alert by default, but switches to window.alert/confirm for web tests
+jest.mock('@/lib/alert/platform', () => {
+  const { Alert, Platform } = require('react-native');
+  return {
+    showAlertPlatform: (title, message, buttons) => {
+      // Check Platform.OS at runtime to support web tests
+      if (Platform.OS === 'web' && typeof global.window?.alert === 'function') {
+        const alertText = message ? `${title}: ${message}` : title;
+        global.window.alert(alertText);
+      } else {
+        Alert.alert(title, message, buttons);
+      }
+    },
+    showConfirmPlatform: (
+      title,
+      message,
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
+      destructive = false
+    ) => {
+      // Check Platform.OS at runtime to support web tests
+      if (Platform.OS === 'web' && typeof global.window?.confirm === 'function') {
+        const confirmMessage = `${title}\n\n${message}`;
+        return Promise.resolve(global.window.confirm(confirmMessage));
+      }
+      return new Promise((resolve) => {
+        Alert.alert(
+          title,
+          message,
+          [
+            { text: cancelText, style: 'cancel', onPress: () => resolve(false) },
+            {
+              text: confirmText,
+              style: destructive ? 'destructive' : 'default',
+              onPress: () => resolve(true),
+            },
+          ],
+          {
+            cancelable: true,
+            onDismiss: () => resolve(false),
+          }
+        );
+      });
+    },
+  };
+});
+
 // Mock react-native-bottom-tabs
 jest.mock('react-native-bottom-tabs', () => {
   const React = require('react');

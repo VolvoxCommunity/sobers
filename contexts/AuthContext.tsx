@@ -616,22 +616,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
   }, [user]);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        profile,
-        loading,
-        signIn,
-        signInWithGoogle,
-        signUp,
-        signOut,
-        refreshProfile,
-        deleteAccount,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const contextValue = useMemo(
+    () => ({
+      session,
+      user,
+      profile,
+      loading,
+      signIn,
+      signInWithGoogle,
+      signUp,
+      signOut,
+      refreshProfile,
+      deleteAccount,
+    }),
+    [
+      session,
+      user,
+      profile,
+      loading,
+      signIn,
+      signInWithGoogle,
+      signUp,
+      signOut,
+      refreshProfile,
+      deleteAccount,
+    ]
   );
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };

@@ -18,9 +18,11 @@ import { Platform } from 'react-native';
 // Mocks
 // =============================================================================
 
-// Mock alert utilities
+// Import Toast mock for assertions
+import Toast from 'react-native-toast-message';
+
+// Mock alert utilities - only showConfirm is used for confirmations
 jest.mock('@/lib/alert', () => ({
-  showAlert: jest.fn(),
   showConfirm: jest.fn(),
 }));
 
@@ -1006,9 +1008,8 @@ describe('TasksScreen', () => {
   });
 
   describe('Task Completion Error Handling', () => {
-    it('shows error alert when task completion fails', async () => {
+    it('shows error toast when task completion fails', async () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
-      const { showAlert } = jest.requireMock('@/lib/alert');
 
       // Make update fail
       supabase.from.mockImplementation((table: string) => {
@@ -1071,7 +1072,9 @@ describe('TasksScreen', () => {
       fireEvent.press(screen.getByText('Mark Complete'));
 
       await waitFor(() => {
-        expect(showAlert).toHaveBeenCalledWith('Error', 'Failed to complete task');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to complete task' })
+        );
       });
     });
   });
@@ -1368,19 +1371,18 @@ describe('TasksScreen', () => {
     beforeEach(() => {
       originalPlatform = Platform.OS;
       Platform.OS = 'web';
-      const { showAlert, showConfirm } = jest.requireMock('@/lib/alert');
+      const { showConfirm } = jest.requireMock('@/lib/alert');
       showConfirm.mockResolvedValue(true);
-      showAlert.mockClear();
       showConfirm.mockClear();
+      (Toast.show as jest.Mock).mockClear();
     });
 
     afterEach(() => {
       Platform.OS = originalPlatform;
     });
 
-    it('uses showAlert for task completion success', async () => {
+    it('shows success toast for task completion', async () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
-      const { showAlert } = jest.requireMock('@/lib/alert');
 
       // Ensure mock success
       supabase.from.mockImplementation((table: string) => {
@@ -1419,13 +1421,14 @@ describe('TasksScreen', () => {
       fireEvent.press(screen.getByText('Mark Complete'));
 
       await waitFor(() => {
-        expect(showAlert).toHaveBeenCalledWith('Success', 'Task marked as completed!');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Task marked as completed!' })
+        );
       });
     });
 
-    it('uses showAlert for task completion failure', async () => {
+    it('shows error toast for task completion failure', async () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
-      const { showAlert } = jest.requireMock('@/lib/alert');
 
       supabase.from.mockImplementation((table: string) => {
         if (table === 'tasks') {
@@ -1465,13 +1468,15 @@ describe('TasksScreen', () => {
       fireEvent.press(screen.getByText('Mark Complete'));
 
       await waitFor(() => {
-        expect(showAlert).toHaveBeenCalledWith('Error', 'Failed to complete task');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to complete task' })
+        );
       });
     });
 
-    it('uses showConfirm and showAlert for task deletion', async () => {
+    it('uses showConfirm and shows success toast for task deletion', async () => {
       const { supabase } = jest.requireMock('@/lib/supabase');
-      const { showAlert, showConfirm } = jest.requireMock('@/lib/alert');
+      const { showConfirm } = jest.requireMock('@/lib/alert');
 
       const localSponsees = [
         {
@@ -1565,7 +1570,9 @@ describe('TasksScreen', () => {
       );
 
       await waitFor(() => {
-        expect(showAlert).toHaveBeenCalledWith('Success', 'Task deleted successfully');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Task deleted successfully' })
+        );
       });
     });
   });
@@ -1793,7 +1800,7 @@ describe('TasksScreen', () => {
     });
 
     it('handles task deletion error gracefully', async () => {
-      const { showConfirm, showAlert } = jest.requireMock('@/lib/alert');
+      const { showConfirm } = jest.requireMock('@/lib/alert');
       showConfirm.mockImplementation(
         async (
           _title: string,
@@ -1889,7 +1896,9 @@ describe('TasksScreen', () => {
       fireEvent.press(deleteButton);
 
       await waitFor(() => {
-        expect(showAlert).toHaveBeenCalledWith('Error', 'Failed to delete task');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to delete task' })
+        );
       });
     });
   });

@@ -4,6 +4,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 import { supabase } from '@/lib/supabase';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -819,7 +820,7 @@ describe('LogSlipUpSheet', () => {
       });
     });
 
-    it('shows window.alert success message on web after successful submission', async () => {
+    it('shows toast success message on web after successful submission', async () => {
       const insertMock = jest.fn().mockResolvedValue({ error: null });
 
       (supabase.from as jest.Mock).mockImplementation((table: string) => {
@@ -855,8 +856,12 @@ describe('LogSlipUpSheet', () => {
       fireEvent.press(submitButton);
 
       await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith(
-          "Setback Recorded: Your setback has been recorded. This took real courage. Remember: every day is a fresh start, and you're not alone on this journey."
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'success',
+            text1:
+              "Setback recorded. Every day is a fresh start — you're not alone on this journey.",
+          })
         );
       });
     });

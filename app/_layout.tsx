@@ -37,6 +37,8 @@ import { StyleSheet, Platform } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
+import { createToastConfig } from '@/lib/toast';
 import { useFonts } from 'expo-font';
 import {
   JetBrainsMono_400Regular,
@@ -49,6 +51,15 @@ import { trackScreenView } from '@/lib/analytics';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Toast component wrapper that uses theme context for styling.
+ * Must be rendered inside ThemeProvider to access theme.
+ */
+function ToastWrapper(): React.ReactElement {
+  const { isDark } = useTheme();
+  return <Toast config={createToastConfig(isDark)} position="top" topOffset={60} />;
+}
 
 /**
  * Root navigation component that always renders the Stack immediately.
@@ -215,6 +226,7 @@ export default wrapRootComponent(function RootLayout() {
                 <RootLayoutNav />
               </BottomSheetModalProvider>
             </AuthProvider>
+            <ToastWrapper />
           </ThemeProvider>
         </KeyboardProvider>
         {/* Vercel Analytics - web only, inside ErrorBoundary for safety */}

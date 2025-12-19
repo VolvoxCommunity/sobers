@@ -28,7 +28,8 @@ import { useRouter } from 'expo-router';
 import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 
 /**
  * Render the home dashboard that displays sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
@@ -163,13 +164,13 @@ export default function HomeScreen() {
 
       await fetchData();
 
-      showAlert('Success', 'Successfully disconnected');
+      showToast.success('Successfully disconnected');
     } catch (error: unknown) {
       logger.error('Relationship disconnect failed', error as Error, {
         category: LogCategory.DATABASE,
       });
       const message = error instanceof Error ? error.message : 'Failed to disconnect.';
-      showAlert('Error', message);
+      showToast.error(message);
     }
   };
 

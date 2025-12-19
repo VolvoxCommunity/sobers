@@ -16,7 +16,7 @@ import { validatePassword, checkPasswordRequirements } from '@/lib/validation';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
-import { showAlert } from '@/lib/alert';
+import { showToast } from '@/lib/toast';
 
 interface PasswordRequirementProps {
   met: boolean;
@@ -99,18 +99,18 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!email || !password || !confirmPassword) {
-      showAlert('Error', 'Please fill in all fields');
+      showToast.error('Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      showAlert('Error', 'Passwords do not match');
+      showToast.error('Passwords do not match');
       return;
     }
 
     const passwordError = validatePassword(password);
     if (passwordError) {
-      showAlert('Error', passwordError);
+      showToast.error(passwordError);
       return;
     }
 
@@ -121,7 +121,7 @@ export default function SignupScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to create account');
       logger.error('Sign up failed', err, { category: LogCategory.AUTH });
-      showAlert('Error', err.message);
+      showToast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ export default function SignupScreen() {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error('Failed to sign in with Google');
       logger.error('Google sign in failed', err, { category: LogCategory.AUTH });
-      showAlert('Error', err.message);
+      showToast.error(err.message);
     } finally {
       setGoogleLoading(false);
     }
@@ -306,7 +306,7 @@ export default function SignupScreen() {
             testID="signup-apple-button"
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
-              showAlert('Error', error.message);
+              showToast.error(error.message);
             }}
           />
 

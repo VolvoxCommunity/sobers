@@ -13,6 +13,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import LoginScreen from '@/app/login';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import Toast from 'react-native-toast-message';
 
 // =============================================================================
 // Mocks
@@ -21,7 +22,6 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 const mockSignIn = jest.fn();
 const mockSignInWithGoogle = jest.fn();
 const mockPush = jest.fn();
-const mockShowAlert = jest.fn();
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -47,10 +47,6 @@ jest.mock('@/lib/logger', () => ({
   LogCategory: {
     AUTH: 'auth',
   },
-}));
-
-jest.mock('@/lib/alert', () => ({
-  showAlert: (...args: any[]) => mockShowAlert(...args),
 }));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -90,6 +86,7 @@ describe('LoginScreen', () => {
     jest.clearAllMocks();
     mockSignIn.mockResolvedValue(undefined);
     mockSignInWithGoogle.mockResolvedValue(undefined);
+    (Toast.show as jest.Mock).mockClear();
   });
 
   describe('rendering', () => {
@@ -241,7 +238,7 @@ describe('LoginScreen', () => {
   });
 
   describe('validation errors', () => {
-    it('shows alert when email is empty', async () => {
+    it('shows toast when email is empty', async () => {
       renderWithTheme(<LoginScreen />);
 
       const passwordInput = screen.getByPlaceholderText('••••••••');
@@ -251,11 +248,13 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+        );
       });
     });
 
-    it('shows alert when password is empty', async () => {
+    it('shows toast when password is empty', async () => {
       renderWithTheme(<LoginScreen />);
 
       const emailInput = screen.getByPlaceholderText('your@email.com');
@@ -265,13 +264,15 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Please fill in all fields');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Please fill in all fields' })
+        );
       });
     });
   });
 
   describe('error handling', () => {
-    it('shows error alert when signIn fails', async () => {
+    it('shows error toast when signIn fails', async () => {
       const signInError = new Error('Invalid credentials');
       mockSignIn.mockRejectedValueOnce(signInError);
 
@@ -286,11 +287,13 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Invalid credentials');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Invalid credentials' })
+        );
       });
     });
 
-    it('shows error alert when Google sign in fails', async () => {
+    it('shows error toast when Google sign in fails', async () => {
       const googleError = new Error('Google auth failed');
       mockSignInWithGoogle.mockRejectedValueOnce(googleError);
 
@@ -300,7 +303,9 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Google auth failed');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Google auth failed' })
+        );
       });
     });
 
@@ -318,7 +323,9 @@ describe('LoginScreen', () => {
       fireEvent.press(signInButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to sign in');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to sign in' })
+        );
       });
     });
 
@@ -331,7 +338,9 @@ describe('LoginScreen', () => {
       fireEvent.press(googleButton);
 
       await waitFor(() => {
-        expect(mockShowAlert).toHaveBeenCalledWith('Error', 'Failed to sign in with Google');
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Failed to sign in with Google' })
+        );
       });
     });
   });
