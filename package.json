@@ -49,7 +49,7 @@
     "@react-navigation/native": "^7.1.8",
     "@sentry/cli": "^3.0.1",
     "@sentry/react-native": "7.2.0",
-    "@supabase/supabase-js": "^2.88.0",
+    "@supabase/supabase-js": "^2.89.0",
     "@vercel/analytics": "^1.6.1",
     "date-fns": "^4.1.0",
     "expo": "~54.0.30",
