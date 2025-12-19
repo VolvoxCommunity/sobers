@@ -23,7 +23,8 @@ export default defineConfig({
   projects: [
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testDir: '.', // Look in e2e/ root for setup files
+      testMatch: /auth\.setup\.ts/,
     },
     {
       name: 'chromium',
