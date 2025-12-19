@@ -3,6 +3,17 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // Lazy-initialized client to avoid errors when listing tests without env vars
 let supabaseAdmin: SupabaseClient | null = null;
 
+/**
+ * Returns the Supabase admin client with service role permissions.
+ *
+ * Uses lazy initialization to avoid errors when Playwright lists tests without
+ * environment variables set. The error will only be thrown during actual test
+ * execution (when the client is first accessed), not during test discovery.
+ *
+ * @throws {Error} If EXPO_PUBLIC_SUPABASE_URL or E2E_SUPABASE_SERVICE_KEY
+ *   environment variables are not set when the function is called.
+ * @returns The configured Supabase admin client
+ */
 function getSupabaseAdmin(): SupabaseClient {
   if (!supabaseAdmin) {
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
