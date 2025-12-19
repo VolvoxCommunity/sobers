@@ -253,6 +253,7 @@ export default function ManageTasksView({
       {/* FAB */}
       {sponsees.length > 0 && (
         <TouchableOpacity
+          testID="tasks-add-button"
           style={styles.fab}
           onPress={onCreateTask}
           accessibilityRole="button"

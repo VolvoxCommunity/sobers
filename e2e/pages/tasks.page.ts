@@ -5,8 +5,8 @@ export class TasksPage extends BasePage {
   readonly tasksList: Locator;
   readonly taskCards: Locator;
   readonly filterAll: Locator;
-  readonly filterDaily: Locator;
-  readonly filterWeekly: Locator;
+  readonly filterAssigned: Locator;
+  readonly filterCompleted: Locator;
   readonly addTaskButton: Locator;
   readonly emptyState: Locator;
 
@@ -15,8 +15,8 @@ export class TasksPage extends BasePage {
     this.tasksList = page.getByTestId('tasks-list');
     this.taskCards = page.getByTestId(/^task-card-/);
     this.filterAll = page.getByTestId('tasks-filter-all');
-    this.filterDaily = page.getByTestId('tasks-filter-daily');
-    this.filterWeekly = page.getByTestId('tasks-filter-weekly');
+    this.filterAssigned = page.getByTestId('tasks-filter-assigned');
+    this.filterCompleted = page.getByTestId('tasks-filter-completed');
     this.addTaskButton = page.getByTestId('tasks-add-button');
     this.emptyState = page.getByTestId('tasks-empty-state');
   }
@@ -53,16 +53,16 @@ export class TasksPage extends BasePage {
     await expect(completeButton).not.toBeVisible();
   }
 
-  async filterByFrequency(frequency: 'all' | 'daily' | 'weekly'): Promise<void> {
-    switch (frequency) {
+  async filterByStatus(status: 'all' | 'assigned' | 'completed'): Promise<void> {
+    switch (status) {
       case 'all':
         await this.filterAll.click();
         break;
-      case 'daily':
-        await this.filterDaily.click();
+      case 'assigned':
+        await this.filterAssigned.click();
         break;
-      case 'weekly':
-        await this.filterWeekly.click();
+      case 'completed':
+        await this.filterCompleted.click();
         break;
     }
   }

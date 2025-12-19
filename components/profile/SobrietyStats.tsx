@@ -59,7 +59,7 @@ export default function SobrietyStats({
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <View style={styles.container} accessible={false}>
+    <View testID="profile-sobriety-stats" style={styles.container} accessible={false}>
       <View style={styles.header} accessibilityRole="header" accessibilityLabel="Sobriety Journey">
         <Heart size={24} color={theme.primary} fill={theme.primary} />
         <Text style={styles.title}>Sobriety Journey</Text>
@@ -89,7 +89,7 @@ export default function SobrietyStats({
           </Text>
         )}
         <TouchableOpacity
-          testID="profile-edit-button"
+          testID="profile-edit-date-button"
           style={styles.editButton}
           onPress={onEditSobrietyDate}
           accessibilityRole="button"
@@ -116,6 +116,7 @@ export default function SobrietyStats({
       )}
 
       <TouchableOpacity
+        testID="profile-log-slip-up-button"
         style={styles.slipUpButton}
         onPress={onLogSlipUp}
         accessibilityRole="button"

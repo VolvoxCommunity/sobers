@@ -157,7 +157,7 @@ export default function MyTasksView({
 
         {/* Empty State */}
         {tasks.length === 0 && (
-          <View style={styles.emptyState}>
+          <View testID="tasks-empty-state" style={styles.emptyState}>
             <Circle size={64} color={theme.textTertiary} />
             <Text style={styles.emptyTitle}>No tasks yet</Text>
             <Text style={styles.emptyText}>

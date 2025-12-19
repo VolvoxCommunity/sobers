@@ -67,12 +67,13 @@ export default function InviteCodeSection({
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <View style={styles.section}>
+    <View testID="profile-invite-code-section" style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {isEmpty ? (
         <View>
           <Text style={styles.emptyStateText}>{emptyMessage}</Text>
           <TouchableOpacity
+            testID={primaryButtonIcon === 'qr' ? 'profile-enter-invite-code-button' : undefined}
             style={styles.actionButton}
             onPress={onPrimaryAction}
             accessibilityRole="button"
