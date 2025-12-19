@@ -1,20 +1,39 @@
 import { Page, expect, Locator } from '@playwright/test';
 import { BasePage } from './base.page';
 
+/**
+ * Settings page object.
+ *
+ * Available testIDs in the app (SettingsContent.tsx):
+ * - settings-theme-toggle ✅ (line 727, wraps theme options)
+ * - settings-logout-button ✅ (line 939)
+ * - settings-delete-account-button ✅ (line 976)
+ *
+ * Missing testIDs (need to be added to SettingsContent.tsx):
+ * - settings-notifications-toggle - no notifications toggle in current UI
+ * - settings-version - app version display not currently exposed
+ * - settings-back-button - navigation handled by Expo Router, not a custom button
+ */
 export class SettingsPage extends BasePage {
+  // Available locators (existing testIDs)
   readonly themeToggle: Locator;
-  readonly notificationsToggle: Locator;
   readonly logoutButton: Locator;
   readonly deleteAccountButton: Locator;
+
+  // Locators needing testIDs to be added to components
+  readonly notificationsToggle: Locator;
   readonly versionText: Locator;
   readonly backButton: Locator;
 
   constructor(page: Page) {
     super(page);
+    // Existing testIDs
     this.themeToggle = page.getByTestId('settings-theme-toggle');
-    this.notificationsToggle = page.getByTestId('settings-notifications-toggle');
     this.logoutButton = page.getByTestId('settings-logout-button');
     this.deleteAccountButton = page.getByTestId('settings-delete-account-button');
+
+    // Missing testIDs - these locators will fail until testIDs are added to components
+    this.notificationsToggle = page.getByTestId('settings-notifications-toggle');
     this.versionText = page.getByTestId('settings-version');
     this.backButton = page.getByTestId('settings-back-button');
   }
