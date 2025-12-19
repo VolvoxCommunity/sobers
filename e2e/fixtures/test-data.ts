@@ -30,14 +30,33 @@ export const TEST_INVITE_CODES = {
   sponsor: 'SPONSOR123',
 } as const;
 
+/**
+ * Test tasks matching the seed-test-data.sql definitions.
+ * Task IDs use valid 8-4-4-4-12 UUID format from the seed script.
+ * Note: Tasks use step_number (1-12) and status ('assigned'|'in_progress'|'completed')
+ * instead of frequency/is_active in the current schema.
+ */
 export const TEST_TASKS = {
-  daily: {
+  meditation: {
     id: '11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     title: 'Morning meditation',
+    description: 'Start day with 10 minutes of meditation',
+    stepNumber: 1,
+    status: 'assigned',
+  },
+  callSponsor: {
+    id: '22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    title: 'Call sponsor',
+    description: 'Weekly check-in call with sponsor',
+    stepNumber: 2,
+    status: 'assigned',
   },
   completed: {
     id: '55555555-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     title: 'Completed task',
+    description: 'This task has been completed',
+    stepNumber: 5,
+    status: 'completed',
   },
 } as const;
 
