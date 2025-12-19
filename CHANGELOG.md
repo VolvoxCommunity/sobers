@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improve E2E GitHub Actions workflow with concurrency cancellation (cancels in-progress runs on same PR) and Playwright browser caching for faster CI runs
 - Enable verbose logging by default in development mode
 - Wire up Verbose Logging toggle to control logger output (when disabled, only warn/error logs are shown)
 
