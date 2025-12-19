@@ -1,7 +1,7 @@
 {
   "name": "sobers",
   "main": "expo-router/entry",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.26.0",
   "scripts": {
     "start": "expo start",
@@ -45,7 +45,7 @@
     "@react-native-firebase/analytics": "^23.7.0",
     "@react-native-firebase/app": "^23.7.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
-    "@react-navigation/elements": "^2.9.2",
+    "@react-navigation/elements": "^2.9.3",
     "@react-navigation/native": "^7.1.8",
     "@sentry/cli": "^3.0.1",
     "@sentry/react-native": "7.8.0",
@@ -67,7 +67,7 @@
     "expo-image": "~3.0.11",
     "expo-insights": "~0.10.8",
     "expo-linking": "~8.0.10",
-    "expo-router": "~6.0.19",
+    "expo-router": "~6.0.20",
     "expo-secure-store": "^15.0.8",
     "expo-splash-screen": "~31.0.12",
     "expo-status-bar": "~3.0.9",

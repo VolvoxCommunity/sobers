@@ -230,6 +230,8 @@ export default function HomeScreen() {
         <View
           style={styles.daysSoberContainer}
           accessible={true}
+          accessibilityRole="text"
+          accessibilityLiveRegion="polite"
           accessibilityLabel={`${loadingDaysSober ? 'Loading' : daysSober} days sober, milestone: ${milestone.text}`}
         >
           <Text testID="home-days-sober-count" style={styles.daysSoberCount}>
