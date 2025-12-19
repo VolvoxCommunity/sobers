@@ -31,7 +31,10 @@ test.describe('Step Detail', () => {
     await stepDetailPage.markComplete();
     await stepDetailPage.expectToast('Step completed');
 
-    // Verify completion persists by navigating back and checking the step card
+    // Verify completion persists in UI by navigating back and checking the step card.
+    // Note: Test data is reset before each test run via resetTestData() in auth setup,
+    // so cross-session persistence is verified at the database/integration level rather
+    // than through page reloads here.
     await stepDetailPage.goBack();
     await stepsPage.expectStepCompleted(1);
   });
