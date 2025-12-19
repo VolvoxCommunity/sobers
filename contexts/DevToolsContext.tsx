@@ -30,11 +30,6 @@ interface DevToolsContextType {
   /** Set time travel days offset */
   setTimeTravelDays: (days: number) => void;
 
-  /** Whether offline mode is simulated */
-  offlineMode: boolean;
-  /** Toggle offline mode simulation */
-  setOfflineMode: (enabled: boolean) => void;
-
   /** Whether analytics debug mode is enabled */
   analyticsDebug: boolean;
   /** Toggle analytics debug mode */
@@ -69,7 +64,6 @@ export function DevToolsProvider({ children }: DevToolsProviderProps) {
   const [verboseLogging, setVerboseLogging] = useState(true);
   const [sobrietyDateOverride, setSobrietyDateOverride] = useState<string | null>(null);
   const [timeTravelDays, setTimeTravelDays] = useState(0);
-  const [offlineMode, setOfflineMode] = useState(false);
   const [analyticsDebug, setAnalyticsDebug] = useState(
     process.env.EXPO_PUBLIC_ANALYTICS_DEBUG === 'true'
   );
@@ -91,7 +85,6 @@ export function DevToolsProvider({ children }: DevToolsProviderProps) {
     setVerboseLogging(true);
     setSobrietyDateOverride(null);
     setTimeTravelDays(0);
-    setOfflineMode(false);
     setAnalyticsDebug(process.env.EXPO_PUBLIC_ANALYTICS_DEBUG === 'true');
   }, []);
 
@@ -103,22 +96,12 @@ export function DevToolsProvider({ children }: DevToolsProviderProps) {
       setSobrietyDateOverride,
       timeTravelDays,
       setTimeTravelDays,
-      offlineMode,
-      setOfflineMode,
       analyticsDebug,
       setAnalyticsDebug,
       getCurrentDate,
       resetAll,
     }),
-    [
-      verboseLogging,
-      sobrietyDateOverride,
-      timeTravelDays,
-      offlineMode,
-      analyticsDebug,
-      getCurrentDate,
-      resetAll,
-    ]
+    [verboseLogging, sobrietyDateOverride, timeTravelDays, analyticsDebug, getCurrentDate, resetAll]
   );
 
   return <DevToolsContext.Provider value={value}>{children}</DevToolsContext.Provider>;
@@ -144,8 +127,6 @@ export function useDevTools(): DevToolsContextType {
       setSobrietyDateOverride: () => {},
       timeTravelDays: 0,
       setTimeTravelDays: () => {},
-      offlineMode: false,
-      setOfflineMode: () => {},
       analyticsDebug: false,
       setAnalyticsDebug: () => {},
       getCurrentDate: () => new Date(),
