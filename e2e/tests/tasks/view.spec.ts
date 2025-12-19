@@ -16,10 +16,10 @@ test.describe('Tasks View', () => {
     expect(taskCount).toBeGreaterThan(0);
   });
 
-  test('should filter tasks by frequency', async () => {
-    await tasksPage.filterByFrequency('daily');
-    // Verify filter is applied
-    await expect(tasksPage.filterDaily).toHaveAttribute('data-selected', 'true');
+  test('should filter tasks by status', async () => {
+    await tasksPage.filterByStatus('assigned');
+    // Verify filter is applied (accessibilityState.selected becomes aria-selected)
+    await expect(tasksPage.filterAssigned).toHaveAttribute('aria-selected', 'true');
   });
 
   test('should complete a task', async () => {
