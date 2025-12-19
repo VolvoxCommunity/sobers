@@ -73,7 +73,7 @@ export default function InviteCodeSection({
         <View>
           <Text style={styles.emptyStateText}>{emptyMessage}</Text>
           <TouchableOpacity
-            testID={primaryButtonIcon === 'qr' ? 'profile-enter-invite-code-button' : undefined}
+            testID="profile-enter-invite-code-button"
             style={styles.actionButton}
             onPress={onPrimaryAction}
             accessibilityRole="button"
