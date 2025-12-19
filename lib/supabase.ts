@@ -9,7 +9,14 @@ import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 // Re-export constants for backward compatibility
 export { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 
-// Environment variables - validated at runtime when client is first used
+// Environment variables for the Supabase client.
+// NOTE:
+// - These are intentionally read at module load *without* immediate validation.
+// - Validation happens lazily when the Supabase client is first created/used.
+// This pattern is required so tools like Playwright can discover/list E2E tests
+// without needing these environment variables to be set at test-discovery time.
+// If you change this behavior (e.g. by validating eagerly at import time),
+// ensure you do not break E2E test discovery.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
