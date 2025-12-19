@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add Developer Tools section in Settings (visible only in `__DEV__` mode) with: Test Sentry Error, Verbose Logging toggle, Copy User ID, Clear AsyncStorage, Reset Onboarding, Clear Slip-Ups, Time Travel, Offline Mode toggle, Fire Test Analytics Event, and Analytics Debug toggle
+- Add `DevToolsContext` for managing dev tools state across the app
+- Add stateful `GlassBottomSheet` mock to `jest.setup.js` for proper modal visibility testing
+- Add `BottomSheetTextInput`, `BottomSheetFooter`, and `BottomSheetHandle` to `@gorhom/bottom-sheet` mock
+
+### Fixed
+
+- Fix toast messages being cut off by replacing BaseToast with custom component that properly wraps text without truncation
+- Fix Reset Onboarding dev tool by clearing `display_name` and `sobriety_date` fields (update instead of delete to avoid RLS/FK constraints) and using explicit `router.replace('/onboarding')` navigation
+
 ## [1.1.0] - 2025-12-18
 
 ### Added

@@ -15,8 +15,11 @@ import {
   TextInput,
   Pressable,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useDevTools } from '@/contexts/DevToolsContext';
 import {
   LogOut,
   Moon,
@@ -25,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  ChevronRight,
   Shield,
   FileText,
   Github,
@@ -37,11 +41,21 @@ import {
   Info,
   Copy,
   User,
+  Bell,
+  Bug,
+  Terminal,
+  Clock,
+  WifiOff,
+  BarChart2,
+  RotateCcw,
+  Zap,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
+import { captureSentryException } from '@/lib/sentry';
+import { trackEvent } from '@/lib/analytics';
 import { validateDisplayName } from '@/lib/validation';
 import { hexWithAlpha } from '@/lib/format';
 import { showConfirm } from '@/lib/alert';
@@ -55,6 +69,429 @@ import { getBuildInfo, formatBuildInfoForCopy } from './utils';
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+// =============================================================================
+// Developer Tools Section (DEV only)
+// =============================================================================
+
+interface DevToolsSectionProps {
+  theme: ReturnType<typeof useTheme>['theme'];
+  styles: ReturnType<typeof createStyles>;
+  profile: ReturnType<typeof useAuth>['profile'];
+  refreshProfile: ReturnType<typeof useAuth>['refreshProfile'];
+}
+
+/**
+ * Developer tools section - only rendered in __DEV__ mode.
+ * Provides utilities for testing and debugging the app.
+ */
+function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSectionProps) {
+  const router = useRouter();
+  const {
+    verboseLogging,
+    setVerboseLogging,
+    timeTravelDays,
+    setTimeTravelDays,
+    offlineMode,
+    setOfflineMode,
+    analyticsDebug,
+    setAnalyticsDebug,
+  } = useDevTools();
+
+  const [timeTravelInput, setTimeTravelInput] = useState(timeTravelDays.toString());
+
+  // Handle test Sentry error
+  const handleTestSentryError = useCallback(() => {
+    const testError = new Error('Test Sentry Error from Developer Tools');
+    captureSentryException(testError, { source: 'dev_tools', test: true });
+    showToast.success('Test error sent to Sentry');
+    logger.info('Test Sentry error triggered', { category: LogCategory.ERROR });
+  }, []);
+
+  // Handle copy user ID
+  const handleCopyUserId = useCallback(async () => {
+    if (profile?.id) {
+      await Clipboard.setStringAsync(profile.id);
+      showToast.success('User ID copied to clipboard');
+    } else {
+      showToast.error('No user ID available');
+    }
+  }, [profile?.id]);
+
+  // Handle clear AsyncStorage
+  const handleClearAsyncStorage = useCallback(async () => {
+    const confirmed = await showConfirm(
+      'Clear AsyncStorage',
+      'This will clear all local storage data. The app may behave unexpectedly. Continue?',
+      'Clear',
+      'Cancel',
+      true
+    );
+
+    if (confirmed) {
+      try {
+        await AsyncStorage.clear();
+        showToast.success('AsyncStorage cleared');
+        logger.info('AsyncStorage cleared via dev tools', { category: LogCategory.STORAGE });
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        showToast.error('Failed to clear AsyncStorage');
+        logger.error('Failed to clear AsyncStorage', err, { category: LogCategory.STORAGE });
+      }
+    }
+  }, []);
+
+  // Handle reset onboarding
+  const handleResetOnboarding = useCallback(async () => {
+    if (!profile?.id) {
+      showToast.error('No profile to reset');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      'Reset Onboarding',
+      'This will clear your profile data and redirect you to onboarding. Continue?',
+      'Reset',
+      'Cancel',
+      true
+    );
+
+    if (confirmed) {
+      try {
+        // Clear the onboarding-related fields to make the profile "incomplete"
+        // This triggers the onboarding redirect without deleting the profile
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            display_name: null,
+            sobriety_date: null,
+          })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        showToast.success('Profile reset. Redirecting to onboarding...');
+        logger.info('Profile reset via dev tools', { category: LogCategory.AUTH });
+
+        // Refresh profile state and navigate to onboarding
+        await refreshProfile();
+        router.replace('/onboarding');
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        showToast.error('Failed to reset profile');
+        logger.error('Failed to reset profile', err, { category: LogCategory.AUTH });
+      }
+    }
+  }, [profile?.id, refreshProfile, router]);
+
+  // Handle time travel
+  const handleApplyTimeTravel = useCallback(() => {
+    const days = parseInt(timeTravelInput, 10);
+    if (!isNaN(days)) {
+      setTimeTravelDays(days);
+      if (days === 0) {
+        showToast.info('Time travel disabled');
+      } else {
+        showToast.success(`Time traveling ${days > 0 ? '+' : ''}${days} days`);
+      }
+    }
+  }, [timeTravelInput, setTimeTravelDays]);
+
+  // Handle fire test event
+  const handleFireTestEvent = useCallback(() => {
+    trackEvent('dev_tools_test_event', {
+      timestamp: new Date().toISOString(),
+      source: 'developer_tools',
+    });
+    showToast.success('Test analytics event fired');
+    logger.info('Test analytics event fired', { category: LogCategory.ANALYTICS });
+  }, []);
+
+  // Handle clear slip-ups
+  const handleClearSlipUps = useCallback(async () => {
+    if (!profile?.id) {
+      showToast.error('No profile found');
+      return;
+    }
+
+    const confirmed = await showConfirm(
+      'Clear Slip-Ups',
+      'This will delete all slip-up records. Your sobriety streak will reset to your original sobriety date. Continue?',
+      'Clear',
+      'Cancel',
+      true
+    );
+
+    if (confirmed) {
+      try {
+        const { error } = await supabase.from('slip_ups').delete().eq('user_id', profile.id);
+
+        if (error) throw error;
+
+        showToast.success('All slip-ups cleared');
+        logger.info('Slip-ups cleared via dev tools', { category: LogCategory.DATABASE });
+
+        // Refresh profile to update any dependent state
+        await refreshProfile();
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        showToast.error('Failed to clear slip-ups');
+        logger.error('Failed to clear slip-ups', err, { category: LogCategory.DATABASE });
+      }
+    }
+  }, [profile?.id, refreshProfile]);
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Developer Tools</Text>
+      <View style={styles.card}>
+        {/* Toast Testing */}
+        <View style={styles.devToolsContainer}>
+          <Text style={styles.devToolsDescription}>Test toast notifications</Text>
+          <View style={styles.toastButtonsRow}>
+            <Pressable
+              style={[styles.toastButton, styles.toastButtonSuccess]}
+              onPress={() => showToast.success('Success! This is a test message.')}
+              accessibilityRole="button"
+              accessibilityLabel="Test success toast"
+              testID="test-toast-success"
+            >
+              <CheckCircle size={18} color="#fff" />
+              <Text style={styles.toastButtonText}>Success</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toastButton, styles.toastButtonError]}
+              onPress={() => showToast.error('Error! Something went wrong.')}
+              accessibilityRole="button"
+              accessibilityLabel="Test error toast"
+              testID="test-toast-error"
+            >
+              <AlertCircle size={18} color="#fff" />
+              <Text style={styles.toastButtonText}>Error</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toastButton, styles.toastButtonInfo]}
+              onPress={() => showToast.info('Info: Here is some information.')}
+              accessibilityRole="button"
+              accessibilityLabel="Test info toast"
+              testID="test-toast-info"
+            >
+              <Bell size={18} color="#fff" />
+              <Text style={styles.toastButtonText}>Info</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.separator} />
+
+        {/* Error & Logging */}
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleTestSentryError}
+          accessibilityRole="button"
+          testID="test-sentry-error"
+        >
+          <View style={styles.menuItemLeft}>
+            <Bug size={20} color={theme.error} />
+            <Text style={styles.menuItemText}>Test Sentry Error</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={() => setVerboseLogging(!verboseLogging)}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: verboseLogging }}
+          testID="toggle-verbose-logging"
+        >
+          <View style={styles.menuItemLeft}>
+            <Terminal size={20} color={theme.text} />
+            <Text style={styles.menuItemText}>Verbose Logging</Text>
+          </View>
+          <View style={[styles.toggle, verboseLogging && styles.toggleActive]}>
+            <Text style={styles.toggleText}>{verboseLogging ? 'ON' : 'OFF'}</Text>
+          </View>
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        {/* User & Data */}
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleCopyUserId}
+          accessibilityRole="button"
+          testID="copy-user-id"
+        >
+          <View style={styles.menuItemLeft}>
+            <Copy size={20} color={theme.text} />
+            <View>
+              <Text style={styles.menuItemText}>Copy User ID</Text>
+              {profile?.id && (
+                <Text style={styles.menuItemSubtext}>{profile.id.substring(0, 8)}...</Text>
+              )}
+            </View>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleClearAsyncStorage}
+          accessibilityRole="button"
+          testID="clear-async-storage"
+        >
+          <View style={styles.menuItemLeft}>
+            <Trash2 size={20} color={theme.warning} />
+            <Text style={styles.menuItemText}>Clear AsyncStorage</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleResetOnboarding}
+          accessibilityRole="button"
+          testID="reset-onboarding"
+        >
+          <View style={styles.menuItemLeft}>
+            <RotateCcw size={20} color={theme.error} />
+            <Text style={styles.menuItemText}>Reset Onboarding</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleClearSlipUps}
+          accessibilityRole="button"
+          testID="clear-slip-ups"
+        >
+          <View style={styles.menuItemLeft}>
+            <Trash2 size={20} color={theme.warning} />
+            <Text style={styles.menuItemText}>Clear Slip-Ups</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        {/* Time Travel */}
+        <View style={styles.devToolsContainer}>
+          <View style={styles.menuItemLeft}>
+            <Clock size={20} color={theme.primary} />
+            <Text style={styles.menuItemText}>Time Travel (days)</Text>
+          </View>
+          <View style={styles.timeTravelRow}>
+            <TextInput
+              style={styles.timeTravelInput}
+              value={timeTravelInput}
+              onChangeText={setTimeTravelInput}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={theme.textSecondary}
+              testID="time-travel-input"
+            />
+            <Pressable
+              style={styles.timeTravelButton}
+              onPress={handleApplyTimeTravel}
+              accessibilityRole="button"
+              testID="apply-time-travel"
+            >
+              <Text style={styles.timeTravelButtonText}>Apply</Text>
+            </Pressable>
+            {timeTravelDays !== 0 && (
+              <Pressable
+                style={[styles.timeTravelButton, styles.timeTravelResetButton]}
+                onPress={() => {
+                  setTimeTravelInput('0');
+                  setTimeTravelDays(0);
+                  showToast.info('Time travel reset');
+                }}
+                accessibilityRole="button"
+                testID="reset-time-travel"
+              >
+                <Text style={styles.timeTravelButtonText}>Reset</Text>
+              </Pressable>
+            )}
+          </View>
+          {timeTravelDays !== 0 && (
+            <Text style={styles.timeTravelStatus}>
+              Currently: {timeTravelDays > 0 ? '+' : ''}
+              {timeTravelDays} days
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.separator} />
+
+        {/* Network & Analytics */}
+        <Pressable
+          style={styles.menuItem}
+          onPress={() => {
+            setOfflineMode(!offlineMode);
+            showToast.info(offlineMode ? 'Offline mode disabled' : 'Offline mode enabled');
+          }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: offlineMode }}
+          testID="toggle-offline-mode"
+        >
+          <View style={styles.menuItemLeft}>
+            <WifiOff size={20} color={offlineMode ? theme.error : theme.text} />
+            <Text style={styles.menuItemText}>Offline Mode</Text>
+          </View>
+          <View style={[styles.toggle, offlineMode && styles.toggleActive]}>
+            <Text style={styles.toggleText}>{offlineMode ? 'ON' : 'OFF'}</Text>
+          </View>
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={handleFireTestEvent}
+          accessibilityRole="button"
+          testID="fire-test-event"
+        >
+          <View style={styles.menuItemLeft}>
+            <Zap size={20} color={theme.warning} />
+            <Text style={styles.menuItemText}>Fire Test Analytics Event</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
+
+        <View style={styles.separator} />
+
+        <Pressable
+          style={styles.menuItem}
+          onPress={() => {
+            setAnalyticsDebug(!analyticsDebug);
+            showToast.info(analyticsDebug ? 'Analytics debug disabled' : 'Analytics debug enabled');
+          }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: analyticsDebug }}
+          testID="toggle-analytics-debug"
+        >
+          <View style={styles.menuItemLeft}>
+            <BarChart2 size={20} color={theme.text} />
+            <Text style={styles.menuItemText}>Analytics Debug</Text>
+          </View>
+          <View style={[styles.toggle, analyticsDebug && styles.toggleActive]}>
+            <Text style={styles.toggleText}>{analyticsDebug ? 'ON' : 'OFF'}</Text>
+          </View>
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
 // =============================================================================
@@ -818,6 +1255,16 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         </View>
       </View>
 
+      {/* Developer Tools Section - Only visible in development */}
+      {__DEV__ && (
+        <DevToolsSection
+          theme={theme}
+          styles={styles}
+          profile={profile}
+          refreshProfile={refreshProfile}
+        />
+      )}
+
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Sobers v{packageJson.version}</Text>
@@ -1370,6 +1817,99 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       fontFamily: theme.fontRegular,
       fontWeight: '600',
       color: theme.white,
+    },
+    devToolsContainer: {
+      padding: 16,
+    },
+    devToolsDescription: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    toastButtonsRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    toastButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      borderRadius: 10,
+      gap: 6,
+    },
+    toastButtonSuccess: {
+      backgroundColor: theme.successAlt,
+    },
+    toastButtonError: {
+      backgroundColor: theme.error,
+    },
+    toastButtonInfo: {
+      backgroundColor: theme.info,
+    },
+    toastButtonText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
+    },
+    toggle: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: theme.borderLight,
+    },
+    toggleActive: {
+      backgroundColor: theme.primary,
+    },
+    toggleText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
+    },
+    timeTravelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginTop: 12,
+    },
+    timeTravelInput: {
+      flex: 1,
+      height: 44,
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingHorizontal: 16,
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.text,
+    },
+    timeTravelButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: theme.primary,
+      borderRadius: 10,
+    },
+    timeTravelResetButton: {
+      backgroundColor: theme.textSecondary,
+    },
+    timeTravelButtonText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
+    },
+    timeTravelStatus: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.primary,
+      marginTop: 8,
+      textAlign: 'center',
     },
   });
 

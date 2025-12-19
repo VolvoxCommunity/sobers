@@ -35,6 +35,7 @@ module.exports = {
   ListChecks: createIconMock('ListChecks'),
   CircleCheck: createIconMock('CircleCheck'),
   CircleCheckBig: createIconMock('CircleCheckBig'),
+  CheckCircle: createIconMock('CheckCircle'),
   CircleX: createIconMock('CircleX'),
   Trash: createIconMock('Trash'),
   Trash2: createIconMock('Trash2'),
@@ -139,4 +140,7 @@ module.exports = {
   CirclePlus: createIconMock('CirclePlus'),
   CircleMinus: createIconMock('CircleMinus'),
   XCircle: createIconMock('XCircle'),
+  Bug: createIconMock('Bug'),
+  Terminal: createIconMock('Terminal'),
+  RotateCcw: createIconMock('RotateCcw'),
 };

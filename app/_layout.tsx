@@ -32,6 +32,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { DevToolsProvider } from '@/contexts/DevToolsContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StyleSheet, Platform } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -221,11 +222,13 @@ export default wrapRootComponent(function RootLayout() {
       <ErrorBoundary>
         <KeyboardProvider>
           <ThemeProvider>
-            <AuthProvider>
-              <BottomSheetModalProvider>
-                <RootLayoutNav />
-              </BottomSheetModalProvider>
-            </AuthProvider>
+            <DevToolsProvider>
+              <AuthProvider>
+                <BottomSheetModalProvider>
+                  <RootLayoutNav />
+                </BottomSheetModalProvider>
+              </AuthProvider>
+            </DevToolsProvider>
             <ToastWrapper />
           </ThemeProvider>
         </KeyboardProvider>

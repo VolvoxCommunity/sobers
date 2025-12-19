@@ -1,11 +1,15 @@
 // =============================================================================
 // Imports
 // =============================================================================
+
+// Unmock GlassBottomSheet so we can test the actual component
 import React, { createRef } from 'react';
 import { Dimensions, Platform, Text } from 'react-native';
 import { act } from '@testing-library/react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import { renderWithProviders } from '@/__tests__/test-utils';
+
+jest.unmock('@/components/GlassBottomSheet');
 
 // Extend global for TypeScript
 declare global {
@@ -81,6 +85,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 });
 /* eslint-enable @typescript-eslint/no-require-imports */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 jest.mock('expo-blur', () => ({
   BlurView: ({ children, intensity, tint, style }: any) => {
     const { View } = require('react-native');
@@ -91,6 +96,7 @@ jest.mock('expo-blur', () => ({
     );
   },
 }));
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 // =============================================================================
 // BackHandler Test Helpers

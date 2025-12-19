@@ -505,6 +505,7 @@ jest.mock('react-native-bottom-tabs', () => {
 // Mock @gorhom/bottom-sheet
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');
+  const { TextInput } = require('react-native');
   return {
     __esModule: true,
     default: ({ children, ...props }) => React.createElement('BottomSheet', props, children),
@@ -517,6 +518,15 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement('BottomSheetScrollView', props, children),
     BottomSheetBackdrop: ({ children, ...props }) =>
       React.createElement('BottomSheetBackdrop', props, children),
+    BottomSheetTextInput: Object.assign(
+      React.forwardRef(function BottomSheetTextInput(props, ref) {
+        return React.createElement(TextInput, { ...props, ref });
+      }),
+      { displayName: 'BottomSheetTextInput' }
+    ),
+    BottomSheetFooter: ({ children, ...props }) =>
+      React.createElement('BottomSheetFooter', props, children),
+    BottomSheetHandle: (props) => React.createElement('BottomSheetHandle', props),
     // Touchable components for use inside bottom sheets
     TouchableOpacity: ({ children, onPress, ...props }) =>
       React.createElement('TouchableOpacity', { onPress, ...props }, children),
@@ -528,6 +538,37 @@ jest.mock('@gorhom/bottom-sheet', () => {
       dismiss: jest.fn(),
       present: jest.fn(),
     }),
+  };
+});
+
+// Mock GlassBottomSheet with visibility state tracking
+jest.mock('@/components/GlassBottomSheet', () => {
+  const React = require('react');
+  const { forwardRef, useImperativeHandle, useState } = React;
+
+  const MockGlassBottomSheet = forwardRef(function MockGlassBottomSheet(
+    { children, onDismiss },
+    ref
+  ) {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useImperativeHandle(ref, () => ({
+      present: () => setIsVisible(true),
+      dismiss: () => {
+        setIsVisible(false);
+        onDismiss?.();
+      },
+      snapToIndex: () => {},
+    }));
+
+    // Only render children when visible (mimics real bottom sheet behavior)
+    if (!isVisible) return null;
+    return React.createElement('View', { testID: 'glass-bottom-sheet' }, children);
+  });
+
+  return {
+    __esModule: true,
+    default: MockGlassBottomSheet,
   };
 });
 
