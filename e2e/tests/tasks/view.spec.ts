@@ -23,7 +23,7 @@ test.describe('Tasks View', () => {
   });
 
   test('should complete a task', async () => {
-    const taskId = TEST_TASKS.daily.id;
+    const taskId = TEST_TASKS.meditation.id;
     await tasksPage.completeTask(taskId);
     await tasksPage.expectToast('Task completed');
 
