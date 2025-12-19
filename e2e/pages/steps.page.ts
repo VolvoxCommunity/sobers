@@ -48,8 +48,9 @@ export class StepDetailPage extends BasePage {
     this.backButton = page.getByTestId('step-detail-back-button');
   }
 
-  async expectOnStepDetailPage(stepNumber: number): Promise<void> {
-    await expect(this.page).toHaveURL(new RegExp(`/steps/${stepNumber}`));
+  async expectOnStepDetailPage(): Promise<void> {
+    // Steps use UUID-based URLs, not numeric step numbers
+    await expect(this.page).toHaveURL(/\/steps\/[a-f0-9-]+$/);
     await expect(this.stepTitle).toBeVisible();
   }
 
