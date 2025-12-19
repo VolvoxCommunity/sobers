@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI
-    ? [['blob', { outputDir: 'blob-report' }], ['github']]
+    ? [['blob', { outputDir: 'e2e/blob-report' }], ['github']]
     : [['html', { open: 'never' }]],
 
   timeout: 30_000,
