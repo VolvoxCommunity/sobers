@@ -16,7 +16,6 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDevTools } from '@/contexts/DevToolsContext';
@@ -118,29 +117,6 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
       showToast.error('No user ID available');
     }
   }, [profile?.id]);
-
-  // Handle clear AsyncStorage
-  const handleClearAsyncStorage = useCallback(async () => {
-    const confirmed = await showConfirm(
-      'Clear AsyncStorage',
-      'This will clear all local storage data. The app may behave unexpectedly. Continue?',
-      'Clear',
-      'Cancel',
-      true
-    );
-
-    if (confirmed) {
-      try {
-        await AsyncStorage.clear();
-        showToast.success('AsyncStorage cleared');
-        logger.info('AsyncStorage cleared via dev tools', { category: LogCategory.STORAGE });
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        showToast.error('Failed to clear AsyncStorage');
-        logger.error('Failed to clear AsyncStorage', err, { category: LogCategory.STORAGE });
-      }
-    }
-  }, []);
 
   // Handle reset onboarding
   const handleResetOnboarding = useCallback(async () => {
@@ -334,21 +310,6 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
                 <Text style={styles.menuItemSubtext}>{profile.id.substring(0, 8)}...</Text>
               )}
             </View>
-          </View>
-          <ChevronRight size={20} color={theme.textSecondary} />
-        </Pressable>
-
-        <View style={styles.separator} />
-
-        <Pressable
-          style={styles.menuItem}
-          onPress={handleClearAsyncStorage}
-          accessibilityRole="button"
-          testID="clear-async-storage"
-        >
-          <View style={styles.menuItemLeft}>
-            <Trash2 size={20} color={theme.warning} />
-            <Text style={styles.menuItemText}>Clear AsyncStorage</Text>
           </View>
           <ChevronRight size={20} color={theme.textSecondary} />
         </Pressable>

@@ -7,7 +7,8 @@
  * @module contexts/DevToolsContext
  */
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { setVerboseLogging as setLoggerVerboseLogging } from '@/lib/logger';
 
 // =============================================================================
 // Types
@@ -72,6 +73,11 @@ export function DevToolsProvider({ children }: DevToolsProviderProps) {
   const [analyticsDebug, setAnalyticsDebug] = useState(
     process.env.EXPO_PUBLIC_ANALYTICS_DEBUG === 'true'
   );
+
+  // Sync verbose logging state with the logger module
+  useEffect(() => {
+    setLoggerVerboseLogging(verboseLogging);
+  }, [verboseLogging]);
 
   const getCurrentDate = useCallback(() => {
     const now = new Date();

@@ -1,6 +1,37 @@
 import * as Sentry from '@sentry/react-native';
 
 // =============================================================================
+// Verbose Logging Control
+// =============================================================================
+
+/**
+ * Module-level state for verbose logging.
+ * When false, only warn and error levels are logged to console.
+ * When true, all levels (debug, info, warn, error, trace) are logged.
+ * Defaults to true in development mode.
+ */
+let verboseLoggingEnabled = __DEV__;
+
+/**
+ * Set whether verbose logging is enabled.
+ * Called by DevToolsContext to sync its state with the logger.
+ *
+ * @param enabled - Whether to enable verbose logging
+ */
+export function setVerboseLogging(enabled: boolean): void {
+  verboseLoggingEnabled = enabled;
+}
+
+/**
+ * Get the current verbose logging state.
+ *
+ * @returns Whether verbose logging is enabled
+ */
+export function getVerboseLogging(): boolean {
+  return verboseLoggingEnabled;
+}
+
+// =============================================================================
 // Types & Interfaces
 // =============================================================================
 
@@ -55,7 +86,11 @@ function log(level: LogLevel, message: string, error?: Error, metadata?: LogMeta
   }
 
   if (__DEV__) {
-    logToConsole(level, message, error, metadata);
+    // When verbose logging is disabled, only log warn and error levels
+    const isImportantLevel = level === 'warn' || level === 'error';
+    if (verboseLoggingEnabled || isImportantLevel) {
+      logToConsole(level, message, error, metadata);
+    }
   }
 }
 

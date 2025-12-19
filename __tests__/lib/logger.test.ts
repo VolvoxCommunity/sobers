@@ -1,9 +1,11 @@
-import { logger } from '@/lib/logger';
+import { logger, setVerboseLogging } from '@/lib/logger';
 import * as Sentry from '@sentry/react-native';
 
 describe('Logger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Ensure verbose logging is enabled for tests
+    setVerboseLogging(true);
   });
 
   describe('info()', () => {
