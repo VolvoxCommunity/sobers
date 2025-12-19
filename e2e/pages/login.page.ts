@@ -32,8 +32,15 @@ export class LoginPage extends BasePage {
     await this.loginButton.click();
   }
 
+  /**
+   * Assert that a login error is displayed.
+   *
+   * Login-specific error assertion. Currently, login errors are displayed via toast messages,
+   * so this delegates to expectToast. Keeping this wrapper allows tests to use a semantic
+   * "expectError" API and isolates them from how errors are rendered, making it easy to change
+   * the underlying implementation (e.g., inline messages instead of toasts) in one place.
+   */
   async expectError(message: string): Promise<void> {
-    // Login errors are displayed via toast messages
     await this.expectToast(message);
   }
 
