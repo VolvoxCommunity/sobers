@@ -17,7 +17,8 @@ test.describe('Steps List', () => {
 
   test('should navigate to step detail on click', async ({ page }) => {
     await stepsPage.clickStep(1);
-    await expect(page).toHaveURL(/.*steps\/1/);
+    // Steps use UUID-based URLs, not numeric step numbers
+    await expect(page).toHaveURL(/.*steps\/[a-f0-9-]+$/);
   });
 
   test('should display step cards with titles', async ({ page }) => {
