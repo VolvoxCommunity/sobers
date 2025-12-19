@@ -35,7 +35,9 @@ export class SignupPage extends BasePage {
   async signup(email: string, password: string, confirmPassword?: string): Promise<void> {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
-    if (this.confirmPasswordInput) {
+    // Check if confirm password field is visible before filling
+    // (Locator objects are always truthy, so we need to check visibility)
+    if (await this.confirmPasswordInput.isVisible()) {
       await this.confirmPasswordInput.fill(confirmPassword ?? password);
     }
     await this.signupButton.click();
