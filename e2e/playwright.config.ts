@@ -6,7 +6,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? [['blob'], ['github']] : [['html', { open: 'never' }]],
+  reporter: process.env.CI
+    ? [['blob', { outputDir: 'e2e/blob-report' }], ['github']]
+    : [['html', { open: 'never' }]],
 
   timeout: 30_000,
   expect: { timeout: 5_000 },
