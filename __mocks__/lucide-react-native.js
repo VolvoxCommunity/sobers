@@ -1,5 +1,3 @@
-const React = require('react');
-
 // Create a factory for icon components
 const createIconMock = (name) => {
   const IconComponent = function (props) {
