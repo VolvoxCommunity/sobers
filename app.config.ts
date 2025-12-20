@@ -45,8 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     easBuildGitCommitHash: process.env.EAS_BUILD_GIT_COMMIT_HASH ?? null,
     easBuildRunner: process.env.EAS_BUILD_RUNNER ?? null,
     eas: {
-      // TODO: Replace projectId with new EAS project ID after creating 'sobers' project at expo.dev
-      projectId: '8d64bbe4-27d4-41ac-9421-9c2758e4765a',
+      projectId: 'd17ee0bf-d2d6-4a29-9348-8dc79fffb815',
     },
   },
   name: 'Sobers',
