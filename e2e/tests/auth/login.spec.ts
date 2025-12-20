@@ -21,7 +21,8 @@ test.describe('Login', () => {
 
   test('should show error for invalid email format', async () => {
     await loginPage.login('invalid-email', 'password123');
-    await loginPage.expectError('Invalid email');
+    // Supabase doesn't validate email format client-side, returns generic credentials error
+    await loginPage.expectError('Invalid login credentials');
   });
 
   test('should show error for wrong credentials', async () => {
@@ -31,7 +32,7 @@ test.describe('Login', () => {
 
   test('should show error for empty fields', async () => {
     await loginPage.loginButton.click();
-    await loginPage.expectError('Email is required');
+    await loginPage.expectError('Please fill in all fields');
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {

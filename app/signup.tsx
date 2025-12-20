@@ -313,7 +313,7 @@ export default function SignupScreen() {
           <TouchableOpacity
             testID="signup-login-link"
             style={styles.loginLink}
-            onPress={() => router.back()}
+            onPress={() => router.push('/login')}
             disabled={loading || googleLoading}
           >
             <Text style={styles.loginLinkText}>

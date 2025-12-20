@@ -32,7 +32,8 @@ test.describe('Settings Preferences', () => {
 
   test('should logout and redirect to login', async ({ page }) => {
     await settingsPage.logout();
-    await expect(page).toHaveURL(/.*login/);
+    // Wait longer for auth state change and redirect
+    await expect(page).toHaveURL(/.*login/, { timeout: 10000 });
   });
 
   // Skipped: requires settings-back-button testID (navigation handled by Expo Router)

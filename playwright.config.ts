@@ -1,7 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config({ path: '.env' });
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: 'e2e/',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -1,20 +1,20 @@
 export const TEST_USERS = {
   primary: {
-    id: '11111111-1111-1111-1111-111111111111',
+    id: 'b81936a6-125f-420a-a736-eeb5943c28b1',
     email: 'e2e-primary@sobers-test.com',
     password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
     displayName: 'E2E Primary User',
     sobrietyDate: '2024-01-15',
   },
   sponsor: {
-    id: '22222222-2222-2222-2222-222222222222',
+    id: '3a28e197-e07d-4cba-b7e4-01804e7cca73',
     email: 'e2e-sponsor@sobers-test.com',
     password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
     displayName: 'E2E Sponsor User',
     sobrietyDate: '2020-06-01',
   },
   sponsee: {
-    id: '33333333-3333-3333-3333-333333333333',
+    id: '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
     email: 'e2e-sponsee@sobers-test.com',
     password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
     displayName: 'E2E Sponsee User',

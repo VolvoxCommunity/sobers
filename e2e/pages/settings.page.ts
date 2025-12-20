@@ -55,7 +55,15 @@ export class SettingsPage extends BasePage {
     await this.notificationsToggle.click();
   }
 
+  /**
+   * Click the logout button and accept the confirmation dialog.
+   * The app uses window.confirm on web which creates a native browser dialog.
+   */
   async logout(): Promise<void> {
+    // Set up dialog handler before clicking (window.confirm)
+    this.page.once('dialog', async (dialog) => {
+      await dialog.accept();
+    });
     await this.logoutButton.click();
   }
 

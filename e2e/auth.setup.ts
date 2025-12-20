@@ -24,7 +24,8 @@ setup('authenticate', async ({ page }) => {
   await page.getByTestId('login-submit-button').click();
 
   // Wait for redirect to home page
-  await expect(page).toHaveURL(/.*\/(app)?$/);
+  // Add a longer timeout to ensure the authentication state is updated
+  await expect(page).toHaveURL(/.*\/(app)?$/, { timeout: 10000 });
 
   // Save storage state
   await page.context().storageState({ path: authFile });

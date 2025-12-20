@@ -8,7 +8,7 @@
 
 INSERT INTO public.profiles (id, email, display_name, sobriety_date, created_at, updated_at)
 VALUES (
-  '11111111-1111-1111-1111-111111111111',
+  'b81936a6-125f-420a-a736-eeb5943c28b1',
   'e2e-primary@sobers-test.com',
   'E2E Primary User',
   '2024-01-15',
@@ -22,7 +22,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO public.profiles (id, email, display_name, sobriety_date, created_at, updated_at)
 VALUES (
-  '22222222-2222-2222-2222-222222222222',
+  '3a28e197-e07d-4cba-b7e4-01804e7cca73',
   'e2e-sponsor@sobers-test.com',
   'E2E Sponsor User',
   '2020-06-01',
@@ -36,7 +36,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO public.profiles (id, email, display_name, sobriety_date, created_at, updated_at)
 VALUES (
-  '33333333-3333-3333-3333-333333333333',
+  '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
   'e2e-sponsee@sobers-test.com',
   'E2E Sponsee User',
   '2024-10-01',
@@ -57,8 +57,8 @@ INSERT INTO public.sponsor_sponsee_relationships (
 )
 VALUES (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  '22222222-2222-2222-2222-222222222222',
-  '33333333-3333-3333-3333-333333333333',
+  '3a28e197-e07d-4cba-b7e4-01804e7cca73',
+  '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
   'active',
   NOW()
 )
@@ -69,8 +69,8 @@ INSERT INTO public.sponsor_sponsee_relationships (
 )
 VALUES (
   'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-  '22222222-2222-2222-2222-222222222222',
-  '11111111-1111-1111-1111-111111111111',
+  '3a28e197-e07d-4cba-b7e4-01804e7cca73',
+  'b81936a6-125f-420a-a736-eeb5943c28b1',
   'active',
   NOW()
 )
@@ -84,15 +84,15 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.tasks (id, sponsor_id, sponsee_id, step_number, title, description, status, created_at)
 VALUES
-  ('11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
+  ('11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '3a28e197-e07d-4cba-b7e4-01804e7cca73', 'b81936a6-125f-420a-a736-eeb5943c28b1',
    1, 'Morning meditation', 'Start day with 10 minutes of meditation', 'assigned', NOW()),
-  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
+  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '3a28e197-e07d-4cba-b7e4-01804e7cca73', 'b81936a6-125f-420a-a736-eeb5943c28b1',
    2, 'Call sponsor', 'Weekly check-in call with sponsor', 'assigned', NOW()),
-  ('33333333-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
+  ('33333333-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '3a28e197-e07d-4cba-b7e4-01804e7cca73', 'b81936a6-125f-420a-a736-eeb5943c28b1',
    3, 'Attend meeting', 'Attend AA/NA meeting', 'assigned', NOW()),
-  ('44444444-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
+  ('44444444-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '3a28e197-e07d-4cba-b7e4-01804e7cca73', 'b81936a6-125f-420a-a736-eeb5943c28b1',
    4, 'Journal entry', 'Write daily gratitude journal', 'assigned', NOW()),
-  ('55555555-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111',
+  ('55555555-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '3a28e197-e07d-4cba-b7e4-01804e7cca73', 'b81936a6-125f-420a-a736-eeb5943c28b1',
    5, 'Completed task', 'This task has been completed', 'completed', NOW())
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
@@ -106,9 +106,9 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO public.user_step_progress (id, user_id, step_number, completed, completed_at, created_at, updated_at)
 VALUES
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 1, true, '2024-01-20', NOW(), NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 2, true, '2024-02-15', NOW(), NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 3, false, NULL, NOW(), NOW())
+  (gen_random_uuid(), 'b81936a6-125f-420a-a736-eeb5943c28b1', 1, true, '2024-01-20', NOW(), NOW()),
+  (gen_random_uuid(), 'b81936a6-125f-420a-a736-eeb5943c28b1', 2, true, '2024-02-15', NOW(), NOW()),
+  (gen_random_uuid(), 'b81936a6-125f-420a-a736-eeb5943c28b1', 3, false, NULL, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
 -- ============================================
@@ -118,7 +118,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.invite_codes (code, sponsor_id, created_at, expires_at)
 VALUES (
   'SPONSOR123',
-  '22222222-2222-2222-2222-222222222222',
+  '3a28e197-e07d-4cba-b7e4-01804e7cca73',
   NOW(),
   NOW() + INTERVAL '30 days'
 )
@@ -135,7 +135,7 @@ BEGIN
   -- Reset tasks to assigned status
   UPDATE public.tasks
   SET status = 'assigned', completed_at = NULL, completion_notes = NULL
-  WHERE sponsee_id = '11111111-1111-1111-1111-111111111111'
+  WHERE sponsee_id = 'b81936a6-125f-420a-a736-eeb5943c28b1'
     AND id != '55555555-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
   -- Keep one task as completed for testing

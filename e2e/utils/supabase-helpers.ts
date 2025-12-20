@@ -37,9 +37,9 @@ export async function resetTestData(): Promise<void> {
 
   // Reset task completions for test users
   const testUserIds = [
-    '11111111-1111-1111-1111-111111111111',
-    '22222222-2222-2222-2222-222222222222',
-    '33333333-3333-3333-3333-333333333333',
+    'b81936a6-125f-420a-a736-eeb5943c28b1',
+    '3a28e197-e07d-4cba-b7e4-01804e7cca73',
+    '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
   ];
 
   await client.from('task_completions').delete().in('user_id', testUserIds);
@@ -49,7 +49,7 @@ export async function resetTestData(): Promise<void> {
 
   // Ensure primary user profile exists (required for login to complete successfully)
   const { error: profileError } = await client.from('profiles').upsert({
-    id: '11111111-1111-1111-1111-111111111111',
+    id: 'b81936a6-125f-420a-a736-eeb5943c28b1',
     email: 'e2e-primary@sobers-test.com',
     display_name: 'E2E Primary User',
     sobriety_date: '2024-01-15',
