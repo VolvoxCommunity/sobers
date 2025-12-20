@@ -4,7 +4,6 @@
  * Tests the build info utility functions for settings/debug screens.
  */
 
-import { Platform } from 'react-native';
 import { getStringOrNull, getBuildInfo, formatBuildInfoForCopy } from '@/components/settings/utils';
 import type { BuildInfo } from '@/components/settings/types';
 
