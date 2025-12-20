@@ -15,6 +15,10 @@ export { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 // - Validation happens lazily when the Supabase client is first created/used.
 // This pattern is required so tools like Playwright can discover/list E2E tests
 // without needing these environment variables to be set at test-discovery time.
+// - During test discovery, it is acceptable for these variables to be undefined
+//   because no Supabase client is created.
+// - During test execution, missing variables will be validated and will cause an
+//   error when the Supabase client is first created/used (e.g. in getSupabaseClient()).
 // If you change this behavior (e.g. by validating eagerly at import time),
 // ensure you do not break E2E test discovery.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -258,7 +262,7 @@ function getSupabaseClient(): SupabaseClient {
   if (!supabaseInstance) {
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error(
-        'Missing Supabase environment variables. Please ensure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are configured in your environment.'
+        'Missing Supabase environment variables during client initialization. Please ensure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are configured in your environment.'
       );
     }
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
