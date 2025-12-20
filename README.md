@@ -1,7 +1,7 @@
 # Sobers
 
-[![CI](https://github.com/VolvoxCommunity/Sobriety-Waypoint/actions/workflows/ci.yml/badge.svg)](https://github.com/VolvoxCommunity/Sobriety-Waypoint/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/VolvoxCommunity/Sobriety-Waypoint/graph/badge.svg?token=U4ILD582YD)](https://codecov.io/gh/VolvoxCommunity/Sobriety-Waypoint)
+[![CI](https://github.com/VolvoxCommunity/sobers/actions/workflows/ci.yml/badge.svg)](https://github.com/VolvoxCommunity/sobers/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/VolvoxCommunity/sobers/graph/badge.svg?token=U4ILD582YD)](https://codecov.io/gh/VolvoxCommunity/sobers)
 
 A cross-platform recovery companion app connecting sponsors and sponsees through task management, milestone tracking, and progress visualization. _Think Jira for your sobriety._
 
@@ -57,14 +57,15 @@ pnpm android  # Android
 
 ```
 app/                    # Expo Router screens
-├── _layout.tsx         # Auth guards
+├── _layout.tsx         # Root layout with auth guards
 ├── login.tsx / signup.tsx
 ├── onboarding.tsx
-└── (tabs)/             # Authenticated screens
-    ├── index.tsx       # Dashboard
-    ├── tasks.tsx       # Task list
-    ├── journey.tsx     # Timeline
-    └── profile.tsx
+└── (app)/              # Authenticated group
+    └── (tabs)/         # Tab navigation
+        ├── index.tsx   # Dashboard
+        ├── tasks.tsx   # Task list
+        ├── journey.tsx # Timeline
+        └── profile.tsx
 contexts/               # AuthContext, ThemeContext
 lib/                    # Supabase client, logger
 types/                  # Database types
