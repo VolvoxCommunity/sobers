@@ -30,10 +30,7 @@ function CustomToast({
       width: TOAST_WIDTH,
       ...Platform.select({
         ios: {
-          shadowColor: theme.shadow,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
         },
         android: {
           elevation: 4,
@@ -54,7 +51,9 @@ function CustomToast({
   ];
 
   return (
-    <View style={containerStyle}>{text1 ? <Text style={textStyle}>{text1}</Text> : null}</View>
+    <View testID="toast-message" style={containerStyle}>
+      {text1 ? <Text style={textStyle}>{text1}</Text> : null}
+    </View>
   );
 }
 

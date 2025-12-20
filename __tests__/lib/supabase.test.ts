@@ -18,12 +18,16 @@ describe('lib/supabase', () => {
 
   it('throws error if EXPO_PUBLIC_SUPABASE_URL is missing', () => {
     process.env.EXPO_PUBLIC_SUPABASE_URL = '';
-    expect(() => require('@/lib/supabase')).toThrow('Missing Supabase environment variables');
+    // Lazy validation: module loads successfully, but accessing supabase throws
+    const { supabase } = require('@/lib/supabase');
+    expect(() => supabase.auth).toThrow('Missing Supabase environment variables');
   });
 
   it('throws error if EXPO_PUBLIC_SUPABASE_ANON_KEY is missing', () => {
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = '';
-    expect(() => require('@/lib/supabase')).toThrow('Missing Supabase environment variables');
+    // Lazy validation: module loads successfully, but accessing supabase throws
+    const { supabase } = require('@/lib/supabase');
+    expect(() => supabase.auth).toThrow('Missing Supabase environment variables');
   });
 
   describe('Supabase Client Initialization', () => {

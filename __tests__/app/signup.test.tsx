@@ -24,11 +24,12 @@ import Toast from 'react-native-toast-message';
 // Mock expo-router
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     back: mockBack,
     replace: mockReplace,
-    push: jest.fn(),
+    push: mockPush,
   }),
 }));
 
@@ -171,12 +172,12 @@ describe('SignupScreen', () => {
       expect(screen.getByText('Sign In')).toBeTruthy();
     });
 
-    it('navigates back when login link is pressed', () => {
+    it('navigates to login when login link is pressed', () => {
       render(<SignupScreen />);
 
       fireEvent.press(screen.getByText(/Already have an account\?/));
 
-      expect(mockBack).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith('/login');
     });
 
     it('navigates back when back button is pressed', () => {

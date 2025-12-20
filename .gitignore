@@ -60,6 +60,9 @@ GoogleService-Info.plist
 coverage/
 *.lcov
 .nyc_output
+playwright-report/
+test-results/
+e2e/.auth/
 
 # Logs
 logs/

@@ -231,11 +231,20 @@ export default function HomeScreen() {
         <View
           style={styles.daysSoberContainer}
           accessible={true}
+          accessibilityRole="text"
+          accessibilityLiveRegion="polite"
           accessibilityLabel={`${loadingDaysSober ? 'Loading' : daysSober} days sober, milestone: ${milestone.text}`}
         >
-          <Text style={styles.daysSoberCount}>{loadingDaysSober ? '...' : daysSober}</Text>
-          <Text style={styles.daysSoberLabel}>Days Sober</Text>
-          <View style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}>
+          <Text testID="home-days-sober-count" style={styles.daysSoberCount}>
+            {loadingDaysSober ? '...' : daysSober}
+          </Text>
+          <Text testID="home-days-sober-label" style={styles.daysSoberLabel}>
+            Days Sober
+          </Text>
+          <View
+            testID="home-milestones-preview"
+            style={[styles.milestoneBadge, { backgroundColor: milestone.color }]}
+          >
             <Award size={16} color={theme.white} />
             <Text style={styles.milestoneText}>{milestone.text}</Text>
           </View>
@@ -343,7 +352,7 @@ export default function HomeScreen() {
       />
 
       {tasks.length > 0 && (
-        <View style={styles.card}>
+        <View testID="home-tasks-section" style={styles.card}>
           <View style={styles.cardHeader}>
             <CheckCircle size={24} color={theme.textSecondary} />
             <Text style={styles.cardTitle}>Recent Tasks</Text>
@@ -366,6 +375,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
+            testID="home-view-tasks-button"
             style={styles.viewAllButton}
             onPress={() => router.push('/tasks')}
             accessibilityRole="button"
@@ -376,7 +386,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <View style={styles.quickActions}>
+      <View testID="home-quick-actions" style={styles.quickActions}>
         <TouchableOpacity
           style={styles.actionCard}
           onPress={() => router.push('/steps')}
@@ -430,11 +440,7 @@ const createStyles = (theme: ThemeColors) =>
       marginTop: 0,
       padding: 24,
       borderRadius: 16,
-      shadowColor: theme.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
     },
     sobrietyHeader: {
       flexDirection: 'row',

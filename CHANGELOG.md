@@ -16,11 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Pin native module versions to Expo SDK 54 requirements (`@react-native-community/datetimepicker@8.4.4`, `@sentry/react-native@7.2.0`, `react-native-reanimated@4.1.6`, `react-native-svg@15.12.1`, `react-native-worklets@0.5.1`)
+- Add `metro-minify-terser` as explicit devDependency for Vercel build compatibility with Metro 0.83+
+- Improve E2E GitHub Actions workflow with concurrency cancellation (cancels in-progress runs on same PR) and Playwright browser caching for faster CI runs
 - Enable verbose logging by default in development mode
 - Wire up Verbose Logging toggle to control logger output (when disabled, only warn/error logs are shown)
 
 ### Fixed
 
+- Fix Vercel deployment by using standard Expo Metro config instead of Sentry's `getSentryExpoConfig` (Sentry Metro serializer is incompatible with Metro 0.83+ in Expo SDK 54)
 - Fix toast messages being cut off by replacing BaseToast with custom component that properly wraps text without truncation
 - Fix Reset Onboarding dev tool by clearing `display_name` and `sobriety_date` fields (update instead of delete to avoid RLS/FK constraints) and using explicit `router.replace('/onboarding')` navigation
 
@@ -28,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add comprehensive E2E test suite using Playwright for web with 56 tests covering all user flows
+- Add Page Object Model pattern for E2E test maintainability (10 page objects)
+- Add GitHub Actions workflow with 4-shard parallelization for E2E tests on every PR
+- Add testID attributes across all screens for E2E test targeting
+- Add SQL seeding script for E2E test data
+- Add `pnpm test:e2e`, `test:e2e:all`, `test:e2e:ui`, `test:e2e:debug` scripts
 - Add dedicated tests for SettingsContent component covering App Updates (OTA) UI states: idle, checking, downloading, ready, up-to-date, and error
 - Add `pnpm release:patch`, `pnpm release:minor`, `pnpm release:major` scripts for automated releases
 - Add npm lifecycle hooks (`version`, `postversion`) to automate version sync, commit, tag, and push

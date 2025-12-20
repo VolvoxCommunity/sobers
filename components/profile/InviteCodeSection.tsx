@@ -36,6 +36,8 @@ interface InviteCodeSectionProps {
   onSecondaryAction?: () => void;
   /** Children to render (relationship cards) */
   children?: React.ReactNode;
+  /** Prefix for testIDs to distinguish between multiple instances */
+  testIDPrefix?: 'sponsor' | 'sponsee';
 }
 
 // =============================================================================
@@ -63,16 +65,24 @@ export default function InviteCodeSection({
   onPrimaryAction,
   onSecondaryAction,
   children,
+  testIDPrefix,
 }: InviteCodeSectionProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const sectionTestID = testIDPrefix
+    ? `profile-${testIDPrefix}-invite-code-section`
+    : 'profile-invite-code-section';
+  const buttonTestID = testIDPrefix
+    ? `profile-${testIDPrefix}-action-button`
+    : 'profile-enter-invite-code-button';
 
   return (
-    <View style={styles.section}>
+    <View testID={sectionTestID} style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {isEmpty ? (
         <View>
           <Text style={styles.emptyStateText}>{emptyMessage}</Text>
           <TouchableOpacity
+            testID={buttonTestID}
             style={styles.actionButton}
             onPress={onPrimaryAction}
             accessibilityRole="button"

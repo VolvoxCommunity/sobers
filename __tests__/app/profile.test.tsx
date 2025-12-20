@@ -456,7 +456,7 @@ describe('ProfileScreen', () => {
         // because native bottom tabs don't support navigation.setOptions for header customization.
         // Use testID for reliable querying since RNTL has issues resolving accessible names
         // when both accessibilityLabel and accessibilityLabelledBy are present.
-        const settingsButton = screen.getByTestId('settings-button');
+        const settingsButton = screen.getByTestId('profile-settings-button');
         expect(settingsButton).toBeTruthy();
         // Verify accessibility props are set correctly
         expect(settingsButton.props.accessibilityLabel).toBe('Open settings');

@@ -724,7 +724,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.card}>
-          <View style={styles.themeOptions}>
+          <View testID="settings-theme-toggle" style={styles.themeOptions}>
             <Pressable
               style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
               onPress={() => setThemeMode('light')}
@@ -936,6 +936,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       {/* Sign Out Section */}
       <View style={styles.section}>
         <Pressable
+          testID="settings-logout-button"
           style={styles.signOutButton}
           onPress={handleSignOut}
           accessibilityRole="button"
@@ -972,6 +973,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               Permanently delete your account and all associated data. This action cannot be undone.
             </Text>
             <Pressable
+              testID="settings-delete-account-button"
               style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]}
               onPress={handleDeleteAccount}
               disabled={isDeleting}

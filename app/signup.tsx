@@ -169,6 +169,7 @@ export default function SignupScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
+              testID="signup-email-input"
               ref={emailRef}
               style={styles.input}
               placeholder="your@email.com"
@@ -189,6 +190,7 @@ export default function SignupScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <TextInput
+              testID="signup-password-input"
               ref={passwordRef}
               style={styles.input}
               placeholder="••••••••"
@@ -242,6 +244,7 @@ export default function SignupScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password</Text>
             <TextInput
+              testID="signup-confirm-password-input"
               ref={confirmPasswordRef}
               style={styles.input}
               placeholder="••••••••"
@@ -258,6 +261,7 @@ export default function SignupScreen() {
           </View>
 
           <TouchableOpacity
+            testID="signup-submit-button"
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleSignup}
             disabled={loading || googleLoading}
@@ -279,6 +283,7 @@ export default function SignupScreen() {
           </View>
 
           <TouchableOpacity
+            testID="signup-google-button"
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
             disabled={loading || googleLoading}
@@ -298,6 +303,7 @@ export default function SignupScreen() {
 
           {/* Apple Sign In - only renders on iOS */}
           <AppleSignInButton
+            testID="signup-apple-button"
             onError={(error) => {
               logger.error('Apple sign in failed', error, { category: LogCategory.AUTH });
               showToast.error(error.message);
@@ -305,8 +311,9 @@ export default function SignupScreen() {
           />
 
           <TouchableOpacity
+            testID="signup-login-link"
             style={styles.loginLink}
-            onPress={() => router.back()}
+            onPress={() => router.push('/login')}
             disabled={loading || googleLoading}
           >
             <Text style={styles.loginLinkText}>

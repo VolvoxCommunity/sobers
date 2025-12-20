@@ -253,7 +253,7 @@ export default function StepDetailScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={handleBack} style={styles.backButton}>
+        <Pressable testID="step-detail-back-button" onPress={handleBack} style={styles.backButton}>
           <ChevronLeft size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.stepIndicator}>
@@ -271,12 +271,14 @@ export default function StepDetailScreen() {
         {/* Step Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.stepNumber}>Step {step.step_number}</Text>
-          <Text style={styles.title}>{step.title}</Text>
+          <Text testID="step-detail-title" style={styles.title}>
+            {step.title}
+          </Text>
           <Text style={styles.description}>{step.description}</Text>
         </View>
 
         {/* Detailed Content Section */}
-        <View style={styles.section}>
+        <View testID="step-detail-content" style={styles.section}>
           <Text style={styles.sectionTitle}>Understanding This Step</Text>
           <Text style={styles.sectionContent}>{step.detailed_content}</Text>
         </View>
@@ -298,6 +300,7 @@ export default function StepDetailScreen() {
         <View style={styles.actionSection}>
           {/* Completion Button */}
           <Pressable
+            testID="step-detail-complete-button"
             style={[
               styles.completeButton,
               isCompleted && styles.completeButtonActive,

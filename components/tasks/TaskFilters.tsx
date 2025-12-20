@@ -73,6 +73,7 @@ export default function TaskFilters({
           contentContainerStyle={styles.filters}
         >
           <TouchableOpacity
+            testID="tasks-filter-all"
             style={[styles.filterChip, filterStatus === 'all' && styles.filterChipActive]}
             onPress={() => onStatusFilterChange('all')}
             accessibilityRole="button"
@@ -86,6 +87,7 @@ export default function TaskFilters({
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID="tasks-filter-assigned"
             style={[styles.filterChip, filterStatus === 'assigned' && styles.filterChipActive]}
             onPress={() => onStatusFilterChange('assigned')}
             accessibilityRole="button"
@@ -102,6 +104,7 @@ export default function TaskFilters({
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID="tasks-filter-completed"
             style={[styles.filterChip, filterStatus === 'completed' && styles.filterChipActive]}
             onPress={() => onStatusFilterChange('completed')}
             accessibilityRole="button"

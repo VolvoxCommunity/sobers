@@ -151,7 +151,7 @@ EXPO_PUBLIC_SENTRY_DSN=xxx        # Production
 - Scopes: auth, journey, tasks, profile, supabase, theme, deps, config
 - Commit after each task, push only when ALL tasks complete
 
-**Never:** Force push to main/develop, skip typecheck, commit .env
+**Never:** Force push to main/develop, skip typecheck, skip formatting, skip running tests, skip building, commit .env
 
 ## Release Checklist
 

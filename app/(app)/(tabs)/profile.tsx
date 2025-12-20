@@ -576,7 +576,7 @@ export default function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open settings"
           accessibilityLabelledBy="profile-title"
-          testID="settings-button"
+          testID="profile-settings-button"
         >
           <Settings size={22} color={theme.text} />
         </TouchableOpacity>
@@ -614,6 +614,7 @@ export default function ProfileScreen() {
             showGenerateNew={sponseeRelationships.length > 0}
             theme={theme}
             onPrimaryAction={generateInviteCode}
+            testIDPrefix="sponsor"
           >
             {sponseeRelationships.map((rel) => (
               <RelationshipCard
@@ -651,6 +652,7 @@ export default function ProfileScreen() {
             onSecondaryAction={
               sponsorRelationships.length > 0 ? handleShowInviteCodeSheet : undefined
             }
+            testIDPrefix="sponsee"
           >
             {sponsorRelationships.map((rel) => (
               <RelationshipCard
