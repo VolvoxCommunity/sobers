@@ -26,8 +26,15 @@ interface PasswordRequirementProps {
 }
 
 /**
- * Displays a single password requirement with check/x icon.
- * Uses text fallback (✓/✗) in test environments where icons may be mocked.
+ * Render a single password requirement row with an indicator (icon or fallback glyph) and label.
+ *
+ * The indicator shows a check when the requirement is met and an X when it is not; if the icon components are unavailable
+ * or throw, a textual glyph (✓ / ✗) is used as a fallback.
+ *
+ * @param met - Whether the requirement is satisfied
+ * @param text - The requirement description to display
+ * @param theme - Theme colors used for the indicator styling
+ * @param styles - StyleSheet object containing `requirementRow`, `requirementText`, and `requirementMet`
  */
 function PasswordRequirement({ met, text, theme, styles }: PasswordRequirementProps) {
   const CheckIcon = Check;
@@ -75,12 +82,9 @@ function PasswordRequirement({ met, text, theme, styles }: PasswordRequirementPr
 }
 
 /**
- * Renders the sign-up screen with fields and actions to create a new account.
+ * Display the create-account screen with email and confirm-password inputs, inline password requirement feedback, and Google/Apple sign-in options.
  *
- * The screen validates email and password inputs, performs email/password sign-up,
- * supports Google and Apple sign-in flows, and navigates to onboarding on successful account creation.
- *
- * @returns A React element representing the sign-up screen.
+ * @returns A React element that renders the sign-up screen UI
  */
 export default function SignupScreen() {
   const { theme } = useTheme();

@@ -33,11 +33,11 @@ import { showAlertPlatform, showConfirmPlatform } from './platform';
 export type { AlertButton } from './types';
 
 /**
- * Displays an alert dialog appropriate for the current platform.
+ * Display an alert dialog appropriate for the current platform.
  *
- * @param title - Dialog title; on web the title is prepended to the message
+ * @param title - Dialog title (on web the title is prepended to the message)
  * @param message - Optional body text shown in the dialog
- * @param buttons - Optional button configurations; applied on native platforms and ignored on web
+ * @param buttons - Optional button configurations; used on native platforms and ignored on web
  */
 export function showAlert(
   title: string,

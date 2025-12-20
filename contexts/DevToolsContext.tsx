@@ -57,8 +57,11 @@ interface DevToolsProviderProps {
 }
 
 /**
- * Provider for developer tools context.
- * Only provides actual functionality in __DEV__ mode.
+ * Provides the DevTools context to descendants, enabling development-only controls for verbose logging, analytics debug, sobriety date override, and time-traveling the current date.
+ *
+ * In production or when the context is not consumed, consumers receive safe no-op defaults; real functionality is active only in __DEV__.
+ *
+ * @param children - Content that will have access to the DevTools context
  */
 export function DevToolsProvider({ children }: DevToolsProviderProps) {
   const [verboseLogging, setVerboseLogging] = useState(true);
@@ -112,8 +115,9 @@ export function DevToolsProvider({ children }: DevToolsProviderProps) {
 // =============================================================================
 
 /**
- * Hook to access developer tools.
- * Returns no-op functions in production for safety.
+ * Provides access to the DevTools context when available in development.
+ *
+ * @returns The DevTools context containing dev-only state, setters, `getCurrentDate`, and `resetAll`; in production or when the context is unavailable, a safe default object with no-op setters, `getCurrentDate()` returning the real current date, and default state values.
  */
 export function useDevTools(): DevToolsContextType {
   const context = useContext(DevToolsContext);

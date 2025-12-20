@@ -15,14 +15,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 /**
  * Protected layout that guards all routes within the (app) group.
  *
- * Uses declarative `<Redirect>` component per Expo Router best practices.
- * This layout handles authentication checks and redirects:
- * - Shows loading indicator while auth state is being determined
- * - Redirects to /login if user is not authenticated
- * - Redirects to /onboarding if user profile is incomplete
- * - Renders child routes if user is fully authenticated
+ * Renders a loading state while auth is resolving, redirects to authentication or onboarding when required, and exposes the app's protected routes when the user has a complete profile.
  *
- * @returns The protected layout with auth guards
+ * @returns The layout element that renders protected routes or redirects based on authentication and profile completeness.
  */
 export default function AppLayout(): React.ReactElement {
   const { user, profile, loading } = useAuth();

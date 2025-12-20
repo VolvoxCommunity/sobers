@@ -32,9 +32,9 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 
 /**
- * Render the home dashboard that displays sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
+ * Render the home dashboard showing sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
  *
- * The screen fetches active relationships and recent tasks, supports pull-to-refresh, allows disconnecting relationships, and opens the task creation sheet for sponsees.
+ * Fetches active relationships and recent assigned tasks, supports pull-to-refresh, allows disconnecting relationships, and opens the task creation sheet for sponsees.
  *
  * @returns The Home screen React element
  */

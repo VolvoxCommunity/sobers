@@ -5,14 +5,13 @@ import { TEST_USERS } from '../fixtures/test-data';
 let supabaseAdmin: SupabaseClient | null = null;
 
 /**
- * Returns the Supabase admin client with service role permissions.
+ * Get a singleton Supabase admin client configured with the service role key.
  *
- * Uses lazy initialization to avoid errors when Playwright lists tests without
- * environment variables set. The error will only be thrown during actual test
- * execution (when the client is first accessed), not during test discovery.
+ * Initializes the client on first call using EXPO_PUBLIC_SUPABASE_URL and
+ * E2E_SUPABASE_SERVICE_KEY. Initialization is deferred so test discovery can
+ * run without requiring those environment variables.
  *
- * @throws {Error} If EXPO_PUBLIC_SUPABASE_URL or E2E_SUPABASE_SERVICE_KEY
- *   environment variables are not set when the function is called.
+ * @throws If EXPO_PUBLIC_SUPABASE_URL or E2E_SUPABASE_SERVICE_KEY are not set when called.
  * @returns The configured Supabase admin client
  */
 function getSupabaseAdmin(): SupabaseClient {
@@ -33,6 +32,15 @@ function getSupabaseAdmin(): SupabaseClient {
   return supabaseAdmin;
 }
 
+/**
+ * Reset Supabase test data to a known state for end-to-end tests.
+ *
+ * Deletes task completion rows for the test users, removes the onboarding
+ * profile by email, and ensures the primary test user profile exists with
+ * the required fields.
+ *
+ * @throws Error if upserting the primary test user profile fails
+ */
 export async function resetTestData(): Promise<void> {
   const client = getSupabaseAdmin();
 
@@ -61,6 +69,11 @@ export async function resetTestData(): Promise<void> {
   }
 }
 
+/**
+ * Deletes Supabase users created for signup end-to-end tests.
+ *
+ * Removes all users whose email begins with `e2e-signup-` via the Supabase admin API.
+ */
 export async function cleanupSignupUsers(): Promise<void> {
   const client = getSupabaseAdmin();
 
@@ -74,6 +87,12 @@ export async function cleanupSignupUsers(): Promise<void> {
   }
 }
 
+/**
+ * Create a new test user with the given email and password.
+ *
+ * @returns The newly created user's ID
+ * @throws If user creation fails
+ */
 export async function createTestUser(email: string, password: string): Promise<string> {
   const client = getSupabaseAdmin();
 
@@ -88,8 +107,12 @@ export async function createTestUser(email: string, password: string): Promise<s
 }
 
 /**
- * Ensures a test user exists with the specified ID, email, and password.
- * Creates the user if they don't exist, or updates their password if they do.
+ * Ensure a test user exists with the given ID, email, and password.
+ *
+ * @param id - The desired user ID to create or validate
+ * @param email - The user's email address
+ * @param password - The user's password; if the user exists their password will be updated
+ * @throws Rethrows the creation error if user creation fails for a reason other than "already been registered"
  */
 export async function ensureTestUserExists(
   id: string,
@@ -120,6 +143,11 @@ export async function ensureTestUserExists(
   }
 }
 
+/**
+ * Permanently deletes the Supabase user with the given user ID from the project.
+ *
+ * @param userId - The ID of the Supabase user to delete
+ */
 export async function deleteTestUser(userId: string): Promise<void> {
   const client = getSupabaseAdmin();
   await client.auth.admin.deleteUser(userId);

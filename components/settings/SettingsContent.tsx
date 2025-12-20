@@ -81,8 +81,11 @@ interface DevToolsSectionProps {
 }
 
 /**
- * Developer tools section - only rendered in __DEV__ mode.
- * Provides utilities for testing and debugging the app.
+ * Renders a Developer Tools section exposing debug utilities for testing toasts, error reporting, analytics, and test data manipulation.
+ *
+ * Includes controls for triggering test toasts, sending a test Sentry error, firing a test analytics event, copying the current user ID, resetting onboarding, clearing slip-ups, adjusting a time-travel offset (days), and toggles for verbose logging and analytics debug.
+ *
+ * @param props - DevToolsSectionProps containing theme, styles, profile, and refreshProfile used to render controls and perform actions
  */
 function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSectionProps) {
   const router = useRouter();

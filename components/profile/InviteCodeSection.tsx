@@ -47,12 +47,11 @@ interface InviteCodeSectionProps {
 /**
  * Render a titled section for invite-code management that supports both empty and populated states.
  *
- * When `isEmpty` is true, displays `emptyMessage` and a primary action button whose icon is `Share2` if
- * `primaryButtonLabel` contains "Generate", otherwise `QrCode`. When `isEmpty` is false, renders `children`
+ * When empty, shows the provided empty message and a primary action button. When populated, renders `children`
  * and optionally a primary "Generate New" button (when `showGenerateNew` is true) and a secondary
  * "Connect to Another Sponsor" button when `onSecondaryAction` is provided.
  *
- * @returns A React element representing the invite code section.
+ * @returns A React element representing the invite code section
  */
 export default function InviteCodeSection({
   title,

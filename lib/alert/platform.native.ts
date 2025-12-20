@@ -22,14 +22,14 @@ export function showAlertPlatform(title: string, message?: string, buttons?: Ale
 }
 
 /**
- * Displays a native confirmation dialog on iOS/Android.
+ * Show a native confirmation dialog and resolve with the user's choice.
  *
  * @param title - Dialog title
  * @param message - Dialog message body
  * @param confirmText - Label for the confirm button (default: 'Confirm')
  * @param cancelText - Label for the cancel button (default: 'Cancel')
  * @param destructive - If true, style the confirm button as destructive (default: false)
- * @returns Promise that resolves to true if confirmed, false otherwise
+ * @returns `true` if the user confirmed, `false` otherwise
  */
 export async function showConfirmPlatform(
   title: string,

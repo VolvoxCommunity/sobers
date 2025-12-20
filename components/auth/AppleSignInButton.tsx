@@ -36,7 +36,8 @@ interface AppleSignInButtonProps {
  *
  * @param onSuccess - Called after a successful sign-in exchange with the backend
  * @param onError - Called when sign-in fails; not invoked if the user cancels the Apple prompt
- * @returns A React element rendering the Apple sign-in button on iOS, or `null` on other platforms
+ * @param testID - Optional test identifier applied to the container View
+ * @returns The Apple sign-in button React element on iOS, or `null` on other platforms
  */
 export function AppleSignInButton({ onSuccess, onError, testID }: AppleSignInButtonProps) {
   const { isDark } = useTheme();

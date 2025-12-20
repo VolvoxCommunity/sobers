@@ -4,8 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /**
- * Custom 404 page with recovery-themed professional humor.
- * Provides a friendly, engaging experience when users land on non-existent routes.
+ * Render a themed 404 Not Found screen that presents a recovery-themed message and a prominent "Back to Home" CTA.
+ *
+ * The UI adapts colors and typography from the active theme and configures the route header title to "Lost?".
+ *
+ * @returns The rendered NotFoundScreen React element.
  */
 export default function NotFoundScreen() {
   const { theme } = useTheme();

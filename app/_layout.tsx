@@ -54,8 +54,11 @@ import { trackScreenView } from '@/lib/analytics';
 SplashScreen.preventAutoHideAsync();
 
 /**
- * Toast component wrapper that uses theme context for styling.
- * Must be rendered inside ThemeProvider to access theme.
+ * Render a themed Toast positioned at the top of the screen.
+ *
+ * Requires a ThemeProvider in the component tree so the current theme can be read.
+ *
+ * @returns A Toast React element configured with the current theme and positioned at the top with a 60px offset.
  */
 function ToastWrapper(): React.ReactElement {
   const { isDark } = useTheme();

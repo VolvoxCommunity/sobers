@@ -60,6 +60,11 @@ export const TEST_TASKS = {
   },
 } as const;
 
+/**
+ * Create a unique signup email address for end-to-end tests.
+ *
+ * @returns An email address in the format `e2e-signup-<timestamp>@sobers-test.com`, where `<timestamp>` is the number of milliseconds since the Unix epoch.
+ */
 export function generateSignupEmail(): string {
   return `e2e-signup-${Date.now()}@sobers-test.com`;
 }

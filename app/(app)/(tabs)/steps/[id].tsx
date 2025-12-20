@@ -27,12 +27,12 @@ import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 // =============================================================================
 
 /**
- * Renders a full-screen, scrollable detail view for a single step with navigation and completion controls.
+ * Render a full-screen, scrollable detail view for a single step with navigation and completion controls.
  *
- * Fetches step content and, when a user is authenticated, their progress; displays loading and error states,
- * allows toggling completion for the current step, and enables previous/next step navigation.
+ * Fetches step content and, when a user is signed in, their progress; displays loading and error states,
+ * lets the user mark the step complete/uncomplete, and enables navigation to previous/next steps.
  *
- * @returns The Step detail screen component
+ * @returns The step detail screen component element
  */
 export default function StepDetailScreen() {
   // ---------------------------------------------------------------------------
