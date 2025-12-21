@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { JSX, useMemo } from 'react';
+import React, { JSX, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { Circle } from 'lucide-react-native';
 import { Task } from '@/types/database';
@@ -76,7 +76,7 @@ interface TaskStats {
  * />
  * ```
  */
-export default function MyTasksView({
+const MyTasksView = memo(function MyTasksView({
   tasks,
   assignedTasks,
   completedTasks,
@@ -168,7 +168,9 @@ export default function MyTasksView({
       </ScrollView>
     </>
   );
-}
+});
+
+export default MyTasksView;
 
 // =============================================================================
 // Styles

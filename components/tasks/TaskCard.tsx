@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { JSX, useMemo } from 'react';
+import React, { JSX, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { CheckCircle, Calendar, Clock, Trash2 } from 'lucide-react-native';
 import { Task, Profile } from '@/types/database';
@@ -49,7 +49,7 @@ interface TaskCardProps {
  * @param onDelete - Optional callback invoked with the task id and title when deleting the task (used by `"managed-task"`).
  * @returns A JSX element that presents the task with appropriate icons, dates, notes, and action controls for the chosen variant.
  */
-export default function TaskCard({
+const TaskCard = memo(function TaskCard({
   task,
   theme,
   variant,
@@ -183,7 +183,9 @@ export default function TaskCard({
       )}
     </View>
   );
-}
+});
+
+export default TaskCard;
 
 // =============================================================================
 // Styles

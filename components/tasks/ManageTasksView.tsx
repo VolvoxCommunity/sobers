@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { JSX, useMemo } from 'react';
+import React, { JSX, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -109,7 +109,7 @@ interface ManageStats {
  * />
  * ```
  */
-export default function ManageTasksView({
+const ManageTasksView = memo(function ManageTasksView({
   tasks,
   filteredTasks,
   groupedTasks,
@@ -264,7 +264,9 @@ export default function ManageTasksView({
       )}
     </>
   );
-}
+});
+
+export default ManageTasksView;
 
 // =============================================================================
 // Styles
