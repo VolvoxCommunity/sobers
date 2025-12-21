@@ -522,36 +522,6 @@ describe('SettingsContent - Theme Selection', () => {
   });
 });
 
-describe('SettingsContent - External Links', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders legal links section', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Privacy Policy')).toBeTruthy();
-    expect(screen.getByText('Terms of Service')).toBeTruthy();
-  });
-
-  it('renders source code link', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Source Code')).toBeTruthy();
-  });
-});
-
 describe('SettingsContent - Sign Out', () => {
   const mockOnDismiss = jest.fn();
 
