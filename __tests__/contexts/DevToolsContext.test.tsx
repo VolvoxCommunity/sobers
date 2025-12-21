@@ -203,13 +203,14 @@ describe('DevToolsContext', () => {
         });
 
         const now = new Date();
-        const expectedDate = new Date();
-        expectedDate.setDate(now.getDate() + 30);
+        const expectedDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
         const currentDate = result.current.getCurrentDate();
 
-        // Check day is approximately correct (within 1 day tolerance for edge cases)
-        expect(Math.abs(currentDate.getDate() - expectedDate.getDate())).toBeLessThanOrEqual(1);
+        // Compare timestamps with 1 day tolerance (86400000ms) for edge cases
+        expect(Math.abs(currentDate.getTime() - expectedDate.getTime())).toBeLessThanOrEqual(
+          86400000
+        );
       });
 
       it('returns past date when time travel days is negative', () => {
@@ -220,13 +221,14 @@ describe('DevToolsContext', () => {
         });
 
         const now = new Date();
-        const expectedDate = new Date();
-        expectedDate.setDate(now.getDate() - 7);
+        const expectedDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         const currentDate = result.current.getCurrentDate();
 
-        // Check day is approximately correct (within 1 day tolerance for edge cases)
-        expect(Math.abs(currentDate.getDate() - expectedDate.getDate())).toBeLessThanOrEqual(1);
+        // Compare timestamps with 1 day tolerance (86400000ms) for edge cases
+        expect(Math.abs(currentDate.getTime() - expectedDate.getTime())).toBeLessThanOrEqual(
+          86400000
+        );
       });
     });
 

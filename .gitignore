@@ -116,3 +116,6 @@ play-store-key.json
 # Git worktrees
 worktrees/
 .worktrees/
+
+# Serena AI tool
+.serena/
