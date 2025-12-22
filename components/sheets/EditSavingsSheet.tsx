@@ -74,8 +74,9 @@ interface EditSavingsSheetProps {
 
   /**
    * Callback invoked after successful save or clear operation.
+   * Supports async callbacks to ensure data is refreshed before sheet dismissal.
    */
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 }
 
 // =============================================================================
@@ -186,6 +187,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
     // ---------------------------------------------------------------------------
     /**
      * Handles saving the updated spending values to the database.
+     * Awaits onSave callback to ensure profile data is refreshed before sheet dismissal.
      */
     const handleSave = useCallback(async () => {
       if (!validateAmount(amount)) return;
@@ -203,7 +205,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
         if (updateError) throw updateError;
 
         showToast.success('Savings tracking updated');
-        onSave();
+        await onSave();
         sheetRef.current?.dismiss();
       } catch (err) {
         logger.error('Failed to update savings tracking', err as Error, {
@@ -217,6 +219,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
 
     /**
      * Handles clearing all spending data after confirmation.
+     * Awaits onSave callback to ensure profile data is refreshed before sheet dismissal.
      */
     const handleClear = useCallback(async () => {
       const confirmed = await showConfirm(
@@ -242,7 +245,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
         if (updateError) throw updateError;
 
         showToast.success('Tracking data cleared');
-        onSave();
+        await onSave();
         sheetRef.current?.dismiss();
       } catch (err) {
         logger.error('Failed to clear savings tracking', err as Error, {

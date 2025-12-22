@@ -340,7 +340,7 @@ describe('EditSavingsSheet', () => {
       // The supabase update test above verifies the call is made correctly
       // This test is simplified to match the plan's simpler integration test pattern
       const mockOnClose = jest.fn();
-      const mockOnSave = jest.fn();
+      const mockOnSave = jest.fn().mockResolvedValue(undefined);
       const { getByTestId } = render(
         <EditSavingsSheet profile={mockProfile} onClose={mockOnClose} onSave={mockOnSave} />
       );
@@ -404,7 +404,7 @@ describe('EditSavingsSheet', () => {
       mockShowConfirm.mockResolvedValue(true);
 
       const mockOnClose = jest.fn();
-      const mockOnSave = jest.fn();
+      const mockOnSave = jest.fn().mockResolvedValue(undefined);
       const { getByTestId } = render(
         <EditSavingsSheet profile={mockProfile} onClose={mockOnClose} onSave={mockOnSave} />
       );

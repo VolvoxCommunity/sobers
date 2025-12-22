@@ -52,6 +52,13 @@ module.exports = defineConfig([
         require: 'readonly',
       },
     },
+    rules: {
+      // Allow underscore-prefixed unused vars (used for destructuring to exclude props)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
   },
   {
     files: ['scripts/**/*.js'],
