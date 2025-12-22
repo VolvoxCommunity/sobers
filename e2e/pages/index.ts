@@ -13,3 +13,4 @@ export {
   LogSlipUpSheet,
 } from './profile.page';
 export { SettingsPage } from './settings.page';
+export { EditSavingsSheet } from './savings.page';
