@@ -53,11 +53,14 @@ export async function resetTestData(): Promise<void> {
   await client.from('profiles').delete().eq('email', TEST_USERS.onboarding.email);
 
   // Ensure primary user profile exists (required for login to complete successfully)
+  // Include spending data for savings tracking E2E tests
   const { error: profileError } = await client.from('profiles').upsert({
     id: TEST_USERS.primary.id,
     email: TEST_USERS.primary.email,
     display_name: TEST_USERS.primary.displayName,
     sobriety_date: TEST_USERS.primary.sobrietyDate,
+    spend_amount: TEST_USERS.primary.spendAmount,
+    spend_frequency: TEST_USERS.primary.spendFrequency,
   });
 
   if (profileError) {
