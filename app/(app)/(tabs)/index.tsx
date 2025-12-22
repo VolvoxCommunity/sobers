@@ -41,7 +41,7 @@ import { showToast } from '@/lib/toast';
  * @returns The Home screen React element
  */
 export default function HomeScreen() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
   // Get safe area insets for scroll padding
   const insets = useSafeAreaInsets();
@@ -369,7 +369,7 @@ export default function HomeScreen() {
           ref={savingsSheetRef}
           profile={profile}
           onClose={() => {}}
-          onSave={fetchData}
+          onSave={refreshProfile}
         />
       )}
 
