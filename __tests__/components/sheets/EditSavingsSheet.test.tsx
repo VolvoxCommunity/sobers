@@ -136,8 +136,8 @@ const mockProfile: Profile = {
   id: 'user-123',
   email: 'test@example.com',
   display_name: 'Test User',
-  addiction_spending_amount: 50,
-  addiction_spending_frequency: 'weekly',
+  spend_amount: 50,
+  spend_frequency: 'weekly',
   notification_preferences: { tasks: true, messages: true, milestones: true, daily: true },
   created_at: '2024-01-01',
   updated_at: '2024-01-01',
@@ -145,8 +145,8 @@ const mockProfile: Profile = {
 
 const mockProfileWithoutSpending: Profile = {
   ...mockProfile,
-  addiction_spending_amount: null,
-  addiction_spending_frequency: null,
+  spend_amount: null,
+  spend_frequency: null,
 };
 
 // =============================================================================
@@ -329,8 +329,8 @@ describe('EditSavingsSheet', () => {
       await waitFor(() => {
         expect(mockSupabaseFrom).toHaveBeenCalledWith('profiles');
         expect(mockSupabaseUpdate).toHaveBeenCalledWith({
-          addiction_spending_amount: 100,
-          addiction_spending_frequency: 'weekly',
+          spend_amount: 100,
+          spend_frequency: 'weekly',
         });
       });
     });
@@ -414,8 +414,8 @@ describe('EditSavingsSheet', () => {
 
       await waitFor(() => {
         expect(mockSupabaseUpdate).toHaveBeenCalledWith({
-          addiction_spending_amount: null,
-          addiction_spending_frequency: null,
+          spend_amount: null,
+          spend_frequency: null,
         });
       });
     });
@@ -438,8 +438,8 @@ describe('EditSavingsSheet', () => {
 
       // Verify update was NOT called for clearing
       expect(mockSupabaseUpdate).not.toHaveBeenCalledWith({
-        addiction_spending_amount: null,
-        addiction_spending_frequency: null,
+        spend_amount: null,
+        spend_frequency: null,
       });
     });
 

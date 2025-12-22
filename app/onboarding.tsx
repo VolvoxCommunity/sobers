@@ -270,8 +270,8 @@ export default function OnboardingScreen() {
         // Add spending data if enabled
         ...(isSavingsEnabled &&
           spendingAmount.trim() && {
-            addiction_spending_amount: parseFloat(spendingAmount),
-            addiction_spending_frequency: spendingFrequency,
+            spend_amount: parseFloat(spendingAmount),
+            spend_frequency: spendingFrequency,
           }),
       };
 

@@ -65,12 +65,12 @@ export interface Profile {
    * Historical spending amount on addiction in USD.
    * Nullable - only set if user opts into savings tracking during onboarding.
    */
-  addiction_spending_amount?: number | null;
+  spend_amount?: number | null;
   /**
-   * Frequency of the addiction spending amount.
-   * Used with addiction_spending_amount to calculate daily spending rate.
+   * Frequency of the spending amount.
+   * Used with spend_amount to calculate daily spending rate.
    */
-  addiction_spending_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+  spend_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;

@@ -132,9 +132,9 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
     // ---------------------------------------------------------------------------
     // State
     // ---------------------------------------------------------------------------
-    const [amount, setAmount] = useState(profile.addiction_spending_amount?.toString() ?? '');
+    const [amount, setAmount] = useState(profile.spend_amount?.toString() ?? '');
     const [frequency, setFrequency] = useState<SpendingFrequency>(
-      profile.addiction_spending_frequency ?? 'weekly'
+      profile.spend_frequency ?? 'weekly'
     );
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -146,8 +146,8 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
     useImperativeHandle(ref, () => ({
       present: () => {
         // Reset to current values when presenting
-        setAmount(profile.addiction_spending_amount?.toString() ?? '');
-        setFrequency(profile.addiction_spending_frequency ?? 'weekly');
+        setAmount(profile.spend_amount?.toString() ?? '');
+        setFrequency(profile.spend_frequency ?? 'weekly');
         setError('');
         sheetRef.current?.present();
       },
@@ -195,8 +195,8 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            addiction_spending_amount: parseFloat(amount),
-            addiction_spending_frequency: frequency,
+            spend_amount: parseFloat(amount),
+            spend_frequency: frequency,
           })
           .eq('id', profile.id);
 
@@ -234,8 +234,8 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            addiction_spending_amount: null,
-            addiction_spending_frequency: null,
+            spend_amount: null,
+            spend_frequency: null,
           })
           .eq('id', profile.id);
 

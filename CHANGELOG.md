@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add optional savings tracking setup during onboarding with amount and frequency inputs
 - Add Money Saved dashboard card showing total savings and daily/weekly/monthly breakdown
 - Add edit bottom sheet to modify or clear savings tracking data
-- Add `addiction_spending_amount` and `addiction_spending_frequency` fields to profiles table
+- Add `spend_amount` and `spend_frequency` fields to profiles table
 - Add savings calculation utilities with currency formatting
 
 ### Changed

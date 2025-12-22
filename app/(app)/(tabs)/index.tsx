@@ -255,15 +255,14 @@ export default function HomeScreen() {
       </View>
 
       {/* Money Saved Card - only show if user has spending data */}
-      {profile?.addiction_spending_amount != null &&
-        profile?.addiction_spending_frequency != null && (
-          <MoneySavedCard
-            amount={profile.addiction_spending_amount}
-            frequency={profile.addiction_spending_frequency}
-            daysSober={daysSober}
-            onPress={() => savingsSheetRef.current?.present()}
-          />
-        )}
+      {profile?.spend_amount != null && profile?.spend_frequency != null && (
+        <MoneySavedCard
+          amount={profile.spend_amount}
+          frequency={profile.spend_frequency}
+          daysSober={daysSober}
+          onPress={() => savingsSheetRef.current?.present()}
+        />
+      )}
 
       {relationships.filter((rel) => rel.sponsor_id !== profile?.id).length > 0 && (
         <View style={styles.card}>
