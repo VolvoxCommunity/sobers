@@ -2,7 +2,7 @@
 // Imports
 // =============================================================================
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import EditSavingsSheet, { EditSavingsSheetRef } from '@/components/sheets/EditSavingsSheet';
 import { Profile } from '@/types/database';
 
@@ -366,7 +366,7 @@ describe('EditSavingsSheet', () => {
       // The actual toast display depends on async resolution that's difficult to test in isolation
       const mockOnClose = jest.fn();
       const mockOnSave = jest.fn();
-      const { getByTestId, getByText } = render(
+      const { getByText } = render(
         <EditSavingsSheet profile={mockProfile} onClose={mockOnClose} onSave={mockOnSave} />
       );
 
