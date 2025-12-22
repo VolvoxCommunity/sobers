@@ -315,7 +315,7 @@ describe('SettingsSheet', () => {
     it('should dismiss when close button is pressed', () => {
       render(<SettingsSheet />);
 
-      const closeButton = screen.getByTestId('close-icon-button');
+      const closeButton = screen.getByTestId('settings-back-button');
       fireEvent.press(closeButton);
 
       expect(mockDismiss).toHaveBeenCalled();
@@ -327,7 +327,7 @@ describe('SettingsSheet', () => {
       render(<SettingsSheet />);
 
       expect(screen.getByText('Settings')).toBeTruthy();
-      expect(screen.getByTestId('close-icon-button')).toBeTruthy();
+      expect(screen.getByTestId('settings-back-button')).toBeTruthy();
     });
 
     it('should render settings sections', () => {
@@ -892,7 +892,7 @@ describe('SettingsSheet', () => {
         fireEvent.press(accountRow);
       });
 
-      const cancelButton = screen.getByTestId('cancel-name-button');
+      const cancelButton = screen.getByTestId('edit-name-cancel-button');
       await act(async () => {
         fireEvent.press(cancelButton);
       });
@@ -913,7 +913,7 @@ describe('SettingsSheet', () => {
         fireEvent.changeText(input, '');
       });
 
-      const saveButton = screen.getByTestId('save-name-button');
+      const saveButton = screen.getByTestId('edit-name-save-button');
       await act(async () => {
         fireEvent.press(saveButton);
       });
@@ -934,7 +934,7 @@ describe('SettingsSheet', () => {
         fireEvent.changeText(input, 'A');
       });
 
-      const saveButton = screen.getByTestId('save-name-button');
+      const saveButton = screen.getByTestId('edit-name-save-button');
       await act(async () => {
         fireEvent.press(saveButton);
       });
@@ -955,7 +955,7 @@ describe('SettingsSheet', () => {
         fireEvent.changeText(input, '');
       });
 
-      const saveButton = screen.getByTestId('save-name-button');
+      const saveButton = screen.getByTestId('edit-name-save-button');
       await act(async () => {
         fireEvent.press(saveButton);
       });
@@ -982,7 +982,7 @@ describe('SettingsSheet', () => {
         fireEvent.changeText(input, 'New Display Name');
       });
 
-      const saveButton = screen.getByTestId('save-name-button');
+      const saveButton = screen.getByTestId('edit-name-save-button');
       await act(async () => {
         fireEvent.press(saveButton);
       });

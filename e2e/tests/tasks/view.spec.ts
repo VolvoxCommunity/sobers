@@ -1,33 +1,47 @@
 import { test, expect } from '@playwright/test';
-import { TasksPage } from '../../pages';
 
-// All tasks tests are skipped because the tasks components don't have testIDs yet.
-// See tasks.page.ts for the testIDs that need to be added to tasks.tsx and manage-tasks.tsx.
 test.describe('Tasks View', () => {
-  let tasksPage: TasksPage;
-
   test.beforeEach(async ({ page }) => {
-    tasksPage = new TasksPage(page);
-    await tasksPage.goto();
+    await page.goto('/tasks');
+    await page.waitForLoadState('networkidle');
   });
 
-  // Skipped: requires tasks-list testID
-  test.skip('should display tasks list', async () => {
-    await tasksPage.expectOnTasksPage();
+  test('should display tasks page', async ({ page }) => {
+    // Should be on the tasks page
+    await expect(page).toHaveURL(/.*tasks/);
+    // My Tasks and Manage segments should be visible
+    await expect(page.getByRole('button', { name: 'My Tasks' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Manage' })).toBeVisible();
   });
 
-  // Skipped: requires tasks-filter-assigned testID
-  test.skip('should filter tasks by status', async () => {
-    await tasksPage.filterByStatus('assigned');
+  test('should display segmented control', async ({ page }) => {
+    // Segmented control with My Tasks and Manage should be visible
+    await expect(page.getByText('My Tasks')).toBeVisible();
+    await expect(page.getByText('Manage')).toBeVisible();
   });
 
-  // Skipped: requires task-complete-* testID
-  test.skip('should complete a task', async () => {
-    // Placeholder
+  test('should display tasks content area', async ({ page }) => {
+    // Either tasks-list, tasks-empty-state, or manage view content should be visible
+    // The app auto-selects between My Tasks and Manage based on pending tasks
+    const tasksList = page.getByTestId('tasks-list');
+    const emptyState = page.getByTestId('tasks-empty-state');
+    const manageList = page.getByTestId('manage-tasks-list');
+    const anyContent = page.getByText(/no assigned tasks|connect with sponsees/i);
+    const isTasksListVisible = await tasksList.isVisible().catch(() => false);
+    const isEmptyVisible = await emptyState.isVisible().catch(() => false);
+    const isManageVisible = await manageList.isVisible().catch(() => false);
+    const hasAnyContent = await anyContent.isVisible().catch(() => false);
+    expect(isTasksListVisible || isEmptyVisible || isManageVisible || hasAnyContent).toBe(true);
   });
 
-  // Skipped: requires tasks-add-button testID
-  test.skip('should show add task button', async () => {
-    await expect(tasksPage.addTaskButton).toBeVisible();
+  test('should switch between My Tasks and Manage views', async ({ page }) => {
+    // Click Manage to switch view
+    await page.getByText('Manage').click();
+    // Subtitle should change
+    await expect(page.getByText(/Track and assign sponsee tasks/i)).toBeVisible();
+    // Click My Tasks to switch back
+    await page.getByText('My Tasks').click();
+    // Subtitle should change back
+    await expect(page.getByText(/Track your step progress/i)).toBeVisible();
   });
 });

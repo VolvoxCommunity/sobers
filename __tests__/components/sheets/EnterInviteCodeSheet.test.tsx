@@ -135,12 +135,12 @@ describe('EnterInviteCodeSheet', () => {
 
     it('renders Connect button', () => {
       renderSheet();
-      expect(screen.getByTestId('connect-button')).toBeTruthy();
+      expect(screen.getByTestId('enter-invite-code-submit-button')).toBeTruthy();
     });
 
     it('renders Cancel button', () => {
       renderSheet();
-      expect(screen.getByTestId('cancel-button')).toBeTruthy();
+      expect(screen.getByTestId('enter-invite-code-cancel-button')).toBeTruthy();
     });
 
     it('renders close icon button', () => {
@@ -215,7 +215,7 @@ describe('EnterInviteCodeSheet', () => {
   describe('Submit Button State', () => {
     it('Connect button is disabled when code is empty', async () => {
       renderSheet();
-      const button = screen.getByTestId('connect-button');
+      const button = screen.getByTestId('enter-invite-code-submit-button');
 
       // Button should be disabled with empty input
       expect(button.props.disabled).toBe(true);
@@ -228,7 +228,7 @@ describe('EnterInviteCodeSheet', () => {
       fireEvent.changeText(input, 'ABC123');
 
       await waitFor(() => {
-        const button = screen.getByTestId('connect-button');
+        const button = screen.getByTestId('enter-invite-code-submit-button');
         expect(button.props.disabled).toBe(true);
       });
     });
@@ -240,7 +240,7 @@ describe('EnterInviteCodeSheet', () => {
       fireEvent.changeText(input, 'ABC12345');
 
       await waitFor(() => {
-        const button = screen.getByTestId('connect-button');
+        const button = screen.getByTestId('enter-invite-code-submit-button');
         expect(button.props.disabled).toBe(false);
       });
     });
@@ -254,7 +254,7 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith('ABC12345');
@@ -268,14 +268,14 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(screen.getByText('Invalid invite code')).toBeTruthy();
       });
 
       // Verify isSubmitting was reset - button should be enabled again
-      const button = screen.getByTestId('connect-button');
+      const button = screen.getByTestId('enter-invite-code-submit-button');
       expect(button.props.disabled).toBe(false);
     });
 
@@ -286,14 +286,14 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(screen.getByText('Failed to connect. Please try again.')).toBeTruthy();
       });
 
       // Verify isSubmitting was reset - button should be enabled again
-      const button = screen.getByTestId('connect-button');
+      const button = screen.getByTestId('enter-invite-code-submit-button');
       expect(button.props.disabled).toBe(false);
     });
 
@@ -304,7 +304,7 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(screen.getByText('Invalid invite code')).toBeTruthy();
@@ -325,7 +325,7 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(mockDismiss).toHaveBeenCalled();
@@ -351,7 +351,7 @@ describe('EnterInviteCodeSheet', () => {
     it('dismisses sheet when Cancel is pressed', () => {
       renderSheet();
 
-      fireEvent.press(screen.getByTestId('cancel-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-cancel-button'));
 
       expect(mockDismiss).toHaveBeenCalled();
     });
@@ -367,7 +367,7 @@ describe('EnterInviteCodeSheet', () => {
     it('calls onClose when sheet is dismissed via Cancel', () => {
       renderSheet();
 
-      fireEvent.press(screen.getByTestId('cancel-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-cancel-button'));
 
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -379,7 +379,7 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ABC12345');
 
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(mockDismiss).toHaveBeenCalled();
@@ -415,7 +415,7 @@ describe('EnterInviteCodeSheet', () => {
 
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'TEST1234');
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledTimes(1);
@@ -429,7 +429,7 @@ describe('EnterInviteCodeSheet', () => {
 
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'ASYNC123');
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       // Should show loading state (button disabled during submission)
       await waitFor(() => {
@@ -449,7 +449,7 @@ describe('EnterInviteCodeSheet', () => {
 
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'FAIL1234');
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(screen.getByText('Sponsor not found')).toBeTruthy();
@@ -466,7 +466,7 @@ describe('EnterInviteCodeSheet', () => {
 
       const input = screen.getByPlaceholderText('Enter 8-character code');
       fireEvent.changeText(input, 'RETRY123');
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeTruthy();
@@ -474,7 +474,7 @@ describe('EnterInviteCodeSheet', () => {
 
       // Second attempt succeeds
       mockOnSubmit.mockResolvedValueOnce(undefined);
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledTimes(2);
@@ -489,7 +489,7 @@ describe('EnterInviteCodeSheet', () => {
       const input = screen.getByPlaceholderText('Enter 8-character code');
       // Enter lowercase - should be capitalized
       fireEvent.changeText(input, 'abcd1234');
-      fireEvent.press(screen.getByTestId('connect-button'));
+      fireEvent.press(screen.getByTestId('enter-invite-code-submit-button'));
 
       await waitFor(() => {
         // Should receive sanitized, capitalized code

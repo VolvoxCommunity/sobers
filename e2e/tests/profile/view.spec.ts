@@ -26,9 +26,14 @@ test.describe('Profile View', () => {
     await expect(profilePage.sponseeInviteCodeSection).toBeVisible();
   });
 
-  // Skipped: requires profile-settings-button testID to be added to ProfileContent
-  test.skip('should navigate to settings', async ({ page }) => {
+  test('should open settings sheet', async ({ page }) => {
+    // Settings is a bottom sheet, not a separate route
     await profilePage.openSettings();
-    await expect(page).toHaveURL(/.*settings/);
+    // Verify settings sheet is visible by checking for theme toggle
+    await expect(page.getByTestId('settings-theme-toggle')).toBeVisible();
+  });
+
+  test('should display display name', async () => {
+    await expect(profilePage.displayName).toBeVisible();
   });
 });

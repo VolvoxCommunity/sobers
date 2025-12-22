@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ProfilePage } from '../../pages';
+import { ProfilePage, EnterInviteCodeSheet } from '../../pages';
 
 test.describe('Profile Relationships', () => {
   let profilePage: ProfilePage;
@@ -25,24 +25,31 @@ test.describe('Profile Relationships', () => {
     await expect(profilePage.enterInviteCodeButton).toBeVisible();
   });
 
-  // Skipped: requires profile-my-invite-code testID to be added
-  test.skip('should display user invite code', async () => {
-    await expect(profilePage.myInviteCode).toBeVisible();
-  });
-
-  // Skipped: requires profile-copy-invite-code testID to be added
-  test.skip('should copy invite code', async () => {
-    await profilePage.copyInviteCode();
-    await profilePage.expectToast('Copied');
-  });
-
-  // Skipped: requires enter-invite-code-input testID in sheet
-  test.skip('should open enter invite code sheet', async () => {
+  test('should open enter invite code sheet', async ({ page }) => {
     await profilePage.openEnterInviteCode();
+    const inviteCodeSheet = new EnterInviteCodeSheet(page);
+    await expect(inviteCodeSheet.inviteCodeInput).toBeVisible();
   });
 
-  // Skipped: requires profile-relationships-list testID to be added
-  test.skip('should display relationships list', async () => {
-    await expect(profilePage.relationshipsList).toBeVisible();
+  test('should require 8-character invite code', async ({ page }) => {
+    await profilePage.openEnterInviteCode();
+    const inviteCodeSheet = new EnterInviteCodeSheet(page);
+    // Enter invalid (too short) code
+    await inviteCodeSheet.inviteCodeInput.fill('ABC');
+    // Check that character count shows 3/8
+    await expect(page.getByText('3/8 characters')).toBeVisible();
+    // Enter full 8-character code
+    await inviteCodeSheet.inviteCodeInput.fill('ABCD1234');
+    // Check that character count shows 8/8
+    await expect(page.getByText('8/8 characters')).toBeVisible();
+  });
+
+  test('should cancel invite code entry', async ({ page }) => {
+    await profilePage.openEnterInviteCode();
+    const inviteCodeSheet = new EnterInviteCodeSheet(page);
+    await expect(inviteCodeSheet.inviteCodeInput).toBeVisible();
+    await inviteCodeSheet.cancelButton.click();
+    // Sheet should close
+    await expect(inviteCodeSheet.inviteCodeInput).not.toBeVisible({ timeout: 5000 });
   });
 });

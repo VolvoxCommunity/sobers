@@ -24,8 +24,8 @@ test.describe('Steps List', () => {
   test('should display step cards with titles', async ({ page }) => {
     const firstStep = page.getByTestId('step-card-1');
     await expect(firstStep).toBeVisible();
-    // Step cards show the number in a badge, the title, and description
-    // First step is "Admit Powerlessness"
-    await expect(firstStep).toContainText('Admit Powerlessness');
+    // Step cards show the number in a badge and the step content
+    // First step is about admitting powerlessness over alcohol
+    await expect(firstStep).toContainText('powerless over alcohol');
   });
 });

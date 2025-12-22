@@ -89,7 +89,7 @@ const SettingsSheet = forwardRef<SettingsSheetRef>((props, ref) => {
         <TouchableOpacity
           onPress={handleDismiss}
           style={styles.closeButton}
-          testID="close-icon-button"
+          testID="settings-back-button"
           accessibilityLabel="Close"
           accessibilityRole="button"
         >

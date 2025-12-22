@@ -221,7 +221,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
           </Text>
 
           {error ? (
-            <View style={styles.errorContainer}>
+            <View testID="enter-invite-code-error" style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
@@ -239,7 +239,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
               editable={!isSubmitting}
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
-              testID="invite-code-input"
+              testID="enter-invite-code-input"
               accessibilityLabel="Invite code input"
             />
             <Text style={styles.characterCount}>{inviteCode.length}/8 characters</Text>
@@ -253,7 +253,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
               ]}
               onPress={handleSubmit}
               disabled={isSubmitting || inviteCode.length !== 8}
-              testID="connect-button"
+              testID="enter-invite-code-submit-button"
             >
               {isSubmitting ? (
                 <ActivityIndicator size="small" color={theme.white} />
@@ -266,7 +266,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
               style={styles.cancelButton}
               onPress={handleClose}
               disabled={isSubmitting}
-              testID="cancel-button"
+              testID="enter-invite-code-cancel-button"
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>

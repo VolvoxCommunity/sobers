@@ -868,7 +868,7 @@ describe('SettingsScreen', () => {
       fireEvent.changeText(displayNameInput, '');
 
       // Try to save
-      fireEvent.press(getByTestId('save-name-button'));
+      fireEvent.press(getByTestId('edit-name-save-button'));
 
       // Should show validation error
       await waitFor(() => {
@@ -890,7 +890,7 @@ describe('SettingsScreen', () => {
       fireEvent.changeText(displayNameInput, 'A');
 
       // Try to save
-      fireEvent.press(getByTestId('save-name-button'));
+      fireEvent.press(getByTestId('edit-name-save-button'));
 
       // Should show validation error
       await waitFor(() => {
@@ -907,7 +907,7 @@ describe('SettingsScreen', () => {
         expect(getByText('Edit Display Name')).toBeTruthy();
       });
 
-      fireEvent.press(getByTestId('cancel-name-button'));
+      fireEvent.press(getByTestId('edit-name-cancel-button'));
 
       await waitFor(() => {
         expect(queryByText('Edit Display Name')).toBeNull();
@@ -931,7 +931,7 @@ describe('SettingsScreen', () => {
       fireEvent.changeText(getByTestId('edit-display-name-input'), 'New Name');
 
       // Save
-      fireEvent.press(getByTestId('save-name-button'));
+      fireEvent.press(getByTestId('edit-name-save-button'));
 
       await waitFor(() => {
         expect(mockSupabaseFrom).toHaveBeenCalledWith('profiles');
@@ -957,7 +957,7 @@ describe('SettingsScreen', () => {
       });
 
       // Save without changing anything (profile has valid data)
-      fireEvent.press(getByTestId('save-name-button'));
+      fireEvent.press(getByTestId('edit-name-save-button'));
 
       await waitFor(() => {
         expect(Toast.show).toHaveBeenCalledWith(
@@ -979,7 +979,7 @@ describe('SettingsScreen', () => {
         expect(getByText('Edit Display Name')).toBeTruthy();
       });
 
-      fireEvent.press(getByTestId('save-name-button'));
+      fireEvent.press(getByTestId('edit-name-save-button'));
 
       // Modal should still be open after error
       await waitFor(() => {
@@ -1017,7 +1017,7 @@ describe('SettingsScreen', () => {
     // Enter name with leading/trailing whitespace
     fireEvent.changeText(getByTestId('edit-display-name-input'), '  John D.  ');
 
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     // First, verify the update was called with trimmed values
     await waitFor(() => {
@@ -1073,7 +1073,7 @@ describe('SettingsScreen', () => {
     expect(getByText('Save')).toBeTruthy();
 
     // First save
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     // Wait for save to start - "Save" text should disappear (replaced by spinner)
     await waitFor(() => {
@@ -1102,7 +1102,7 @@ describe('SettingsScreen', () => {
 
     // Clear display name to trigger validation error
     fireEvent.changeText(getByTestId('edit-display-name-input'), '');
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     await waitFor(() => {
       expect(getByText('Display name is required')).toBeTruthy();
@@ -1125,7 +1125,7 @@ describe('SettingsScreen', () => {
       expect(getByText('Edit Display Name')).toBeTruthy();
     });
 
-    fireEvent.press(getByTestId('cancel-name-button'));
+    fireEvent.press(getByTestId('edit-name-cancel-button'));
 
     await waitFor(() => {
       expect(queryByText('Edit Display Name')).toBeNull();
@@ -1144,7 +1144,7 @@ describe('SettingsScreen', () => {
     // Enter whitespace-only display name
     fireEvent.changeText(getByTestId('edit-display-name-input'), '   ');
 
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     // Should show validation error (trimmed string is empty)
     await waitFor(() => {
@@ -1210,7 +1210,7 @@ describe('SettingsScreen', () => {
 
     fireEvent.changeText(getByTestId('edit-display-name-input'), 'New Name');
 
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     // Should show ActivityIndicator (Save text is replaced with spinner)
     await waitFor(() => {
@@ -1237,7 +1237,7 @@ describe('SettingsScreen', () => {
     // Enter display name with invalid characters
     fireEvent.changeText(getByTestId('edit-display-name-input'), 'John@123');
 
-    fireEvent.press(getByTestId('save-name-button'));
+    fireEvent.press(getByTestId('edit-name-save-button'));
 
     // Should show validation error
     await waitFor(() => {

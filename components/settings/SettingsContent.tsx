@@ -1209,7 +1209,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Sobers v{packageJson.version}</Text>
+        <Text testID="settings-version" style={styles.footerText}>
+          Sobers v{packageJson.version}
+        </Text>
         <Text style={styles.footerSubtext}>Supporting recovery, one day at a time</Text>
         <Pressable
           onPress={() => handleOpenURL(EXTERNAL_LINKS.DEVELOPER)}
@@ -1272,7 +1274,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
             <View style={styles.modalButtons}>
               <Pressable
-                testID="cancel-name-button"
+                testID="edit-name-cancel-button"
                 style={styles.modalCancelButton}
                 onPress={() => {
                   setIsEditNameModalVisible(false);
@@ -1284,7 +1286,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </Pressable>
               <Pressable
-                testID="save-name-button"
+                testID="edit-name-save-button"
                 style={[styles.modalSaveButton, isSavingName && styles.buttonDisabled]}
                 onPress={handleSaveName}
                 disabled={isSavingName}

@@ -176,6 +176,7 @@ const ManageTasksView = memo(function ManageTasksView({
 
       {/* Task List */}
       <ScrollView
+        testID="manage-tasks-list"
         style={styles.content}
         contentContainerStyle={{ paddingBottom: tabBarHeight }}
         refreshControl={
@@ -253,7 +254,7 @@ const ManageTasksView = memo(function ManageTasksView({
       {/* FAB */}
       {sponsees.length > 0 && (
         <TouchableOpacity
-          testID="tasks-add-button"
+          testID="manage-tasks-create-button"
           style={styles.fab}
           onPress={onCreateTask}
           accessibilityRole="button"
