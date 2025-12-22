@@ -39,7 +39,7 @@ export interface SavingsCalculation {
 export const FREQUENCY_DIVISORS: Record<SpendingFrequency, number> = {
   daily: 1,
   weekly: 7,
-  monthly: 30.44,
+  monthly: 365 / 12,
   yearly: 365,
 } as const;
 

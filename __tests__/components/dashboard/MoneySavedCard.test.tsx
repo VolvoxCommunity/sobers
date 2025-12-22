@@ -117,12 +117,19 @@ describe('MoneySavedCard', () => {
     });
 
     it('should calculate correctly for monthly frequency', () => {
+      // Use 365/12 (average days per month) for precise calculation
+      const monthlyAmount = 365 / 12; // ≈ 30.4167
       renderWithProviders(
-        <MoneySavedCard {...defaultProps} amount={304.4} frequency="monthly" daysSober={30} />
+        <MoneySavedCard
+          {...defaultProps}
+          amount={monthlyAmount}
+          frequency="monthly"
+          daysSober={30}
+        />
       );
       const totalText = screen.getByTestId('money-saved-total');
-      // $304.4/month / 30.44 = $10/day * 30 days = $300.00
-      expect(totalText).toHaveTextContent('$300.00');
+      // $30.4167/month / (365/12) = $1/day * 30 days = $30.00
+      expect(totalText).toHaveTextContent('$30.00');
     });
 
     it('should calculate correctly for yearly frequency', () => {

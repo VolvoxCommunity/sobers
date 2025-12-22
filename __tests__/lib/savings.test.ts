@@ -11,7 +11,7 @@ describe('savings utilities', () => {
     it('should have correct divisor values', () => {
       expect(FREQUENCY_DIVISORS.daily).toBe(1);
       expect(FREQUENCY_DIVISORS.weekly).toBe(7);
-      expect(FREQUENCY_DIVISORS.monthly).toBeCloseTo(30.44, 2);
+      expect(FREQUENCY_DIVISORS.monthly).toBe(365 / 12);
       expect(FREQUENCY_DIVISORS.yearly).toBe(365);
     });
   });
@@ -26,7 +26,8 @@ describe('savings utilities', () => {
     });
 
     it('should return correct daily rate for monthly frequency', () => {
-      expect(calculateDailyRate(304.4, 'monthly')).toBeCloseTo(10, 2);
+      // 365/12 ≈ 30.4167 days per month
+      expect(calculateDailyRate(365 / 12, 'monthly')).toBeCloseTo(1, 2);
     });
 
     it('should return correct daily rate for yearly frequency', () => {
@@ -59,8 +60,8 @@ describe('savings utilities', () => {
 
     it('should calculate per-month savings correctly', () => {
       const result = calculateSavings(70, 'weekly', 14);
-      // $10/day * 30.44 = $304.40/month
-      expect(result.perMonth).toBeCloseTo(304.4, 1);
+      // $10/day * (365/12) ≈ $304.17/month
+      expect(result.perMonth).toBeCloseTo(10 * (365 / 12), 2);
     });
 
     it('should handle zero days sober', () => {
@@ -68,7 +69,7 @@ describe('savings utilities', () => {
       expect(result.totalSaved).toBe(0);
       expect(result.perDay).toBe(100);
       expect(result.perWeek).toBeCloseTo(700, 2);
-      expect(result.perMonth).toBeCloseTo(3044, 0);
+      expect(result.perMonth).toBeCloseTo(100 * (365 / 12), 2);
     });
 
     it('should handle zero amount', () => {
