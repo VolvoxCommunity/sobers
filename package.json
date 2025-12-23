@@ -111,7 +111,7 @@
     "lint-staged": "^16.2.7",
     "metro-minify-terser": "^0.83.3",
     "prettier": "^3.7.4",
-    "react-test-renderer": "19.1.0",
+    "react-test-renderer": "19.2.3",
     "typescript": "~5.9.3"
   },
   "lint-staged": {
