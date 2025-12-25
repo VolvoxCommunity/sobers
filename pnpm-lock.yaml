@@ -132,8 +132,8 @@ importers:
         specifier: ^12.7.0
         version: 12.7.0(@react-native-async-storage/async-storage@2.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))
       lucide-react-native:
-        specifier: ^0.561.0
-        version: 0.561.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        specifier: ^0.562.0
+        version: 0.562.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -4343,8 +4343,8 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react-native@0.561.0:
-    resolution: {integrity: sha512-XxC6DBYN9eK6Y2KO901rBCeqhFvZbz2dihqdwpLBYq36Qa5Vh6ALEkN6xxzB4KHSvfT1hmGcrdHxB2NNpiphGg==}
+  lucide-react-native@0.562.0:
+    resolution: {integrity: sha512-ZF2ok8SzyUaiCIrLGqYh/6SPs+huVzbZOCv0i411L4+oP3tJgQvvKePiVgWCioa7HsT2xaJZSrdd92cuB2/+ew==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-native: '*'
@@ -11061,7 +11061,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react-native@0.561.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+  lucide-react-native@0.562.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
