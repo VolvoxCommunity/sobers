@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `WhatsNewFeatureCard` component for displaying feature highlights in What's New popup
 - Add `useWhatsNew` hook for fetching and managing What's New release data
 - Add `last_seen_version` field to Profile type for tracking seen What's New releases
 - Add `dev`, `supabase:start`, and `supabase:stop` scripts for local development with OAuth env vars
