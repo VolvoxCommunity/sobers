@@ -183,6 +183,22 @@ let mockUpdateState = {
   isSupported: false,
 };
 
+/**
+ * Resets mockUpdateState to default values.
+ * Call in beforeEach blocks to ensure clean test state.
+ */
+const resetMockUpdateState = (options?: { isSupported?: boolean }) => {
+  mockUpdateState = {
+    status: 'idle',
+    isChecking: false,
+    isDownloading: false,
+    errorMessage: null,
+    checkForUpdates: mockCheckForUpdates,
+    applyUpdate: mockApplyUpdate,
+    isSupported: options?.isSupported ?? false,
+  };
+};
+
 jest.mock('@/hooks/useAppUpdates', () => ({
   useAppUpdates: () => mockUpdateState,
 }));
@@ -196,16 +212,7 @@ describe('SettingsContent - App Updates', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset to default state
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
+    resetMockUpdateState();
   });
 
   describe('when updates are not supported', () => {
@@ -379,15 +386,7 @@ describe('SettingsContent - Accessibility', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: true,
-    };
+    resetMockUpdateState({ isSupported: true });
   });
 
   it('has accessible check for updates button', () => {
@@ -407,163 +406,6 @@ describe('SettingsContent - Accessibility', () => {
   });
 });
 
-describe('SettingsContent - Build Info', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders build info section header', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    // Build info header is in uppercase
-    expect(screen.getByText('BUILD INFO')).toBeTruthy();
-  });
-
-  it('shows app version', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    // App version is visible in the build info section (may appear in multiple places)
-    expect(screen.getAllByText(/1\.0\.0/).length).toBeGreaterThanOrEqual(1);
-  });
-});
-
-describe('SettingsContent - Display Name', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders current display name', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Test User')).toBeTruthy();
-  });
-
-  it('shows display name section', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Display Name')).toBeTruthy();
-  });
-});
-
-describe('SettingsContent - Theme Selection', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders theme selection section', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Appearance')).toBeTruthy();
-  });
-
-  it('shows theme options', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Light')).toBeTruthy();
-    expect(screen.getByText('Dark')).toBeTruthy();
-    expect(screen.getByText('System')).toBeTruthy();
-  });
-
-  it('changes theme when light option is pressed', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    fireEvent.press(screen.getByText('Light'));
-
-    expect(mockSetThemeMode).toHaveBeenCalledWith('light');
-  });
-
-  it('changes theme when dark option is pressed', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    fireEvent.press(screen.getByText('Dark'));
-
-    expect(mockSetThemeMode).toHaveBeenCalledWith('dark');
-  });
-
-  it('changes theme when system option is pressed', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    fireEvent.press(screen.getByText('System'));
-
-    expect(mockSetThemeMode).toHaveBeenCalledWith('system');
-  });
-});
-
-describe('SettingsContent - Sign Out', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders sign out button', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Sign Out')).toBeTruthy();
-  });
-});
-
-describe('SettingsContent - Delete Account', () => {
-  const mockOnDismiss = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
-  });
-
-  it('renders delete account button', () => {
-    render(<SettingsContent onDismiss={mockOnDismiss} />);
-
-    expect(screen.getByText('Delete Account')).toBeTruthy();
-  });
-});
+// Note: Build Info, Display Name, Theme Selection, Sign Out, and Delete Account
+// are comprehensively tested in __tests__/app/settings.test.tsx.
+// This file focuses specifically on App Updates UI states as documented in the fileoverview.
