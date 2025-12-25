@@ -71,6 +71,11 @@ export interface Profile {
    * Used with spend_amount to calculate daily spending rate.
    */
   spend_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+  /**
+   * Whether to hide the Money Saved card from dashboard.
+   * User preference set via three-dot menu on card or Settings.
+   */
+  hide_savings_card?: boolean;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
