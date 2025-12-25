@@ -583,6 +583,23 @@ jest.mock('expo-blur', () => {
   };
 });
 
+// Mock expo-image
+jest.mock('expo-image', () => {
+  const React = require('react');
+  return {
+    Image: ({ source, style, contentFit, onLoad, onError, ...props }) =>
+      React.createElement('Image', {
+        source,
+        style,
+        contentFit,
+        onLoad,
+        onError,
+        testID: props.testID || 'expo-image',
+        ...props,
+      }),
+  };
+});
+
 // Mock react-native-keyboard-controller
 jest.mock('react-native-keyboard-controller', () => {
   const React = require('react');

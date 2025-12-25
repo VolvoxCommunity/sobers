@@ -32,6 +32,8 @@ import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
 import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
+import { useWhatsNew } from '@/lib/whats-new';
+import { WhatsNewSheet, WhatsNewSheetRef } from '@/components/whats-new';
 
 /**
  * Render the home dashboard showing sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
@@ -55,6 +57,9 @@ export default function HomeScreen() {
   const { daysSober, currentStreakStartDate, loading: loadingDaysSober } = useDaysSober();
   const taskSheetRef = useRef<TaskCreationSheetRef>(null);
   const savingsSheetRef = useRef<EditSavingsSheetRef>(null);
+  const whatsNewRef = useRef<WhatsNewSheetRef>(null);
+  const { shouldShowWhatsNew, activeRelease, markAsSeen } = useWhatsNew();
+  const hasShownWhatsNewThisSession = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
@@ -110,6 +115,17 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchData();
   }, [profile, fetchData]);
+
+  // Auto-show What's New after delay if there's unseen content
+  useEffect(() => {
+    if (shouldShowWhatsNew && !hasShownWhatsNewThisSession.current) {
+      hasShownWhatsNewThisSession.current = true;
+      const timer = setTimeout(() => {
+        whatsNewRef.current?.present();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowWhatsNew]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -226,6 +242,14 @@ export default function HomeScreen() {
       showToast.error('Failed to hide card. Please try again.');
     }
   };
+
+  /**
+   * Handles dismissal of the What's New sheet.
+   * Marks the current release as seen so it won't auto-show again.
+   */
+  const handleWhatsNewDismiss = useCallback(async () => {
+    await markAsSeen();
+  }, [markAsSeen]);
 
   return (
     <ScrollView
@@ -411,6 +435,14 @@ export default function HomeScreen() {
           profile={profile}
           onClose={() => {}}
           onSave={refreshProfile}
+        />
+      )}
+
+      {activeRelease && (
+        <WhatsNewSheet
+          ref={whatsNewRef}
+          release={activeRelease}
+          onDismiss={handleWhatsNewDismiss}
         />
       )}
 
