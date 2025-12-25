@@ -2,7 +2,7 @@
 // Imports
 // =============================================================================
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
 import EditSavingsSheet, { EditSavingsSheetRef } from '@/components/sheets/EditSavingsSheet';
 import { Profile } from '@/types/database';
 
@@ -532,6 +532,42 @@ describe('EditSavingsSheet', () => {
       // Form should be reset to original value
       const resetInput = getByTestId('edit-savings-amount-input');
       expect(resetInput.props.value).toBe('50');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Setup Mode Tests
+  // ---------------------------------------------------------------------------
+  describe('Setup Mode', () => {
+    const setupModeProps = {
+      profile: mockProfileWithoutSpending,
+      onClose: jest.fn(),
+      onSave: jest.fn(),
+    };
+
+    it('should show setup title when spend data is not set', () => {
+      render(<EditSavingsSheet {...setupModeProps} />);
+      expect(screen.getByText('Set Up Savings Tracking')).toBeTruthy();
+    });
+
+    it('should not show Clear Data button in setup mode', () => {
+      render(<EditSavingsSheet {...setupModeProps} />);
+      expect(screen.queryByText('Clear Tracking Data')).toBeNull();
+    });
+
+    it('should show Get Started button in setup mode', () => {
+      render(<EditSavingsSheet {...setupModeProps} />);
+      expect(screen.getByText('Get Started')).toBeTruthy();
+    });
+
+    it('should show Edit title when spend data is set', () => {
+      render(<EditSavingsSheet profile={mockProfile} onClose={jest.fn()} onSave={jest.fn()} />);
+      expect(screen.getByText('Edit Savings Tracking')).toBeTruthy();
+    });
+
+    it('should show Save Changes button when spend data is set', () => {
+      render(<EditSavingsSheet profile={mockProfile} onClose={jest.fn()} onSave={jest.fn()} />);
+      expect(screen.getByText('Save Changes')).toBeTruthy();
     });
   });
 

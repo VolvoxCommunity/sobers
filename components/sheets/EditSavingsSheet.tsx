@@ -141,6 +141,9 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
     const [isSaving, setIsSaving] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
 
+    // Determine if this is first-time setup (no existing spend data)
+    const isSetupMode = profile.spend_amount == null || profile.spend_frequency == null;
+
     // ---------------------------------------------------------------------------
     // Imperative API
     // ---------------------------------------------------------------------------
@@ -283,7 +286,9 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
       >
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
-          <Text style={styles.title}>Edit Savings Tracking</Text>
+          <Text style={styles.title}>
+            {isSetupMode ? 'Set Up Savings Tracking' : 'Edit Savings Tracking'}
+          </Text>
           <TouchableOpacity
             onPress={() => sheetRef.current?.dismiss()}
             style={styles.closeButton}
@@ -363,23 +368,27 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
             {isSaving ? (
               <ActivityIndicator size="small" color={theme.white} />
             ) : (
-              <Text style={styles.saveButtonText}>Save Changes</Text>
+              <Text style={styles.saveButtonText}>
+                {isSetupMode ? 'Get Started' : 'Save Changes'}
+              </Text>
             )}
           </TouchableOpacity>
 
-          {/* Clear Button */}
-          <TouchableOpacity
-            testID="edit-savings-clear-button"
-            style={styles.clearButton}
-            onPress={handleClear}
-            disabled={isSaving || isClearing}
-          >
-            {isClearing ? (
-              <ActivityIndicator size="small" color={theme.danger} />
-            ) : (
-              <Text style={styles.clearButtonText}>Clear Tracking Data</Text>
-            )}
-          </TouchableOpacity>
+          {/* Clear Button - only shown when editing, not during setup */}
+          {!isSetupMode && (
+            <TouchableOpacity
+              testID="edit-savings-clear-button"
+              style={styles.clearButton}
+              onPress={handleClear}
+              disabled={isSaving || isClearing}
+            >
+              {isClearing ? (
+                <ActivityIndicator size="small" color={theme.danger} />
+              ) : (
+                <Text style={styles.clearButtonText}>Clear Tracking Data</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </BottomSheetScrollView>
       </GlassBottomSheet>
     );
