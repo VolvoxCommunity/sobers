@@ -202,8 +202,9 @@ describe('DevToolsContext', () => {
           result.current.setTimeTravelDays(30);
         });
 
-        const now = new Date();
-        const expectedDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        // Use setDate() to match the implementation (handles DST correctly)
+        const expectedDate = new Date();
+        expectedDate.setDate(expectedDate.getDate() + 30);
 
         const currentDate = result.current.getCurrentDate();
 
@@ -218,8 +219,9 @@ describe('DevToolsContext', () => {
           result.current.setTimeTravelDays(-7);
         });
 
-        const now = new Date();
-        const expectedDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        // Use setDate() to match the implementation (handles DST correctly)
+        const expectedDate = new Date();
+        expectedDate.setDate(expectedDate.getDate() - 7);
 
         const currentDate = result.current.getCurrentDate();
 
