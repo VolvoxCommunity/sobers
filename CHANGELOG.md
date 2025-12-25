@@ -15,10 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add edit bottom sheet to modify or clear savings tracking data
 - Add `spend_amount` and `spend_frequency` fields to profiles table
 - Add savings calculation utilities with currency formatting
+- Add unconfigured state for Money Saved card showing setup prompt when spending data not set
+- Add three-dot menu to Money Saved card with "Edit savings" and "Hide from dashboard" options
+- Add Dashboard section in Settings with toggle to show/hide savings card
+- Add `hide_savings_card` field to profiles table for persisting card visibility preference
+- Add setup mode to EditSavingsSheet with "Set Up Savings Tracking" title and "Get Started" button
 
 ### Changed
 
 - Add React.memo to TaskCard, MyTasksView, and ManageTasksView components to prevent unnecessary re-renders during list interactions
+- Update MoneySavedCard to support configured and unconfigured variants via discriminated union types
 
 ### Fixed
 
