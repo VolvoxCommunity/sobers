@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add DevToolsSection tests for SettingsContent covering development mode features
+- Add App Updates UI tests for SettingsContent covering all update status states
+- Add filter by Completed status tests for manage-tasks screen
+- Add initializeAuth error handling tests for AuthContext
+- Add Build Info conditional rendering tests for SettingsContent
+- Add handleSaveName edge case tests for SettingsContent
+- Add handleToggleSavingsCard tests for SettingsContent
+
 ### Changed
 
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
