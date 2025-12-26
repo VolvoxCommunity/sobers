@@ -10,6 +10,7 @@ export class HomePage extends BasePage {
   readonly milestonesPreview: Locator;
   readonly manageTasksQuickAction: Locator;
   readonly moneySavedCard: Locator;
+  readonly moneySavedMenuButton: Locator;
   readonly moneySavedTotal: Locator;
   readonly breakdownDay: Locator;
   readonly breakdownWeek: Locator;
@@ -29,6 +30,7 @@ export class HomePage extends BasePage {
     });
     // Money saved card (only visible when user has spending data)
     this.moneySavedCard = page.getByTestId('money-saved-card');
+    this.moneySavedMenuButton = page.getByTestId('money-saved-menu-button');
     this.moneySavedTotal = page.getByTestId('money-saved-total');
     this.breakdownDay = page.getByTestId('breakdown-day');
     this.breakdownWeek = page.getByTestId('breakdown-week');
@@ -89,9 +91,10 @@ export class HomePage extends BasePage {
   }
 
   /**
-   * Open the edit savings sheet by clicking on the money saved card.
+   * Open the edit savings sheet by clicking the menu button and selecting "Edit savings".
    */
   async openEditSavingsSheet(): Promise<void> {
-    await this.moneySavedCard.click();
+    await this.moneySavedMenuButton.click();
+    await this.page.getByText('Edit savings').click();
   }
 }
