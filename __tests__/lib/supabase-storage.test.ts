@@ -9,15 +9,9 @@ import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 // Unmock lib/supabase so we get the real adapter logic
 jest.unmock('@/lib/supabase');
 
-// Mock expo-constants with Supabase config
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    extra: {
-      supabaseUrl: 'https://test.supabase.co',
-      supabaseAnonKey: 'test-key',
-    },
-  },
-}));
+// Set up environment variables for Supabase
+process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-key';
 
 /**
  * Helper to generate chunk key (matches lib/supabase.ts)

@@ -53,6 +53,12 @@ file_size_limit = "50MiB"
 [storage.s3_protocol]
 enabled = true
 
+# What's New feature images bucket
+[storage.buckets.whats-new-images]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp"]
+
 [auth]
 enabled = true
 site_url = "sobers://google-auth"
@@ -103,7 +109,7 @@ max_frequency = "5s"
 
 # OAuth Providers
 [auth.external.apple]
-enabled = false
+enabled = true
 client_id = "env(APPLE_CLIENT_ID)"
 skip_nonce_check = false
 
@@ -111,7 +117,7 @@ skip_nonce_check = false
 enabled = true
 client_id = "env(GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_SECRET)"
-skip_nonce_check = true
+skip_nonce_check = false
 
 [edge_runtime]
 enabled = true

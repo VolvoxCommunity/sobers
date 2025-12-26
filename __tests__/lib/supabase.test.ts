@@ -1,45 +1,38 @@
 // Unmock the module we are testing
 jest.unmock('@/lib/supabase');
 
-// Mock expo-constants
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    extra: {
-      supabaseUrl: 'https://example.com',
-      supabaseAnonKey: 'anon-key',
-    },
-  },
-}));
+// Set up default environment variables
+const originalEnv = process.env;
 
 describe('lib/supabase', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
+    // Reset process.env before each test
+    process.env = {
+      ...originalEnv,
+      EXPO_PUBLIC_SUPABASE_URL: 'https://example.com',
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable-key',
+    };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   it('throws error if supabaseUrl is missing', () => {
-    jest.doMock('expo-constants', () => ({
-      expoConfig: {
-        extra: {
-          supabaseUrl: undefined,
-          supabaseAnonKey: 'anon-key',
-        },
-      },
-    }));
+    process.env.EXPO_PUBLIC_SUPABASE_URL = '';
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
+
     // Lazy validation: module loads successfully, but accessing supabase throws
     const { supabase } = require('@/lib/supabase');
     expect(() => supabase.auth).toThrow('Missing Supabase environment variables');
   });
 
-  it('throws error if supabaseAnonKey is missing', () => {
-    jest.doMock('expo-constants', () => ({
-      expoConfig: {
-        extra: {
-          supabaseUrl: 'https://example.com',
-          supabaseAnonKey: undefined,
-        },
-      },
-    }));
+  it('throws error if supabasePublishableKey is missing', () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.com';
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = '';
+
     // Lazy validation: module loads successfully, but accessing supabase throws
     const { supabase } = require('@/lib/supabase');
     expect(() => supabase.auth).toThrow('Missing Supabase environment variables');
@@ -47,14 +40,8 @@ describe('lib/supabase', () => {
 
   describe('Supabase Client Initialization', () => {
     it('initializes Supabase client with correct config on native', () => {
-      jest.doMock('expo-constants', () => ({
-        expoConfig: {
-          extra: {
-            supabaseUrl: 'https://example.com',
-            supabaseAnonKey: 'anon-key',
-          },
-        },
-      }));
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.com';
+      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
 
       const { Platform } = require('react-native');
       Platform.OS = 'ios';
@@ -65,7 +52,7 @@ describe('lib/supabase', () => {
 
       expect(createClient).toHaveBeenCalledWith(
         'https://example.com',
-        'anon-key',
+        'publishable-key',
         expect.objectContaining({
           auth: expect.objectContaining({
             autoRefreshToken: false,
@@ -81,14 +68,9 @@ describe('lib/supabase', () => {
     let storageAdapter: any;
 
     const getStorageAdapter = () => {
-      jest.doMock('expo-constants', () => ({
-        expoConfig: {
-          extra: {
-            supabaseUrl: 'https://example.com',
-            supabaseAnonKey: 'anon-key',
-          },
-        },
-      }));
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.com';
+      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
+
       const { createClient } = require('@supabase/supabase-js');
       const { supabase } = require('@/lib/supabase');
       const _ = supabase.auth; // Trigger init
@@ -180,14 +162,8 @@ describe('lib/supabase', () => {
 
   describe('Proxy Behavior', () => {
     it('proxies function calls binding context', () => {
-      jest.doMock('expo-constants', () => ({
-        expoConfig: {
-          extra: {
-            supabaseUrl: 'https://example.com',
-            supabaseAnonKey: 'anon-key',
-          },
-        },
-      }));
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.com';
+      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
 
       const { createClient } = require('@supabase/supabase-js');
 
@@ -205,14 +181,8 @@ describe('lib/supabase', () => {
     });
 
     it('proxies property access', () => {
-      jest.doMock('expo-constants', () => ({
-        expoConfig: {
-          extra: {
-            supabaseUrl: 'https://example.com',
-            supabaseAnonKey: 'anon-key',
-          },
-        },
-      }));
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.com';
+      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-key';
 
       const { createClient } = require('@supabase/supabase-js');
       createClient.mockReturnValue({

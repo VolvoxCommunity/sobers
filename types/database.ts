@@ -76,6 +76,12 @@ export interface Profile {
    * User preference set via three-dot menu on card or Settings.
    */
   hide_savings_card?: boolean;
+  /**
+   * Last "What's New" release version the user has seen.
+   * Used to determine if the What's New popup should be shown.
+   * Null if user hasn't seen any What's New content.
+   */
+  last_seen_version?: string | null;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;

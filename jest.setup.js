@@ -550,7 +550,7 @@ jest.mock('@/components/GlassBottomSheet', () => {
   const { forwardRef, useImperativeHandle, useState } = React;
 
   const MockGlassBottomSheet = forwardRef(function MockGlassBottomSheet(
-    { children, onDismiss },
+    { children, onDismiss, footerComponent },
     ref
   ) {
     const [isVisible, setIsVisible] = useState(false);
@@ -566,7 +566,13 @@ jest.mock('@/components/GlassBottomSheet', () => {
 
     // Only render children when visible (mimics real bottom sheet behavior)
     if (!isVisible) return null;
-    return React.createElement('View', { testID: 'glass-bottom-sheet' }, children);
+    return React.createElement(
+      'View',
+      { testID: 'glass-bottom-sheet' },
+      children,
+      // Render footer component if provided
+      footerComponent ? footerComponent({ animatedFooterPosition: { value: 0 } }) : null
+    );
   });
 
   return {
@@ -580,6 +586,41 @@ jest.mock('expo-blur', () => {
   const React = require('react');
   return {
     BlurView: ({ children, ...props }) => React.createElement('BlurView', props, children),
+  };
+});
+
+// Mock expo-image
+jest.mock('expo-image', () => {
+  const React = require('react');
+  return {
+    Image: ({ source, style, contentFit, onLoad, onError, ...props }) =>
+      React.createElement('Image', {
+        source,
+        style,
+        contentFit,
+        onLoad,
+        onError,
+        testID: props.testID || 'expo-image',
+        ...props,
+      }),
+  };
+});
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return {
+    Ionicons: ({ name, size, color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    MaterialIcons: ({ name, size, color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    FontAwesome: ({ name, size, color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    AntDesign: ({ name, size, color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    Feather: ({ name, size, color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
   };
 });
 
