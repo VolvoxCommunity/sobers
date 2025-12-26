@@ -660,3 +660,50 @@ jest.mock('react-native-toast-message', () => {
     BaseToast: ({ children, ...props }) => React.createElement('BaseToast', props, children),
   };
 });
+
+// Mock expo-clipboard
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn(() => Promise.resolve()),
+  getStringAsync: jest.fn(() => Promise.resolve('')),
+  hasStringAsync: jest.fn(() => Promise.resolve(false)),
+}));
+
+// Mock expo-updates
+jest.mock('expo-updates', () => ({
+  channel: null,
+  updateId: null,
+  runtimeVersion: null,
+  isEmbeddedLaunch: true,
+  checkForUpdateAsync: jest.fn(() => Promise.resolve({ isAvailable: false })),
+  fetchUpdateAsync: jest.fn(() => Promise.resolve({ isNew: false })),
+  reloadAsync: jest.fn(() => Promise.resolve()),
+  useUpdates: jest.fn(() => ({
+    isUpdateAvailable: false,
+    isUpdatePending: false,
+    isChecking: false,
+    isDownloading: false,
+    availableUpdate: null,
+    downloadedUpdate: null,
+    checkError: null,
+    downloadError: null,
+    initializationError: null,
+    lastCheckForUpdateTimeSinceRestart: null,
+  })),
+}));
+
+// Mock expo-device
+jest.mock('expo-device', () => ({
+  modelName: 'Test Device',
+  osName: 'iOS',
+  osVersion: '18.0',
+  deviceType: 2, // Phone
+  isDevice: false,
+}));
+
+// Mock expo-application
+jest.mock('expo-application', () => ({
+  nativeBuildVersion: '100',
+  nativeApplicationVersion: '1.0.0',
+  applicationId: 'com.test.sobers',
+  applicationName: 'Sobers',
+}));

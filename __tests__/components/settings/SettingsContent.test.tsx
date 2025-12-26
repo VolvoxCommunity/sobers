@@ -183,6 +183,22 @@ let mockUpdateState = {
   isSupported: false,
 };
 
+/**
+ * Resets mockUpdateState to default values.
+ * Call in beforeEach blocks to ensure clean test state.
+ */
+const resetMockUpdateState = (options?: { isSupported?: boolean }) => {
+  mockUpdateState = {
+    status: 'idle',
+    isChecking: false,
+    isDownloading: false,
+    errorMessage: null,
+    checkForUpdates: mockCheckForUpdates,
+    applyUpdate: mockApplyUpdate,
+    isSupported: options?.isSupported ?? false,
+  };
+};
+
 jest.mock('@/hooks/useAppUpdates', () => ({
   useAppUpdates: () => mockUpdateState,
 }));
@@ -196,16 +212,7 @@ describe('SettingsContent - App Updates', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset to default state
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: false,
-    };
+    resetMockUpdateState();
   });
 
   describe('when updates are not supported', () => {
@@ -379,15 +386,7 @@ describe('SettingsContent - Accessibility', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUpdateState = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: true,
-    };
+    resetMockUpdateState({ isSupported: true });
   });
 
   it('has accessible check for updates button', () => {
@@ -406,3 +405,7 @@ describe('SettingsContent - Accessibility', () => {
     expect(button).toBeTruthy();
   });
 });
+
+// Note: Build Info, Display Name, Theme Selection, Sign Out, and Delete Account
+// are comprehensively tested in __tests__/app/settings.test.tsx.
+// This file focuses specifically on App Updates UI states as documented in the fileoverview.
