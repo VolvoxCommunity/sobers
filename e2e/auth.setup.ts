@@ -15,19 +15,19 @@ setup('authenticate', async ({ page }) => {
   // Reset test data before running tests
   await resetTestData();
 
-  // Navigate to login page and wait for network to settle
-  // This prevents race conditions with React hydration that can detach form elements
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  // Navigate to login page
+  await page.goto('/login');
 
-  // Wait for the email input to be stable (attached, visible, and enabled)
-  // This gives React time to complete hydration before we interact with the form
-  const emailInput = page.getByTestId('login-email-input');
-  await emailInput.waitFor({ state: 'attached', timeout: 10000 });
+  // Wait for the submit button to be visible - this indicates the full form is rendered
+  // and React hydration is complete. This is more reliable than waiting for individual
+  // input elements which may briefly detach during hydration.
+  const submitButton = page.getByTestId('login-submit-button');
+  await submitButton.waitFor({ state: 'visible', timeout: 30000 });
 
-  // Fill login form
-  await emailInput.fill(TEST_USERS.primary.email);
+  // Fill login form - elements should now be stable
+  await page.getByTestId('login-email-input').fill(TEST_USERS.primary.email);
   await page.getByTestId('login-password-input').fill(TEST_USERS.primary.password);
-  await page.getByTestId('login-submit-button').click();
+  await submitButton.click();
 
   // Wait for redirect to home page
   // Add a longer timeout to ensure the authentication state is updated
