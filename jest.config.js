@@ -41,13 +41,9 @@ module.exports = {
   coverageThreshold: {
     global: {
       statements: 85,
-      branches: 80, // Temporarily lowered from 85% - see TODO below
+      branches: 85,
       functions: 85,
       lines: 85,
     },
   },
-  // TODO: Increase branch coverage to 85% by adding tests for:
-  // - components/settings/SettingsContent.tsx (58.73% branches)
-  // - app/(app)/(tabs)/profile.tsx (69.79% branches)
-  // - contexts/DevToolsContext.tsx (0% branches)
 };
