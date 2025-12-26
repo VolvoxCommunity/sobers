@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix E2E savings tests failing due to incorrect card click (menu button required)
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle
-- Fix keyboard blocking input fields in EditSavingsSheet and TaskCreationSheet bottom sheets
+- Fix keyboard pushing content up excessively in EditSavingsSheet by using single snap point
 
 ## [1.2.1] - 2025-12-25
 

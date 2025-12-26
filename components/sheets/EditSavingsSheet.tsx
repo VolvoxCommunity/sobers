@@ -272,7 +272,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
     return (
       <GlassBottomSheet
         ref={sheetRef}
-        snapPoints={['50%', '70%']}
+        snapPoints={['50%']}
         onDismiss={handleDismiss}
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
