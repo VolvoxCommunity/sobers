@@ -923,8 +923,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           <Pressable
             testID="settings-whats-new-row"
             style={styles.menuItem}
-            onPress={() => whatsNewRef.current?.present()}
-            disabled={!activeRelease}
+            onPress={() => {
+              if (activeRelease) {
+                whatsNewRef.current?.present();
+              } else {
+                showToast.info("You're all caught up! No new updates.");
+              }
+            }}
             accessibilityRole="button"
             accessibilityLabel="View What's New"
           >

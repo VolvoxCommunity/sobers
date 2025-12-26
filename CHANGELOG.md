@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix "What's New" settings row doing nothing when no release is available - now shows info toast
 - Fix Money Saved card not updating on home tab after editing savings amount or frequency
 - Fix `_scrollRef` null error when dismissing LogSlipUpSheet by replacing BottomSheetTextInput with standard TextInput
 - Fix potential race condition in EditSavingsSheet where profile refresh could show stale data by awaiting onSave callback before sheet dismissal
@@ -78,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix "What's New" settings row doing nothing when no release is available - now shows info toast
+
 - Fix Vercel deployment by using standard Expo Metro config (Sentry Metro serializer incompatible with Metro 0.83+)
 - Fix toast messages being cut off by replacing BaseToast with custom component that properly wraps text
 - Fix Reset Onboarding dev tool by clearing fields correctly and using explicit navigation
@@ -97,6 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSDoc documentation for profile, login, settings utils, and Supabase client modules
 
 ### Fixed
+
+- Fix "What's New" settings row doing nothing when no release is available - now shows info toast
 
 - Restored missing newlines at end of files (POSIX compliance)
 

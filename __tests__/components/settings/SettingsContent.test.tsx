@@ -66,6 +66,15 @@ jest.mock('@/components/whats-new', () => ({
   WhatsNewSheet: () => null,
 }));
 
+// Mock toast - using factory function to ensure proper hoisting
+jest.mock('@/lib/toast', () => ({
+  showToast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
+}));
+
 // Mock package.json
 jest.mock(
   '../../../package.json',
@@ -422,5 +431,35 @@ describe('SettingsContent - Accessibility', () => {
 
     const button = screen.getByText('Restart to Update');
     expect(button).toBeTruthy();
+  });
+});
+
+describe("SettingsContent - What's New", () => {
+  const mockOnDismiss = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUpdateState = {
+      status: 'idle',
+      isChecking: false,
+      isDownloading: false,
+      errorMessage: null,
+      checkForUpdates: mockCheckForUpdates,
+      applyUpdate: mockApplyUpdate,
+      isSupported: true,
+    };
+  });
+
+  it('shows info toast when clicked with no active release', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { showToast } = require('@/lib/toast');
+
+    // The default mock has activeRelease: null
+    render(<SettingsContent onDismiss={mockOnDismiss} />);
+
+    const whatsNewRow = screen.getByTestId('settings-whats-new-row');
+    fireEvent.press(whatsNewRow);
+
+    expect(showToast.info).toHaveBeenCalledWith("You're all caught up! No new updates.");
   });
 });
