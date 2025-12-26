@@ -11,7 +11,8 @@
 // =============================================================================
 import React, { forwardRef, useRef, useImperativeHandle, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView, BottomSheetFooter, BottomSheetFooterProps } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import GlassBottomSheet, { type GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import WhatsNewFeatureCard from './WhatsNewFeatureCard';
@@ -99,6 +100,7 @@ const SNAP_POINTS = ['70%', '90%'];
 const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
   ({ release, onDismiss }, ref) => {
     const { theme } = useTheme();
+    const insets = useSafeAreaInsets();
     const bottomSheetRef = useRef<GlassBottomSheetRef>(null);
     const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -116,8 +118,37 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
       bottomSheetRef.current?.dismiss();
     }, []);
 
+    /**
+     * Renders the footer with the dismiss button.
+     * Using BottomSheetFooter ensures the button is always visible at the bottom,
+     * even when scrolling through many features.
+     */
+    const renderFooter = useCallback(
+      (props: BottomSheetFooterProps) => (
+        <BottomSheetFooter {...props} bottomInset={insets.bottom}>
+          <View style={styles.footer}>
+            <TouchableOpacity
+              testID="whats-new-got-it-button"
+              style={styles.button}
+              onPress={handleGotIt}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss What's New"
+            >
+              <Text style={styles.buttonText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetFooter>
+      ),
+      [insets.bottom, styles, handleGotIt]
+    );
+
     return (
-      <GlassBottomSheet ref={bottomSheetRef} snapPoints={SNAP_POINTS} onDismiss={onDismiss}>
+      <GlassBottomSheet
+        ref={bottomSheetRef}
+        snapPoints={SNAP_POINTS}
+        onDismiss={onDismiss}
+        footerComponent={renderFooter}
+      >
         <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={styles.title}>{release.title}</Text>
@@ -129,16 +160,6 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
               <WhatsNewFeatureCard key={feature.id} feature={feature} />
             ))}
           </View>
-
-          <TouchableOpacity
-            testID="whats-new-got-it-button"
-            style={styles.button}
-            onPress={handleGotIt}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss What's New"
-          >
-            <Text style={styles.buttonText}>Got it!</Text>
-          </TouchableOpacity>
         </BottomSheetScrollView>
       </GlassBottomSheet>
     );
@@ -155,7 +176,8 @@ const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: 40,
+      // Extra padding at bottom to account for the fixed footer
+      paddingBottom: 100,
     },
     header: {
       alignItems: 'center',
@@ -177,6 +199,12 @@ const createStyles = (theme: ThemeColors) =>
     },
     features: {
       marginBottom: 24,
+    },
+    footer: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 16,
+      backgroundColor: theme.background,
     },
     button: {
       backgroundColor: theme.primary,

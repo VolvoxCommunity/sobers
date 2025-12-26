@@ -1397,7 +1397,12 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         </Pressable>
       </Modal>
 
-      {/* What's New Sheet */}
+      {/* What's New Sheet
+       * Note: onDismiss is intentionally empty here because viewing What's New from
+       * Settings is a manual action. We don't mark the release as "seen" so that the
+       * auto-popup on the home screen can still trigger for users who haven't dismissed
+       * it there. The home screen handles marking releases as seen.
+       */}
       {activeRelease && (
         <WhatsNewSheet ref={whatsNewRef} release={activeRelease} onDismiss={() => {}} />
       )}

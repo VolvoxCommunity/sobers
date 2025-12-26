@@ -24,6 +24,7 @@ const mockTheme = {
   white: '#ffffff',
   card: '#ffffff',
   border: '#e0e0e0',
+  background: '#f5f5f5',
   fontRegular: 'System',
 };
 
@@ -31,6 +32,10 @@ jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({
     theme: mockTheme,
   }),
+}));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
 }));
 
 // Mock WhatsNewFeatureCard to simplify testing

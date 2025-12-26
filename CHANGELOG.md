@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update MoneySavedCard to support configured and unconfigured variants via discriminated union types
 - Update Money Saved card to require menu interaction for editing (removed card tap-to-edit behavior)
 - Rename Supabase environment variables from `EXPO_PUBLIC_SUPABASE_*` to `SUPABASE_*` and `SUPABASE_ANON_KEY` to `SUPABASE_PUBLISHABLE_KEY` (exposed via app.config.ts extra)
+- Move What's New dismiss button to fixed footer for better UX when scrolling through many features
 
 ### Fixed
 
