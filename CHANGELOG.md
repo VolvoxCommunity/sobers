@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Refactor EditSavingsSheet tests to use renderWithProviders from test-utils
+- Change Android package name from `com.volvox.sobrietywaypoint` to `com.volvox.sobers`
 
 ### Fixed
 

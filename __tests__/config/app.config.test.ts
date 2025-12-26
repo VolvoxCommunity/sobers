@@ -83,7 +83,7 @@ describe('app.config.ts', () => {
       const config = appConfig({ config: {} } as any);
 
       expect(config.ios?.bundleIdentifier).toBe('com.volvox.sobrietywaypoint');
-      expect(config.android?.package).toBe('com.volvox.sobrietywaypoint');
+      expect(config.android?.package).toBe('com.volvox.sobers');
     });
   });
 

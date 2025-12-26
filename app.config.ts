@@ -92,7 +92,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // Android Configuration
   // ===========================================================================
   android: {
-    package: 'com.volvox.sobrietywaypoint',
+    package: 'com.volvox.sobers',
     icon: './assets/images/logo.png',
     /**
      * Firebase Android configuration file path.
