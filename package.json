@@ -1,7 +1,7 @@
 {
   "name": "sobers",
   "main": "expo-router/entry",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "packageManager": "pnpm@10.26.0",
   "scripts": {
     "dev": ". ./.env && supabase start && expo start",
