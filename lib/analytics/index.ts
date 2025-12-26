@@ -39,7 +39,7 @@ import {
 
 // Re-export types and constants for convenience
 export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';
-export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
+export { calculateDaysSoberBucket, calculateStepsCompletedBucket } from '@/lib/analytics-utils';
 
 // =============================================================================
 // Module State

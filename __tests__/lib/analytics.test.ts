@@ -10,6 +10,7 @@ import {
   resetAnalytics,
   AnalyticsEvents,
   calculateDaysSoberBucket,
+  calculateStepsCompletedBucket,
   __resetForTesting,
 } from '@/lib/analytics';
 
@@ -41,6 +42,7 @@ jest.mock('@/lib/analytics-utils', () => ({
   shouldInitializeAnalytics: () => mockShouldInitializeAnalytics(),
   isDebugMode: () => mockIsDebugMode(),
   calculateDaysSoberBucket: jest.fn(() => '31-90'),
+  calculateStepsCompletedBucket: jest.fn(() => '4-6'),
 }));
 
 // Mock logger
@@ -261,6 +263,11 @@ describe('Unified Analytics Module', () => {
     it('re-exports calculateDaysSoberBucket', () => {
       expect(calculateDaysSoberBucket).toBeDefined();
       expect(typeof calculateDaysSoberBucket).toBe('function');
+    });
+
+    it('re-exports calculateStepsCompletedBucket', () => {
+      expect(calculateStepsCompletedBucket).toBeDefined();
+      expect(typeof calculateStepsCompletedBucket).toBe('function');
     });
   });
 
