@@ -9,7 +9,12 @@
 
 import * as amplitude from '@amplitude/analytics-react-native';
 
-import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';
+import {
+  AnalyticsEvents,
+  type EventParams,
+  type UserProperties,
+  type AnalyticsConfig,
+} from '@/types/analytics';
 import { isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
 
@@ -83,20 +88,30 @@ export function setUserPropertiesPlatform(properties: UserProperties): void {
 
   if (!isInitialized) return;
 
-  const identify = new amplitude.Identify();
-  for (const [key, value] of Object.entries(properties)) {
-    if (value !== undefined) {
-      identify.set(key, value);
+  try {
+    const identify = new amplitude.Identify();
+    for (const [key, value] of Object.entries(properties)) {
+      if (value !== undefined) {
+        identify.set(key, value);
+      }
     }
+    amplitude.identify(identify);
+  } catch (error) {
+    logger.error(
+      'Failed to set user properties',
+      error instanceof Error ? error : new Error(String(error)),
+      { category: LogCategory.ANALYTICS }
+    );
   }
-  amplitude.identify(identify);
 }
 
 /**
  * Tracks a screen view event.
+ * @param screenName - The name of the screen being viewed
+ * @param screenClass - Optional screen class. Defaults to screenName if not provided.
  */
 export function trackScreenViewPlatform(screenName: string, screenClass?: string): void {
-  trackEventPlatform('Screen Viewed', {
+  trackEventPlatform(AnalyticsEvents.SCREEN_VIEWED, {
     screen_name: screenName,
     screen_class: screenClass || screenName,
   });
