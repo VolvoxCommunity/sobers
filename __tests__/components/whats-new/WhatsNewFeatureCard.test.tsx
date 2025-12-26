@@ -115,12 +115,12 @@ describe('WhatsNewFeatureCard', () => {
       expect(screen.getByText('NEW')).toBeTruthy();
     });
 
-    it('displays IMPROVED badge for fix type', () => {
+    it('displays FIX badge for fix type', () => {
       const fixFeature = { ...mockFeature, type: 'fix' as const };
       render(<WhatsNewFeatureCard feature={fixFeature} />);
 
       expect(screen.getByTestId('feature-type-badge')).toBeTruthy();
-      expect(screen.getByText('IMPROVED')).toBeTruthy();
+      expect(screen.getByText('FIX')).toBeTruthy();
     });
   });
 });

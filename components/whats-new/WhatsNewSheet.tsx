@@ -104,6 +104,14 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
     const bottomSheetRef = useRef<GlassBottomSheetRef>(null);
     const styles = useMemo(() => createStyles(theme), [theme]);
 
+    // Sort features: 'feature' type first, then 'fix' type
+    const sortedFeatures = useMemo(() => {
+      return [...release.features].sort((a, b) => {
+        if (a.type === b.type) return a.displayOrder - b.displayOrder;
+        return a.type === 'feature' ? -1 : 1;
+      });
+    }, [release.features]);
+
     // Expose present/dismiss methods via ref
     useImperativeHandle(ref, () => ({
       present: () => bottomSheetRef.current?.present(),
@@ -156,7 +164,7 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
           </View>
 
           <View style={styles.features}>
-            {release.features.map((feature) => (
+            {sortedFeatures.map((feature) => (
               <WhatsNewFeatureCard key={feature.id} feature={feature} />
             ))}
           </View>

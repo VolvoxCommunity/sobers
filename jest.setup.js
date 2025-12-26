@@ -550,7 +550,7 @@ jest.mock('@/components/GlassBottomSheet', () => {
   const { forwardRef, useImperativeHandle, useState } = React;
 
   const MockGlassBottomSheet = forwardRef(function MockGlassBottomSheet(
-    { children, onDismiss },
+    { children, onDismiss, footerComponent },
     ref
   ) {
     const [isVisible, setIsVisible] = useState(false);
@@ -566,7 +566,13 @@ jest.mock('@/components/GlassBottomSheet', () => {
 
     // Only render children when visible (mimics real bottom sheet behavior)
     if (!isVisible) return null;
-    return React.createElement('View', { testID: 'glass-bottom-sheet' }, children);
+    return React.createElement(
+      'View',
+      { testID: 'glass-bottom-sheet' },
+      children,
+      // Render footer component if provided
+      footerComponent ? footerComponent({ animatedFooterPosition: { value: 0 } }) : null
+    );
   });
 
   return {

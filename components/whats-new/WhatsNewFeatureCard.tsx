@@ -53,7 +53,7 @@ const TYPE_CONFIG: Record<
     borderColor: '#059669',
   },
   fix: {
-    label: 'IMPROVED',
+    label: 'FIX',
     icon: 'construct',
     color: '#7c3aed',
     backgroundColor: 'rgba(124, 58, 237, 0.15)',
