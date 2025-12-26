@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [develop]
+    branches: [main]
 
 # Cancel in-progress runs when a new run is triggered on the same branch/PR
 concurrency:
@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 # Minimal permissions for security (required secrets)
-# - E2E_SUPABASE_URL: Supabase project URL
-# - E2E_SUPABASE_ANON_KEY: Supabase anonymous/public key
+# - EXPO_PUBLIC_SUPABASE_URL: Supabase project URL
+# - EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: Supabase publishable key
 # - E2E_SUPABASE_SERVICE_KEY: Supabase service role key (for test data management)
 # - E2E_TEST_PASSWORD: Password for E2E test user accounts
 permissions:
@@ -32,13 +32,13 @@ jobs:
         shardTotal: [4]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
         with:
           version: 10.26.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'pnpm'
@@ -51,7 +51,7 @@ jobs:
         run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -69,7 +69,7 @@ jobs:
         run: pnpm build:web
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Start web server
         run: npx serve dist -l 8081 &
@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload blob report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: blob-report-${{ matrix.shardIndex }}
           path: e2e/blob-report/
@@ -99,13 +99,13 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
         with:
           version: 10.26.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'pnpm'
@@ -113,7 +113,7 @@ jobs:
       - run: pnpm install
 
       - name: Download blob reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: blob-report-*
           path: all-blob-reports
@@ -122,7 +122,7 @@ jobs:
       - name: Merge reports
         run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: playwright-report

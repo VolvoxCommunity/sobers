@@ -5,6 +5,10 @@ export const TEST_USERS = {
     password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
     displayName: 'E2E Primary User',
     sobrietyDate: '2024-01-15',
+    /** Spending amount for savings tracking E2E tests (USD per week) */
+    spendAmount: 50.0,
+    /** Spending frequency for savings tracking E2E tests */
+    spendFrequency: 'weekly' as const,
   },
   sponsor: {
     id: '3a28e197-e07d-4cba-b7e4-01804e7cca73',

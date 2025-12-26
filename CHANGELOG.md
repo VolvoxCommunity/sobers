@@ -9,7 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refactor EditSavingsSheet tests to use renderWithProviders from test-utils
+
+### Fixed
+
+- Fix MoneySavedCard rendering non-functional unconfigured card when profile is null
+- Fix E2E workflow using incorrect GitHub secret name for Supabase key
+
+## [1.2.0] - 2025-12-25
+
+### Added
+
+- Add What's New popup feature showing release highlights when users have unseen content
+- Add `whats_new_releases` and `whats_new_features` Supabase tables for managing release content
+- Add `WhatsNewSheet` component for displaying new features in a bottom sheet modal with release info, feature cards, and dismiss button
+- Add `WhatsNewFeatureCard` component for displaying feature highlights in What's New popup with type badges (NEW/IMPROVED)
+- Add `type` field to What's New features to categorize as 'feature' or 'fix' with distinct visual styling
+- Add `useWhatsNew` hook for fetching and managing What's New release data
+- Add `last_seen_version` field to Profile type for tracking seen What's New releases
+- Add "What's New" row in Settings About section to manually view latest release features
+- Add `dev`, `supabase:start`, and `supabase:stop` scripts for local development with OAuth env vars
+- Add expense tracking feature to visualize money saved since sobriety start date
+- Add optional savings tracking setup during onboarding with amount and frequency inputs
+- Add Money Saved dashboard card showing total savings and daily/weekly/monthly breakdown
+- Add edit bottom sheet to modify or clear savings tracking data
+- Add `spend_amount` and `spend_frequency` fields to profiles table
+- Add savings calculation utilities with currency formatting
+- Add unconfigured state for Money Saved card showing setup prompt when spending data not set
+- Add three-dot menu to Money Saved card with "Edit savings" and "Hide from dashboard" options
+- Add Dashboard section in Settings with toggle to show/hide savings card
+- Add `hide_savings_card` field to profiles table for persisting card visibility preference
+- Add setup mode to EditSavingsSheet with "Set Up Savings Tracking" title and "Get Started" button
+
+### Changed
+
+- Update What's New sheet to open at 90% height by default for better content visibility
+- Enable Google OAuth provider in Supabase auth configuration with GOOGLE_CLIENT_ID and GOOGLE_SECRET environment variables
 - Add React.memo to TaskCard, MyTasksView, and ManageTasksView components to prevent unnecessary re-renders during list interactions
+- Update MoneySavedCard to support configured and unconfigured variants via discriminated union types
+- Update Money Saved card to require menu interaction for editing (removed card tap-to-edit behavior)
+- Rename Supabase environment variable from `EXPO_PUBLIC_SUPABASE_ANON_KEY` to `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- Move What's New dismiss button to fixed footer for better UX when scrolling through many features
+
+### Fixed
+
+- Fix Money Saved card not updating on home tab after editing savings amount or frequency
+- Fix `_scrollRef` null error when dismissing LogSlipUpSheet by replacing BottomSheetTextInput with standard TextInput
+- Fix potential race condition in EditSavingsSheet where profile refresh could show stale data by awaiting onSave callback before sheet dismissal
 
 ## [1.1.0] - 2025-12-19
 
@@ -66,6 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix "What's New" settings row doing nothing when no release is available - now shows info toast
+
 - Restored missing newlines at end of files (POSIX compliance)
 
 ## [1.0.0] - 2025-12-17
@@ -74,7 +122,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/VolvoxCommunity/sobers/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/VolvoxCommunity/sobers/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/VolvoxCommunity/sobers/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/VolvoxCommunity/sobers/compare/v1.0.0...v1.1.0
 [1.0.1]: https://github.com/VolvoxCommunity/sobers/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/VolvoxCommunity/sobers/releases/tag/v1.0.0

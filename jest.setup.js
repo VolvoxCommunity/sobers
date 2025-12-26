@@ -14,6 +14,8 @@ jest.mock('react-native', () => {
     visible ? React.createElement('Modal', props, children) : null;
   const Pressable = ({ children, onPress, ...props }) =>
     React.createElement('Pressable', { onPress, ...props }, children);
+  const Switch = ({ value, onValueChange, ...props }) =>
+    React.createElement('Switch', { value, onValueChange, ...props });
 
   // Mock Animated for AnimatedBottomNav and other animated components
   class MockAnimatedValue {
@@ -51,7 +53,7 @@ jest.mock('react-native', () => {
         callback && callback();
       },
     }),
-    spring: (value, config) => ({
+    spring: (_value, _config) => ({
       start: (callback) => {
         callback && callback();
       },
@@ -77,6 +79,7 @@ jest.mock('react-native', () => {
     KeyboardAvoidingView,
     Modal,
     Pressable,
+    Switch,
     Animated,
     ActivityIndicator: ({ size, color, ...props }) =>
       React.createElement('ActivityIndicator', { size, color, ...props }),
@@ -229,7 +232,7 @@ jest.mock('expo-router', () => {
     }),
     useSegments: () => [],
     usePathname: () => '/',
-    Link: ({ children, ...props }) => children,
+    Link: ({ children, ..._props }) => children,
     Slot: ({ children }) => children,
     Stack: ({ children }) => children,
     Tabs: ({ children }) => children,
@@ -324,7 +327,7 @@ jest.mock('@react-native-community/datetimepicker', () => {
   const React = require('react');
   return {
     __esModule: true,
-    default: ({ value, onChange, mode, display, ...props }) =>
+    default: ({ value, onChange: _onChange, mode, display, ...props }) =>
       React.createElement('DateTimePicker', {
         value: value?.toISOString(),
         mode,
@@ -547,7 +550,7 @@ jest.mock('@/components/GlassBottomSheet', () => {
   const { forwardRef, useImperativeHandle, useState } = React;
 
   const MockGlassBottomSheet = forwardRef(function MockGlassBottomSheet(
-    { children, onDismiss },
+    { children, onDismiss, footerComponent },
     ref
   ) {
     const [isVisible, setIsVisible] = useState(false);
@@ -563,7 +566,13 @@ jest.mock('@/components/GlassBottomSheet', () => {
 
     // Only render children when visible (mimics real bottom sheet behavior)
     if (!isVisible) return null;
-    return React.createElement('View', { testID: 'glass-bottom-sheet' }, children);
+    return React.createElement(
+      'View',
+      { testID: 'glass-bottom-sheet' },
+      children,
+      // Render footer component if provided
+      footerComponent ? footerComponent({ animatedFooterPosition: { value: 0 } }) : null
+    );
   });
 
   return {
@@ -577,6 +586,41 @@ jest.mock('expo-blur', () => {
   const React = require('react');
   return {
     BlurView: ({ children, ...props }) => React.createElement('BlurView', props, children),
+  };
+});
+
+// Mock expo-image
+jest.mock('expo-image', () => {
+  const React = require('react');
+  return {
+    Image: ({ source, style, contentFit, onLoad, onError, ...props }) =>
+      React.createElement('Image', {
+        source,
+        style,
+        contentFit,
+        onLoad,
+        onError,
+        testID: props.testID || 'expo-image',
+        ...props,
+      }),
+  };
+});
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return {
+    Ionicons: ({ name, size: _size, color: _color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    MaterialIcons: ({ name, size: _size, color: _color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    FontAwesome: ({ name, size: _size, color: _color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    AntDesign: ({ name, size: _size, color: _color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
+    Feather: ({ name, size: _size, color: _color }) =>
+      React.createElement(Text, { testID: `icon-${name}` }, `[${name}]`),
   };
 });
 
@@ -707,3 +751,183 @@ jest.mock('expo-application', () => ({
   applicationId: 'com.test.sobers',
   applicationName: 'Sobers',
 }));
+
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+
+  // Mock shared values
+  const mockSharedValue = (initialValue) => ({ value: initialValue });
+
+  // Create View component for Animated.View
+  // Note: entering, exiting, layout are destructured to prevent them from being passed to native View
+  const AnimatedView = React.forwardRef(
+    ({ children, entering: _entering, exiting: _exiting, layout: _layout, ...props }, ref) =>
+      React.createElement('View', { ...props, ref }, children)
+  );
+  AnimatedView.displayName = 'Animated.View';
+
+  // Create Text component for Animated.Text
+  const AnimatedText = React.forwardRef(
+    ({ children, entering: _entering, exiting: _exiting, layout: _layout, ...props }, ref) =>
+      React.createElement('Text', { ...props, ref }, children)
+  );
+  AnimatedText.displayName = 'Animated.Text';
+
+  // Create Image component for Animated.Image
+  const AnimatedImage = React.forwardRef(
+    ({ entering: _entering, exiting: _exiting, layout: _layout, ...props }, ref) =>
+      React.createElement('Image', { ...props, ref })
+  );
+  AnimatedImage.displayName = 'Animated.Image';
+
+  // Create ScrollView component for Animated.ScrollView
+  const AnimatedScrollView = React.forwardRef(
+    ({ children, entering: _entering, exiting: _exiting, layout: _layout, ...props }, ref) =>
+      React.createElement('ScrollView', { ...props, ref }, children)
+  );
+  AnimatedScrollView.displayName = 'Animated.ScrollView';
+
+  // Create FlatList component for Animated.FlatList
+  const AnimatedFlatList = React.forwardRef(
+    ({ children, entering: _entering, exiting: _exiting, layout: _layout, ...props }, ref) =>
+      React.createElement('FlatList', { ...props, ref }, children)
+  );
+  AnimatedFlatList.displayName = 'Animated.FlatList';
+
+  // Mock Animated namespace
+  const Animated = {
+    View: AnimatedView,
+    Text: AnimatedText,
+    Image: AnimatedImage,
+    ScrollView: AnimatedScrollView,
+    FlatList: AnimatedFlatList,
+  };
+
+  // Mock animation configurations
+  const mockEntering = { duration: jest.fn().mockReturnThis() };
+  const mockExiting = { duration: jest.fn().mockReturnThis() };
+
+  return {
+    __esModule: true,
+    default: Animated,
+    // Core hooks
+    useSharedValue: mockSharedValue,
+    useAnimatedStyle: jest.fn(() => ({})),
+    useDerivedValue: jest.fn((fn) => ({ value: fn() })),
+    useAnimatedScrollHandler: jest.fn(() => jest.fn()),
+    useAnimatedGestureHandler: jest.fn(() => jest.fn()),
+    useAnimatedRef: jest.fn(() => ({ current: null })),
+    useAnimatedReaction: jest.fn(),
+    useAnimatedProps: jest.fn(() => ({})),
+    // Timing functions
+    withTiming: jest.fn((toValue) => toValue),
+    withSpring: jest.fn((toValue) => toValue),
+    withDecay: jest.fn((config) => config?.velocity || 0),
+    withDelay: jest.fn((_, animation) => animation),
+    withSequence: jest.fn((...animations) => animations[0]),
+    withRepeat: jest.fn((animation) => animation),
+    // Interpolation
+    interpolate: jest.fn((value, inputRange, outputRange) => {
+      if (inputRange.length < 2 || outputRange.length < 2) return outputRange[0] || 0;
+      return outputRange[0];
+    }),
+    Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+    Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+    // Easing
+    Easing: {
+      linear: jest.fn(),
+      ease: jest.fn(),
+      quad: jest.fn(),
+      cubic: jest.fn(),
+      poly: jest.fn(),
+      sin: jest.fn(),
+      circle: jest.fn(),
+      exp: jest.fn(),
+      elastic: jest.fn(),
+      back: jest.fn(),
+      bounce: jest.fn(),
+      bezier: jest.fn(() => jest.fn()),
+      bezierFn: jest.fn(() => jest.fn()),
+      in: jest.fn(),
+      out: jest.fn(),
+      inOut: jest.fn(),
+    },
+    // Layout animations - entering
+    FadeIn: mockEntering,
+    FadeInUp: mockEntering,
+    FadeInDown: mockEntering,
+    FadeInLeft: mockEntering,
+    FadeInRight: mockEntering,
+    SlideInUp: mockEntering,
+    SlideInDown: mockEntering,
+    SlideInLeft: mockEntering,
+    SlideInRight: mockEntering,
+    ZoomIn: mockEntering,
+    ZoomInDown: mockEntering,
+    ZoomInUp: mockEntering,
+    BounceIn: mockEntering,
+    BounceInDown: mockEntering,
+    BounceInUp: mockEntering,
+    FlipInXDown: mockEntering,
+    FlipInXUp: mockEntering,
+    FlipInYLeft: mockEntering,
+    FlipInYRight: mockEntering,
+    StretchInX: mockEntering,
+    StretchInY: mockEntering,
+    LightSpeedInLeft: mockEntering,
+    LightSpeedInRight: mockEntering,
+    PinwheelIn: mockEntering,
+    RotateInDownLeft: mockEntering,
+    RotateInDownRight: mockEntering,
+    RotateInUpLeft: mockEntering,
+    RotateInUpRight: mockEntering,
+    RollInLeft: mockEntering,
+    RollInRight: mockEntering,
+    // Layout animations - exiting
+    FadeOut: mockExiting,
+    FadeOutUp: mockExiting,
+    FadeOutDown: mockExiting,
+    FadeOutLeft: mockExiting,
+    FadeOutRight: mockExiting,
+    SlideOutUp: mockExiting,
+    SlideOutDown: mockExiting,
+    SlideOutLeft: mockExiting,
+    SlideOutRight: mockExiting,
+    ZoomOut: mockExiting,
+    ZoomOutDown: mockExiting,
+    ZoomOutUp: mockExiting,
+    BounceOut: mockExiting,
+    BounceOutDown: mockExiting,
+    BounceOutUp: mockExiting,
+    FlipOutXDown: mockExiting,
+    FlipOutXUp: mockExiting,
+    FlipOutYLeft: mockExiting,
+    FlipOutYRight: mockExiting,
+    StretchOutX: mockExiting,
+    StretchOutY: mockExiting,
+    LightSpeedOutLeft: mockExiting,
+    LightSpeedOutRight: mockExiting,
+    PinwheelOut: mockExiting,
+    RotateOutDownLeft: mockExiting,
+    RotateOutDownRight: mockExiting,
+    RotateOutUpLeft: mockExiting,
+    RotateOutUpRight: mockExiting,
+    RollOutLeft: mockExiting,
+    RollOutRight: mockExiting,
+    // Layout animations - layout
+    Layout: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
+    LinearTransition: { duration: jest.fn().mockReturnThis() },
+    SequencedTransition: { duration: jest.fn().mockReturnThis() },
+    FadingTransition: { duration: jest.fn().mockReturnThis() },
+    JumpingTransition: { duration: jest.fn().mockReturnThis() },
+    CurvedTransition: { duration: jest.fn().mockReturnThis() },
+    EntryExitTransition: { duration: jest.fn().mockReturnThis() },
+    // Utilities
+    runOnJS: jest.fn((fn) => fn),
+    runOnUI: jest.fn((fn) => fn),
+    createAnimatedComponent: (component) => component,
+    // Animated components
+    ...Animated,
+  };
+});

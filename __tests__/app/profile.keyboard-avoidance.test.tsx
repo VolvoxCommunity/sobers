@@ -202,6 +202,24 @@ jest.mock('lucide-react-native', () => ({
   Copy: () => null,
   User: () => null,
   ChevronLeft: () => null,
+  Layout: () => null,
+  Sparkles: () => null,
+}));
+
+// Mock useWhatsNew hook
+jest.mock('@/lib/whats-new', () => ({
+  useWhatsNew: () => ({
+    shouldShowWhatsNew: false,
+    activeRelease: null,
+    isLoading: false,
+    markAsSeen: jest.fn(),
+    refetch: jest.fn(),
+  }),
+}));
+
+// Mock WhatsNewSheet component
+jest.mock('@/components/whats-new', () => ({
+  WhatsNewSheet: () => null,
 }));
 
 // Mock DateTimePicker

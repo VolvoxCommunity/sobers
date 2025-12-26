@@ -6,18 +6,22 @@
 -- 1. SEED PROFILES
 -- ============================================
 
-INSERT INTO public.profiles (id, email, display_name, sobriety_date, created_at, updated_at)
+INSERT INTO public.profiles (id, email, display_name, sobriety_date, spend_amount, spend_frequency, created_at, updated_at)
 VALUES (
   'b81936a6-125f-420a-a736-eeb5943c28b1',
   'e2e-primary@sobers-test.com',
   'E2E Primary User',
   '2024-01-15',
+  50.00,
+  'weekly',
   NOW(),
   NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
   display_name = EXCLUDED.display_name,
   sobriety_date = EXCLUDED.sobriety_date,
+  spend_amount = EXCLUDED.spend_amount,
+  spend_frequency = EXCLUDED.spend_frequency,
   updated_at = NOW();
 
 INSERT INTO public.profiles (id, email, display_name, sobriety_date, created_at, updated_at)

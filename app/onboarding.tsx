@@ -18,7 +18,9 @@ import { showToast } from '@/lib/toast';
 import { Calendar, LogOut, Info, Square, CheckSquare } from 'lucide-react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
+import SavingsTrackingCard from '@/components/onboarding/SavingsTrackingCard';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import type { SpendingFrequency } from '@/lib/savings';
 import {
   getDateDiffInDays,
   formatDateWithTimezone,
@@ -101,6 +103,12 @@ export default function OnboardingScreen() {
   // Track when we're waiting for profile to update after form submission
   const [awaitingProfileUpdate, setAwaitingProfileUpdate] = useState(false);
 
+  // Savings tracking state (optional feature)
+  const [isSavingsEnabled, setIsSavingsEnabled] = useState(false);
+  const [spendingAmount, setSpendingAmount] = useState('');
+  const [spendingFrequency, setSpendingFrequency] = useState<SpendingFrequency>('weekly');
+  const [spendingError, setSpendingError] = useState<string | null>(null);
+
   // Refresh profile on mount to catch any pending updates (e.g., Apple Sign In)
   // Apple Sign In updates the profile AFTER navigation to onboarding happens,
   // so we need to re-fetch to get the display_name that was just set.
@@ -170,14 +178,45 @@ export default function OnboardingScreen() {
     return () => clearTimeout(timeoutId);
   }, [displayName]);
 
+  // Validate spending amount when enabled
+  useEffect(() => {
+    if (!isSavingsEnabled) {
+      setSpendingError(null);
+      return;
+    }
+    if (!spendingAmount.trim()) {
+      setSpendingError('Amount is required when tracking is enabled');
+      return;
+    }
+    const num = parseFloat(spendingAmount);
+    if (isNaN(num)) {
+      setSpendingError('Please enter a valid number');
+      return;
+    }
+    if (num < 0) {
+      setSpendingError('Amount cannot be negative');
+      return;
+    }
+    setSpendingError(null);
+  }, [isSavingsEnabled, spendingAmount]);
+
   /**
    * Validates that the form is complete and valid for submission.
    * Requires valid display name and accepted terms.
    */
   const isFormValid = useMemo(() => {
     const hasValidDisplayName = displayName.trim() !== '' && displayNameError === null;
-    return hasValidDisplayName && isTermsAccepted;
-  }, [displayName, displayNameError, isTermsAccepted]);
+    const hasValidSpending =
+      !isSavingsEnabled || (spendingAmount.trim() !== '' && spendingError === null);
+    return hasValidDisplayName && isTermsAccepted && hasValidSpending;
+  }, [
+    displayName,
+    displayNameError,
+    isTermsAccepted,
+    isSavingsEnabled,
+    spendingAmount,
+    spendingError,
+  ]);
 
   /**
    * Character count for display name with visual feedback.
@@ -228,6 +267,12 @@ export default function OnboardingScreen() {
         display_name: displayName.trim(),
         // Capture the user's timezone for date calculations
         timezone: userTimezone,
+        // Add spending data if enabled
+        ...(isSavingsEnabled &&
+          spendingAmount.trim() && {
+            spend_amount: parseFloat(spendingAmount),
+            spend_frequency: spendingFrequency,
+          }),
       };
 
       // Use upsert to create the profile if it doesn't exist (for both OAuth and email/password users),
@@ -433,6 +478,17 @@ export default function OnboardingScreen() {
                 <Text style={styles.statsLabel}>Days</Text>
               </View>
             </View>
+
+            {/* Card 3: Savings Tracking (Optional) */}
+            <SavingsTrackingCard
+              isEnabled={isSavingsEnabled}
+              onToggle={setIsSavingsEnabled}
+              amount={spendingAmount}
+              onAmountChange={setSpendingAmount}
+              frequency={spendingFrequency}
+              onFrequencyChange={setSpendingFrequency}
+              error={spendingError}
+            />
 
             {/* Terms Acceptance */}
             <TouchableOpacity

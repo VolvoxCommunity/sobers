@@ -36,7 +36,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['jest.setup.js', '__tests__/**/*.{js,jsx,ts,tsx}', '**/*.test.{js,jsx,ts,tsx}'],
+    files: ['__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
     languageOptions: {
       globals: {
         jest: 'readonly',
@@ -51,6 +51,35 @@ module.exports = defineConfig([
         global: 'writable',
         require: 'readonly',
       },
+    },
+    rules: {
+      // Allow underscore-prefixed unused vars (used for destructuring to exclude props)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    files: ['jest.setup.js', '__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        test: 'readonly',
+        global: 'writable',
+        require: 'readonly',
+      },
+    },
+    rules: {
+      // Allow underscore-prefixed unused vars (used for destructuring to exclude props)
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   {

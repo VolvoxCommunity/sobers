@@ -26,10 +26,14 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import TaskCreationSheet, { TaskCreationSheetRef } from '@/components/TaskCreationSheet';
+import MoneySavedCard from '@/components/dashboard/MoneySavedCard';
+import EditSavingsSheet, { EditSavingsSheetRef } from '@/components/sheets/EditSavingsSheet';
 import { logger, LogCategory } from '@/lib/logger';
 import { parseDateAsLocal } from '@/lib/date';
 import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
+import { useWhatsNew } from '@/lib/whats-new';
+import { WhatsNewSheet, WhatsNewSheetRef } from '@/components/whats-new';
 
 /**
  * Render the home dashboard showing sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
@@ -39,7 +43,7 @@ import { showToast } from '@/lib/toast';
  * @returns The Home screen React element
  */
 export default function HomeScreen() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
   // Get safe area insets for scroll padding
   const insets = useSafeAreaInsets();
@@ -52,6 +56,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const { daysSober, currentStreakStartDate, loading: loadingDaysSober } = useDaysSober();
   const taskSheetRef = useRef<TaskCreationSheetRef>(null);
+  const savingsSheetRef = useRef<EditSavingsSheetRef>(null);
+  const whatsNewRef = useRef<WhatsNewSheetRef>(null);
+  const { shouldShowWhatsNew, activeRelease, markAsSeen } = useWhatsNew();
+  const hasShownWhatsNewThisSession = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
@@ -107,6 +115,17 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchData();
   }, [profile, fetchData]);
+
+  // Auto-show What's New after delay if there's unseen content
+  useEffect(() => {
+    if (shouldShowWhatsNew && !hasShownWhatsNewThisSession.current) {
+      hasShownWhatsNewThisSession.current = true;
+      const timer = setTimeout(() => {
+        whatsNewRef.current?.present();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowWhatsNew]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -191,6 +210,47 @@ export default function HomeScreen() {
   const milestone = getMilestone(daysSober);
   const styles = useMemo(() => createStyles(theme), [theme]);
 
+  /**
+   * Handles hiding the savings card from dashboard.
+   * Shows confirmation dialog, then updates profile in Supabase.
+   */
+  const handleHideSavingsCard = async () => {
+    const confirmed = await showConfirm(
+      'Hide Savings Card?',
+      'You can re-enable this from Settings > Dashboard anytime.',
+      'Hide',
+      'Cancel',
+      false
+    );
+
+    if (!confirmed || !profile) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ hide_savings_card: true })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      showToast.success('Card hidden from dashboard');
+    } catch (error) {
+      logger.error('Failed to hide savings card', error as Error, {
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to hide card. Please try again.');
+    }
+  };
+
+  /**
+   * Handles dismissal of the What's New sheet.
+   * Marks the current release as seen so it won't auto-show again.
+   */
+  const handleWhatsNewDismiss = useCallback(async () => {
+    await markAsSeen();
+  }, [markAsSeen]);
+
   return (
     <ScrollView
       testID="home-scroll-view"
@@ -250,6 +310,25 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
+
+      {/* Money Saved Card - show if profile exists and not hidden */}
+      {profile &&
+        !profile.hide_savings_card &&
+        (profile.spend_amount != null && profile.spend_frequency != null ? (
+          <MoneySavedCard
+            amount={profile.spend_amount}
+            frequency={profile.spend_frequency}
+            daysSober={daysSober}
+            onPress={() => savingsSheetRef.current?.present()}
+            onHide={handleHideSavingsCard}
+          />
+        ) : (
+          <MoneySavedCard
+            variant="unconfigured"
+            onSetup={() => savingsSheetRef.current?.present()}
+            onHide={handleHideSavingsCard}
+          />
+        ))}
 
       {relationships.filter((rel) => rel.sponsor_id !== profile?.id).length > 0 && (
         <View style={styles.card}>
@@ -350,6 +429,23 @@ export default function HomeScreen() {
         preselectedSponseeId={selectedSponseeId}
         theme={theme}
       />
+
+      {profile && (
+        <EditSavingsSheet
+          ref={savingsSheetRef}
+          profile={profile}
+          onClose={() => {}}
+          onSave={refreshProfile}
+        />
+      )}
+
+      {activeRelease && (
+        <WhatsNewSheet
+          ref={whatsNewRef}
+          release={activeRelease}
+          onDismiss={handleWhatsNewDismiss}
+        />
+      )}
 
       {tasks.length > 0 && (
         <View testID="home-tasks-section" style={styles.card}>

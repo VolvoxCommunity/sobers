@@ -1,7 +1,7 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,8 @@ import {
   BarChart2,
   RotateCcw,
   Zap,
+  Layout,
+  Sparkles,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
@@ -58,6 +60,8 @@ import { validateDisplayName } from '@/lib/validation';
 import { hexWithAlpha } from '@/lib/format';
 import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
+import { useWhatsNew } from '@/lib/whats-new';
+import { WhatsNewSheet, type WhatsNewSheetRef } from '@/components/whats-new';
 import packageJson from '../../package.json';
 
 import type { SettingsContentProps } from './types';
@@ -468,6 +472,8 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   // ---------------------------------------------------------------------------
   const { signOut, deleteAccount, profile, refreshProfile } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
+  const whatsNewRef = useRef<WhatsNewSheetRef>(null);
+  const { activeRelease } = useWhatsNew();
 
   // ---------------------------------------------------------------------------
   // State
@@ -480,6 +486,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [editDisplayName, setEditDisplayName] = useState('');
   const [nameValidationError, setNameValidationError] = useState<string | null>(null);
   const [isSavingName, setIsSavingName] = useState(false);
+  const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const buildInfo = getBuildInfo();
   const {
     status: updateStatus,
@@ -682,6 +689,36 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
     }
   };
 
+  /**
+   * Handles toggling the savings card visibility.
+   * Updates profile in Supabase and refreshes profile state.
+   */
+  const handleToggleSavingsCard = useCallback(async () => {
+    if (!profile?.id || isSavingDashboard) return;
+
+    setIsSavingDashboard(true);
+    try {
+      const newValue = !profile.hide_savings_card;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ hide_savings_card: newValue })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      showToast.success(newValue ? 'Savings card hidden' : 'Savings card visible');
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to update setting');
+      logger.error('Failed to toggle savings card visibility', err, {
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to update. Please try again.');
+    } finally {
+      setIsSavingDashboard(false);
+    }
+  }, [profile?.id, profile?.hide_savings_card, isSavingDashboard, refreshProfile]);
+
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   // ---------------------------------------------------------------------------
@@ -797,6 +834,37 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         </View>
       </View>
 
+      {/* Dashboard Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Dashboard</Text>
+        <View style={styles.card}>
+          <Pressable
+            testID="settings-show-savings-toggle"
+            style={styles.menuItem}
+            onPress={handleToggleSavingsCard}
+            disabled={isSavingDashboard}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: !profile?.hide_savings_card }}
+            accessibilityLabel="Show savings card on dashboard"
+          >
+            <View style={styles.menuItemLeft}>
+              <Layout size={20} color={theme.textSecondary} />
+              <View>
+                <Text style={styles.menuItemText}>Show savings card</Text>
+                <Text style={styles.menuItemSubtext}>Display money saved on home screen</Text>
+              </View>
+            </View>
+            {isSavingDashboard ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <View style={[styles.toggle, !profile?.hide_savings_card && styles.toggleActive]}>
+                <Text style={styles.toggleText}>{profile?.hide_savings_card ? 'OFF' : 'ON'}</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </View>
+
       {/* About Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
@@ -844,6 +912,30 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             <View style={styles.menuItemLeft}>
               <Github size={20} color={theme.textSecondary} />
               <Text style={styles.menuItemText}>Source Code</Text>
+            </View>
+            <ChevronLeft
+              size={20}
+              color={theme.textTertiary}
+              style={{ transform: [{ rotate: '180deg' }] }}
+            />
+          </Pressable>
+          <View style={styles.separator} />
+          <Pressable
+            testID="settings-whats-new-row"
+            style={styles.menuItem}
+            onPress={() => {
+              if (activeRelease) {
+                whatsNewRef.current?.present();
+              } else {
+                showToast.info("You're all caught up! No new updates.");
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="View What's New"
+          >
+            <View style={styles.menuItemLeft}>
+              <Sparkles size={20} color={theme.textSecondary} />
+              <Text style={styles.menuItemText}>What&apos;s New</Text>
             </View>
             <ChevronLeft
               size={20}
@@ -1304,6 +1396,16 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* What's New Sheet
+       * Note: onDismiss is intentionally empty here because viewing What's New from
+       * Settings is a manual action. We don't mark the release as "seen" so that the
+       * auto-popup on the home screen can still trigger for users who haven't dismissed
+       * it there. The home screen handles marking releases as seen.
+       */}
+      {activeRelease && (
+        <WhatsNewSheet ref={whatsNewRef} release={activeRelease} onDismiss={() => {}} />
+      )}
     </>
   );
 }

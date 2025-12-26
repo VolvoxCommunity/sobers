@@ -9,6 +9,11 @@ export class HomePage extends BasePage {
   readonly quickActionButtons: Locator;
   readonly milestonesPreview: Locator;
   readonly manageTasksQuickAction: Locator;
+  readonly moneySavedCard: Locator;
+  readonly moneySavedTotal: Locator;
+  readonly breakdownDay: Locator;
+  readonly breakdownWeek: Locator;
+  readonly breakdownMonth: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -22,6 +27,12 @@ export class HomePage extends BasePage {
     this.manageTasksQuickAction = page.getByRole('button', {
       name: /manage tasks/i,
     });
+    // Money saved card (only visible when user has spending data)
+    this.moneySavedCard = page.getByTestId('money-saved-card');
+    this.moneySavedTotal = page.getByTestId('money-saved-total');
+    this.breakdownDay = page.getByTestId('breakdown-day');
+    this.breakdownWeek = page.getByTestId('breakdown-week');
+    this.breakdownMonth = page.getByTestId('breakdown-month');
   }
 
   async goto(): Promise<void> {
@@ -58,5 +69,29 @@ export class HomePage extends BasePage {
    */
   async hasAssignedTasks(): Promise<boolean> {
     return this.tasksSection.isVisible().catch(() => false);
+  }
+
+  /**
+   * Check if the money saved card is visible on the home page.
+   * Only visible when user has spending data configured.
+   */
+  async hasMoneySavedCard(): Promise<boolean> {
+    return this.moneySavedCard.isVisible().catch(() => false);
+  }
+
+  /**
+   * Get the total money saved amount displayed on the card.
+   *
+   * @returns The formatted currency string (e.g., "$1,234.56")
+   */
+  async getMoneySavedTotal(): Promise<string> {
+    return (await this.moneySavedTotal.textContent()) ?? '';
+  }
+
+  /**
+   * Open the edit savings sheet by clicking on the money saved card.
+   */
+  async openEditSavingsSheet(): Promise<void> {
+    await this.moneySavedCard.click();
   }
 }

@@ -18,10 +18,16 @@ setup('authenticate', async ({ page }) => {
   // Navigate to login page
   await page.goto('/login');
 
-  // Fill login form
+  // Wait for the submit button to be visible - this indicates the full form is rendered
+  // and React hydration is complete. This is more reliable than waiting for individual
+  // input elements which may briefly detach during hydration.
+  const submitButton = page.getByTestId('login-submit-button');
+  await submitButton.waitFor({ state: 'visible', timeout: 30000 });
+
+  // Fill login form - elements should now be stable
   await page.getByTestId('login-email-input').fill(TEST_USERS.primary.email);
   await page.getByTestId('login-password-input').fill(TEST_USERS.primary.password);
-  await page.getByTestId('login-submit-button').click();
+  await submitButton.click();
 
   // Wait for redirect to home page
   // Add a longer timeout to ensure the authentication state is updated

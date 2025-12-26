@@ -141,4 +141,6 @@ module.exports = {
   Bug: createIconMock('Bug'),
   Terminal: createIconMock('Terminal'),
   RotateCcw: createIconMock('RotateCcw'),
+  DollarSign: createIconMock('DollarSign'),
+  Layout: createIconMock('Layout'),
 };

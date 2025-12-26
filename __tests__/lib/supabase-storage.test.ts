@@ -9,6 +9,10 @@ import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 // Unmock lib/supabase so we get the real adapter logic
 jest.unmock('@/lib/supabase');
 
+// Set up environment variables for Supabase
+process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-key';
+
 /**
  * Helper to generate chunk key (matches lib/supabase.ts)
  */
@@ -27,12 +31,7 @@ describe('SupabaseStorageAdapter', () => {
   let SupabaseStorageAdapter: any;
 
   beforeAll(() => {
-    // Set env vars required by lib/supabase
-    process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-key';
-
-    // Require the module after setting env vars
-    // We use require because import is hoisted and runs before we can set env vars
+    // Require the module after mocking expo-constants
     const mod = require('@/lib/supabase');
     SupabaseStorageAdapter = mod.SupabaseStorageAdapter;
   });

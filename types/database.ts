@@ -61,6 +61,27 @@ export interface Profile {
    * @remarks Stored as ISO 8601 timestamp for legal audit trail.
    */
   terms_accepted_at?: string;
+  /**
+   * Historical spending amount on addiction in USD.
+   * Nullable - only set if user opts into savings tracking during onboarding.
+   */
+  spend_amount?: number | null;
+  /**
+   * Frequency of the spending amount.
+   * Used with spend_amount to calculate daily spending rate.
+   */
+  spend_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+  /**
+   * Whether to hide the Money Saved card from dashboard.
+   * User preference set via three-dot menu on card or Settings.
+   */
+  hide_savings_card?: boolean;
+  /**
+   * Last "What's New" release version the user has seen.
+   * Used to determine if the What's New popup should be shown.
+   * Null if user hasn't seen any What's New content.
+   */
+  last_seen_version?: string | null;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;

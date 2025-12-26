@@ -16,10 +16,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  TextInput,
 } from 'react-native';
 import {
   BottomSheetScrollView,
-  BottomSheetTextInput,
   BottomSheetFooter,
   BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet';
@@ -424,7 +424,7 @@ const LogSlipUpSheet = forwardRef<LogSlipUpSheetRef, LogSlipUpSheetProps>(
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Notes (Optional)</Text>
-            <BottomSheetTextInput
+            <TextInput
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}

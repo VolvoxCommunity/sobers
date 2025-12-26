@@ -137,7 +137,7 @@ The `[Unreleased]` section MUST be kept current at all times. This is non-negoti
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=xxx
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=xxx
 EXPO_TOKEN=xxx                    # EAS builds
 EXPO_PUBLIC_SENTRY_DSN=xxx        # Production
 ```
