@@ -37,8 +37,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * Supabase configuration.
      * These are read from environment variables and exposed to the app.
      */
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_PUBLISHABLE_KEY,
     /**
      * EAS Build information captured at build time.
      * These environment variables are only available during EAS Build,
