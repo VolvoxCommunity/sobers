@@ -54,7 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'sobers',
   userInterfaceStyle: 'automatic',
   icon: './assets/images/logo.png',
-  version: '1.2.0',
+  version: '1.2.1',
   orientation: 'portrait',
   newArchEnabled: true,
   // =============================================================================
