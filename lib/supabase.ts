@@ -2,7 +2,6 @@ import 'react-native-url-polyfill/auto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { logger, LogCategory } from '@/lib/logger';
 import { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
@@ -22,8 +21,8 @@ export { CHUNK_SIZE, CHUNK_COUNT_SUFFIX } from '@/lib/supabase-constants';
 //   error when the Supabase client is first created/used (e.g. in getSupabaseClient()).
 // If you change this behavior (e.g. by validating eagerly at import time),
 // ensure you do not break E2E test discovery.
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl as string | undefined;
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 // Check if we're in a browser/client environment (not SSR/Node.js)
 const isClient = typeof window !== 'undefined';

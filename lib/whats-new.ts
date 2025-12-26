@@ -4,7 +4,6 @@
 // Imports
 // =============================================================================
 import { useState, useEffect, useCallback } from 'react';
-import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger, LogCategory } from '@/lib/logger';
@@ -54,7 +53,7 @@ export interface UseWhatsNewResult {
 // Constants
 // =============================================================================
 
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl as string | undefined;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_STORAGE_URL = supabaseUrl
   ? `${supabaseUrl}/storage/v1/object/public/whats-new-images`
   : '';
