@@ -263,7 +263,7 @@ function getSupabaseClient(): SupabaseClient {
   if (!supabaseInstance) {
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error(
-        'Missing Supabase environment variables during client initialization. Please ensure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are configured in your environment.'
+        'Missing Supabase environment variables during client initialization. Please ensure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are configured in your environment.'
       );
     }
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
