@@ -392,7 +392,7 @@ describe('EditSavingsSheet', () => {
       await waitFor(() => {
         expect(mockShowConfirm).toHaveBeenCalledWith(
           'Clear Tracking Data?',
-          'This will remove your spending data and hide the Money Saved card from your dashboard.',
+          'This will reset your spending data. The Money Saved card will show a setup prompt until you configure it again.',
           'Clear Data',
           'Cancel',
           true
