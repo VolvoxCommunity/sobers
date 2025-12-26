@@ -1,19 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  Platform,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { SponsorSponseeRelationship, Task, Profile } from '@/types/database';
 import { useDaysSober } from '@/hooks/useDaysSober';
+import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 import {
   Heart,
   CheckCircle,
@@ -45,12 +37,7 @@ import { WhatsNewSheet, WhatsNewSheetRef } from '@/components/whats-new';
 export default function HomeScreen() {
   const { profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
-  // Get safe area insets for scroll padding
-  const insets = useSafeAreaInsets();
-  // Native tab bar heights: iOS UITabBar = 49pt, Android BottomNavigationView = 56dp
-  const NATIVE_TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;
-  // Total bottom padding = tab bar height + safe area inset (home indicator on iOS)
-  const bottomPadding = NATIVE_TAB_BAR_HEIGHT + insets.bottom;
+  const bottomPadding = useTabBarPadding();
   const [relationships, setRelationships] = useState<SponsorSponseeRelationship[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [refreshing, setRefreshing] = useState(false);
