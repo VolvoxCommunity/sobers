@@ -64,7 +64,7 @@ The app uses Supabase Auth with Google OAuth. The authentication flow varies by 
 1. Click **Create Credentials** → **OAuth client ID**
 2. Application type: **Android**
 3. Name: `Sobers Android`
-4. Package name: `com.volvox.sobrietywaypoint`
+4. Package name: `com.volvox.sobers`
 5. SHA-1 certificate fingerprint:
    - For development, get from EAS:
      ```bash
@@ -116,7 +116,7 @@ ios: {
   bundleIdentifier: 'com.volvox.sobrietywaypoint',
 },
 android: {
-  package: 'com.volvox.sobrietywaypoint',
+  package: 'com.volvox.sobers',
 },
 ```
 
