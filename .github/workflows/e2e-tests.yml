@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 # Minimal permissions for security (required secrets)
-# - E2E_SUPABASE_URL: Supabase project URL
-# - SUPABASE_PUBLISHABLE_KEY: Supabase publishable key
+# - EXPO_PUBLIC_SUPABASE_URL: Supabase project URL
+# - EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: Supabase publishable key
 # - E2E_SUPABASE_SERVICE_KEY: Supabase service role key (for test data management)
 # - E2E_TEST_PASSWORD: Password for E2E test user accounts
 permissions:
@@ -68,8 +68,9 @@ jobs:
       - name: Build web app
         run: pnpm build:web
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          # Map from old GitHub secret names to new env var names expected by app
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Start web server
         run: npx serve dist -l 8081 &
@@ -80,7 +81,8 @@ jobs:
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: pnpm test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # Map from old GitHub secret names to new env var names expected by tests
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           E2E_SUPABASE_SERVICE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_KEY }}
 
