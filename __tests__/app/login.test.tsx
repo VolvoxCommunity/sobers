@@ -57,6 +57,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 // Mock lucide-react-native
 jest.mock('lucide-react-native', () => ({
   Heart: () => null,
+  Eye: () => null,
+  EyeOff: () => null,
 }));
 
 // Mock AppleSignInButton (iOS only component)
