@@ -465,6 +465,69 @@ describe('SignupScreen', () => {
     });
   });
 
+  describe('Password Visibility Toggle', () => {
+    it('toggles password visibility when toggle button is pressed', () => {
+      render(<SignupScreen />);
+
+      const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+      const passwordInput = passwordInputs[0];
+      const toggleButton = screen.getByTestId('signup-password-toggle');
+
+      // Initially password should be hidden (secureTextEntry=true)
+      expect(passwordInput.props.secureTextEntry).toBe(true);
+
+      // Press toggle to show password
+      fireEvent.press(toggleButton);
+
+      // Password should now be visible (secureTextEntry=false)
+      expect(passwordInput.props.secureTextEntry).toBe(false);
+
+      // Press toggle again to hide password
+      fireEvent.press(toggleButton);
+
+      // Password should be hidden again
+      expect(passwordInput.props.secureTextEntry).toBe(true);
+    });
+
+    it('toggles confirm password visibility when toggle button is pressed', () => {
+      render(<SignupScreen />);
+
+      const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+      const confirmPasswordInput = passwordInputs[1];
+      const toggleButton = screen.getByTestId('signup-confirm-password-toggle');
+
+      // Initially password should be hidden (secureTextEntry=true)
+      expect(confirmPasswordInput.props.secureTextEntry).toBe(true);
+
+      // Press toggle to show password
+      fireEvent.press(toggleButton);
+
+      // Password should now be visible (secureTextEntry=false)
+      expect(confirmPasswordInput.props.secureTextEntry).toBe(false);
+
+      // Press toggle again to hide password
+      fireEvent.press(toggleButton);
+
+      // Password should be hidden again
+      expect(confirmPasswordInput.props.secureTextEntry).toBe(true);
+    });
+
+    it('has proper accessibility labels for password toggle', () => {
+      render(<SignupScreen />);
+
+      const toggleButton = screen.getByTestId('signup-password-toggle');
+
+      // Initially should have "Show password" label
+      expect(screen.getByLabelText('Show password')).toBeTruthy();
+
+      // Press toggle
+      fireEvent.press(toggleButton);
+
+      // Should now have "Hide password" label
+      expect(screen.getByLabelText('Hide password')).toBeTruthy();
+    });
+  });
+
   describe('Input Behavior', () => {
     it('allows typing in email field', () => {
       render(<SignupScreen />);

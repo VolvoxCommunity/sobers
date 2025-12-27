@@ -213,6 +213,7 @@ export default function SignupScreen() {
                 textContentType="newPassword"
               />
               <TouchableOpacity
+                testID="signup-password-toggle"
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
@@ -281,6 +282,7 @@ export default function SignupScreen() {
                 textContentType="newPassword"
               />
               <TouchableOpacity
+                testID="signup-confirm-password-toggle"
                 style={styles.eyeIcon}
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}

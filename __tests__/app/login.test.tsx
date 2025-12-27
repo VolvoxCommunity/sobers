@@ -405,6 +405,33 @@ describe('LoginScreen', () => {
     });
   });
 
+  describe('password visibility toggle', () => {
+    it('toggles password visibility when toggle button is pressed', () => {
+      renderWithTheme(<LoginScreen />);
+
+      const passwordInput = screen.getByPlaceholderText('••••••••');
+      const toggleButton = screen.getByTestId('login-password-toggle');
+
+      // Initially password should be hidden (secureTextEntry=true)
+      expect(passwordInput.props.secureTextEntry).toBe(true);
+      expect(screen.getByLabelText('Show password')).toBeTruthy();
+
+      // Press toggle to show password
+      fireEvent.press(toggleButton);
+
+      // Password should now be visible (secureTextEntry=false)
+      expect(passwordInput.props.secureTextEntry).toBe(false);
+      expect(screen.getByLabelText('Hide password')).toBeTruthy();
+
+      // Press toggle again to hide password
+      fireEvent.press(toggleButton);
+
+      // Password should be hidden again
+      expect(passwordInput.props.secureTextEntry).toBe(true);
+      expect(screen.getByLabelText('Show password')).toBeTruthy();
+    });
+  });
+
   describe('loading states', () => {
     it('disables Google button while email sign in is loading', async () => {
       mockSignIn.mockImplementation(() => new Promise(() => {})); // Never resolves

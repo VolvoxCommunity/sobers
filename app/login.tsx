@@ -133,6 +133,7 @@ export default function LoginScreen() {
                 textContentType="password"
               />
               <TouchableOpacity
+                testID="login-password-toggle"
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
