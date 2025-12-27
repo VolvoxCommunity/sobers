@@ -13,7 +13,7 @@ import {
 import { useRouter, Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
-import { Heart } from 'lucide-react-native';
+import { Heart, Eye, EyeOff } from 'lucide-react-native';
 import { GoogleLogo } from '@/components/auth/SocialLogos';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 import { logger, LogCategory } from '@/lib/logger';
@@ -32,6 +32,7 @@ export default function LoginScreen() {
   const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { user, signIn, signInWithGoogle } = useAuth();
@@ -115,21 +116,36 @@ export default function LoginScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              testID="login-password-input"
-              ref={passwordRef}
-              style={styles.input}
-              placeholder="••••••••"
-              accessibilityLabel="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              editable={!loading}
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-              autoComplete="password"
-              textContentType="password"
-            />
+            <View>
+              <TextInput
+                testID="login-password-input"
+                ref={passwordRef}
+                style={[styles.input, styles.inputWithIcon]}
+                placeholder="••••••••"
+                accessibilityLabel="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!loading}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                autoComplete="password"
+                textContentType="password"
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityRole="button"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color={theme.textSecondary} />
+                ) : (
+                  <Eye size={20} color={theme.textSecondary} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -252,6 +268,15 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 16,
       fontFamily: theme.fontRegular,
       color: theme.text,
+    },
+    inputWithIcon: {
+      paddingRight: 48,
+    },
+    eyeIcon: {
+      position: 'absolute',
+      right: 16,
+      height: '100%',
+      justifyContent: 'center',
     },
     button: {
       backgroundColor: theme.primary,

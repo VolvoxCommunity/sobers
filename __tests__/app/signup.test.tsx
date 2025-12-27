@@ -70,6 +70,10 @@ jest.mock('@/contexts/ThemeContext', () => ({
 jest.mock('lucide-react-native', () => ({
   Heart: () => null,
   ArrowLeft: () => null,
+  Check: () => null,
+  X: () => null,
+  Eye: () => null,
+  EyeOff: () => null,
 }));
 
 // Mock SocialLogos
