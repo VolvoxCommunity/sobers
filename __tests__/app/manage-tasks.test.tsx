@@ -718,7 +718,7 @@ describe('ManageTasksScreen', () => {
 
   describe('delete task flow', () => {
     it('shows Alert when delete is triggered', async () => {
-      const { Alert } = jest.requireMock('react-native');
+      jest.requireMock('react-native');
 
       render(<ManageTasksScreen />);
 
@@ -1025,6 +1025,26 @@ describe('ManageTasksScreen', () => {
       // Should render without crashing
       await waitFor(() => {
         expect(screen.getByText('Manage Tasks')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Filter by Completed Status', () => {
+    it('applies filter when Completed filter chip is pressed', async () => {
+      render(<ManageTasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('All Tasks')).toBeTruthy();
+      });
+
+      // Press "Filter by Completed Tasks" chip using accessibility label
+      const completedFilterChip = screen.getByLabelText('Filter by Completed Tasks');
+      fireEvent.press(completedFilterChip);
+
+      // After pressing completed filter, the chip should be selected
+      await waitFor(() => {
+        // The chip accessibility state should indicate it's selected
+        expect(completedFilterChip.props.accessibilityState.selected).toBe(true);
       });
     });
   });

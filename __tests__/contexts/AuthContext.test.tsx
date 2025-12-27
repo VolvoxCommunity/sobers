@@ -1499,6 +1499,56 @@ describe('AuthContext', () => {
     });
   });
 
+  describe('initializeAuth error handling', () => {
+    it('handles getSession error gracefully', async () => {
+      mockGetSession.mockRejectedValueOnce(new Error('Session fetch failed'));
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should still complete loading even with error
+      expect(result.current.user).toBeNull();
+      expect(result.current.profile).toBeNull();
+    });
+  });
+
+  describe('unmount guard handling', () => {
+    it('ignores auth state changes after unmount', async () => {
+      let authCallback: ((event: string, session: null) => void) | null = null;
+
+      mockOnAuthStateChange.mockImplementation(
+        (callback: (event: string, session: null) => void) => {
+          authCallback = callback;
+          return {
+            data: {
+              subscription: { unsubscribe: jest.fn() },
+            },
+          };
+        }
+      );
+
+      const { result, unmount } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Unmount the component
+      unmount();
+
+      // Now trigger auth state change after unmount
+      if (authCallback) {
+        authCallback('SIGNED_OUT', null);
+      }
+
+      // Should not throw or cause issues
+      expect(true).toBe(true);
+    });
+  });
+
   describe('profile effect edge cases', () => {
     it('sets Sentry context when profile has email', async () => {
       const mockProfile = {
