@@ -79,13 +79,25 @@ const TaskCard = memo(function TaskCard({
         {variant === 'my-task' && !isCompleted && (
           <Text style={styles.taskDate}>{new Date(task.created_at).toLocaleDateString()}</Text>
         )}
-        {variant === 'my-task' && isCompleted && <CheckCircle size={20} color={theme.primary} />}
-        {variant === 'managed-task' && task.status === 'completed' && (
-          <CheckCircle size={20} color={theme.success} />
+        {variant === 'my-task' && isCompleted && (
+          <View accessible accessibilityLabel="Status: Completed">
+            <CheckCircle size={20} color={theme.primary} />
+          </View>
         )}
-        {variant === 'managed-task' && isOverdue && <Clock size={20} color={theme.error} />}
+        {variant === 'managed-task' && task.status === 'completed' && (
+          <View accessible accessibilityLabel="Status: Completed">
+            <CheckCircle size={20} color={theme.success} />
+          </View>
+        )}
+        {variant === 'managed-task' && isOverdue && (
+          <View accessible accessibilityLabel="Status: Overdue">
+            <Clock size={20} color={theme.error} />
+          </View>
+        )}
         {variant === 'managed-task' && !isCompleted && !isOverdue && (
-          <Clock size={20} color={theme.textSecondary} />
+          <View accessible accessibilityLabel="Status: In Progress">
+            <Clock size={20} color={theme.textSecondary} />
+          </View>
         )}
       </View>
 
@@ -100,7 +112,11 @@ const TaskCard = memo(function TaskCard({
 
       {/* Due Date */}
       {task.due_date && variant === 'my-task' && (
-        <View style={styles.dueDateContainer}>
+        <View
+          style={styles.dueDateContainer}
+          accessible
+          accessibilityLabel={`Due ${parseDateAsLocal(task.due_date).toLocaleDateString()}`}
+        >
           <Calendar size={14} color={theme.textSecondary} />
           <Text style={styles.dueDateText}>
             Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
@@ -108,7 +124,13 @@ const TaskCard = memo(function TaskCard({
         </View>
       )}
       {task.due_date && variant === 'managed-task' && (
-        <View style={styles.taskMeta}>
+        <View
+          style={styles.taskMeta}
+          accessible
+          accessibilityLabel={`Due ${parseDateAsLocal(task.due_date).toLocaleDateString()}${
+            isOverdue ? ', Overdue' : ''
+          }`}
+        >
           <Calendar size={14} color={isOverdue ? theme.error : theme.textSecondary} />
           <Text style={[styles.taskMetaText, isOverdue && styles.taskMetaTextOverdue]}>
             Due {parseDateAsLocal(task.due_date).toLocaleDateString()}
