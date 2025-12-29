@@ -518,13 +518,13 @@ describe('SignupScreen', () => {
       const toggleButton = screen.getByTestId('signup-password-toggle');
 
       // Initially should have "Show password" label
-      expect(screen.getByLabelText('Show password')).toBeTruthy();
+      expect(toggleButton.props.accessibilityLabel).toBe('Show password');
 
       // Press toggle
       fireEvent.press(toggleButton);
 
       // Should now have "Hide password" label
-      expect(screen.getByLabelText('Hide password')).toBeTruthy();
+      expect(toggleButton.props.accessibilityLabel).toBe('Hide password');
     });
   });
 

@@ -152,7 +152,7 @@ EXPO_PUBLIC_SENTRY_DSN=xxx        # Production
 
 ## Release Checklist
 
-Before creating a release, complete these 4 steps:
+Before creating a release, complete these 5 steps:
 
 ### 1. Verify All Changes Committed
 
@@ -213,6 +213,29 @@ Use semantic versioning (MAJOR.MINOR.PATCH):
 3. Stage and commit: `git add -A && git commit -m "vX.Y.Z"`
 4. Create tag: `git tag vX.Y.Z`
 5. Push with tags: `git push origin HEAD --tags`
+
+### 5. Create Release PR
+
+Create a pull request for the release:
+
+- **Title:** `vX.Y.Z` (the release version)
+- **Description:** Include the changelog entries for this release
+
+```bash
+gh pr create --title "vX.Y.Z" --body "$(cat <<'EOF'
+## Release vX.Y.Z
+
+### Added
+- Feature descriptions from CHANGELOG
+
+### Changed
+- Change descriptions from CHANGELOG
+
+### Fixed
+- Fix descriptions from CHANGELOG
+EOF
+)"
+```
 
 ## Visual Verification (UI Changes)
 
