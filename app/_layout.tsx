@@ -34,7 +34,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { DevToolsProvider } from '@/contexts/DevToolsContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, AppState, type AppStateStatus } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -47,7 +47,8 @@ import {
   JetBrainsMono_600SemiBold,
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
-import { trackScreenView } from '@/lib/analytics';
+import { trackScreenView, trackEvent, AnalyticsEvents } from '@/lib/analytics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /* eslint-enable import/first */
 
 // Prevent splash screen from auto-hiding
@@ -79,6 +80,8 @@ function RootLayoutNav(): React.ReactElement {
   const navigationRef = useNavigationContainerRef();
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const sessionStartTimeRef = useRef<number>(Date.now());
 
   // Register navigation container with Sentry
   useEffect(() => {
@@ -86,6 +89,62 @@ function RootLayoutNav(): React.ReactElement {
       navigationIntegration.registerNavigationContainer(navigationRef);
     }
   }, [navigationRef]);
+
+  // Track app opened and daily check-in on mount
+  useEffect(() => {
+    const trackAppOpened = async () => {
+      // Track app opened
+      trackEvent(AnalyticsEvents.APP_OPENED, {
+        timestamp: new Date().toISOString(),
+      });
+
+      // Track session started
+      trackEvent(AnalyticsEvents.APP_SESSION_STARTED, {
+        timestamp: new Date().toISOString(),
+      });
+
+      // Check for daily check-in (first open of the day)
+      try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const lastCheckIn = await AsyncStorage.getItem('last_daily_check_in');
+
+        if (lastCheckIn !== today) {
+          trackEvent(AnalyticsEvents.DAILY_CHECK_IN, {
+            date: today,
+            is_first_today: true,
+          });
+          await AsyncStorage.setItem('last_daily_check_in', today);
+        }
+      } catch {
+        // Silently fail - analytics is non-critical
+      }
+    };
+
+    trackAppOpened();
+  }, []);
+
+  // Track app state changes (foreground/background)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appStateRef.current === 'active' && nextAppState.match(/inactive|background/)) {
+        // App is going to background
+        const sessionDuration = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000);
+        trackEvent(AnalyticsEvents.APP_BACKGROUNDED, {
+          session_duration_seconds: sessionDuration,
+        });
+      } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App is coming to foreground - start new session
+        sessionStartTimeRef.current = Date.now();
+        trackEvent(AnalyticsEvents.APP_SESSION_STARTED, {
+          timestamp: new Date().toISOString(),
+        });
+      }
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
   // Track screen views on navigation
   useEffect(() => {

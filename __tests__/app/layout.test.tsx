@@ -140,6 +140,7 @@ jest.mock('@/lib/analytics', () => ({
   setUserId: jest.fn(),
   setUserProperties: jest.fn(),
   resetAnalytics: jest.fn(),
+  AnalyticsEvents: jest.requireActual('@/types/analytics').AnalyticsEvents,
 }));
 
 // =============================================================================

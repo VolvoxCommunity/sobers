@@ -92,6 +92,11 @@ jest.mock('react-native', () => {
       getInitialURL: jest.fn().mockResolvedValue(null),
       addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
     },
+    AppState: {
+      currentState: 'active',
+      addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+      removeEventListener: jest.fn(),
+    },
     Dimensions: {
       get: jest.fn(() => ({ width: 375, height: 812 })),
       addEventListener: jest.fn(),

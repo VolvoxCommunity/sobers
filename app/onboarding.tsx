@@ -227,6 +227,14 @@ export default function OnboardingScreen() {
 
   const handleSignOut = async () => {
     try {
+      // Track onboarding abandonment before signing out
+      const durationSeconds = Math.floor((Date.now() - onboardingStartTime) / 1000);
+      trackEvent(AnalyticsEvents.ONBOARDING_ABANDONED, {
+        duration_seconds: durationSeconds,
+        had_display_name: displayName.trim().length > 0,
+        had_savings_enabled: isSavingsEnabled,
+      });
+
       await signOut();
       router.replace('/login');
     } catch (error) {
