@@ -226,6 +226,40 @@ jest.mock('@/contexts/DevToolsContext', () => ({
   }),
 }));
 
+// Mock Sentry
+jest.mock('@/lib/sentry', () => ({
+  captureSentryException: jest.fn(),
+}));
+
+// Mock analytics
+jest.mock('@/lib/analytics', () => ({
+  trackEvent: jest.fn(),
+}));
+
+// Mock expo-router
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    replace: jest.fn(),
+    push: jest.fn(),
+    back: jest.fn(),
+  }),
+}));
+
+// Mock DevToolsContext
+const mockSetVerboseLoggingGlobal = jest.fn();
+const mockSetTimeTravelDaysGlobal = jest.fn();
+const mockSetAnalyticsDebugGlobal = jest.fn();
+jest.mock('@/contexts/DevToolsContext', () => ({
+  useDevTools: () => ({
+    verboseLogging: false,
+    setVerboseLogging: mockSetVerboseLoggingGlobal,
+    timeTravelDays: 0,
+    setTimeTravelDays: mockSetTimeTravelDaysGlobal,
+    analyticsDebug: false,
+    setAnalyticsDebug: mockSetAnalyticsDebugGlobal,
+  }),
+}));
+
 // Mock useAppUpdates hook - will be overridden per test
 const mockCheckForUpdates = jest.fn();
 const mockApplyUpdate = jest.fn();

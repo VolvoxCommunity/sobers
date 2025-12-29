@@ -40,7 +40,7 @@ jest.mock('@/lib/supabase', () => ({
       if (table === 'sponsor_sponsee_relationships') {
         return {
           select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockImplementation((field: string, value: string) => {
+            eq: jest.fn().mockImplementation((field: string, _value: string) => {
               if (field === 'sponsor_id') {
                 return {
                   eq: jest.fn().mockResolvedValue({
@@ -111,13 +111,15 @@ const mockProfile: Profile = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
+const mockRefreshProfile = jest.fn();
 jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
+  useAuth: jest.fn(() => ({
     profile: mockProfile,
     user: { id: 'user-123' },
     session: {},
     loading: false,
-  }),
+    refreshProfile: mockRefreshProfile,
+  })),
 }));
 
 // Mock ThemeContext
@@ -191,6 +193,124 @@ jest.mock('@/components/TaskCreationSheet', () => {
     default: MockTaskCreationSheet,
   };
 });
+
+// Mock MoneySavedCard
+const mockMoneySavedCardOnPress = jest.fn();
+const mockMoneySavedCardOnHide = jest.fn();
+const mockMoneySavedCardOnSetup = jest.fn();
+jest.mock('@/components/dashboard/MoneySavedCard', () => {
+  const React = require('react');
+  const { View, Text, TouchableOpacity } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({
+      variant,
+      onPress,
+      onHide,
+      onSetup,
+    }: {
+      variant?: string;
+      onPress?: () => void;
+      onHide?: () => void;
+      onSetup?: () => void;
+    }) => {
+      // Store callbacks for test access
+      if (onPress) mockMoneySavedCardOnPress.mockImplementation(onPress);
+      if (onHide) mockMoneySavedCardOnHide.mockImplementation(onHide);
+      if (onSetup) mockMoneySavedCardOnSetup.mockImplementation(onSetup);
+
+      return React.createElement(
+        View,
+        { testID: 'money-saved-card' },
+        React.createElement(
+          Text,
+          null,
+          variant === 'unconfigured' ? 'Set Up Savings Tracker' : 'Money Saved'
+        ),
+        onHide &&
+          React.createElement(
+            TouchableOpacity,
+            { testID: 'hide-savings-button', onPress: onHide },
+            React.createElement(Text, null, 'Hide')
+          ),
+        onPress &&
+          React.createElement(
+            TouchableOpacity,
+            { testID: 'edit-savings-button', onPress: onPress },
+            React.createElement(Text, null, 'Edit')
+          ),
+        onSetup &&
+          React.createElement(
+            TouchableOpacity,
+            { testID: 'setup-savings-button', onPress: onSetup },
+            React.createElement(Text, null, 'Setup')
+          )
+      );
+    },
+  };
+});
+
+// Mock EditSavingsSheet
+jest.mock('@/components/sheets/EditSavingsSheet', () => {
+  const React = require('react');
+  const MockEditSavingsSheet = React.forwardRef((_props: unknown, ref: React.Ref<unknown>) => {
+    React.useImperativeHandle(ref, () => ({
+      present: jest.fn(),
+      dismiss: jest.fn(),
+    }));
+    return React.createElement('View', { testID: 'edit-savings-sheet' });
+  });
+  MockEditSavingsSheet.displayName = 'EditSavingsSheet';
+  return {
+    __esModule: true,
+    default: MockEditSavingsSheet,
+  };
+});
+
+// Mock WhatsNewSheet
+const mockWhatsNewPresent = jest.fn();
+jest.mock('@/components/whats-new', () => {
+  const React = require('react');
+  const MockWhatsNewSheet = React.forwardRef(
+    (
+      { onDismiss }: { onDismiss?: () => void },
+      ref: React.Ref<{ present: () => void; dismiss: () => void }>
+    ) => {
+      React.useImperativeHandle(ref, () => ({
+        present: mockWhatsNewPresent,
+        dismiss: jest.fn(),
+      }));
+      const { View, TouchableOpacity, Text } = require('react-native');
+      return React.createElement(
+        View,
+        { testID: 'whats-new-sheet' },
+        onDismiss &&
+          React.createElement(
+            TouchableOpacity,
+            { testID: 'dismiss-whats-new', onPress: onDismiss },
+            React.createElement(Text, null, 'Dismiss')
+          )
+      );
+    }
+  );
+  MockWhatsNewSheet.displayName = 'WhatsNewSheet';
+  return {
+    __esModule: true,
+    WhatsNewSheet: MockWhatsNewSheet,
+  };
+});
+
+// Mock useWhatsNew hook
+let mockShouldShowWhatsNew = false;
+let mockActiveRelease: { version: string; title: string } | null = null;
+const mockMarkAsSeen = jest.fn();
+jest.mock('@/lib/whats-new', () => ({
+  useWhatsNew: jest.fn(() => ({
+    shouldShowWhatsNew: mockShouldShowWhatsNew,
+    activeRelease: mockActiveRelease,
+    markAsSeen: mockMarkAsSeen,
+  })),
+}));
 
 // Mock date library
 jest.mock('@/lib/date', () => ({
@@ -279,6 +399,14 @@ describe('HomeScreen', () => {
     mockTasks = [];
     mockDaysSober = 180;
     mockIsLoadingDaysSober = false;
+    // Reset new mocks
+    mockShouldShowWhatsNew = false;
+    mockActiveRelease = null;
+    mockMarkAsSeen.mockClear();
+    mockWhatsNewPresent.mockClear();
+    mockMoneySavedCardOnPress.mockClear();
+    mockMoneySavedCardOnHide.mockClear();
+    mockMoneySavedCardOnSetup.mockClear();
   });
 
   describe('Header', () => {
@@ -1218,6 +1346,367 @@ describe('HomeScreen', () => {
       // Should render without crashing despite error
       await waitFor(() => {
         expect(screen.getByText('Your Sobriety Journey')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Money Saved Card', () => {
+    it('shows configured MoneySavedCard when spend_amount and spend_frequency are set', async () => {
+      // Update AuthContext mock to include spending data
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: 50,
+          spend_frequency: 'daily',
+          hide_savings_card: false,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: jest.fn(),
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('money-saved-card')).toBeTruthy();
+        expect(screen.getByText('Money Saved')).toBeTruthy();
+      });
+    });
+
+    it('shows unconfigured MoneySavedCard when spending data is not set', async () => {
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: null,
+          spend_frequency: null,
+          hide_savings_card: false,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: jest.fn(),
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('money-saved-card')).toBeTruthy();
+        expect(screen.getByText('Set Up Savings Tracker')).toBeTruthy();
+      });
+    });
+
+    it('hides MoneySavedCard when hide_savings_card is true', async () => {
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: 50,
+          spend_frequency: 'daily',
+          hide_savings_card: true,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: jest.fn(),
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('money-saved-card')).toBeNull();
+      });
+    });
+
+    it('triggers onHide callback when hide button is pressed and confirmed', async () => {
+      const mockRefreshProfile = jest.fn();
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: 50,
+          spend_frequency: 'daily',
+          hide_savings_card: false,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: mockRefreshProfile,
+      });
+
+      // Mock supabase update for profiles
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((_field: string) => {
+                return {
+                  eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+                };
+              }),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  order: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      mockShowConfirm.mockResolvedValue(true);
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('hide-savings-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('hide-savings-button'));
+
+      await waitFor(() => {
+        expect(mockShowConfirm).toHaveBeenCalledWith(
+          'Hide Savings Card?',
+          'You can re-enable this from Settings > Dashboard anytime.',
+          'Hide',
+          'Cancel',
+          false
+        );
+      });
+
+      await waitFor(() => {
+        expect(mockRefreshProfile).toHaveBeenCalled();
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'Card hidden from dashboard' })
+        );
+      });
+    });
+
+    it('does not hide card when confirmation is cancelled', async () => {
+      const mockRefreshProfile = jest.fn();
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: 50,
+          spend_frequency: 'daily',
+          hide_savings_card: false,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: mockRefreshProfile,
+      });
+
+      mockShowConfirm.mockResolvedValue(false);
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('hide-savings-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('hide-savings-button'));
+
+      await waitFor(() => {
+        expect(mockShowConfirm).toHaveBeenCalled();
+      });
+
+      // Should not call refreshProfile or show success toast
+      expect(mockRefreshProfile).not.toHaveBeenCalled();
+      expect(Toast.show).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+    });
+
+    it('shows error toast when hide fails', async () => {
+      const mockRefreshProfile = jest.fn();
+      const useAuthModule = require('@/contexts/AuthContext');
+      useAuthModule.useAuth.mockReturnValue({
+        profile: {
+          ...mockProfile,
+          spend_amount: 50,
+          spend_frequency: 'daily',
+          hide_savings_card: false,
+        },
+        user: { id: 'user-123' },
+        session: {},
+        loading: false,
+        refreshProfile: mockRefreshProfile,
+      });
+
+      // Mock supabase update to fail
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: new Error('Update failed') }),
+            }),
+          };
+        }
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation(() => ({
+                eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+              })),
+            }),
+          };
+        }
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockReturnValue({
+                  order: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      mockShowConfirm.mockResolvedValue(true);
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('hide-savings-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('hide-savings-button'));
+
+      await waitFor(() => {
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'error',
+            text1: 'Failed to hide card. Please try again.',
+          })
+        );
+      });
+    });
+  });
+
+  describe("What's New", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("auto-shows What's New sheet after delay when shouldShowWhatsNew is true", async () => {
+      mockShouldShowWhatsNew = true;
+      mockActiveRelease = { version: '1.0.0', title: 'New Features' };
+
+      // Update the mock to return these values
+      const useWhatsNewModule = require('@/lib/whats-new');
+      useWhatsNewModule.useWhatsNew.mockReturnValue({
+        shouldShowWhatsNew: true,
+        activeRelease: { version: '1.0.0', title: 'New Features' },
+        markAsSeen: mockMarkAsSeen,
+      });
+
+      render(<HomeScreen />);
+
+      // Should not show immediately
+      expect(mockWhatsNewPresent).not.toHaveBeenCalled();
+
+      // Advance timers past the 2500ms delay
+      await act(async () => {
+        jest.advanceTimersByTime(2500);
+      });
+
+      expect(mockWhatsNewPresent).toHaveBeenCalled();
+    });
+
+    it("does not auto-show What's New when shouldShowWhatsNew is false", async () => {
+      mockShouldShowWhatsNew = false;
+      mockActiveRelease = null;
+
+      const useWhatsNewModule = require('@/lib/whats-new');
+      useWhatsNewModule.useWhatsNew.mockReturnValue({
+        shouldShowWhatsNew: false,
+        activeRelease: null,
+        markAsSeen: mockMarkAsSeen,
+      });
+
+      render(<HomeScreen />);
+
+      // Advance timers
+      await act(async () => {
+        jest.advanceTimersByTime(3000);
+      });
+
+      expect(mockWhatsNewPresent).not.toHaveBeenCalled();
+    });
+
+    it("calls markAsSeen when What's New sheet is dismissed", async () => {
+      mockActiveRelease = { version: '1.0.0', title: 'New Features' };
+
+      const useWhatsNewModule = require('@/lib/whats-new');
+      useWhatsNewModule.useWhatsNew.mockReturnValue({
+        shouldShowWhatsNew: false,
+        activeRelease: { version: '1.0.0', title: 'New Features' },
+        markAsSeen: mockMarkAsSeen,
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('whats-new-sheet')).toBeTruthy();
+      });
+
+      // Press dismiss button
+      fireEvent.press(screen.getByTestId('dismiss-whats-new'));
+
+      await waitFor(() => {
+        expect(mockMarkAsSeen).toHaveBeenCalled();
+      });
+    });
+
+    it('does not render WhatsNewSheet when activeRelease is null', async () => {
+      mockActiveRelease = null;
+
+      const useWhatsNewModule = require('@/lib/whats-new');
+      useWhatsNewModule.useWhatsNew.mockReturnValue({
+        shouldShowWhatsNew: false,
+        activeRelease: null,
+        markAsSeen: mockMarkAsSeen,
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('whats-new-sheet')).toBeNull();
       });
     });
   });
