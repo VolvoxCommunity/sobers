@@ -4,7 +4,7 @@
 
 /**
  * Comprehensive build and runtime information for debugging.
- * Combines EAS Build env vars, expo-updates, expo-device, and expo-application data.
+ * Combines EAS Build env vars, expo-device, and expo-application data.
  */
 export interface BuildInfo {
   // EAS Build info (baked at build time via app.config.ts)
@@ -16,16 +16,6 @@ export interface BuildInfo {
   easBuildGitCommitHash: string | null;
   /** Build runner type ('eas-build' for cloud, 'local-build-plugin' for local) */
   easBuildRunner: string | null;
-
-  // OTA Update info (from expo-updates)
-  /** Current OTA update channel */
-  updateChannel: string | null;
-  /** Current running update ID (UUID) */
-  updateId: string | null;
-  /** Runtime version for update compatibility */
-  runtimeVersion: string | null;
-  /** Whether running the embedded bundle (not an OTA update) */
-  isEmbeddedLaunch: boolean;
 
   // Device info (from expo-device)
   /** Device model name (e.g., "iPhone 15 Pro", "Pixel 8") */

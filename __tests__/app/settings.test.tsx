@@ -88,19 +88,6 @@ jest.mock('@/contexts/ThemeContext', () => ({
   }),
 }));
 
-// Mock useAppUpdates hook
-jest.mock('@/hooks/useAppUpdates', () => ({
-  useAppUpdates: () => ({
-    status: 'idle',
-    isChecking: false,
-    isDownloading: false,
-    errorMessage: null,
-    checkForUpdates: jest.fn(),
-    applyUpdate: jest.fn(),
-    isSupported: false,
-  }),
-}));
-
 // Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => ({
   LogOut: () => null,
@@ -157,14 +144,6 @@ jest.mock('expo-constants', () => ({
       easBuildGitCommitHash: 'abc123',
     },
   },
-}));
-
-// Mock expo-updates
-jest.mock('expo-updates', () => ({
-  channel: 'preview',
-  updateId: null,
-  runtimeVersion: '1.1.0',
-  isEmbeddedLaunch: true,
 }));
 
 // Mock expo-device
@@ -748,17 +727,6 @@ describe('SettingsScreen', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Copy All Build Info')).toBeTruthy();
-      });
-    });
-
-    it('renders bundle type label', async () => {
-      render(<SettingsScreen />);
-
-      fireEvent.press(screen.getByLabelText('Build Information section'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Bundle')).toBeTruthy();
-        expect(screen.getByText('Embedded')).toBeTruthy();
       });
     });
   });
