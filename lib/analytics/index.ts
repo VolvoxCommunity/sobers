@@ -120,9 +120,10 @@ export async function initializeAnalytics(): Promise<void> {
   }
 
   // Amplitude uses a single API key for all platforms
-  // Trim whitespace to match shouldInitializeAnalytics validation
+  // Note: shouldInitializeAnalytics() already verified the key exists and is non-empty
+  // The fallback handles test environments where the mock bypasses the check
   const config: AnalyticsConfig = {
-    apiKey: process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY?.trim() || '',
+    apiKey: process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY?.trim() ?? '',
   };
 
   // Start new initialization

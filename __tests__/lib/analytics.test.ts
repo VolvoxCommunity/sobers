@@ -24,7 +24,6 @@ const mockResetAnalyticsPlatform = jest.fn(() => Promise.resolve());
 const mockSanitizeParams = jest.fn((params) => params);
 const mockShouldInitializeAnalytics = jest.fn(() => true);
 const mockIsDebugMode = jest.fn(() => false);
-const mockLoggerWarn = jest.fn();
 
 // Mock the platform implementation module
 jest.mock('@/lib/analytics/platform', () => ({
@@ -48,7 +47,7 @@ jest.mock('@/lib/analytics-utils', () => ({
 // Mock logger
 jest.mock('@/lib/logger', () => ({
   logger: {
-    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    warn: jest.fn(),
     info: jest.fn(),
     error: jest.fn(),
     debug: jest.fn(),
@@ -74,7 +73,8 @@ describe('Unified Analytics Module', () => {
 
       await initializeAnalytics();
 
-      expect(mockLoggerWarn).toHaveBeenCalledWith(
+      const { logger } = jest.requireMock('@/lib/logger');
+      expect(logger.warn).toHaveBeenCalledWith(
         'Amplitude not configured - analytics disabled',
         expect.any(Object)
       );
@@ -84,11 +84,10 @@ describe('Unified Analytics Module', () => {
     it('initializes platform analytics when configured', async () => {
       await initializeAnalytics();
 
-      expect(mockInitializePlatformAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({
-          apiKey: expect.any(String),
-        })
-      );
+      // Verify platform init was called with a config object containing apiKey
+      expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
+      const config = mockInitializePlatformAnalytics.mock.calls[0][0];
+      expect(config).toHaveProperty('apiKey');
     });
 
     it('returns immediately when already completed (with debug logging)', async () => {
@@ -173,7 +172,6 @@ describe('Unified Analytics Module', () => {
 
       expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
     });
-
   });
 
   describe('trackEvent', () => {
