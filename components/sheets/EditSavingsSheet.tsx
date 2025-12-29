@@ -18,6 +18,8 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import { logger, LogCategory } from '@/lib/logger';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
+import { trackEvent } from '@/lib/analytics';
+import { AnalyticsEvents } from '@/types/analytics';
 import type { Profile } from '@/types/database';
 import type { SpendingFrequency } from '@/lib/savings';
 
@@ -200,6 +202,12 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
 
         if (updateError) throw updateError;
 
+        trackEvent(AnalyticsEvents.SAVINGS_UPDATED, {
+          amount: parseFloat(amount),
+          frequency,
+          is_first_setup: isSetupMode,
+        });
+
         showToast.success('Savings tracking updated');
         await onSave();
         sheetRef.current?.dismiss();
@@ -211,7 +219,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
       } finally {
         setIsSaving(false);
       }
-    }, [amount, frequency, profile.id, validateAmount, onSave]);
+    }, [amount, frequency, profile.id, validateAmount, onSave, isSetupMode]);
 
     /**
      * Handles clearing all spending data after confirmation.
