@@ -52,7 +52,7 @@ import * as Clipboard from 'expo-clipboard';
 import { logger, LogCategory } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { captureSentryException } from '@/lib/sentry';
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 import { validateDisplayName } from '@/lib/validation';
 import { hexWithAlpha } from '@/lib/format';
 import { showConfirm } from '@/lib/alert';
@@ -694,6 +694,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       if (error) throw error;
 
       await refreshProfile();
+
+      // Track settings change
+      trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
+        setting: 'show_savings_card',
+        value: !newValue, // newValue is hide_savings_card, so invert for show
+      });
+
       showToast.success(newValue ? 'Savings card hidden' : 'Savings card visible');
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update setting');
@@ -754,7 +761,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           <View testID="settings-theme-toggle" style={styles.themeOptions}>
             <Pressable
               style={[styles.themeOption, themeMode === 'light' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('light')}
+              onPress={() => {
+                setThemeMode('light');
+                trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
+                  setting: 'theme',
+                  value: 'light',
+                });
+              }}
               accessibilityRole="radio"
               accessibilityState={{ checked: themeMode === 'light' }}
               accessibilityLabel="Light theme"
@@ -776,7 +789,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
             <Pressable
               style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('dark')}
+              onPress={() => {
+                setThemeMode('dark');
+                trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
+                  setting: 'theme',
+                  value: 'dark',
+                });
+              }}
               accessibilityRole="radio"
               accessibilityState={{ checked: themeMode === 'dark' }}
               accessibilityLabel="Dark theme"
@@ -798,7 +817,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
             <Pressable
               style={[styles.themeOption, themeMode === 'system' && styles.themeOptionSelected]}
-              onPress={() => setThemeMode('system')}
+              onPress={() => {
+                setThemeMode('system');
+                trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
+                  setting: 'theme',
+                  value: 'system',
+                });
+              }}
               accessibilityRole="radio"
               accessibilityState={{ checked: themeMode === 'system' }}
               accessibilityLabel="System theme"

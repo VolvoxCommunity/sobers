@@ -13,6 +13,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "spotlight": "spotlight-sidecar",
     "build:web": "expo export --platform web",
     "build:android": "expo export --platform android",
     "build:ios": "expo export --platform ios",
@@ -33,6 +34,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.33.0",
+    "@amplitude/analytics-react-native": "^1.5.32",
     "@bottom-tabs/react-navigation": "^1.1.0",
     "@date-fns/tz": "^1.4.1",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
@@ -40,8 +43,6 @@
     "@gorhom/bottom-sheet": "^5.2.8",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",
-    "@react-native-firebase/analytics": "^23.7.0",
-    "@react-native-firebase/app": "^23.7.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.9.3",
     "@react-navigation/native": "^7.1.8",
@@ -72,7 +73,6 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
-    "firebase": "^12.7.0",
     "lucide-react-native": "^0.562.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -93,6 +93,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
+    "@spotlightjs/spotlight": "^4.9.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.17",

@@ -92,6 +92,11 @@ jest.mock('react-native', () => {
       getInitialURL: jest.fn().mockResolvedValue(null),
       addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
     },
+    AppState: {
+      currentState: 'active',
+      addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+      removeEventListener: jest.fn(),
+    },
     Dimensions: {
       get: jest.fn(() => ({ width: 375, height: 812 })),
       addEventListener: jest.fn(),
@@ -727,6 +732,36 @@ jest.mock('expo-application', () => ({
   nativeApplicationVersion: '1.0.0',
   applicationId: 'com.test.sobers',
   applicationName: 'Sobers',
+}));
+
+// Mock @amplitude/analytics-react-native
+jest.mock('@amplitude/analytics-react-native', () => ({
+  init: jest.fn().mockReturnValue({ promise: Promise.resolve() }),
+  track: jest.fn(),
+  identify: jest.fn(),
+  setUserId: jest.fn(),
+  reset: jest.fn().mockResolvedValue(undefined),
+  Identify: jest.fn().mockImplementation(() => ({
+    set: jest.fn().mockReturnThis(),
+  })),
+  Types: {
+    LogLevel: { Debug: 0, None: 4 },
+  },
+}));
+
+// Mock @amplitude/analytics-browser
+jest.mock('@amplitude/analytics-browser', () => ({
+  init: jest.fn().mockReturnValue({ promise: Promise.resolve() }),
+  track: jest.fn(),
+  identify: jest.fn(),
+  setUserId: jest.fn(),
+  reset: jest.fn(),
+  Identify: jest.fn().mockImplementation(() => ({
+    set: jest.fn().mockReturnThis(),
+  })),
+  Types: {
+    LogLevel: { Debug: 0, None: 4 },
+  },
 }));
 
 // Mock react-native-reanimated

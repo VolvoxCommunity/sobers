@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Amplitude Analytics integration for product analytics with native and web platform support
+- Add 35+ analytics events with Title Case naming (e.g., "Screen Viewed", "Task Completed") for comprehensive user engagement tracking
+- Add 9 user properties for cohort analysis: days_sober_bucket, steps_completed_bucket, has_sponsor, has_sponsees, theme_preference, notifications_enabled, app_version, platform, device_type
 - Add password visibility toggle to Login and Signup screens with accessible labels
 - Add testIDs for password toggle buttons to improve test selectability
 - Add tests for password visibility toggle functionality in login and signup screens
@@ -18,20 +21,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Build Info conditional rendering tests for SettingsContent
 - Add handleSaveName edge case tests for SettingsContent
 - Add handleToggleSavingsCard tests for SettingsContent
+- Add TaskCard accessibility tests for status icon labels and due date announcements
+- Add analytics platform tests for uninitialized state and edge cases
+- Add Sentry Spotlight for local development error debugging (`pnpm spotlight`)
+- Add complete AnalyticsEvents constant assertions covering all 35 event types to catch renamed/removed constants
+- Add comprehensive onboarding analytics tracking (ONBOARDING_STARTED, ONBOARDING_SCREEN_VIEWED, ONBOARDING_FIELD_COMPLETED, ONBOARDING_STEP_COMPLETED, ONBOARDING_SOBRIETY_DATE_SET, ONBOARDING_COMPLETED, ONBOARDING_ABANDONED)
+- Add analytics tracking for settings changes (SETTINGS_CHANGED event for theme and dashboard preferences)
+- Add analytics tracking for app engagement (APP_OPENED, APP_BACKGROUNDED, APP_SESSION_STARTED, DAILY_CHECK_IN events)
+- Add analytics tracking for savings updates (SAVINGS_UPDATED event when editing savings settings)
 
 ### Changed
 
+- Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support
+- Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
+
+### Removed
+
+- Remove Firebase Analytics dependencies (@react-native-firebase/analytics, @react-native-firebase/app)
+- Remove Firebase configuration files and plugins (firebase.json, withFirebaseConfig.js, withModularHeaders.js)
+- Remove check for updates feature and expo-updates dependency from the app
 
 ### Fixed
 
 - Fix E2E savings tests failing due to incorrect card click (menu button required)
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle
 - Fix keyboard pushing content up excessively in EditSavingsSheet by using single snap point
-
-### Removed
-
-- Remove check for updates feature and expo-updates dependency from the app
+- Fix TaskCard syntax error causing build failure (broken JSX from accessibility enhancement)
+- Fix analytics initialization errors being swallowed, preventing retry on failure
+- Fix calculateStepsCompletedBucket returning incorrect bucket for negative values
 
 ## [1.2.1] - 2025-12-25
 
@@ -152,7 +170,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/VolvoxCommunity/sobers/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/VolvoxCommunity/sobers/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/VolvoxCommunity/sobers/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/VolvoxCommunity/sobers/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/VolvoxCommunity/sobers/compare/v1.0.0...v1.1.0
 [1.0.1]: https://github.com/VolvoxCommunity/sobers/compare/v1.0.0...v1.0.1

@@ -1,5 +1,5 @@
 /**
- * Unified Firebase Analytics module for Sobers.
+ * Unified Amplitude Analytics module for Sobers.
  *
  * This is the ONLY module that app code should import for analytics.
  * Metro automatically selects the correct platform implementation:
@@ -10,10 +10,10 @@
  *
  * @example
  * ```ts
- * import { trackEvent, setUserId, setUserProperties } from '@/lib/analytics';
+ * import { trackEvent, setUserId, setUserProperties, AnalyticsEvents } from '@/lib/analytics';
  *
- * // Track an event
- * trackEvent('task_completed', { task_id: '123' });
+ * // Track an event using constants
+ * trackEvent(AnalyticsEvents.TASK_COMPLETED, { task_id: '123' });
  *
  * // Set user ID after login
  * setUserId(user.id);
@@ -22,8 +22,6 @@
  * setUserProperties({ days_sober_bucket: '31-90' });
  * ```
  */
-
-import { Platform } from 'react-native';
 
 import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';
 import { sanitizeParams, shouldInitializeAnalytics, isDebugMode } from '@/lib/analytics-utils';
@@ -41,7 +39,7 @@ import {
 
 // Re-export types and constants for convenience
 export { AnalyticsEvents, type AnalyticsEventName } from '@/types/analytics';
-export { calculateDaysSoberBucket } from '@/lib/analytics-utils';
+export { calculateDaysSoberBucket, calculateStepsCompletedBucket } from '@/lib/analytics-utils';
 
 // =============================================================================
 // Module State
@@ -62,32 +60,20 @@ let initializationPromise: Promise<void> | null = null;
 let initializationState: 'pending' | 'completed' | 'skipped' | 'failed' | null = null;
 
 /**
- * Internal initialization logic. Called by initializeAnalytics wrapper.
+ * Initialize platform-specific analytics using the provided configuration.
  *
- * @param config - Analytics configuration
+ * @param config - Analytics configuration used to initialize platform analytics (must include `apiKey`)
  */
 async function doInitialize(config: AnalyticsConfig): Promise<void> {
   await initializePlatformAnalytics(config);
 }
 
 /**
- * Initialize Firebase Analytics for the app.
+ * Initialize Amplitude Analytics for the app.
  *
- * Call this once at app startup, before any other analytics calls.
- * On native platforms, Firebase is configured via config files.
- * On web, it uses environment variables.
+ * Starts analytics initialization using EXPO_PUBLIC_AMPLITUDE_API_KEY. Concurrent callers will share the same initialization process; initialization is skipped if configuration indicates analytics should not run. Initialization failures are logged and do not throw, allowing retries on subsequent calls.
  *
- * This function uses a Promise-based pattern to prevent race conditions:
- * - Concurrent calls during initialization will await the same Promise
- * - Once completed, subsequent calls return immediately
- * - On failure, retry is allowed (state is reset)
- *
- * @example
- * ```ts
- * // In app/_layout.tsx
- * import { initializeAnalytics } from '@/lib/analytics';
- * initializeAnalytics();
- * ```
+ * @returns Nothing; resolves when initialization completes
  */
 export async function initializeAnalytics(): Promise<void> {
   // Already completed or skipped - return immediately
@@ -114,7 +100,7 @@ export async function initializeAnalytics(): Promise<void> {
   // Check if analytics should be initialized
   if (!shouldInitializeAnalytics()) {
     if (isDebugMode()) {
-      logger.warn('Firebase not configured - analytics disabled', {
+      logger.warn('Amplitude not configured - analytics disabled', {
         category: LogCategory.ANALYTICS,
       });
     }
@@ -122,25 +108,12 @@ export async function initializeAnalytics(): Promise<void> {
     return;
   }
 
-  // On native, Firebase reads config from GoogleService-Info.plist / google-services.json
-  // On web, we need explicit configuration via environment variables
+  // Amplitude uses a single API key for all platforms
+  // Note: shouldInitializeAnalytics() already verified the key exists and is non-empty
+  // The fallback handles test environments where the mock bypasses the check
   const config: AnalyticsConfig = {
-    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
-    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
+    apiKey: process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY?.trim() ?? '',
   };
-
-  // Only warn about missing config on web - native uses config files, not env vars
-  if (Platform.OS === 'web' && (!config.apiKey || !config.projectId || !config.appId)) {
-    logger.warn('Firebase config incomplete - some required values are missing', {
-      category: LogCategory.ANALYTICS,
-      hasApiKey: !!config.apiKey,
-      hasProjectId: !!config.projectId,
-      hasAppId: !!config.appId,
-      hasMeasurementId: !!config.measurementId,
-    });
-  }
 
   // Start new initialization
   initializationState = 'pending';

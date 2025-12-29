@@ -1,312 +1,168 @@
+// lib/analytics/platform.native.ts
 /**
- * Firebase Analytics implementation for native platforms (iOS/Android).
+ * Amplitude Analytics implementation for native platforms (iOS/Android).
  *
  * This file is automatically selected by Metro bundler on iOS and Android.
- * Uses the modular API introduced in React Native Firebase v22.
  *
  * @module lib/analytics/platform.native
- * @see {@link https://rnfirebase.io/migrating-to-v22 Migration Guide}
  */
 
-import {
-  getAnalytics,
-  logEvent,
-  setUserId,
-  setUserProperties,
-  resetAnalyticsData,
-  setAnalyticsCollectionEnabled,
-} from '@react-native-firebase/analytics';
+import * as amplitude from '@amplitude/analytics-react-native';
 
-import type { EventParams, UserProperties, AnalyticsConfig } from '@/types/analytics';
+import {
+  AnalyticsEvents,
+  type EventParams,
+  type UserProperties,
+  type AnalyticsConfig,
+} from '@/types/analytics';
 import { isDebugMode } from '@/lib/analytics-utils';
 import { logger, LogCategory } from '@/lib/logger';
 
-// Lazily initialized analytics instance to avoid module-scope crashes
-// when Firebase config files are missing
-let analyticsInstance: ReturnType<typeof getAnalytics> | null = null;
+let isInitialized = false;
 
 /**
- * Gets or initializes the Firebase Analytics instance.
+ * Initialize Amplitude analytics with the provided configuration for native platforms.
  *
- * Deferred initialization prevents crashes when Firebase config files
- * (GoogleService-Info.plist / google-services.json) are missing.
+ * If analytics have already been initialized this function is a no-op.
  *
- * @returns The analytics instance, or null if initialization fails
+ * @param config - Configuration containing the Amplitude `apiKey` used to initialize the SDK
+ * @throws An `Error` if Amplitude initialization fails
  */
-function getAnalyticsInstance(): ReturnType<typeof getAnalytics> | null {
-  if (analyticsInstance === null) {
-    try {
-      analyticsInstance = getAnalytics();
-    } catch (error) {
-      logger.error(
-        'Failed to get Firebase Analytics instance',
-        error instanceof Error ? error : new Error(String(error)),
-        { category: LogCategory.ANALYTICS }
-      );
-      return null;
+export async function initializePlatformAnalytics(config: AnalyticsConfig): Promise<void> {
+  if (isInitialized) {
+    if (isDebugMode()) {
+      logger.debug('Amplitude already initialized', { category: LogCategory.ANALYTICS });
     }
+    return;
   }
-  return analyticsInstance;
-}
 
-/**
- * Initializes Firebase Analytics for native platforms using the bundled native configuration.
- *
- * The optional `_config` argument is ignored on iOS and Android.
- *
- * @param _config - Optional analytics configuration; ignored on native platforms
- */
-export async function initializePlatformAnalytics(_config?: AnalyticsConfig): Promise<void> {
   try {
-    const analytics = getAnalyticsInstance();
-    if (!analytics) {
-      logger.warn('Analytics not available - Firebase may not be configured', {
-        category: LogCategory.ANALYTICS,
-      });
-      return;
-    }
+    await amplitude.init(config.apiKey, undefined, {
+      logLevel: isDebugMode() ? amplitude.Types.LogLevel.Debug : amplitude.Types.LogLevel.None,
+    }).promise;
 
-    // Always enable analytics collection (on native, it's enabled by default,
-    // but we explicitly enable it to ensure consistent behavior)
-    await setAnalyticsCollectionEnabled(analytics, true);
+    isInitialized = true;
 
     if (isDebugMode()) {
-      logger.info('Firebase Analytics initialized for native', {
+      logger.info('Amplitude Analytics initialized for native', {
         category: LogCategory.ANALYTICS,
       });
     }
   } catch (error) {
-    logger.error(
-      'Failed to initialize native analytics',
-      error instanceof Error ? error : new Error(String(error)),
-      { category: LogCategory.ANALYTICS }
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to initialize Amplitude', err, { category: LogCategory.ANALYTICS });
+    throw err; // Rethrow so caller can handle and allow retry
   }
 }
 
 /**
- * Tracks an analytics event.
+ * Record an analytics event with optional parameters.
  *
- * This function is synchronous (fire-and-forget) to match the public API in index.ts.
- * Errors are caught and logged but not propagated to avoid unhandled promise rejections.
+ * If analytics has not been initialized this function is a no-op. Any runtime
+ * errors encountered while sending the event are logged and not thrown.
  *
- * @param eventName - The analytics event name to record
- * @param params - Optional event parameters as key/value pairs
+ * @param eventName - The name of the event to record
+ * @param params - Optional key/value parameters to attach to the event
  */
 export function trackEventPlatform(eventName: string, params?: EventParams): void {
   if (isDebugMode()) {
-    const { error_message, error_stack, error_name, ...safeParams } = params || {};
-    logger.debug(`Event: ${eventName}`, { category: LogCategory.ANALYTICS, ...safeParams });
+    logger.debug(`Event: ${eventName}`, { category: LogCategory.ANALYTICS, ...params });
   }
 
-  const analytics = getAnalyticsInstance();
-  if (!analytics) return;
+  if (!isInitialized) return;
 
-  logEvent(analytics, eventName, params).catch((error: unknown) => {
+  try {
+    amplitude.track(eventName, params);
+  } catch (error) {
     logger.error(
-      `Failed to track event ${eventName}`,
+      'Failed to track event',
       error instanceof Error ? error : new Error(String(error)),
-      { category: LogCategory.ANALYTICS }
+      { category: LogCategory.ANALYTICS, eventName }
     );
-  });
+  }
 }
 
 /**
- * Computes a simple deterministic hash of a string for privacy-safe logging.
+ * Set the analytics user identifier for the current session.
  *
- * Uses a djb2-style hash algorithm that's fast and deterministic.
- * This is suitable for logging purposes (not cryptographic security).
- *
- * @param input - The string to hash
- * @returns The hex-encoded hash, or null if input is null/undefined
- *
- * @example
- * ```ts
- * const hash = hashUserIdForLogging('user-123');
- * // Returns: 'a1b2c3d4...' (deterministic hash)
- * ```
- */
-function hashUserIdForLogging(input: string | null): string | null {
-  if (input === null || input === undefined) {
-    return null;
-  }
-
-  // Simple djb2-style hash for deterministic, one-way hashing
-  let hash = 5381;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash << 5) + hash + input.charCodeAt(i);
-    hash = hash | 0; // Convert to 32-bit integer
-  }
-
-  // Convert to positive hex string (8 chars for 32-bit hash)
-  const hashHex = Math.abs(hash).toString(16).padStart(8, '0');
-  return hashHex;
-}
-
-/**
- * Set the analytics user ID for the current session.
- *
- * Passing `null` clears the current user ID. Errors encountered while setting the ID
- * are caught and logged and will not be propagated.
- *
- * @param userId - The user ID to set, or `null` to clear the current user ID
+ * @param userId - The user identifier to assign; pass `null` to clear the current user id
  */
 export function setUserIdPlatform(userId: string | null): void {
   if (isDebugMode()) {
-    const hashed = hashUserIdForLogging(userId);
-    if (hashed === null) {
-      logger.debug('setUserId: null', { category: LogCategory.ANALYTICS });
-    } else {
-      logger.debug(`setUserId: <hashed: ${hashed}>`, { category: LogCategory.ANALYTICS });
-    }
+    logger.debug(`setUserId: ${userId ? '<set>' : 'null'}`, { category: LogCategory.ANALYTICS });
   }
 
-  const analytics = getAnalyticsInstance();
-  if (!analytics) return;
+  if (!isInitialized) return;
 
-  setUserId(analytics, userId).catch((error: unknown) => {
+  try {
+    amplitude.setUserId(userId ?? undefined);
+  } catch (error) {
     logger.error(
       'Failed to set user ID',
       error instanceof Error ? error : new Error(String(error)),
       { category: LogCategory.ANALYTICS }
     );
-  });
-}
-
-/**
- * Sanitizes user properties for safe logging by redacting sensitive values.
- *
- * @param properties - User properties to sanitize
- * @returns Sanitized properties with sensitive values replaced with "<redacted>"
- */
-function sanitizeUserPropertiesForLogging(
-  properties: UserProperties
-): Record<string, string | null> {
-  const sensitiveKeys = new Set([
-    'email',
-    'name',
-    'phone',
-    'phone_number',
-    'display_name',
-    'full_name',
-    'first_name',
-    'last_name',
-    'user_name',
-    'username',
-  ]);
-
-  const sanitized: Record<string, string | null> = {};
-  for (const [key, value] of Object.entries(properties)) {
-    if (value === undefined) continue;
-    if (sensitiveKeys.has(key.toLowerCase())) {
-      sanitized[key] = '<redacted>';
-    } else if (value === null) {
-      sanitized[key] = null;
-    } else if (typeof value === 'boolean') {
-      sanitized[key] = value ? 'true' : 'false';
-    } else {
-      sanitized[key] = String(value);
-    }
   }
-  return sanitized;
 }
 
 /**
- * Set analytics user properties for the native platform.
+ * Apply a set of user properties to the current analytics user via Amplitude Identify.
  *
- * Accepts an object mapping property names to values; `null` clears a property and `undefined` entries are ignored.
- * Boolean values are converted to the strings `'true'` or `'false'` to meet Firebase requirements; other non-null values are converted to strings.
- * Errors from the underlying analytics call are logged and not rethrown.
+ * Properties with the value `undefined` are ignored. If analytics has not been initialized, this is a no-op. Errors are caught and logged and will not be thrown to the caller.
  *
- * @param properties - Mapping of user property names to string, boolean, `null`, or `undefined` values
+ * @param properties - Key/value map of user properties to set; values other than `undefined` will be written to the analytics user profile
  */
 export function setUserPropertiesPlatform(properties: UserProperties): void {
   if (isDebugMode()) {
-    const sanitized = sanitizeUserPropertiesForLogging(properties);
-    logger.debug('setUserProperties', { category: LogCategory.ANALYTICS, ...sanitized });
+    logger.debug('setUserProperties', { category: LogCategory.ANALYTICS, ...properties });
   }
 
-  // Convert boolean values to strings for Firebase compatibility
-  const normalized: Record<string, string | null> = {};
-  for (const [key, value] of Object.entries(properties)) {
-    if (value === undefined) continue;
-    if (value === null) {
-      normalized[key] = null;
-    } else if (typeof value === 'boolean') {
-      normalized[key] = value ? 'true' : 'false';
-    } else {
-      normalized[key] = String(value);
+  if (!isInitialized) return;
+
+  try {
+    const identify = new amplitude.Identify();
+    for (const [key, value] of Object.entries(properties)) {
+      if (value !== undefined) {
+        identify.set(key, value);
+      }
     }
-  }
-
-  const analytics = getAnalyticsInstance();
-  if (!analytics) return;
-
-  setUserProperties(analytics, normalized).catch((error: unknown) => {
+    amplitude.identify(identify);
+  } catch (error) {
     logger.error(
       'Failed to set user properties',
       error instanceof Error ? error : new Error(String(error)),
       { category: LogCategory.ANALYTICS }
     );
-  });
+  }
 }
 
 /**
- * Record a screen view in analytics.
- *
- * This is a fire-and-forget call: it enqueues a 'screen_view' event and catches/logs any errors without throwing.
- *
- * @param screenName - The displayed name of the screen to record
- * @param screenClass - Optional screen class; defaults to `screenName` when omitted
+ * Tracks a screen view event.
+ * @param screenName - The name of the screen being viewed
+ * @param screenClass - Optional screen class. Defaults to screenName if not provided.
  */
 export function trackScreenViewPlatform(screenName: string, screenClass?: string): void {
-  if (isDebugMode()) {
-    logger.debug(`Screen view: ${screenName}`, { category: LogCategory.ANALYTICS });
-  }
-
-  const analytics = getAnalyticsInstance();
-  if (!analytics) return;
-
-  // Use logEvent with 'screen_view' instead of the deprecated logScreenView function
-  // Type assertion needed because Firebase typings have strict overloads
-  (
-    logEvent as (
-      analytics: ReturnType<typeof getAnalytics>,
-      event: string,
-      params?: Record<string, unknown>
-    ) => Promise<void>
-  )(analytics, 'screen_view', {
+  trackEventPlatform(AnalyticsEvents.SCREEN_VIEWED, {
     screen_name: screenName,
     screen_class: screenClass || screenName,
-  }).catch((error: unknown) => {
-    logger.error(
-      'Failed to track screen view',
-      error instanceof Error ? error : new Error(String(error)),
-      { category: LogCategory.ANALYTICS }
-    );
   });
 }
 
 /**
- * Clear the native Firebase Analytics instance state and stored analytics data, typically used on user logout.
+ * Reset analytics state for the native Amplitude integration.
  *
- * If Firebase Analytics is unavailable, logs a warning and returns without error. Any errors encountered while resetting are logged and not rethrown.
+ * If analytics have not been initialized this function is a no-op. Any errors
+ * encountered while resetting are logged and not rethrown.
  */
 export async function resetAnalyticsPlatform(): Promise<void> {
+  if (isDebugMode()) {
+    logger.info('Resetting analytics state', { category: LogCategory.ANALYTICS });
+  }
+
+  if (!isInitialized) return;
+
   try {
-    const analytics = getAnalyticsInstance();
-    if (!analytics) {
-      logger.warn('Cannot reset analytics - Firebase not available', {
-        category: LogCategory.ANALYTICS,
-      });
-      return;
-    }
-
-    if (isDebugMode()) {
-      logger.info('Resetting analytics state', { category: LogCategory.ANALYTICS });
-    }
-
-    await resetAnalyticsData(analytics);
+    await amplitude.reset();
   } catch (error) {
     logger.error(
       'Failed to reset analytics',
@@ -314,4 +170,19 @@ export async function resetAnalyticsPlatform(): Promise<void> {
       { category: LogCategory.ANALYTICS }
     );
   }
+}
+
+/**
+ * Reset the module's initialization state for test environments.
+ *
+ * Sets the internal initialized flag to `false`. This function is intended for use only during tests.
+ *
+ * @internal
+ * @throws Error If called when NODE_ENV is not `'test'`.
+ */
+export function __resetForTesting(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('__resetForTesting should only be called in test environments');
+  }
+  isInitialized = false;
 }

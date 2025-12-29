@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -109,6 +109,11 @@ export default function OnboardingScreen() {
   const [spendingFrequency, setSpendingFrequency] = useState<SpendingFrequency>('weekly');
   const [spendingError, setSpendingError] = useState<string | null>(null);
 
+  // Refs to track which fields have been completed (to avoid duplicate analytics events)
+  const hasTrackedDisplayName = useRef(false);
+  const hasTrackedSobrietyDate = useRef(false);
+  const hasTrackedSavingsEnabled = useRef(false);
+
   // Refresh profile on mount to catch any pending updates (e.g., Apple Sign In)
   // Apple Sign In updates the profile AFTER navigation to onboarding happens,
   // so we need to re-fetch to get the display_name that was just set.
@@ -163,9 +168,12 @@ export default function OnboardingScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awaitingProfileUpdate, profile]);
 
-  // Track onboarding started on mount
+  // Track onboarding started and screen viewed on mount
   useEffect(() => {
     trackEvent(AnalyticsEvents.ONBOARDING_STARTED);
+    trackEvent(AnalyticsEvents.ONBOARDING_SCREEN_VIEWED, {
+      screen_name: 'profile_setup',
+    });
   }, []);
 
   // Debounced validation for display name
@@ -173,6 +181,14 @@ export default function OnboardingScreen() {
     const timeoutId = setTimeout(() => {
       const error = validateDisplayName(displayName);
       setDisplayNameError(error);
+
+      // Track field completion when display name becomes valid for the first time
+      if (!error && displayName.trim() && !hasTrackedDisplayName.current) {
+        hasTrackedDisplayName.current = true;
+        trackEvent(AnalyticsEvents.ONBOARDING_FIELD_COMPLETED, {
+          field_name: 'display_name',
+        });
+      }
     }, VALIDATION_DEBOUNCE_MS);
 
     return () => clearTimeout(timeoutId);
@@ -184,6 +200,15 @@ export default function OnboardingScreen() {
       setSpendingError(null);
       return;
     }
+
+    // Track field completion when savings tracking is enabled for the first time
+    if (!hasTrackedSavingsEnabled.current) {
+      hasTrackedSavingsEnabled.current = true;
+      trackEvent(AnalyticsEvents.ONBOARDING_FIELD_COMPLETED, {
+        field_name: 'savings_tracking',
+      });
+    }
+
     if (!spendingAmount.trim()) {
       setSpendingError('Amount is required when tracking is enabled');
       return;
@@ -227,6 +252,14 @@ export default function OnboardingScreen() {
 
   const handleSignOut = async () => {
     try {
+      // Track onboarding abandonment before signing out
+      const durationSeconds = Math.floor((Date.now() - onboardingStartTime) / 1000);
+      trackEvent(AnalyticsEvents.ONBOARDING_ABANDONED, {
+        duration_seconds: durationSeconds,
+        had_display_name: displayName.trim().length > 0,
+        had_savings_enabled: isSavingsEnabled,
+      });
+
       await signOut();
       router.replace('/login');
     } catch (error) {
@@ -283,10 +316,16 @@ export default function OnboardingScreen() {
 
       if (error) throw error;
 
-      // Track onboarding completion with duration
+      // Track step and onboarding completion with duration
       const durationSeconds = Math.floor((Date.now() - onboardingStartTime) / 1000);
+      trackEvent(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, {
+        step_name: 'profile_setup',
+        step_number: 1,
+        total_steps: 1,
+      });
       trackEvent(AnalyticsEvents.ONBOARDING_COMPLETED, {
         duration_seconds: durationSeconds,
+        savings_enabled: isSavingsEnabled,
       });
 
       // Refresh the profile state in AuthContext
@@ -327,6 +366,14 @@ export default function OnboardingScreen() {
       trackEvent(AnalyticsEvents.ONBOARDING_SOBRIETY_DATE_SET, {
         days_sober_bucket: calculateDaysSoberBucket(daysSober),
       });
+
+      // Track field completion the first time sobriety date is explicitly set
+      if (!hasTrackedSobrietyDate.current) {
+        hasTrackedSobrietyDate.current = true;
+        trackEvent(AnalyticsEvents.ONBOARDING_FIELD_COMPLETED, {
+          field_name: 'sobriety_date',
+        });
+      }
     }
   };
 

@@ -1,6 +1,6 @@
 // types/analytics.ts
 /**
- * Firebase Analytics type definitions for Sobers.
+ * Amplitude Analytics type definitions for Sobers.
  *
  * These types define the contract for analytics events and user properties
  * tracked across all platforms (iOS, Android, web).
@@ -10,22 +10,13 @@
 
 /**
  * Allowed values for event parameters.
- * Firebase Analytics supports strings, numbers, and booleans.
+ * Amplitude supports strings, numbers, booleans, and arrays.
  */
-export type EventParamValue = string | number | boolean | undefined;
+export type EventParamValue = string | number | boolean | string[] | undefined;
 
 /**
  * Generic event parameters object.
  * All custom event parameters must use this interface.
- *
- * @example
- * ```ts
- * const params: EventParams = {
- *   task_id: '123',
- *   days_to_complete: 3,
- *   is_first_task: true,
- * };
- * ```
  */
 export interface EventParams {
   [key: string]: EventParamValue;
@@ -38,12 +29,13 @@ export interface EventParams {
 export type DaysSoberBucket = '0-7' | '8-30' | '31-90' | '91-180' | '181-365' | '365+';
 
 /**
- * User properties tracked in Firebase Analytics.
+ * Bucketed ranges for steps completed count.
+ */
+export type StepsCompletedBucket = '0' | '1-3' | '4-6' | '7-9' | '10-12';
+
+/**
+ * User properties tracked in Amplitude Analytics.
  * These are set once and persist across sessions until changed.
- *
- * @remarks
- * All properties are optional - only set properties that have values.
- * Never include PII (email, name, exact dates) in user properties.
  */
 export interface UserProperties {
   /** Bucketed sobriety duration for cohort analysis */
@@ -56,55 +48,83 @@ export interface UserProperties {
   theme_preference?: 'light' | 'dark' | 'system';
   /** Authentication method used */
   sign_in_method?: 'email' | 'google' | 'apple';
+  /** Whether user completed onboarding */
+  onboarding_completed?: boolean;
+  /** Current task streak count */
+  task_streak_current?: number;
+  /** Bucketed 12-step progress */
+  steps_completed_count?: StepsCompletedBucket;
+  /** Whether user has set a savings goal */
+  savings_goal_set?: boolean;
 }
 
 /**
- * Firebase web SDK configuration.
- * These values come from Firebase Console > Project Settings > Web App.
+ * Amplitude configuration.
+ * Uses a single API key for all platforms.
  */
 export interface AnalyticsConfig {
   apiKey: string;
-  projectId: string;
-  appId: string;
-  measurementId: string;
 }
 
 /**
  * Analytics event names used throughout the app.
- * Using a const object ensures consistency and enables autocomplete.
+ * Using Title Case per Amplitude conventions for better dashboard rendering.
  */
 export const AnalyticsEvents = {
   // Authentication
-  AUTH_SIGN_UP: 'auth_sign_up',
-  AUTH_LOGIN: 'auth_login',
-  AUTH_LOGOUT: 'auth_logout',
+  AUTH_SIGN_UP: 'Auth Sign Up',
+  AUTH_LOGIN: 'Auth Login',
+  AUTH_LOGOUT: 'Auth Logout',
 
   // Onboarding
-  ONBOARDING_STARTED: 'onboarding_started',
-  ONBOARDING_STEP_COMPLETED: 'onboarding_step_completed',
-  ONBOARDING_SOBRIETY_DATE_SET: 'onboarding_sobriety_date_set',
-  ONBOARDING_COMPLETED: 'onboarding_completed',
+  ONBOARDING_STARTED: 'Onboarding Started',
+  ONBOARDING_STEP_COMPLETED: 'Onboarding Step Completed',
+  ONBOARDING_SOBRIETY_DATE_SET: 'Onboarding Sobriety Date Set',
+  ONBOARDING_COMPLETED: 'Onboarding Completed',
+  ONBOARDING_SCREEN_VIEWED: 'Onboarding Screen Viewed',
+  ONBOARDING_FIELD_COMPLETED: 'Onboarding Field Completed',
+  ONBOARDING_ABANDONED: 'Onboarding Abandoned',
 
   // Core Features
-  SCREEN_VIEW: 'screen_view',
-  TASK_VIEWED: 'task_viewed',
-  TASK_STARTED: 'task_started',
-  TASK_COMPLETED: 'task_completed',
-  STEP_VIEWED: 'step_viewed',
+  SCREEN_VIEWED: 'Screen Viewed',
+  TASK_VIEWED: 'Task Viewed',
+  TASK_STARTED: 'Task Started',
+  TASK_COMPLETED: 'Task Completed',
+  TASK_CREATED: 'Task Created',
+  TASK_SKIPPED: 'Task Skipped',
+  TASK_STREAK_UPDATED: 'Task Streak Updated',
+
+  // Steps (12-step)
+  STEP_VIEWED: 'Step Viewed',
+  STEP_STARTED: 'Step Started',
+  STEP_PROGRESS_SAVED: 'Step Progress Saved',
+  STEP_COMPLETED: 'Step Completed',
 
   // Milestones
-  MILESTONE_REACHED: 'milestone_reached',
-  MILESTONE_SHARED: 'milestone_shared',
+  MILESTONE_REACHED: 'Milestone Reached',
+  MILESTONE_SHARED: 'Milestone Shared',
+  MILESTONE_CELEBRATED: 'Milestone Celebrated',
 
   // Social
-  SPONSOR_CONNECTED: 'sponsor_connected',
-  SPONSOR_INVITE_SENT: 'sponsor_invite_sent',
-  SPONSOR_INVITE_ACCEPTED: 'sponsor_invite_accepted',
-  MESSAGE_SENT: 'message_sent',
+  SPONSOR_CONNECTED: 'Sponsor Connected',
+  SPONSOR_INVITE_SENT: 'Sponsor Invite Sent',
+  SPONSOR_INVITE_ACCEPTED: 'Sponsor Invite Accepted',
+  SPONSEE_ADDED: 'Sponsee Added',
+  MESSAGE_SENT: 'Message Sent',
+  MESSAGE_READ: 'Message Read',
 
-  // Retention
-  APP_OPENED: 'app_opened',
-  DAILY_CHECK_IN: 'daily_check_in',
+  // Engagement
+  APP_OPENED: 'App Opened',
+  APP_BACKGROUNDED: 'App Backgrounded',
+  APP_SESSION_STARTED: 'App Session Started',
+  DAILY_CHECK_IN: 'Daily Check In',
+
+  // Settings
+  SETTINGS_CHANGED: 'Settings Changed',
+
+  // Savings
+  SAVINGS_GOAL_SET: 'Savings Goal Set',
+  SAVINGS_UPDATED: 'Savings Updated',
 } as const;
 
 /**

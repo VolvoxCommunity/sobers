@@ -334,6 +334,84 @@ describe('TaskCard', () => {
       const deleteButton = screen.getByLabelText('Delete task Complete Step 1');
       expect(deleteButton).toBeTruthy();
     });
+
+    describe('Status Icon Labels', () => {
+      it('announces completed status for my-task variant', () => {
+        render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" isCompleted={true} />);
+
+        expect(screen.getByLabelText('Status: Completed')).toBeTruthy();
+      });
+
+      it('announces completed status for managed-task variant', () => {
+        const completedTask = { ...mockTask, status: 'completed' as const };
+
+        render(<TaskCard task={completedTask} theme={mockTheme} variant="managed-task" />);
+
+        expect(screen.getByLabelText('Status: Completed')).toBeTruthy();
+      });
+
+      it('announces overdue status for managed-task variant', () => {
+        render(
+          <TaskCard task={mockTask} theme={mockTheme} variant="managed-task" isOverdue={true} />
+        );
+
+        expect(screen.getByLabelText('Status: Overdue')).toBeTruthy();
+      });
+
+      it('announces assigned status for managed-task variant', () => {
+        const assignedTask = { ...mockTask, status: 'assigned' as const };
+
+        render(
+          <TaskCard
+            task={assignedTask}
+            theme={mockTheme}
+            variant="managed-task"
+            isCompleted={false}
+            isOverdue={false}
+          />
+        );
+
+        expect(screen.getByLabelText('Status: Assigned')).toBeTruthy();
+      });
+
+      it('announces in progress status for managed-task variant', () => {
+        const inProgressTask = { ...mockTask, status: 'in_progress' as const };
+
+        render(
+          <TaskCard
+            task={inProgressTask}
+            theme={mockTheme}
+            variant="managed-task"
+            isCompleted={false}
+            isOverdue={false}
+          />
+        );
+
+        expect(screen.getByLabelText('Status: In Progress')).toBeTruthy();
+      });
+    });
+
+    describe('Due Date Labels', () => {
+      it('announces due date for my-task variant', () => {
+        render(<TaskCard task={mockTask} theme={mockTheme} variant="my-task" />);
+
+        expect(screen.getByLabelText(/^Due /)).toBeTruthy();
+      });
+
+      it('announces due date for managed-task variant', () => {
+        render(<TaskCard task={mockTask} theme={mockTheme} variant="managed-task" />);
+
+        expect(screen.getByLabelText(/^Due /)).toBeTruthy();
+      });
+
+      it('announces overdue due date for managed-task variant', () => {
+        render(
+          <TaskCard task={mockTask} theme={mockTheme} variant="managed-task" isOverdue={true} />
+        );
+
+        expect(screen.getByLabelText(/^Due .*, Overdue$/)).toBeTruthy();
+      });
+    });
   });
 
   describe('Edge Cases', () => {

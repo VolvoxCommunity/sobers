@@ -10,6 +10,7 @@ import {
   resetAnalytics,
   AnalyticsEvents,
   calculateDaysSoberBucket,
+  calculateStepsCompletedBucket,
   __resetForTesting,
 } from '@/lib/analytics';
 
@@ -23,15 +24,6 @@ const mockResetAnalyticsPlatform = jest.fn(() => Promise.resolve());
 const mockSanitizeParams = jest.fn((params) => params);
 const mockShouldInitializeAnalytics = jest.fn(() => true);
 const mockIsDebugMode = jest.fn(() => false);
-const mockLoggerWarn = jest.fn();
-
-// Mock react-native Platform
-jest.mock('react-native', () => ({
-  Platform: {
-    OS: 'ios',
-    select: jest.fn((options: { web?: unknown; default?: unknown }) => options.default),
-  },
-}));
 
 // Mock the platform implementation module
 jest.mock('@/lib/analytics/platform', () => ({
@@ -49,12 +41,13 @@ jest.mock('@/lib/analytics-utils', () => ({
   shouldInitializeAnalytics: () => mockShouldInitializeAnalytics(),
   isDebugMode: () => mockIsDebugMode(),
   calculateDaysSoberBucket: jest.fn(() => '31-90'),
+  calculateStepsCompletedBucket: jest.fn(() => '4-6'),
 }));
 
 // Mock logger
 jest.mock('@/lib/logger', () => ({
   logger: {
-    warn: (...args: unknown[]) => mockLoggerWarn(...args),
+    warn: jest.fn(),
     info: jest.fn(),
     error: jest.fn(),
     debug: jest.fn(),
@@ -74,14 +67,15 @@ describe('Unified Analytics Module', () => {
   });
 
   describe('initializeAnalytics', () => {
-    it('skips initialization when Firebase not configured', async () => {
+    it('skips initialization when Amplitude not configured', async () => {
       mockShouldInitializeAnalytics.mockReturnValue(false);
       mockIsDebugMode.mockReturnValue(true);
 
       await initializeAnalytics();
 
-      expect(mockLoggerWarn).toHaveBeenCalledWith(
-        'Firebase not configured - analytics disabled',
+      const { logger } = jest.requireMock('@/lib/logger');
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Amplitude not configured - analytics disabled',
         expect.any(Object)
       );
       expect(mockInitializePlatformAnalytics).not.toHaveBeenCalled();
@@ -90,14 +84,10 @@ describe('Unified Analytics Module', () => {
     it('initializes platform analytics when configured', async () => {
       await initializeAnalytics();
 
-      expect(mockInitializePlatformAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({
-          apiKey: expect.any(String),
-          projectId: expect.any(String),
-          appId: expect.any(String),
-          measurementId: expect.any(String),
-        })
-      );
+      // Verify platform init was called with a config object containing apiKey
+      expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
+      const config = mockInitializePlatformAnalytics.mock.calls[0][0];
+      expect(config).toHaveProperty('apiKey');
     });
 
     it('returns immediately when already completed (with debug logging)', async () => {
@@ -182,32 +172,6 @@ describe('Unified Analytics Module', () => {
 
       expect(mockInitializePlatformAnalytics).toHaveBeenCalledTimes(1);
     });
-
-    it('warns about missing Firebase config on web platform', async () => {
-      // Mock Platform.OS as 'web'
-      const { Platform } = jest.requireMock('react-native');
-      const originalOS = Platform.OS;
-      Platform.OS = 'web';
-
-      try {
-        await initializeAnalytics();
-
-        // Should warn about missing config (env vars are empty in test)
-        expect(mockLoggerWarn).toHaveBeenCalledWith(
-          'Firebase config incomplete - some required values are missing',
-          expect.objectContaining({
-            category: 'ANALYTICS',
-            hasApiKey: expect.any(Boolean),
-            hasProjectId: expect.any(Boolean),
-            hasAppId: expect.any(Boolean),
-            hasMeasurementId: expect.any(Boolean),
-          })
-        );
-      } finally {
-        // Restore Platform.OS
-        Platform.OS = originalOS;
-      }
-    });
   });
 
   describe('trackEvent', () => {
@@ -289,6 +253,11 @@ describe('Unified Analytics Module', () => {
     it('re-exports calculateDaysSoberBucket', () => {
       expect(calculateDaysSoberBucket).toBeDefined();
       expect(typeof calculateDaysSoberBucket).toBe('function');
+    });
+
+    it('re-exports calculateStepsCompletedBucket', () => {
+      expect(calculateStepsCompletedBucket).toBeDefined();
+      expect(typeof calculateStepsCompletedBucket).toBe('function');
     });
   });
 
