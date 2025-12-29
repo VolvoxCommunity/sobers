@@ -97,7 +97,7 @@ const TaskCard = memo(function TaskCard({
         {variant === 'managed-task' && !isCompleted && !isOverdue && (
           <View accessible accessibilityLabel="Status: In Progress">
             <Clock size={20} color={theme.textSecondary} />
-          </View>
+          <View accessible accessibilityLabel={`Status: ${task.status === 'assigned' ? 'Assigned' : 'In Progress'}`}>
         )}
       </View>
 
