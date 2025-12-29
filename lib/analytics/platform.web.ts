@@ -44,11 +44,9 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
       });
     }
   } catch (error) {
-    logger.error(
-      'Failed to initialize Amplitude',
-      error instanceof Error ? error : new Error(String(error)),
-      { category: LogCategory.ANALYTICS }
-    );
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to initialize Amplitude', err, { category: LogCategory.ANALYTICS });
+    throw err; // Rethrow so caller can handle and allow retry
   }
 }
 

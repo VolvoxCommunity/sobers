@@ -40,6 +40,20 @@ describe('lib/analytics/platform.web', () => {
 
       expect(amplitude.init).toHaveBeenCalledTimes(1);
     });
+
+    it('should rethrow initialization errors to allow retry', async () => {
+      const mockError = new Error('Network error');
+      (amplitude.init as jest.Mock).mockImplementationOnce(() => {
+        throw mockError;
+      });
+
+      await expect(initializePlatformAnalytics({ apiKey: 'test-key' })).rejects.toThrow(
+        'Network error'
+      );
+
+      // Verify init was called
+      expect(amplitude.init).toHaveBeenCalled();
+    });
   });
 
   describe('trackEventPlatform', () => {

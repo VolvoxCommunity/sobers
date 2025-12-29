@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle
 - Fix keyboard pushing content up excessively in EditSavingsSheet by using single snap point
 - Fix TaskCard syntax error causing build failure (broken JSX from accessibility enhancement)
+- Fix analytics initialization errors being swallowed, preventing retry on failure
 
 ## [1.2.1] - 2025-12-25
 
