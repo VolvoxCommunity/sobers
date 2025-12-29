@@ -7,8 +7,8 @@ import { logger, LogCategory } from '@/lib/logger';
 initializeSentry();
 
 /* eslint-disable import/first -- Sentry and Analytics must initialize before React components load */
-// Initialize Firebase Analytics for event tracking (skip during SSR)
-// Dynamic import prevents build failures - Firebase SDK requires browser APIs
+// Initialize Amplitude Analytics for event tracking (skip during SSR)
+// Dynamic import prevents build failures - analytics SDK requires browser APIs
 // Note: Async init means early events may be dropped (handled gracefully by analytics module)
 if (typeof window !== 'undefined') {
   import('@/lib/analytics')
