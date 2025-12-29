@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add handleSaveName edge case tests for SettingsContent
 - Add handleToggleSavingsCard tests for SettingsContent
 - Add TaskCard accessibility tests for status icon labels and due date announcements
+- Add analytics platform tests for uninitialized state and edge cases
 
 ### Changed
 
