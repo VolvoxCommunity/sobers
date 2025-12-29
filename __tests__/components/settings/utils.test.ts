@@ -23,14 +23,6 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-// Mock expo-updates
-jest.mock('expo-updates', () => ({
-  channel: 'production',
-  updateId: 'update-123',
-  runtimeVersion: '1.0.0',
-  isEmbeddedLaunch: false,
-}));
-
 // Mock expo-device
 jest.mock('expo-device', () => ({
   modelName: 'iPhone 15 Pro',
@@ -94,10 +86,6 @@ describe('getBuildInfo', () => {
     expect(buildInfo.easBuildProfile).toBe('production');
     expect(buildInfo.easBuildGitCommitHash).toBe('abc123');
     expect(buildInfo.easBuildRunner).toBe('eas-build');
-    expect(buildInfo.updateChannel).toBe('production');
-    expect(buildInfo.updateId).toBe('update-123');
-    expect(buildInfo.runtimeVersion).toBe('1.0.0');
-    expect(buildInfo.isEmbeddedLaunch).toBe(false);
     expect(buildInfo.deviceModel).toBe('iPhone 15 Pro');
     expect(buildInfo.osName).toBe('iOS');
     expect(buildInfo.osVersion).toBe('17.0');
@@ -116,10 +104,6 @@ describe('formatBuildInfoForCopy', () => {
     easBuildProfile: null,
     easBuildGitCommitHash: null,
     easBuildRunner: null,
-    updateChannel: null,
-    updateId: null,
-    runtimeVersion: null,
-    isEmbeddedLaunch: true,
     deviceModel: null,
     osName: null,
     osVersion: null,
@@ -131,50 +115,9 @@ describe('formatBuildInfoForCopy', () => {
     const result = formatBuildInfoForCopy(baseBuildInfo);
 
     expect(result).toContain('=== Sobers Build Info ===');
-    expect(result).toContain('Bundle Type: Embedded');
     expect(result).toContain('Build Profile: Development');
     expect(result).toContain('Build Runner: Development');
     expect(result).toContain('Generated:');
-  });
-
-  it('includes runtime version when present', () => {
-    const buildInfo: BuildInfo = {
-      ...baseBuildInfo,
-      runtimeVersion: '1.0.0',
-    };
-
-    const result = formatBuildInfoForCopy(buildInfo);
-    expect(result).toContain('Runtime Version: 1.0.0');
-  });
-
-  it('includes update channel when present', () => {
-    const buildInfo: BuildInfo = {
-      ...baseBuildInfo,
-      updateChannel: 'production',
-    };
-
-    const result = formatBuildInfoForCopy(buildInfo);
-    expect(result).toContain('Update Channel: production');
-  });
-
-  it('includes update ID when present', () => {
-    const buildInfo: BuildInfo = {
-      ...baseBuildInfo,
-      updateId: 'update-456',
-    };
-
-    const result = formatBuildInfoForCopy(buildInfo);
-    expect(result).toContain('Update ID: update-456');
-  });
-
-  it('shows OTA Update bundle type when not embedded', () => {
-    const buildInfo: BuildInfo = {
-      ...baseBuildInfo,
-      isEmbeddedLaunch: false,
-    };
-
-    const result = formatBuildInfoForCopy(buildInfo);
-    expect(result).toContain('Bundle Type: OTA Update');
   });
 
   it('shows EAS Cloud runner when eas-build', () => {
@@ -275,10 +218,6 @@ describe('formatBuildInfoForCopy', () => {
       easBuildProfile: 'production',
       easBuildGitCommitHash: 'deadbeef',
       easBuildRunner: 'eas-build',
-      updateChannel: 'production',
-      updateId: 'update-complete-456',
-      runtimeVersion: '1.2.3',
-      isEmbeddedLaunch: false,
       deviceModel: 'iPhone 15 Pro Max',
       osName: 'iOS',
       osVersion: '17.2',
@@ -292,10 +231,6 @@ describe('formatBuildInfoForCopy', () => {
     expect(result).toContain('App Version: 1.5.0 (150)');
     expect(result).toContain('Device: iPhone 15 Pro Max');
     expect(result).toContain('OS: iOS 17.2');
-    expect(result).toContain('Runtime Version: 1.2.3');
-    expect(result).toContain('Update Channel: production');
-    expect(result).toContain('Update ID: update-complete-456');
-    expect(result).toContain('Bundle Type: OTA Update');
     expect(result).toContain('Build Profile: production');
     expect(result).toContain('Build Runner: EAS Cloud');
     expect(result).toContain('Git Commit: deadbeef');

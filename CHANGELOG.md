@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add DevToolsSection tests for SettingsContent covering development mode features
-- Add App Updates UI tests for SettingsContent covering all update status states
 - Add filter by Completed status tests for manage-tasks screen
 - Add initializeAuth error handling tests for AuthContext
 - Add Build Info conditional rendering tests for SettingsContent
@@ -26,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix E2E savings tests failing due to incorrect card click (menu button required)
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle
 - Fix keyboard pushing content up excessively in EditSavingsSheet by using single snap point
+
+### Removed
+
+- Remove check for updates feature and expo-updates dependency from the app
 
 ## [1.2.1] - 2025-12-25
 

@@ -33,10 +33,8 @@ import {
   Github,
   Trash2,
   AlertTriangle,
-  RefreshCw,
-  CheckCircle,
-  Download,
   AlertCircle,
+  CheckCircle,
   Info,
   Copy,
   User,
@@ -51,7 +49,6 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
-import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { logger, LogCategory } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { captureSentryException } from '@/lib/sentry';
@@ -449,7 +446,6 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
  * - Account (display name editing)
  * - Appearance (theme selection)
  * - About (external links)
- * - App Updates (OTA update management)
  * - Sign Out
  * - Danger Zone (account deletion)
  * - Build Info (debugging information)
@@ -488,15 +484,6 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const buildInfo = getBuildInfo();
-  const {
-    status: updateStatus,
-    isChecking,
-    isDownloading,
-    errorMessage: updateError,
-    checkForUpdates,
-    applyUpdate,
-    isSupported: updatesSupported,
-  } = useAppUpdates();
 
   // ---------------------------------------------------------------------------
   // Callbacks
@@ -946,88 +933,6 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
         </View>
       </View>
 
-      {/* App Updates Section */}
-      {updatesSupported && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Updates</Text>
-          <View style={styles.card}>
-            <View style={styles.updateContainer}>
-              {updateStatus === 'idle' && (
-                <Pressable
-                  style={styles.updateButton}
-                  onPress={checkForUpdates}
-                  accessibilityRole="button"
-                  accessibilityLabel="Check for app updates"
-                >
-                  <RefreshCw size={20} color={theme.primary} />
-                  <Text style={styles.updateButtonText}>Check for Updates</Text>
-                </Pressable>
-              )}
-
-              {(isChecking || isDownloading) && (
-                <View style={styles.updateStatusContainer}>
-                  <ActivityIndicator size="small" color={theme.primary} />
-                  <Text style={styles.updateStatusText}>
-                    {isChecking ? 'Checking for updates...' : 'Downloading update...'}
-                  </Text>
-                </View>
-              )}
-
-              {updateStatus === 'up-to-date' && (
-                <View style={styles.updateStatusContainer}>
-                  <CheckCircle size={20} color={theme.success} />
-                  <Text style={[styles.updateStatusText, { color: theme.success }]}>
-                    App is up to date
-                  </Text>
-                  <Pressable
-                    style={styles.checkAgainButton}
-                    onPress={checkForUpdates}
-                    accessibilityRole="button"
-                    accessibilityLabel="Check again for updates"
-                  >
-                    <Text style={styles.checkAgainText}>Check Again</Text>
-                  </Pressable>
-                </View>
-              )}
-
-              {updateStatus === 'ready' && (
-                <View style={styles.updateReadyContainer}>
-                  <View style={styles.updateReadyInfo}>
-                    <Download size={20} color={theme.primary} />
-                    <Text style={styles.updateReadyText}>Update ready to install</Text>
-                  </View>
-                  <Pressable
-                    style={styles.applyUpdateButton}
-                    onPress={applyUpdate}
-                    accessibilityRole="button"
-                    accessibilityLabel="Restart app to apply update"
-                  >
-                    <Text style={styles.applyUpdateText}>Restart to Update</Text>
-                  </Pressable>
-                </View>
-              )}
-
-              {updateStatus === 'error' && (
-                <View style={styles.updateStatusContainer}>
-                  <AlertCircle size={20} color={theme.error} />
-                  <Text style={[styles.updateStatusText, { color: theme.error }]}>
-                    {updateError || 'Failed to check for updates'}
-                  </Text>
-                  <Pressable
-                    style={styles.checkAgainButton}
-                    onPress={checkForUpdates}
-                    accessibilityRole="button"
-                    accessibilityLabel="Try again"
-                  >
-                    <Text style={styles.checkAgainText}>Try Again</Text>
-                  </Pressable>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-      )}
-
       {/* Sign Out Section */}
       <View style={styles.section}>
         <Pressable
@@ -1135,51 +1040,6 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             </View>
             <View style={styles.buildInfoSeparator} />
 
-            {/* Runtime Version */}
-            {buildInfo.runtimeVersion != null && (
-              <>
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Runtime</Text>
-                  <Text style={styles.buildInfoValue}>{buildInfo.runtimeVersion}</Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-              </>
-            )}
-
-            {/* Update Channel & ID */}
-            {buildInfo.updateChannel != null && (
-              <>
-                <View style={styles.buildInfoRow}>
-                  <Text style={styles.buildInfoLabel}>Channel</Text>
-                  <Text style={styles.buildInfoValue}>{buildInfo.updateChannel}</Text>
-                </View>
-                <View style={styles.buildInfoSeparator} />
-              </>
-            )}
-            {buildInfo.updateId != null && (
-              <>
-                <Pressable
-                  style={styles.buildInfoRow}
-                  onPress={() => copyToClipboard(buildInfo.updateId ?? '', 'updateId')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Copy update ID"
-                >
-                  <Text style={styles.buildInfoLabel}>Update ID</Text>
-                  <View style={styles.buildInfoCopyRow}>
-                    <Text style={styles.buildInfoValueMono}>
-                      {buildInfo.updateId.slice(0, 8)}...
-                    </Text>
-                    {copiedField === 'updateId' ? (
-                      <CheckCircle size={14} color={theme.success} />
-                    ) : (
-                      <Copy size={14} color={theme.textTertiary} />
-                    )}
-                  </View>
-                </Pressable>
-                <View style={styles.buildInfoSeparator} />
-              </>
-            )}
-
             {/* Build Profile & Runner */}
             <View style={styles.buildInfoRow}>
               <Text style={styles.buildInfoLabel}>Build Profile</Text>
@@ -1248,15 +1108,6 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
                 </Pressable>
               </>
             )}
-
-            {/* OTA vs Embedded indicator */}
-            <View style={styles.buildInfoSeparator} />
-            <View style={styles.buildInfoRow}>
-              <Text style={styles.buildInfoLabel}>Bundle</Text>
-              <Text style={styles.buildInfoValue}>
-                {buildInfo.isEmbeddedLaunch ? 'Embedded' : 'OTA Update'}
-              </Text>
-            </View>
 
             {/* Development mode note */}
             {!buildInfo.easBuildId && !buildInfo.easBuildProfile && (
@@ -1608,74 +1459,6 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
     },
     buttonDisabled: {
       opacity: 0.6,
-    },
-    updateContainer: {
-      padding: 16,
-    },
-    updateButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 14,
-      borderRadius: 12,
-      backgroundColor: theme.primaryLight,
-      gap: 10,
-    },
-    updateButtonText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.primary,
-    },
-    updateStatusContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexWrap: 'wrap',
-      gap: 10,
-      padding: 8,
-    },
-    updateStatusText: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-    },
-    checkAgainButton: {
-      marginLeft: 8,
-    },
-    checkAgainText: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.primary,
-      textDecorationLine: 'underline',
-    },
-    updateReadyContainer: {
-      alignItems: 'center',
-      gap: 12,
-    },
-    updateReadyInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    updateReadyText: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      fontWeight: '500',
-      color: theme.text,
-    },
-    applyUpdateButton: {
-      backgroundColor: theme.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-    },
-    applyUpdateText: {
-      fontSize: 16,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.white,
     },
     buildInfoHeader: {
       flexDirection: 'row',
