@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove Firebase Analytics dependencies (@react-native-firebase/analytics, @react-native-firebase/app)
 - Remove Firebase configuration files and plugins (firebase.json, withFirebaseConfig.js, withModularHeaders.js)
+- Remove check for updates feature and expo-updates dependency from the app
 
 ### Fixed
 
@@ -45,10 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix TaskCard syntax error causing build failure (broken JSX from accessibility enhancement)
 - Fix analytics initialization errors being swallowed, preventing retry on failure
 - Fix calculateStepsCompletedBucket returning incorrect bucket for negative values
-
-### Removed
-
-- Remove check for updates feature and expo-updates dependency from the app
 
 ## [1.2.1] - 2025-12-25
 
