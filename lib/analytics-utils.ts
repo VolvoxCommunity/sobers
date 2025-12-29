@@ -41,6 +41,7 @@ const MAX_DEPTH = 10;
  * @param visited - Internal WeakSet used to track objects already traversed to avoid cycles.
  * @param depth - Current recursion depth; when greater than `MAX_DEPTH` the original `value` is returned.
  * @returns The sanitized value with PII keys removed, `undefined` for a cyclic branch, or the original value if recursion depth is exceeded.
+ */
 function sanitizeValue(
   value: unknown,
   visited: WeakSet<object> = new WeakSet(),
