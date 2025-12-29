@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add 35+ analytics events with Title Case naming (e.g., "Screen Viewed", "Task Completed") for comprehensive user engagement tracking
 - Add 9 user properties for cohort analysis: days_sober_bucket, steps_completed_bucket, has_sponsor, has_sponsees, theme_preference, notifications_enabled, app_version, platform, device_type
 - Add DevToolsSection tests for SettingsContent covering development mode features
-- Add App Updates UI tests for SettingsContent covering all update status states
 - Add filter by Completed status tests for manage-tasks screen
 - Add initializeAuth error handling tests for AuthContext
 - Add Build Info conditional rendering tests for SettingsContent
@@ -41,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix TaskCard syntax error causing build failure (broken JSX from accessibility enhancement)
 - Fix analytics initialization errors being swallowed, preventing retry on failure
 - Fix calculateStepsCompletedBucket returning incorrect bucket for negative values
+
+### Removed
+
+- Remove check for updates feature and expo-updates dependency from the app
 
 ## [1.2.1] - 2025-12-25
 

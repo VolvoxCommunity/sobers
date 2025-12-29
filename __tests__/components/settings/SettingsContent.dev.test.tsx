@@ -97,14 +97,6 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-// Mock expo-updates
-jest.mock('expo-updates', () => ({
-  channel: 'production',
-  updateId: 'test-update-id-12345678',
-  runtimeVersion: '1.0.0',
-  isEmbeddedLaunch: true,
-}));
-
 // Mock expo-device
 jest.mock('expo-device', () => ({
   modelName: 'Test Device',
@@ -256,19 +248,6 @@ jest.mock('@/contexts/DevToolsContext', () => ({
       return mockAnalyticsDebug;
     },
     setAnalyticsDebug: mockSetAnalyticsDebug,
-  }),
-}));
-
-// Mock useAppUpdates hook
-jest.mock('@/hooks/useAppUpdates', () => ({
-  useAppUpdates: () => ({
-    status: 'idle',
-    isChecking: false,
-    isDownloading: false,
-    errorMessage: null,
-    checkForUpdates: jest.fn(),
-    applyUpdate: jest.fn(),
-    isSupported: false,
   }),
 }));
 

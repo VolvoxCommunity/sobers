@@ -130,9 +130,7 @@ const TaskCard = memo(function TaskCard({
         <View
           style={styles.taskMeta}
           accessible
-          accessibilityLabel={`Due ${parseDateAsLocal(task.due_date).toLocaleDateString()}${
-            isOverdue ? ', Overdue' : ''
-          }`}
+          accessibilityLabel={`Due ${parseDateAsLocal(task.due_date).toLocaleDateString()}${isOverdue ? ', Overdue' : ''}`}
         >
           <Calendar size={14} color={isOverdue ? theme.error : theme.textSecondary} />
           <Text style={[styles.taskMetaText, isOverdue && styles.taskMetaTextOverdue]}>
