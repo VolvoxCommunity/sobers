@@ -712,29 +712,6 @@ jest.mock('expo-clipboard', () => ({
   hasStringAsync: jest.fn(() => Promise.resolve(false)),
 }));
 
-// Mock expo-updates
-jest.mock('expo-updates', () => ({
-  channel: null,
-  updateId: null,
-  runtimeVersion: null,
-  isEmbeddedLaunch: true,
-  checkForUpdateAsync: jest.fn(() => Promise.resolve({ isAvailable: false })),
-  fetchUpdateAsync: jest.fn(() => Promise.resolve({ isNew: false })),
-  reloadAsync: jest.fn(() => Promise.resolve()),
-  useUpdates: jest.fn(() => ({
-    isUpdateAvailable: false,
-    isUpdatePending: false,
-    isChecking: false,
-    isDownloading: false,
-    availableUpdate: null,
-    downloadedUpdate: null,
-    checkError: null,
-    downloadError: null,
-    initializationError: null,
-    lastCheckForUpdateTimeSinceRestart: null,
-  })),
-}));
-
 // Mock expo-device
 jest.mock('expo-device', () => ({
   modelName: 'Test Device',

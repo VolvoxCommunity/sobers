@@ -133,23 +133,6 @@ jest.mock('@/lib/validation', () => ({
   }),
 }));
 
-// Mock app updates hook - configurable for different states
-const mockCheckForUpdates = jest.fn();
-const mockApplyUpdate = jest.fn();
-let mockUseAppUpdatesReturn = {
-  status: 'idle' as 'idle' | 'checking' | 'downloading' | 'up-to-date' | 'ready' | 'error',
-  isChecking: false,
-  isDownloading: false,
-  errorMessage: null as string | null,
-  checkForUpdates: mockCheckForUpdates,
-  applyUpdate: mockApplyUpdate,
-  isSupported: true,
-};
-
-jest.mock('@/hooks/useAppUpdates', () => ({
-  useAppUpdates: () => mockUseAppUpdatesReturn,
-}));
-
 // Mock Clipboard
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn().mockResolvedValue(undefined),
@@ -171,14 +154,6 @@ jest.mock('expo-constants', () => ({
       extra: {},
     },
   },
-}));
-
-// Mock Updates
-jest.mock('expo-updates', () => ({
-  channel: null,
-  updateId: null,
-  runtimeVersion: null,
-  isEmbeddedLaunch: true,
 }));
 
 // Mock Device
@@ -244,7 +219,7 @@ jest.mock('@/components/GlassBottomSheet', () => {
   const React = require('react');
   const MockGlassBottomSheet = React.forwardRef(
     (
-      { children, onDismiss }: { children: React.ReactNode; onDismiss?: () => void },
+      { children, onDismiss: _onDismiss }: { children: React.ReactNode; onDismiss?: () => void },
       ref: React.Ref<{ present: () => void; dismiss: () => void }>
     ) => {
       React.useImperativeHandle(ref, () => ({
@@ -285,16 +260,6 @@ describe('SettingsSheet', () => {
     jest.clearAllMocks();
     // Reset Platform.OS to default
     (Platform as any).OS = originalPlatform;
-    // Reset app updates mock to default state
-    mockUseAppUpdatesReturn = {
-      status: 'idle',
-      isChecking: false,
-      isDownloading: false,
-      errorMessage: null,
-      checkForUpdates: mockCheckForUpdates,
-      applyUpdate: mockApplyUpdate,
-      isSupported: true,
-    };
     // Reset signOut and deleteAccount mocks
     mockSignOut.mockResolvedValue(undefined);
     mockDeleteAccount.mockResolvedValue(undefined);
@@ -462,7 +427,6 @@ describe('SettingsSheet', () => {
       expect(screen.getByText('OS')).toBeTruthy();
       expect(screen.getByText('Build Profile')).toBeTruthy();
       expect(screen.getByText('Build Runner')).toBeTruthy();
-      expect(screen.getByText('Bundle')).toBeTruthy();
     });
 
     it('should show copy all button when expanded', () => {
@@ -1019,106 +983,6 @@ describe('SettingsSheet', () => {
       });
 
       expect(screen.getByText('9/30 characters')).toBeTruthy(); // 'Test User' = 9 chars
-    });
-  });
-
-  describe('App Updates Section', () => {
-    it('should render check for updates button in idle state', () => {
-      render(<SettingsSheet />);
-
-      expect(screen.getByLabelText('Check for app updates')).toBeTruthy();
-      expect(screen.getByText('Check for Updates')).toBeTruthy();
-    });
-
-    it('should call checkForUpdates when button is pressed', async () => {
-      render(<SettingsSheet />);
-
-      const checkButton = screen.getByLabelText('Check for app updates');
-      await act(async () => {
-        fireEvent.press(checkButton);
-      });
-
-      expect(mockCheckForUpdates).toHaveBeenCalled();
-    });
-
-    it('should show checking state', () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        status: 'checking',
-        isChecking: true,
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.getByText('Checking for updates...')).toBeTruthy();
-    });
-
-    it('should show downloading state', () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        status: 'downloading',
-        isDownloading: true,
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.getByText('Downloading update...')).toBeTruthy();
-    });
-
-    it('should show up-to-date state with check again button', () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        status: 'up-to-date',
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.getByText('App is up to date')).toBeTruthy();
-      expect(screen.getByLabelText('Check again for updates')).toBeTruthy();
-    });
-
-    it('should show ready state with apply button', async () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        status: 'ready',
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.getByText('Update ready to install')).toBeTruthy();
-      const applyButton = screen.getByLabelText('Restart app to apply update');
-      expect(applyButton).toBeTruthy();
-
-      await act(async () => {
-        fireEvent.press(applyButton);
-      });
-
-      expect(mockApplyUpdate).toHaveBeenCalled();
-    });
-
-    it('should show error state with try again button', () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        status: 'error',
-        errorMessage: 'Network error occurred',
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.getByText('Network error occurred')).toBeTruthy();
-      expect(screen.getByLabelText('Try again')).toBeTruthy();
-    });
-
-    it('should not render updates section when not supported', () => {
-      mockUseAppUpdatesReturn = {
-        ...mockUseAppUpdatesReturn,
-        isSupported: false,
-      };
-
-      render(<SettingsSheet />);
-
-      expect(screen.queryByText('App Updates')).toBeNull();
-      expect(screen.queryByText('Check for Updates')).toBeNull();
     });
   });
 

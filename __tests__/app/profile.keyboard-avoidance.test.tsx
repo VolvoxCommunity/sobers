@@ -278,14 +278,6 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-// Mock expo-updates (required by SettingsSheet)
-jest.mock('expo-updates', () => ({
-  channel: null,
-  updateId: null,
-  runtimeVersion: null,
-  isEmbeddedLaunch: true,
-}));
-
 // Mock expo-device (required by SettingsSheet)
 jest.mock('expo-device', () => ({
   modelName: 'iPhone 14 Pro',
@@ -297,19 +289,6 @@ jest.mock('expo-device', () => ({
 jest.mock('expo-application', () => ({
   nativeBuildVersion: '1',
   nativeApplicationVersion: '1.1.0',
-}));
-
-// Mock useAppUpdates hook (required by SettingsSheet)
-jest.mock('@/hooks/useAppUpdates', () => ({
-  useAppUpdates: () => ({
-    status: 'idle',
-    isChecking: false,
-    isDownloading: false,
-    errorMessage: null,
-    checkForUpdates: jest.fn(),
-    applyUpdate: jest.fn(),
-    isSupported: true,
-  }),
 }));
 
 // Mock validation (required by SettingsSheet)
@@ -333,7 +312,7 @@ jest.mock('@/components/GlassBottomSheet', () => {
   const React = require('react');
   const MockGlassBottomSheet = React.forwardRef(
     (
-      { children, onDismiss }: { children: React.ReactNode; onDismiss?: () => void },
+      { children, onDismiss: _onDismiss }: { children: React.ReactNode; onDismiss?: () => void },
       ref: React.Ref<{ present: () => void; dismiss: () => void }>
     ) => {
       React.useImperativeHandle(ref, () => ({
