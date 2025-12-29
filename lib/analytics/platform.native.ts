@@ -34,7 +34,7 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
   try {
     await amplitude.init(config.apiKey, undefined, {
       logLevel: isDebugMode() ? amplitude.Types.LogLevel.Debug : amplitude.Types.LogLevel.None,
-    });
+    }).promise;
 
     isInitialized = true;
 
