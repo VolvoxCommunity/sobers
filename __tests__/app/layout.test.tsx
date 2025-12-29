@@ -346,3 +346,250 @@ describe('RootLayout', () => {
     });
   });
 });
+
+  describe('app lifecycle analytics tracking', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('tracks APP_OPENED event on mount', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Opened',
+        expect.objectContaining({
+          timestamp: expect.any(String),
+        })
+      );
+    });
+
+    it('tracks APP_SESSION_STARTED event on mount', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Session Started',
+        expect.objectContaining({
+          timestamp: expect.any(String),
+        })
+      );
+    });
+
+    it('tracks DAILY_CHECK_IN event on first open of the day', async () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const AsyncStorage = require('@react-native-async-storage/async-storage');
+      
+      // Mock AsyncStorage to return null (first open)
+      AsyncStorage.getItem.mockResolvedValueOnce(null);
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Wait for async operation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Daily Check In',
+        expect.objectContaining({
+          date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+          is_first_today: true,
+        })
+      );
+      
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        'last_daily_check_in',
+        expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+      );
+    });
+
+    it('does not track DAILY_CHECK_IN if already checked in today', async () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const AsyncStorage = require('@react-native-async-storage/async-storage');
+      
+      const today = new Date().toISOString().split('T')[0];
+      AsyncStorage.getItem.mockResolvedValueOnce(today);
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Wait for async operation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Should not call DAILY_CHECK_IN
+      expect(trackEvent).not.toHaveBeenCalledWith(
+        'Daily Check In',
+        expect.any(Object)
+      );
+    });
+
+    it('handles AsyncStorage errors gracefully for daily check-in', async () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const AsyncStorage = require('@react-native-async-storage/async-storage');
+      
+      // Mock AsyncStorage to throw error
+      AsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage error'));
+      
+      const RootLayout = getLayout();
+      
+      // Should not throw
+      expect(() => render(<RootLayout />)).not.toThrow();
+      
+      // Wait for async operation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // APP_OPENED should still be tracked
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Opened',
+        expect.any(Object)
+      );
+    });
+
+    it('tracks APP_BACKGROUNDED event with session duration when app goes to background', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Clear initial mount events
+      jest.clearAllMocks();
+
+      // Get the change listener
+      const changeListener = AppState.addEventListener.mock.calls[0][1];
+
+      // Simulate app going to background
+      changeListener('background');
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Backgrounded',
+        expect.objectContaining({
+          session_duration_seconds: expect.any(Number),
+        })
+      );
+    });
+
+    it('tracks new APP_SESSION_STARTED when app comes to foreground', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Get the change listener
+      const changeListener = AppState.addEventListener.mock.calls[0][1];
+
+      // Simulate app going to background then foreground
+      changeListener('background');
+      jest.clearAllMocks();
+      changeListener('active');
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Session Started',
+        expect.objectContaining({
+          timestamp: expect.any(String),
+        })
+      );
+    });
+
+    it('calculates session duration correctly', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      jest.clearAllMocks();
+
+      // Get the change listener
+      const changeListener = AppState.addEventListener.mock.calls[0][1];
+
+      // Advance time by 5 seconds
+      jest.advanceTimersByTime(5000);
+
+      // Simulate app going to background
+      changeListener('background');
+
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Backgrounded',
+        expect.objectContaining({
+          session_duration_seconds: expect.any(Number),
+        })
+      );
+
+      // Session duration should be at least 5 seconds
+      const call = trackEvent.mock.calls.find(c => c[0] === 'App Backgrounded');
+      expect(call[1].session_duration_seconds).toBeGreaterThanOrEqual(5);
+    });
+
+    it('handles transition from inactive to background', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      jest.clearAllMocks();
+
+      // Get the change listener
+      const changeListener = AppState.addEventListener.mock.calls[0][1];
+
+      // Simulate inactive state (e.g., notification center pulled down)
+      changeListener('inactive');
+      jest.clearAllMocks();
+
+      // Then background
+      changeListener('background');
+
+      // Should track APP_BACKGROUNDED
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Backgrounded',
+        expect.any(Object)
+      );
+    });
+
+    it('handles transition from background to inactive to active', () => {
+      const { trackEvent } = require('@/lib/analytics');
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      render(<RootLayout />);
+
+      // Get the change listener
+      const changeListener = AppState.addEventListener.mock.calls[0][1];
+
+      // Go to background
+      changeListener('background');
+      jest.clearAllMocks();
+
+      // Then inactive (e.g., during app switch animation)
+      changeListener('inactive');
+      jest.clearAllMocks();
+
+      // Then active
+      changeListener('active');
+
+      // Should track new session
+      expect(trackEvent).toHaveBeenCalledWith(
+        'App Session Started',
+        expect.any(Object)
+      );
+    });
+
+    it('cleans up AppState event listener on unmount', () => {
+      const { AppState } = require('react-native');
+      
+      const RootLayout = getLayout();
+      const { unmount } = render(<RootLayout />);
+
+      const subscription = AppState.addEventListener.mock.results[0].value;
+
+      unmount();
+
+      expect(subscription.remove).toHaveBeenCalled();
+    });
+  });
