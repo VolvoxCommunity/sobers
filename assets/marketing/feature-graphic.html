@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1024, height=500">
+  <title>Sobers Feature Graphic - 1024x500</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .feature-graphic {
+      width: 1024px;
+      height: 500px;
+      background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 50%, #1e40af 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle background pattern */
+    .feature-graphic::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .feature-graphic::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      max-width: 550px;
+    }
+
+    .tagline {
+      font-size: 44px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      letter-spacing: -0.03em;
+    }
+
+    .tagline .highlight {
+      color: #93c5fd;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.5;
+    }
+
+    .logo-section {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-container {
+      width: 180px;
+      height: 180px;
+      background: white;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo-container img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+    }
+
+    .app-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.01em;
+    }
+
+    /* Connection visual - two circles connected */
+    .connection-visual {
+      position: absolute;
+      right: 300px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.1;
+    }
+
+    .connection-visual svg {
+      width: 200px;
+      height: 300px;
+    }
+
+    /* Guide text - hidden in final export */
+    .guide {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: #333;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      z-index: 1000;
+    }
+
+    .guide code {
+      background: #555;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="guide">
+    Export: Screenshot at <code>1024 x 500</code> px | Press F12 → Device toolbar → Set custom size
+  </div>
+
+  <div class="feature-graphic">
+    <!-- Decorative connection visual -->
+    <div class="connection-visual">
+      <svg viewBox="0 0 100 150" fill="white">
+        <circle cx="50" cy="25" r="20" />
+        <ellipse cx="50" cy="85" rx="15" ry="40" />
+      </svg>
+    </div>
+
+    <div class="content">
+      <h1 class="tagline">
+        Track the <span class="highlight">journey</span>,<br>
+        not just the days.
+      </h1>
+      <p class="subtitle">
+        Sobriety tracking with sponsor-sponsee connection.<br>
+        Free forever. No ads. Real accountability.
+      </p>
+    </div>
+
+    <div class="logo-section">
+      <div class="logo-container">
+        <img src="../images/logo.png" alt="Sobers Logo">
+      </div>
+      <span class="app-name">Sobers</span>
+    </div>
+  </div>
+</body>
+</html>
