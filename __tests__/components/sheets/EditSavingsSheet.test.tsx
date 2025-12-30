@@ -595,3 +595,157 @@ describe('EditSavingsSheet', () => {
     });
   });
 });
+
+describe('Analytics Tracking', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('tracks SAVINGS_UPDATED event when savings are saved', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    const sheetRef = { current: null };
+    renderWithProviders(
+      <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
+    );
+
+    // Present the sheet
+    act(() => {
+      sheetRef.current?.present();
+    });
+
+    // Update amount
+    const amountInput = screen.getByTestId('savings-amount-input');
+    fireEvent.changeText(amountInput, '75');
+
+    // Change frequency
+    const monthlyButton = screen.getByTestId('frequency-monthly');
+    fireEvent.press(monthlyButton);
+
+    jest.clearAllMocks();
+
+    // Save
+    const saveButton = screen.getByTestId('save-savings-button');
+    fireEvent.press(saveButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Savings Updated',
+        expect.objectContaining({
+          amount: 75,
+          frequency: 'monthly',
+          is_setup: false,
+        })
+      );
+    });
+  });
+
+  it('tracks SAVINGS_UPDATED with is_setup=true in setup mode', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    const profileWithoutSavings = {
+      ...mockProfile,
+      spend_amount: null,
+      spend_frequency: null,
+    };
+
+    const sheetRef = { current: null };
+    renderWithProviders(
+      <EditSavingsSheet ref={sheetRef} profile={profileWithoutSavings} onSave={mockOnSave} />
+    );
+
+    act(() => {
+      sheetRef.current?.present();
+    });
+
+    const amountInput = screen.getByTestId('savings-amount-input');
+    fireEvent.changeText(amountInput, '100');
+
+    jest.clearAllMocks();
+
+    const saveButton = screen.getByText('Get Started');
+    fireEvent.press(saveButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Savings Updated',
+        expect.objectContaining({
+          amount: 100,
+          frequency: 'weekly',
+          is_setup: true,
+        })
+      );
+    });
+  });
+
+  it('tracks SAVINGS_UPDATED with amount=0 when clearing data', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    const sheetRef = { current: null };
+    renderWithProviders(
+      <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
+    );
+
+    act(() => {
+      sheetRef.current?.present();
+    });
+
+    jest.clearAllMocks();
+
+    // Press clear button
+    const clearButton = screen.getByTestId('clear-savings-button');
+    fireEvent.press(clearButton);
+
+    // Confirm
+    await waitFor(() => {
+      expect(mockConfirm).toHaveBeenCalled();
+    });
+
+    mockConfirm.mockResolvedValueOnce(true);
+    fireEvent.press(clearButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Savings Updated',
+        expect.objectContaining({
+          amount: 0,
+          frequency: null,
+          is_setup: false,
+        })
+      );
+    });
+  });
+
+  it('does not track analytics when save fails', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    mockSupabase.from.mockReturnValue({
+      update: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({
+          error: new Error('Update failed'),
+        }),
+      }),
+    });
+
+    const sheetRef = { current: null };
+    renderWithProviders(
+      <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
+    );
+
+    act(() => {
+      sheetRef.current?.present();
+    });
+
+    const amountInput = screen.getByTestId('savings-amount-input');
+    fireEvent.changeText(amountInput, '75');
+
+    jest.clearAllMocks();
+
+    const saveButton = screen.getByTestId('save-savings-button');
+    fireEvent.press(saveButton);
+
+    await waitFor(() => {
+      expect(trackEvent).not.toHaveBeenCalled();
+    });
+  });
+});

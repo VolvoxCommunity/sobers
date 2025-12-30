@@ -958,3 +958,383 @@ describe('OnboardingScreen', () => {
     });
   });
 });
+
+describe('Analytics Tracking', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('tracks ONBOARDING_STARTED on mount', () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    expect(trackEvent).toHaveBeenCalledWith('Onboarding Started');
+  });
+
+  it('tracks ONBOARDING_SCREEN_VIEWED with screen name on mount', () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      'Onboarding Screen Viewed',
+      expect.objectContaining({
+        screen_name: 'setup',
+      })
+    );
+  });
+
+  it('tracks ONBOARDING_FIELD_COMPLETED when display name is entered', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    jest.clearAllMocks();
+
+    const displayNameInput = screen.getByPlaceholderText('Enter your name');
+    fireEvent.changeText(displayNameInput, 'John');
+
+    // Wait for debounce
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Onboarding Field Completed',
+        expect.objectContaining({
+          field_name: 'display_name',
+          field_value_length: 4,
+        })
+      );
+    });
+  });
+
+  it('tracks ONBOARDING_FIELD_COMPLETED when sobriety date is set', () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    jest.clearAllMocks();
+
+    // Open date picker
+    const sobrietyDateButton = screen.getByText(/days sober/i);
+    fireEvent.press(sobrietyDateButton);
+
+    // Simulate date selection
+    const { onChange } = mockDateTimePicker.mock.calls[0][0];
+    const newDate = new Date('2024-01-01');
+    onChange({ type: 'set' }, newDate);
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      'Onboarding Field Completed',
+      expect.objectContaining({
+        field_name: 'sobriety_date',
+      })
+    );
+  });
+
+  it('tracks ONBOARDING_SOBRIETY_DATE_SET with days sober bucket', () => {
+    const { trackEvent, calculateDaysSoberBucket } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    jest.clearAllMocks();
+
+    // Open date picker
+    const sobrietyDateButton = screen.getByText(/days sober/i);
+    fireEvent.press(sobrietyDateButton);
+
+    // Simulate date selection (30 days ago)
+    const { onChange } = mockDateTimePicker.mock.calls[0][0];
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    onChange({ type: 'set' }, thirtyDaysAgo);
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      'Onboarding Sobriety Date Set',
+      expect.objectContaining({
+        days_sober: expect.any(Number),
+        days_sober_bucket: expect.any(String),
+      })
+    );
+  });
+
+  it('tracks ONBOARDING_FIELD_COMPLETED when savings is enabled', () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    jest.clearAllMocks();
+
+    // Enable savings tracking
+    const savingsCheckbox = screen.getByTestId('savings-tracking-checkbox');
+    fireEvent.press(savingsCheckbox);
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      'Onboarding Field Completed',
+      expect.objectContaining({
+        field_name: 'savings_enabled',
+        field_value: 'true',
+      })
+    );
+  });
+
+  it('tracks ONBOARDING_STEP_COMPLETED when form is submitted', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    // Fill in valid data
+    const displayNameInput = screen.getByPlaceholderText('Enter your name');
+    fireEvent.changeText(displayNameInput, 'John Doe');
+
+    // Wait for validation
+    await waitFor(() => {
+      expect(screen.queryByText(/at least 2 characters/i)).toBeNull();
+    });
+
+    // Accept terms
+    const termsCheckbox = screen.getByTestId('terms-checkbox');
+    fireEvent.press(termsCheckbox);
+
+    jest.clearAllMocks();
+
+    // Submit
+    const completeButton = screen.getByText('Complete Setup');
+    fireEvent.press(completeButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Onboarding Step Completed',
+        expect.objectContaining({
+          step_name: 'complete_setup',
+        })
+      );
+    });
+  });
+
+  it('tracks ONBOARDING_COMPLETED with duration when profile update succeeds', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    mockSupabase.from.mockReturnValue({
+      update: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: {
+                ...mockProfile,
+                display_name: 'John Doe',
+                sobriety_date: '2024-01-01',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    });
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    // Fill in valid data
+    const displayNameInput = screen.getByPlaceholderText('Enter your name');
+    fireEvent.changeText(displayNameInput, 'John Doe');
+
+    await waitFor(() => {
+      expect(screen.queryByText(/at least 2 characters/i)).toBeNull();
+    });
+
+    const termsCheckbox = screen.getByTestId('terms-checkbox');
+    fireEvent.press(termsCheckbox);
+
+    jest.clearAllMocks();
+
+    const completeButton = screen.getByText('Complete Setup');
+    fireEvent.press(completeButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Onboarding Completed',
+        expect.objectContaining({
+          duration_seconds: expect.any(Number),
+          has_savings_goal: expect.any(Boolean),
+        })
+      );
+    });
+  });
+
+  it('tracks ONBOARDING_ABANDONED when user signs out', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    jest.clearAllMocks();
+
+    const signOutButton = screen.getByText('Sign Out');
+    fireEvent.press(signOutButton);
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      'Onboarding Abandoned',
+      expect.objectContaining({
+        duration_seconds: expect.any(Number),
+      })
+    );
+  });
+
+  it('does not track duplicate ONBOARDING_FIELD_COMPLETED for display name', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    const displayNameInput = screen.getByPlaceholderText('Enter your name');
+
+    // First change
+    fireEvent.changeText(displayNameInput, 'John');
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Onboarding Field Completed',
+        expect.objectContaining({ field_name: 'display_name' })
+      );
+    });
+
+    const firstCallCount = trackEvent.mock.calls.filter(
+      (call) => call[0] === 'Onboarding Field Completed' && call[1]?.field_name === 'display_name'
+    ).length;
+
+    jest.clearAllMocks();
+
+    // Second change - should not track again
+    fireEvent.changeText(displayNameInput, 'John Doe');
+
+    await waitFor(() => {
+      expect(trackEvent).not.toHaveBeenCalledWith(
+        'Onboarding Field Completed',
+        expect.objectContaining({ field_name: 'display_name' })
+      );
+    });
+  });
+
+  it('includes savings data in ONBOARDING_COMPLETED when savings is enabled', async () => {
+    const { trackEvent } = require('@/lib/analytics');
+
+    mockSupabase.from.mockReturnValue({
+      update: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: {
+                ...mockProfile,
+                display_name: 'John Doe',
+                sobriety_date: '2024-01-01',
+                spend_amount: 50,
+                spend_frequency: 'weekly',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    });
+
+    render(<OnboardingScreen />, {
+      wrapper: ({ children }) => (
+        <MockedAuthProvider>
+          <MockedThemeProvider>{children}</MockedThemeProvider>
+        </MockedAuthProvider>
+      ),
+    });
+
+    // Enable savings
+    const savingsCheckbox = screen.getByTestId('savings-tracking-checkbox');
+    fireEvent.press(savingsCheckbox);
+
+    // Fill amount
+    const amountInput = screen.getByPlaceholderText('0');
+    fireEvent.changeText(amountInput, '50');
+
+    // Fill display name
+    const displayNameInput = screen.getByPlaceholderText('Enter your name');
+    fireEvent.changeText(displayNameInput, 'John Doe');
+
+    await waitFor(() => {
+      expect(screen.queryByText(/at least 2 characters/i)).toBeNull();
+    });
+
+    const termsCheckbox = screen.getByTestId('terms-checkbox');
+    fireEvent.press(termsCheckbox);
+
+    jest.clearAllMocks();
+
+    const completeButton = screen.getByText('Complete Setup');
+    fireEvent.press(completeButton);
+
+    await waitFor(() => {
+      expect(trackEvent).toHaveBeenCalledWith(
+        'Onboarding Completed',
+        expect.objectContaining({
+          has_savings_goal: true,
+          savings_amount: 50,
+          savings_frequency: 'weekly',
+        })
+      );
+    });
+  });
+});
