@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add "Include 12-Step Content" toggle in onboarding Preferences card (enabled by default)
 - Add "Include 12-Step Content" toggle in Settings to show or hide the Steps tab
 - Add full release history view in What's New modal with collapsible version sections
 - Add WhatsNewVersionSection component with expand/collapse, NEW badge, and feature sorting by type
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Restructure onboarding from 3 cards to 2 cards: merge "About You" and "Your Journey" into single "Your Journey" card, move savings tracking to new "Preferences" card
 - Rename Settings "Dashboard" section to "Features" to better reflect its purpose
 - Merge Account and Journey sections into unified "Your Journey" section in Settings for streamlined user experience
 - Move journey start date editing from profile screen to settings for cleaner profile UI

@@ -238,11 +238,17 @@ describe('OnboardingScreen', () => {
       expect(screen.getByText("Let's set up your profile.")).toBeTruthy();
     });
 
-    it('renders both cards on single page', () => {
+    it('renders two cards: YOUR JOURNEY and PREFERENCES', () => {
       render(<OnboardingScreen />);
 
-      expect(screen.getByText('👤 ABOUT YOU')).toBeTruthy();
       expect(screen.getByText('📅 YOUR JOURNEY')).toBeTruthy();
+      expect(screen.getByText('⚙️ PREFERENCES')).toBeTruthy();
+    });
+
+    it('does not render ABOUT YOU card (merged into YOUR JOURNEY)', () => {
+      render(<OnboardingScreen />);
+
+      expect(screen.queryByText('👤 ABOUT YOU')).toBeNull();
     });
 
     it('renders display name input', () => {
@@ -1135,6 +1141,130 @@ describe('Analytics Tracking', () => {
       'Onboarding Field Completed',
       expect.objectContaining({ field_name: 'display_name' })
     );
+  });
+
+  describe('Twelve Step Content Toggle', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockUseAuth.mockReturnValue({
+        user: mockUser,
+        profile: mockProfile,
+        signOut: mockSignOut,
+        refreshProfile: mockRefreshProfile,
+        loading: false,
+      });
+    });
+
+    it('renders 12-step content toggle in PREFERENCES card', () => {
+      render(<OnboardingScreen />);
+
+      expect(screen.getByTestId('twelve-step-toggle')).toBeTruthy();
+      expect(screen.getByText('Include 12-Step Content')).toBeTruthy();
+    });
+
+    it('shows subtext explaining 12-step content toggle', () => {
+      render(<OnboardingScreen />);
+
+      expect(
+        screen.getByText('Show the 12 Steps tab for step-by-step recovery guidance')
+      ).toBeTruthy();
+    });
+
+    it('has 12-step toggle enabled by default', () => {
+      render(<OnboardingScreen />);
+
+      // The TouchableOpacity wrapper has the accessibilityRole="switch" and accessibilityState
+      const toggle = screen.getByTestId('twelve-step-toggle');
+      expect(toggle.props.accessibilityState?.checked).toBe(true);
+    });
+
+    it('can toggle 12-step content off', async () => {
+      render(<OnboardingScreen />);
+
+      const toggle = screen.getByTestId('twelve-step-toggle');
+      fireEvent.press(toggle);
+
+      await waitFor(() => {
+        // After pressing, the toggle should be unchecked
+        expect(toggle.props.accessibilityState?.checked).toBe(false);
+      });
+    });
+
+    it('includes show_twelve_step_content in profile upsert', async () => {
+      let capturedUpsertData: Record<string, unknown> | null = null;
+      const mockUpsertFn = jest.fn((data) => {
+        capturedUpsertData = data;
+        return Promise.resolve({ error: null });
+      });
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockReturnValue({
+        upsert: mockUpsertFn,
+      });
+
+      render(<OnboardingScreen />);
+
+      // Fill display name
+      const displayNameInput = screen.getByPlaceholderText('e.g. John D.');
+      fireEvent.changeText(displayNameInput, 'John D.');
+
+      // Wait for validation
+      await waitFor(() => {
+        expect(screen.getByText('7/30 characters')).toBeTruthy();
+      });
+
+      // Accept terms and submit
+      fireEvent.press(screen.getByText(/I agree to the/));
+      fireEvent.press(screen.getByText('Complete Setup'));
+
+      await waitFor(() => {
+        expect(mockUpsertFn).toHaveBeenCalled();
+      });
+
+      // Verify show_twelve_step_content is included (defaults to true)
+      expect(capturedUpsertData).not.toBeNull();
+      expect(capturedUpsertData!.show_twelve_step_content).toBe(true);
+    });
+
+    it('includes show_twelve_step_content=false when toggled off', async () => {
+      let capturedUpsertData: Record<string, unknown> | null = null;
+      const mockUpsertFn = jest.fn((data) => {
+        capturedUpsertData = data;
+        return Promise.resolve({ error: null });
+      });
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockReturnValue({
+        upsert: mockUpsertFn,
+      });
+
+      render(<OnboardingScreen />);
+
+      // Toggle off 12-step content
+      const toggle = screen.getByTestId('twelve-step-toggle');
+      fireEvent.press(toggle);
+
+      // Fill display name
+      const displayNameInput = screen.getByPlaceholderText('e.g. John D.');
+      fireEvent.changeText(displayNameInput, 'John D.');
+
+      // Wait for validation
+      await waitFor(() => {
+        expect(screen.getByText('7/30 characters')).toBeTruthy();
+      });
+
+      // Accept terms and submit
+      fireEvent.press(screen.getByText(/I agree to the/));
+      fireEvent.press(screen.getByText('Complete Setup'));
+
+      await waitFor(() => {
+        expect(mockUpsertFn).toHaveBeenCalled();
+      });
+
+      // Verify show_twelve_step_content is false
+      expect(capturedUpsertData).not.toBeNull();
+      expect(capturedUpsertData!.show_twelve_step_content).toBe(false);
+    });
   });
 
   describe('Spending Validation', () => {

@@ -7,6 +7,7 @@ import {
   Platform,
   TextInput,
   Linking,
+  Switch,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
@@ -15,11 +16,10 @@ import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { validateDisplayName } from '@/lib/validation';
 import { showToast } from '@/lib/toast';
-import { Calendar, LogOut, Info, Square, CheckSquare } from 'lucide-react-native';
+import { Calendar, LogOut, Info, Square, CheckSquare, DollarSign } from 'lucide-react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingStep from '@/components/onboarding/OnboardingStep';
-import SavingsTrackingCard from '@/components/onboarding/SavingsTrackingCard';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import type { SpendingFrequency } from '@/lib/savings';
 import {
   getDateDiffInDays,
@@ -53,6 +53,16 @@ const MAX_DISPLAY_NAME_LENGTH = 30;
  * validation is responsive but not triggered on every keystroke.
  */
 const VALIDATION_DEBOUNCE_MS = 300;
+
+/**
+ * Spending frequency options for savings tracking.
+ */
+const FREQUENCIES: { value: SpendingFrequency; label: string }[] = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+];
 
 // =============================================================================
 // Component
@@ -102,6 +112,9 @@ export default function OnboardingScreen() {
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
   // Track when we're waiting for profile to update after form submission
   const [awaitingProfileUpdate, setAwaitingProfileUpdate] = useState(false);
+
+  // Preferences state
+  const [showTwelveStepContent, setShowTwelveStepContent] = useState(true);
 
   // Savings tracking state (optional feature)
   const [isSavingsEnabled, setIsSavingsEnabled] = useState(false);
@@ -300,6 +313,8 @@ export default function OnboardingScreen() {
         display_name: displayName.trim(),
         // Capture the user's timezone for date calculations
         timezone: userTimezone,
+        // Save 12-step content preference
+        show_twelve_step_content: showTwelveStepContent,
         // Add spending data if enabled
         ...(isSavingsEnabled &&
           spendingAmount.trim() && {
@@ -407,9 +422,9 @@ export default function OnboardingScreen() {
               <Text style={styles.subtitle}>Let&apos;s set up your profile.</Text>
             </View>
 
-            {/* Card 1: About You - Display Name */}
+            {/* Card 1: Your Journey - Display Name + Sobriety Date */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>👤 ABOUT YOU</Text>
+              <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Display Name</Text>
@@ -459,11 +474,8 @@ export default function OnboardingScreen() {
                   </Text>
                 </Animated.View>
               )}
-            </View>
 
-            {/* Card 2: Your Journey - Sobriety Date */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>📅 YOUR JOURNEY</Text>
+              <View style={styles.divider} />
 
               <TouchableOpacity
                 testID="onboarding-sobriety-date-input"
@@ -526,16 +538,119 @@ export default function OnboardingScreen() {
               </View>
             </View>
 
-            {/* Card 3: Savings Tracking (Optional) */}
-            <SavingsTrackingCard
-              isEnabled={isSavingsEnabled}
-              onToggle={setIsSavingsEnabled}
-              amount={spendingAmount}
-              onAmountChange={setSpendingAmount}
-              frequency={spendingFrequency}
-              onFrequencyChange={setSpendingFrequency}
-              error={spendingError}
-            />
+            {/* Card 2: Preferences - 12-Step Toggle + Savings Tracking */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>⚙️ PREFERENCES</Text>
+
+              {/* 12-Step Content Toggle */}
+              <TouchableOpacity
+                testID="twelve-step-toggle"
+                style={styles.toggleRow}
+                onPress={() => setShowTwelveStepContent(!showTwelveStepContent)}
+                activeOpacity={0.7}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: showTwelveStepContent }}
+                accessibilityLabel="Include 12-Step Content"
+              >
+                <View style={styles.toggleContent}>
+                  <Text style={styles.toggleLabel}>Include 12-Step Content</Text>
+                  <Text style={styles.toggleSubtext}>
+                    Show the 12 Steps tab for step-by-step recovery guidance
+                  </Text>
+                </View>
+                <Switch
+                  value={showTwelveStepContent}
+                  onValueChange={setShowTwelveStepContent}
+                  trackColor={{ false: theme.border, true: theme.primaryLight }}
+                  thumbColor={showTwelveStepContent ? theme.primary : theme.textTertiary}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              {/* Savings Tracking Toggle */}
+              <TouchableOpacity
+                testID="savings-toggle"
+                style={styles.toggleRow}
+                onPress={() => setIsSavingsEnabled(!isSavingsEnabled)}
+                activeOpacity={0.7}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: isSavingsEnabled }}
+                accessibilityLabel="Enable savings tracking"
+              >
+                <View style={styles.toggleContent}>
+                  <Text style={styles.toggleLabel}>Track Money Saved</Text>
+                  <Text style={styles.toggleSubtext}>
+                    See how much you&apos;re saving in your recovery journey
+                  </Text>
+                </View>
+                <Switch
+                  value={isSavingsEnabled}
+                  onValueChange={setIsSavingsEnabled}
+                  trackColor={{ false: theme.border, true: theme.primaryLight }}
+                  thumbColor={isSavingsEnabled ? theme.primary : theme.textTertiary}
+                />
+              </TouchableOpacity>
+
+              {isSavingsEnabled && (
+                <Animated.View
+                  entering={FadeInDown}
+                  exiting={FadeOutUp}
+                  style={styles.inputsContainer}
+                >
+                  <Text style={styles.label}>How much did you spend on your addiction?</Text>
+
+                  <View style={styles.inputRow}>
+                    <View style={styles.amountInputContainer}>
+                      <DollarSign size={20} color={theme.textSecondary} style={styles.dollarIcon} />
+                      <TextInput
+                        testID="savings-amount-input"
+                        style={styles.amountInput}
+                        value={spendingAmount}
+                        onChangeText={setSpendingAmount}
+                        placeholder="0.00"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel="Spending amount"
+                      />
+                    </View>
+                    <Text style={styles.perText}>per</Text>
+                  </View>
+
+                  <View testID="savings-frequency-picker" style={styles.frequencyContainer}>
+                    {FREQUENCIES.map((freq) => (
+                      <TouchableOpacity
+                        key={freq.value}
+                        testID={`frequency-${freq.value}`}
+                        style={[
+                          styles.frequencyButton,
+                          spendingFrequency === freq.value && styles.frequencyButtonSelected,
+                        ]}
+                        onPress={() => setSpendingFrequency(freq.value)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: spendingFrequency === freq.value }}
+                        accessibilityLabel={`${freq.label} frequency`}
+                      >
+                        <Text
+                          style={[
+                            styles.frequencyText,
+                            spendingFrequency === freq.value && styles.frequencyTextSelected,
+                          ]}
+                        >
+                          {freq.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {spendingError && (
+                    <Animated.View entering={FadeInDown}>
+                      <Text style={styles.spendingErrorText}>{spendingError}</Text>
+                    </Animated.View>
+                  )}
+                </Animated.View>
+              )}
+            </View>
 
             {/* Terms Acceptance */}
             <TouchableOpacity
@@ -842,5 +957,100 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       fontWeight: '500',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: theme.border,
+      marginVertical: 20,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    toggleContent: {
+      flex: 1,
+      marginRight: 12,
+    },
+    toggleLabel: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.text,
+      marginBottom: 4,
+    },
+    toggleSubtext: {
+      fontSize: 13,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+      lineHeight: 18,
+    },
+    inputsContainer: {
+      marginTop: 20,
+      paddingTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
+    },
+    amountInputContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.background,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+    },
+    dollarIcon: {
+      marginRight: 8,
+    },
+    amountInput: {
+      flex: 1,
+      padding: 16,
+      fontSize: 18,
+      fontFamily: theme.fontRegular,
+      color: theme.text,
+    },
+    perText: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+    },
+    frequencyContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    frequencyButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+      backgroundColor: theme.background,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    frequencyButtonSelected: {
+      backgroundColor: theme.primaryLight,
+      borderColor: theme.primary,
+    },
+    frequencyText: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
+    },
+    frequencyTextSelected: {
+      color: theme.primary,
+      fontWeight: '600',
+    },
+    spendingErrorText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.danger,
+      marginTop: 8,
     },
   });
