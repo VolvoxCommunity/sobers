@@ -595,6 +595,139 @@ describe('useWhatsNew', () => {
     });
   });
 
+  describe('edge cases for data transformation', () => {
+    it('handles null features data with no error (defaults to empty array)', async () => {
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: null, // null data, no error
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      const { result } = renderHook(() => useWhatsNew());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Should still have the release, just with empty features
+      expect(result.current.releases).toHaveLength(1);
+      expect(result.current.releases[0].features).toEqual([]);
+      expect(mockLoggerError).not.toHaveBeenCalled();
+    });
+
+    it('defaults feature type to "feature" when type is null', async () => {
+      const featureWithNullType = {
+        id: 'feature-null-type',
+        title: 'Feature with null type',
+        description: 'Testing null type fallback',
+        image_path: null,
+        display_order: 1,
+        type: null, // null type should default to 'feature'
+        release_id: 'release-1',
+      };
+
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [featureWithNullType],
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      const { result } = renderHook(() => useWhatsNew());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.releases[0].features[0].type).toBe('feature');
+    });
+
+    it('defaults feature type to "feature" when type is undefined', async () => {
+      const featureWithUndefinedType = {
+        id: 'feature-undefined-type',
+        title: 'Feature with undefined type',
+        description: 'Testing undefined type fallback',
+        image_path: null,
+        display_order: 1,
+        type: undefined, // undefined type should default to 'feature'
+        release_id: 'release-1',
+      };
+
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [featureWithUndefinedType],
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      const { result } = renderHook(() => useWhatsNew());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.releases[0].features[0].type).toBe('feature');
+    });
+  });
+
   describe('error handling', () => {
     it('handles release fetch error gracefully', async () => {
       mockSupabaseFrom.mockImplementation((table: string) => {

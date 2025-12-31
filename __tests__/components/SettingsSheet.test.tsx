@@ -146,12 +146,17 @@ jest.mock('@/lib/alert', () => ({
 // Get references to the mocked functions
 const { showConfirm: mockShowConfirm } = jest.requireMock('@/lib/alert');
 
-// Mock Constants
+// Mock Constants with build info values
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: {
     expoConfig: {
-      extra: {},
+      extra: {
+        easBuildId: 'test-build-id',
+        easBuildProfile: 'production',
+        easBuildGitCommitHash: 'abc123def456',
+        easBuildRunner: 'eas-build',
+      },
     },
   },
 }));
@@ -1006,6 +1011,38 @@ describe('SettingsSheet', () => {
         expect.any(Error),
         expect.any(Object)
       );
+    });
+
+    it('should copy commit hash when commit row is pressed', async () => {
+      render(<SettingsSheet />);
+
+      const buildInfoHeader = screen.getByLabelText('Build Information section');
+      fireEvent.press(buildInfoHeader);
+
+      const copyCommitButton = screen.getByLabelText('Copy commit hash');
+      await act(async () => {
+        fireEvent.press(copyCommitButton);
+      });
+
+      await waitFor(() => {
+        expect(mockSetStringAsync).toHaveBeenCalledWith('abc123def456');
+      });
+    });
+
+    it('should copy build ID when build ID row is pressed', async () => {
+      render(<SettingsSheet />);
+
+      const buildInfoHeader = screen.getByLabelText('Build Information section');
+      fireEvent.press(buildInfoHeader);
+
+      const copyBuildIdButton = screen.getByLabelText('Copy build ID');
+      await act(async () => {
+        fireEvent.press(copyBuildIdButton);
+      });
+
+      await waitFor(() => {
+        expect(mockSetStringAsync).toHaveBeenCalledWith('test-build-id');
+      });
     });
   });
 

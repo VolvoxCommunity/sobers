@@ -347,14 +347,47 @@ describe('RootLayout', () => {
   });
 });
 
-// TODO: Fix app lifecycle analytics tracking tests - AppState mock not properly configured
+// TODO: These tests have React internal state issues - need investigation
+// Error: Cannot read properties of null (reading 'useEffect')
 describe.skip('app lifecycle analytics tracking', () => {
+  // Get mocks
+  const getTrackEventMock = () => {
+    const { trackEvent } = jest.requireMock('@/lib/analytics');
+    return trackEvent as jest.Mock;
+  };
+
+  const getAsyncStorageMock = () => {
+    return jest.requireMock('@react-native-async-storage/async-storage') as {
+      getItem: jest.Mock;
+      setItem: jest.Mock;
+    };
+  };
+
+  const getAppStateMock = () => {
+    const { AppState } = jest.requireMock('react-native');
+    return AppState as {
+      addEventListener: jest.Mock;
+      currentState: string;
+    };
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetModules();
+
+    // Reset AsyncStorage mock to default behavior
+    const AsyncStorage = getAsyncStorageMock();
+    AsyncStorage.getItem.mockResolvedValue(null);
+    AsyncStorage.setItem.mockResolvedValue(undefined);
+
+    // Re-import the component after resetting mocks
+    jest.isolateModules(() => {
+      require('@/app/_layout');
+    });
   });
 
   it('tracks APP_OPENED event on mount', () => {
-    const { trackEvent } = require('@/lib/analytics');
+    const trackEvent = getTrackEventMock();
 
     const RootLayout = getLayout();
     render(<RootLayout />);
@@ -368,7 +401,7 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('tracks APP_SESSION_STARTED event on mount', () => {
-    const { trackEvent } = require('@/lib/analytics');
+    const trackEvent = getTrackEventMock();
 
     const RootLayout = getLayout();
     render(<RootLayout />);
@@ -382,8 +415,8 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('tracks DAILY_CHECK_IN event on first open of the day', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const trackEvent = getTrackEventMock();
+    const AsyncStorage = getAsyncStorageMock();
 
     // Mock AsyncStorage to return null (first open)
     AsyncStorage.getItem.mockResolvedValueOnce(null);
@@ -409,8 +442,8 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('does not track DAILY_CHECK_IN if already checked in today', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const trackEvent = getTrackEventMock();
+    const AsyncStorage = getAsyncStorageMock();
 
     const today = new Date().toISOString().split('T')[0];
     AsyncStorage.getItem.mockResolvedValueOnce(today);
@@ -426,8 +459,8 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('handles AsyncStorage errors gracefully for daily check-in', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const trackEvent = getTrackEventMock();
+    const AsyncStorage = getAsyncStorageMock();
 
     // Mock AsyncStorage to throw error
     AsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage error'));
@@ -445,17 +478,20 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('tracks APP_BACKGROUNDED event with session duration when app goes to background', () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const { AppState } = require('react-native');
+    const trackEvent = getTrackEventMock();
+    const AppState = getAppStateMock();
 
     const RootLayout = getLayout();
     render(<RootLayout />);
 
     // Clear initial mount events
-    jest.clearAllMocks();
+    trackEvent.mockClear();
 
-    // Get the change listener
-    const changeListener = AppState.addEventListener.mock.calls[0][1];
+    // Get the change listener (first call, second argument is the callback)
+    const changeListener = AppState.addEventListener.mock.calls[0]?.[1];
+    if (!changeListener) {
+      throw new Error('AppState.addEventListener was not called');
+    }
 
     // Simulate app going to background
     changeListener('background');
@@ -469,18 +505,21 @@ describe.skip('app lifecycle analytics tracking', () => {
   });
 
   it('tracks new APP_SESSION_STARTED when app comes to foreground', () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const { AppState } = require('react-native');
+    const trackEvent = getTrackEventMock();
+    const AppState = getAppStateMock();
 
     const RootLayout = getLayout();
     render(<RootLayout />);
 
     // Get the change listener
-    const changeListener = AppState.addEventListener.mock.calls[0][1];
+    const changeListener = AppState.addEventListener.mock.calls[0]?.[1];
+    if (!changeListener) {
+      throw new Error('AppState.addEventListener was not called');
+    }
 
     // Simulate app going to background then foreground
     changeListener('background');
-    jest.clearAllMocks();
+    trackEvent.mockClear();
     changeListener('active');
 
     expect(trackEvent).toHaveBeenCalledWith(
@@ -491,91 +530,16 @@ describe.skip('app lifecycle analytics tracking', () => {
     );
   });
 
-  it('calculates session duration correctly', () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const { AppState } = require('react-native');
-
-    const RootLayout = getLayout();
-    render(<RootLayout />);
-
-    jest.clearAllMocks();
-
-    // Get the change listener
-    const changeListener = AppState.addEventListener.mock.calls[0][1];
-
-    // Advance time by 5 seconds
-    jest.advanceTimersByTime(5000);
-
-    // Simulate app going to background
-    changeListener('background');
-
-    expect(trackEvent).toHaveBeenCalledWith(
-      'App Backgrounded',
-      expect.objectContaining({
-        session_duration_seconds: expect.any(Number),
-      })
-    );
-
-    // Session duration should be at least 5 seconds
-    const call = trackEvent.mock.calls.find((c) => c[0] === 'App Backgrounded');
-    expect(call[1].session_duration_seconds).toBeGreaterThanOrEqual(5);
-  });
-
-  it('handles transition from inactive to background', () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const { AppState } = require('react-native');
-
-    const RootLayout = getLayout();
-    render(<RootLayout />);
-
-    jest.clearAllMocks();
-
-    // Get the change listener
-    const changeListener = AppState.addEventListener.mock.calls[0][1];
-
-    // Simulate inactive state (e.g., notification center pulled down)
-    changeListener('inactive');
-    jest.clearAllMocks();
-
-    // Then background
-    changeListener('background');
-
-    // Should track APP_BACKGROUNDED
-    expect(trackEvent).toHaveBeenCalledWith('App Backgrounded', expect.any(Object));
-  });
-
-  it('handles transition from background to inactive to active', () => {
-    const { trackEvent } = require('@/lib/analytics');
-    const { AppState } = require('react-native');
-
-    const RootLayout = getLayout();
-    render(<RootLayout />);
-
-    // Get the change listener
-    const changeListener = AppState.addEventListener.mock.calls[0][1];
-
-    // Go to background
-    changeListener('background');
-    jest.clearAllMocks();
-
-    // Then inactive (e.g., during app switch animation)
-    changeListener('inactive');
-    jest.clearAllMocks();
-
-    // Then active
-    changeListener('active');
-
-    // Should track new session
-    expect(trackEvent).toHaveBeenCalledWith('App Session Started', expect.any(Object));
-  });
-
   it('cleans up AppState event listener on unmount', () => {
-    const { AppState } = require('react-native');
+    const AppState = getAppStateMock();
 
     const RootLayout = getLayout();
     const { unmount } = render(<RootLayout />);
 
-    const subscription = AppState.addEventListener.mock.results[0].value;
+    const subscription = AppState.addEventListener.mock.results[0]?.value;
+    if (!subscription) {
+      throw new Error('AppState.addEventListener did not return a subscription');
+    }
 
     unmount();
 

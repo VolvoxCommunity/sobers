@@ -64,6 +64,20 @@ jest.mock('@gorhom/bottom-sheet', () => {
   };
 });
 
+// Capture DateTimePicker onChange callback for testing
+let mockDatePickerOnChange: ((event: unknown, date?: Date) => void) | null = null;
+
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react');
+  return {
+    __esModule: true,
+    default: ({ onChange }: { onChange: (event: unknown, date?: Date) => void }) => {
+      mockDatePickerOnChange = onChange;
+      return React.createElement('View', { testID: 'date-time-picker' });
+    },
+  };
+});
+
 // =============================================================================
 // Test Data
 // =============================================================================
@@ -134,7 +148,7 @@ describe('LogSlipUpSheet', () => {
     );
 
     // Mock Supabase responses
-    (supabase.from as jest.Mock).mockImplementation((table: string) => ({
+    (supabase.from as jest.Mock).mockImplementation((_table: string) => ({
       insert: jest.fn().mockResolvedValue({ error: null }),
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
@@ -547,7 +561,7 @@ describe('LogSlipUpSheet', () => {
         return {};
       });
 
-      const { getByText, getByTestId } = renderWithProviders(
+      const { getByText } = renderWithProviders(
         <LogSlipUpSheet
           ref={sheetRef}
           profile={mockProfile}
@@ -1047,6 +1061,90 @@ describe('LogSlipUpSheet', () => {
       );
 
       // No state update errors should occur (this test passes if no errors are thrown)
+    });
+  });
+
+  describe('DateTimePicker Interaction (Native)', () => {
+    beforeEach(() => {
+      mockDatePickerOnChange = null;
+    });
+
+    it('opens date picker when date button is pressed', () => {
+      const { getByLabelText, queryByTestId } = renderWithProviders(
+        <LogSlipUpSheet
+          ref={sheetRef}
+          profile={mockProfile}
+          theme={mockTheme}
+          onClose={mockOnClose}
+          onSlipUpLogged={mockOnSlipUpLogged}
+        />
+      );
+
+      // Find the date button by accessibility label pattern
+      const dateButton = getByLabelText(/^Date:/);
+      fireEvent.press(dateButton);
+
+      // DateTimePicker should now be visible (and onChange callback captured)
+      expect(queryByTestId('date-time-picker')).toBeTruthy();
+      expect(mockDatePickerOnChange).toBeTruthy();
+    });
+
+    it('updates date when date picker onChange is called with a valid date', async () => {
+      const { getByLabelText } = renderWithProviders(
+        <LogSlipUpSheet
+          ref={sheetRef}
+          profile={mockProfile}
+          theme={mockTheme}
+          onClose={mockOnClose}
+          onSlipUpLogged={mockOnSlipUpLogged}
+        />
+      );
+
+      // Open the date picker
+      const dateButton = getByLabelText(/^Date:/);
+      fireEvent.press(dateButton);
+
+      // Simulate selecting a new date (use local date to avoid timezone issues)
+      const newDate = new Date(2024, 5, 15); // June 15, 2024 in local time
+      expect(mockDatePickerOnChange).toBeTruthy();
+      mockDatePickerOnChange!({ type: 'set' }, newDate);
+
+      // The date should be updated - wait for state to update
+      await waitFor(() => {
+        const updatedButton = getByLabelText(/^Date:/);
+        expect(updatedButton.props.accessibilityLabel).toMatch(/June 15, 2024/);
+      });
+    });
+
+    it('closes date picker and keeps current date when onChange is called without a date', async () => {
+      const { getByLabelText, queryByTestId } = renderWithProviders(
+        <LogSlipUpSheet
+          ref={sheetRef}
+          profile={mockProfile}
+          theme={mockTheme}
+          onClose={mockOnClose}
+          onSlipUpLogged={mockOnSlipUpLogged}
+        />
+      );
+
+      // Capture the initial date text
+      const initialDateButton = getByLabelText(/^Date:/);
+      const initialDateText = initialDateButton.props.accessibilityLabel;
+
+      // Open the date picker
+      fireEvent.press(initialDateButton);
+      expect(queryByTestId('date-time-picker')).toBeTruthy();
+
+      // Simulate dismissing the picker (cancel pressed - date is undefined)
+      expect(mockDatePickerOnChange).toBeTruthy();
+      mockDatePickerOnChange!({ type: 'dismissed' }, undefined);
+
+      // Wait for state to update - the date picker should be hidden and date unchanged
+      await waitFor(() => {
+        // Date should remain unchanged
+        const updatedDateButton = getByLabelText(/^Date:/);
+        expect(updatedDateButton.props.accessibilityLabel).toBe(initialDateText);
+      });
     });
   });
 });

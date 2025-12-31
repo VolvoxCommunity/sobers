@@ -1048,4 +1048,31 @@ describe('ManageTasksScreen', () => {
       });
     });
   });
+
+  describe('Pull to Refresh', () => {
+    it('triggers data refetch when pull to refresh is activated', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase');
+
+      render(<ManageTasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Manage Tasks')).toBeTruthy();
+      });
+
+      // Clear previous calls
+      supabase.from.mockClear();
+
+      // Find all ScrollViews and get the one with a refreshControl
+      const scrollViews = screen.UNSAFE_getAllByType(require('react-native').ScrollView);
+      const scrollViewWithRefresh = scrollViews.find((sv) => sv.props.refreshControl != null);
+      expect(scrollViewWithRefresh).toBeTruthy();
+      const refreshControl = scrollViewWithRefresh!.props.refreshControl;
+
+      // Trigger onRefresh
+      await refreshControl.props.onRefresh();
+
+      // Should have called supabase.from to refetch data
+      expect(supabase.from).toHaveBeenCalled();
+    });
+  });
 });

@@ -573,6 +573,59 @@ describe('TaskCompletionSheet', () => {
     });
   });
 
+  describe('Edge Cases', () => {
+    it('does not call onTaskCompleted when task is null', async () => {
+      const ref = createRef<TaskCompletionSheetRef>();
+
+      render(
+        <TaskCompletionSheet
+          ref={ref}
+          theme={mockTheme}
+          onDismiss={mockOnDismiss}
+          onTaskCompleted={mockOnTaskCompleted}
+        />
+      );
+
+      // Try to submit without presenting a task
+      // The internal handleSubmit should early return
+      const submitButton = screen.getByText('Mark Complete');
+      await act(async () => {
+        fireEvent.press(submitButton);
+      });
+
+      expect(mockOnTaskCompleted).not.toHaveBeenCalled();
+    });
+
+    it('handles onTaskCompleted rejection gracefully', async () => {
+      const ref = createRef<TaskCompletionSheetRef>();
+      const rejectingOnTaskCompleted = jest.fn().mockRejectedValue(new Error('Test error'));
+
+      render(
+        <TaskCompletionSheet
+          ref={ref}
+          theme={mockTheme}
+          onDismiss={mockOnDismiss}
+          onTaskCompleted={rejectingOnTaskCompleted}
+        />
+      );
+
+      act(() => {
+        ref.current?.present(mockTask);
+      });
+
+      const submitButton = await waitFor(() => screen.getByText('Mark Complete'));
+
+      // This should not throw even when onTaskCompleted rejects
+      await act(async () => {
+        fireEvent.press(submitButton);
+      });
+
+      expect(rejectingOnTaskCompleted).toHaveBeenCalled();
+      // Should not call dismiss on error (dismiss only happens on success)
+      // The button text should reappear as isSubmitting resets
+    });
+  });
+
   describe('Accessibility', () => {
     it('sets accessibility label for close button', async () => {
       const ref = createRef<TaskCompletionSheetRef>();

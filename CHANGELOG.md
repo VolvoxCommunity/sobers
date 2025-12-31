@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Always expand the latest version section by default in What's New modal (previously only expanded if unseen)
-- Use transparent background for What's New modal footer
+- Redesign What's New modal header to match other modals: sparkles icon, centered title, X close button, bottom border, subtitle in scroll content
 - Redesign WhatsNewVersionSection with improved visual hierarchy: colored version badges, metadata row with Ionicons for date and feature/fix counts
 - Refactor useWhatsNew hook to fetch all releases instead of only active release
 - Update WhatsNewSheet to display release history with "What's New?" title
@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix analytics test mocks in EditSavingsSheet, SettingsContent, and onboarding tests (correct property names, add missing mock functions)
 - Fix What's New RLS policy migration failing on databases with partial manual changes (idempotent policy drops)
 - Fix TaskCreationSheet dropdown options not clickable due to parent scroll view closing dropdowns before item press fires
 - Fix E2E savings tests failing due to incorrect card click (menu button required)

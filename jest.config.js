@@ -41,11 +41,7 @@ module.exports = {
   coverageThreshold: {
     global: {
       statements: 85,
-      // Branch coverage is lower due to untestable code paths:
-      // - DevToolsSection (__DEV__ evaluated at module load time)
-      // - Platform-specific conditionals (require module isolation to test)
-      // - Error handling edge cases in async operations
-      branches: 83,
+      branches: 85,
       functions: 85,
       lines: 85,
     },

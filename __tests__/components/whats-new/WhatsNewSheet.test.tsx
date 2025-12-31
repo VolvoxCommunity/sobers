@@ -6,7 +6,7 @@
  * - Rendering all version sections
  * - Marking new versions with badges
  * - Expanding latest version by default
- * - Dismiss button behavior
+ * - Close button behavior
  * - Imperative ref API
  */
 
@@ -279,8 +279,8 @@ describe('WhatsNewSheet', () => {
     });
   });
 
-  describe('dismiss behavior', () => {
-    it('calls onDismiss when Got it button is pressed', () => {
+  describe('close button behavior', () => {
+    it('calls onDismiss when close button is pressed', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
       render(
         <WhatsNewSheet
@@ -295,13 +295,13 @@ describe('WhatsNewSheet', () => {
         ref.current?.present();
       });
 
-      const button = screen.getByText('Got it!');
+      const button = screen.getByTestId('whats-new-close-button');
       fireEvent.press(button);
 
       expect(mockOnDismiss).toHaveBeenCalled();
     });
 
-    it('has accessible button with correct role and label', () => {
+    it('has accessible close button with correct role and label', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
       render(
         <WhatsNewSheet
@@ -316,10 +316,10 @@ describe('WhatsNewSheet', () => {
         ref.current?.present();
       });
 
-      const button = screen.getByTestId('whats-new-got-it-button');
+      const button = screen.getByTestId('whats-new-close-button');
       expect(button).toBeTruthy();
       expect(button.props.accessibilityRole).toBe('button');
-      expect(button.props.accessibilityLabel).toBe("Dismiss What's New");
+      expect(button.props.accessibilityLabel).toBe("Close What's New");
     });
   });
 
@@ -391,8 +391,8 @@ describe('WhatsNewSheet', () => {
       expect(screen.getByText("What's New?")).toBeTruthy();
       // No version sections
       expect(screen.queryByTestId(/^version-section-/)).toBeNull();
-      // Got it button should still work
-      expect(screen.getByText('Got it!')).toBeTruthy();
+      // Close button should still be present
+      expect(screen.getByTestId('whats-new-close-button')).toBeTruthy();
     });
 
     it('renders correctly with single release', () => {

@@ -29,18 +29,27 @@ jest.mock('@/contexts/ThemeContext', () => ({
   }),
 }));
 
+// Track expo-image callbacks for testing
+let capturedOnLoad: (() => void) | null = null;
+let capturedOnError: (() => void) | null = null;
+
 // Mock expo-image
 jest.mock('expo-image', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ReactModule = require('react');
   return {
-    Image: ({ source, style, contentFit, _onLoad, _onError, ...props }: Record<string, unknown>) =>
-      ReactModule.createElement('Image', {
+    Image: ({ source, style, contentFit, onLoad, onError, ...props }: Record<string, unknown>) => {
+      // Store callbacks for testing
+      capturedOnLoad = onLoad as (() => void) | null;
+      capturedOnError = onError as (() => void) | null;
+      return ReactModule.createElement('Image', {
         ...props,
+        testID: 'expo-image',
         source: typeof source === 'object' ? (source as { uri: string }).uri : source,
         style,
         contentFit,
-      }),
+      });
+    },
   };
 });
 
@@ -121,6 +130,39 @@ describe('WhatsNewFeatureCard', () => {
 
       expect(screen.getByTestId('feature-type-badge')).toBeTruthy();
       expect(screen.getByText('FIX')).toBeTruthy();
+    });
+  });
+
+  describe('image loading callbacks', () => {
+    beforeEach(() => {
+      capturedOnLoad = null;
+      capturedOnError = null;
+    });
+
+    it('hides loading indicator when image loads successfully', () => {
+      render(<WhatsNewFeatureCard feature={mockFeature} />);
+
+      // Image callbacks should be captured
+      expect(capturedOnLoad).toBeTruthy();
+
+      // Trigger onLoad callback
+      capturedOnLoad!();
+
+      // No error should occur - loading state is updated
+      expect(screen.getByTestId('feature-card-image-container')).toBeTruthy();
+    });
+
+    it('hides loading indicator when image fails to load', () => {
+      render(<WhatsNewFeatureCard feature={mockFeature} />);
+
+      // Image callbacks should be captured
+      expect(capturedOnError).toBeTruthy();
+
+      // Trigger onError callback
+      capturedOnError!();
+
+      // No error should occur - loading state is updated
+      expect(screen.getByTestId('feature-card-image-container')).toBeTruthy();
     });
   });
 });

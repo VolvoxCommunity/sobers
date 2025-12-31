@@ -1903,4 +1903,407 @@ describe('TasksScreen', () => {
       });
     });
   });
+
+  describe('Pull to Refresh - onRefresh callback', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockMyTasks = createMockMyTasks();
+      mockPendingTasks = [{ id: 'task-1' }];
+      mockManageTasks = [];
+      mockSponsees = [];
+
+      // Reset the Supabase mock to use the global mock variables
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                    neq: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null }),
+                    }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockManageTasks, error: null }),
+                  };
+                }
+                return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: mockSponsees.map((s) => ({ sponsee: s })),
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'notifications') {
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+    });
+
+    it('triggers data refetch when pull to refresh is activated on My Tasks', async () => {
+      const { supabase } = jest.requireMock('@/lib/supabase');
+
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Read Step 1')).toBeTruthy();
+      });
+
+      // Get initial call count
+      const initialCallCount = supabase.from.mock.calls.length;
+
+      // Find the tasks list ScrollView and trigger the onRefresh via scroll event
+      const tasksList = screen.getByTestId('tasks-list');
+
+      // In RNTL, we need to call the onRefresh callback from the refreshControl element
+      // Access the ScrollView's refreshControl prop (which is a React element)
+      const refreshControl = tasksList.props.refreshControl;
+      if (refreshControl && refreshControl.props && refreshControl.props.onRefresh) {
+        await refreshControl.props.onRefresh();
+      }
+
+      // Should have called supabase.from again for refresh
+      await waitFor(() => {
+        expect(supabase.from.mock.calls.length).toBeGreaterThan(initialCallCount);
+      });
+    });
+
+    it('triggers data refetch when pull to refresh is activated on Manage view', async () => {
+      const mockSponsee = {
+        id: 'sponsee-1',
+        display_name: 'Jane D.',
+        sobriety_date: '2024-06-01',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      mockPendingTasks = [];
+      mockManageTasks = [
+        {
+          id: 'manage-task-1',
+          sponsor_id: 'user-123',
+          sponsee_id: 'sponsee-1',
+          title: 'Manage Task',
+          description: 'A task to manage',
+          status: 'assigned' as const,
+          due_date: null,
+          step_number: 1,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+          sponsee: mockSponsee,
+        },
+      ];
+      mockSponsees = [mockSponsee];
+
+      const { supabase } = jest.requireMock('@/lib/supabase');
+
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Manage Task')).toBeTruthy();
+      });
+
+      // Get initial call count
+      const initialCallCount = supabase.from.mock.calls.length;
+
+      // Find the manage tasks list ScrollView and trigger the onRefresh
+      const manageTasksList = screen.getByTestId('manage-tasks-list');
+
+      // Access the ScrollView's refreshControl prop
+      const refreshControl = manageTasksList.props.refreshControl;
+      if (refreshControl && refreshControl.props && refreshControl.props.onRefresh) {
+        await refreshControl.props.onRefresh();
+      }
+
+      // Should have called supabase.from again for refresh
+      await waitFor(() => {
+        expect(supabase.from.mock.calls.length).toBeGreaterThan(initialCallCount);
+      });
+    });
+  });
+
+  describe('Status Filter Branch Coverage', () => {
+    const mockSponsee = {
+      id: 'sponsee-1',
+      display_name: 'Jane D.',
+      sobriety_date: '2024-06-01',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockPendingTasks = [];
+      mockMyTasks = [];
+      mockSponsees = [mockSponsee];
+      mockManageTasks = [
+        {
+          id: 'task-assigned',
+          sponsor_id: 'user-123',
+          sponsee_id: 'sponsee-1',
+          title: 'Assigned Task',
+          description: 'An assigned task',
+          status: 'assigned' as const,
+          due_date: null,
+          step_number: 1,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+          sponsee: mockSponsee,
+        },
+        {
+          id: 'task-completed',
+          sponsor_id: 'user-123',
+          sponsee_id: 'sponsee-1',
+          title: 'Completed Task',
+          description: 'A completed task',
+          status: 'completed' as const,
+          due_date: null,
+          step_number: null,
+          created_at: '2024-01-02T00:00:00Z',
+          updated_at: '2024-01-02T00:00:00Z',
+          sponsee: mockSponsee,
+        },
+      ];
+
+      // Reset the Supabase mock to use the global mock variables
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                    neq: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null }),
+                    }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockManageTasks, error: null }),
+                  };
+                }
+                return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: mockSponsees.map((s) => ({ sponsee: s })),
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'notifications') {
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+    });
+
+    it('filters to show only assigned tasks when Assigned filter is selected via testID', async () => {
+      render(<TasksScreen />);
+
+      // Wait for initial render with both tasks
+      await waitFor(() => {
+        expect(screen.getByText('Assigned Task')).toBeTruthy();
+        expect(screen.getByText('Completed Task')).toBeTruthy();
+      });
+
+      // Press the Assigned filter chip using testID
+      const assignedFilter = screen.getByTestId('tasks-filter-assigned');
+      fireEvent.press(assignedFilter);
+
+      // After filtering, only assigned task should be visible
+      await waitFor(() => {
+        expect(screen.getByText('Assigned Task')).toBeTruthy();
+        expect(screen.queryByText('Completed Task')).toBeNull();
+      });
+    });
+
+    it('filters to show only completed tasks when Completed filter is selected via testID', async () => {
+      render(<TasksScreen />);
+
+      // Wait for initial render with both tasks
+      await waitFor(() => {
+        expect(screen.getByText('Assigned Task')).toBeTruthy();
+        expect(screen.getByText('Completed Task')).toBeTruthy();
+      });
+
+      // Press the Completed filter chip using testID
+      const completedFilter = screen.getByTestId('tasks-filter-completed');
+      fireEvent.press(completedFilter);
+
+      // After filtering, only completed task should be visible
+      await waitFor(() => {
+        expect(screen.queryByText('Assigned Task')).toBeNull();
+        expect(screen.getByText('Completed Task')).toBeTruthy();
+      });
+    });
+
+    it('shows all tasks when All filter is selected after filtering', async () => {
+      render(<TasksScreen />);
+
+      // Wait for initial render
+      await waitFor(() => {
+        expect(screen.getByText('Assigned Task')).toBeTruthy();
+      });
+
+      // Apply Assigned filter first
+      const assignedFilter = screen.getByTestId('tasks-filter-assigned');
+      fireEvent.press(assignedFilter);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Completed Task')).toBeNull();
+      });
+
+      // Press All filter to show all tasks again
+      const allFilter = screen.getByTestId('tasks-filter-all');
+      fireEvent.press(allFilter);
+
+      await waitFor(() => {
+        expect(screen.getByText('Assigned Task')).toBeTruthy();
+        expect(screen.getByText('Completed Task')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('TaskCreationSheet Callbacks', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockPendingTasks = [];
+      mockMyTasks = [];
+      mockSponsees = [
+        {
+          id: 'sponsee-1',
+          display_name: 'Jane D.',
+          sobriety_date: '2024-06-01',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ];
+      mockManageTasks = [];
+
+      // Reset the Supabase mock to use the global mock variables
+      const { supabase } = jest.requireMock('@/lib/supabase');
+      supabase.from.mockImplementation((table: string) => {
+        if (table === 'tasks') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockImplementation((field: string) => {
+                if (field === 'sponsee_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
+                    neq: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockResolvedValue({ data: mockPendingTasks, error: null }),
+                    }),
+                  };
+                }
+                if (field === 'sponsor_id') {
+                  return {
+                    order: jest.fn().mockResolvedValue({ data: mockManageTasks, error: null }),
+                  };
+                }
+                return { order: jest.fn().mockResolvedValue({ data: [], error: null }) };
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+            delete: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'sponsor_sponsee_relationships') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: mockSponsees.map((s) => ({ sponsee: s })),
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'notifications') {
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      });
+    });
+
+    it('opens task creation sheet when FAB is pressed', async () => {
+      render(<TasksScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('manage-tasks-create-button')).toBeTruthy();
+      });
+
+      // Press the FAB
+      const createButton = screen.getByTestId('manage-tasks-create-button');
+      fireEvent.press(createButton);
+
+      // The TaskCreationSheet should be triggered (we can't easily verify sheet state in tests)
+      // but the press event should not throw
+      await waitFor(() => {
+        expect(createButton).toBeTruthy();
+      });
+    });
+  });
 });

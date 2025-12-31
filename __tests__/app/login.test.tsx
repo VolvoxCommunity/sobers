@@ -23,18 +23,26 @@ const mockSignIn = jest.fn();
 const mockSignInWithGoogle = jest.fn();
 const mockPush = jest.fn();
 
+// Configurable mock user for testing authenticated state
+let mockUser: { id: string } | null = null;
+
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     signIn: mockSignIn,
     signInWithGoogle: mockSignInWithGoogle,
+    user: mockUser,
   }),
 }));
+
+// Mock Redirect component to track redirects
+const MockRedirect = jest.fn(() => null);
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: jest.fn(),
   }),
+  Redirect: (props: { href: string }) => MockRedirect(props),
 }));
 
 jest.mock('@/lib/logger', () => ({
@@ -86,12 +94,21 @@ const renderWithTheme = (component: React.ReactElement) => {
 describe('LoginScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUser = null; // Reset to unauthenticated state
     mockSignIn.mockResolvedValue(undefined);
     mockSignInWithGoogle.mockResolvedValue(undefined);
     (Toast.show as jest.Mock).mockClear();
+    MockRedirect.mockClear();
   });
 
   describe('rendering', () => {
+    it('redirects authenticated users to app', () => {
+      mockUser = { id: 'user-123' };
+      renderWithTheme(<LoginScreen />);
+
+      expect(MockRedirect).toHaveBeenCalledWith({ href: '/(app)' });
+    });
+
     it('renders the login form', () => {
       renderWithTheme(<LoginScreen />);
 

@@ -2,7 +2,7 @@
 // Imports
 // =============================================================================
 import React from 'react';
-import { fireEvent, waitFor, screen } from '@testing-library/react-native';
+import { fireEvent, waitFor, screen, act } from '@testing-library/react-native';
 import { renderWithProviders } from '@/__tests__/test-utils';
 import EditSavingsSheet, { EditSavingsSheetRef } from '@/components/sheets/EditSavingsSheet';
 import { Profile } from '@/types/database';
@@ -79,14 +79,13 @@ jest.mock('@/lib/alert', () => ({
   showConfirm: (...args: any[]) => mockShowConfirm(...args),
 }));
 
-// Mock toast
-const mockShowToast = {
-  success: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-};
+// Mock toast - define inline to avoid hoisting issues
 jest.mock('@/lib/toast', () => ({
-  showToast: mockShowToast,
+  showToast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
 }));
 
 // Mock logger
@@ -102,6 +101,20 @@ jest.mock('@/lib/logger', () => ({
     DATABASE: 'database',
   },
 }));
+
+// Mock analytics - define inline to avoid hoisting issues
+jest.mock('@/lib/analytics', () => ({
+  trackEvent: jest.fn(),
+  setUserId: jest.fn(),
+  setUserProperties: jest.fn(),
+  resetAnalytics: jest.fn(),
+  initializeAnalytics: jest.fn().mockResolvedValue(undefined),
+  AnalyticsEvents: jest.requireActual('@/types/analytics').AnalyticsEvents,
+}));
+
+// Get mock reference after jest.mock
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockTrackEvent = require('@/lib/analytics').trackEvent as jest.Mock;
 
 // =============================================================================
 // Test Data
@@ -596,16 +609,17 @@ describe('EditSavingsSheet', () => {
   });
 });
 
-// TODO: Fix Analytics Tracking tests - mock configuration issues
-describe.skip('Analytics Tracking', () => {
+describe('Analytics Tracking', () => {
+  const mockOnSave = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEq.mockResolvedValue({ error: null });
+    mockOnSave.mockReset();
   });
 
   it('tracks SAVINGS_UPDATED event when savings are saved', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-
-    const sheetRef = { current: null };
+    const sheetRef = { current: null as EditSavingsSheetRef | null };
     renderWithProviders(
       <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
     );
@@ -616,73 +630,65 @@ describe.skip('Analytics Tracking', () => {
     });
 
     // Update amount
-    const amountInput = screen.getByTestId('savings-amount-input');
+    const amountInput = screen.getByTestId('edit-savings-amount-input');
     fireEvent.changeText(amountInput, '75');
 
     // Change frequency
-    const monthlyButton = screen.getByTestId('frequency-monthly');
+    const monthlyButton = screen.getByTestId('edit-frequency-monthly');
     fireEvent.press(monthlyButton);
 
-    jest.clearAllMocks();
+    mockTrackEvent.mockClear();
 
     // Save
-    const saveButton = screen.getByTestId('save-savings-button');
+    const saveButton = screen.getByTestId('edit-savings-save-button');
     fireEvent.press(saveButton);
 
     await waitFor(() => {
-      expect(trackEvent).toHaveBeenCalledWith(
+      expect(mockTrackEvent).toHaveBeenCalledWith(
         'Savings Updated',
         expect.objectContaining({
           amount: 75,
           frequency: 'monthly',
-          is_setup: false,
+          is_first_setup: false,
         })
       );
     });
   });
 
-  it('tracks SAVINGS_UPDATED with is_setup=true in setup mode', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-
-    const profileWithoutSavings = {
-      ...mockProfile,
-      spend_amount: null,
-      spend_frequency: null,
-    };
-
-    const sheetRef = { current: null };
+  it('tracks SAVINGS_UPDATED with is_first_setup=true in setup mode', async () => {
+    const sheetRef = { current: null as EditSavingsSheetRef | null };
     renderWithProviders(
-      <EditSavingsSheet ref={sheetRef} profile={profileWithoutSavings} onSave={mockOnSave} />
+      <EditSavingsSheet ref={sheetRef} profile={mockProfileWithoutSpending} onSave={mockOnSave} />
     );
 
     act(() => {
       sheetRef.current?.present();
     });
 
-    const amountInput = screen.getByTestId('savings-amount-input');
+    const amountInput = screen.getByTestId('edit-savings-amount-input');
     fireEvent.changeText(amountInput, '100');
 
-    jest.clearAllMocks();
+    mockTrackEvent.mockClear();
 
     const saveButton = screen.getByText('Get Started');
     fireEvent.press(saveButton);
 
     await waitFor(() => {
-      expect(trackEvent).toHaveBeenCalledWith(
+      expect(mockTrackEvent).toHaveBeenCalledWith(
         'Savings Updated',
         expect.objectContaining({
           amount: 100,
           frequency: 'weekly',
-          is_setup: true,
+          is_first_setup: true,
         })
       );
     });
   });
 
-  it('tracks SAVINGS_UPDATED with amount=0 when clearing data', async () => {
-    const { trackEvent } = require('@/lib/analytics');
+  it('does not track analytics when clearing data', async () => {
+    mockShowConfirm.mockResolvedValueOnce(true);
 
-    const sheetRef = { current: null };
+    const sheetRef = { current: null as EditSavingsSheetRef | null };
     renderWithProviders(
       <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
     );
@@ -691,44 +697,26 @@ describe.skip('Analytics Tracking', () => {
       sheetRef.current?.present();
     });
 
-    jest.clearAllMocks();
+    mockTrackEvent.mockClear();
 
     // Press clear button
-    const clearButton = screen.getByTestId('clear-savings-button');
-    fireEvent.press(clearButton);
-
-    // Confirm
-    await waitFor(() => {
-      expect(mockConfirm).toHaveBeenCalled();
-    });
-
-    mockConfirm.mockResolvedValueOnce(true);
+    const clearButton = screen.getByTestId('edit-savings-clear-button');
     fireEvent.press(clearButton);
 
     await waitFor(() => {
-      expect(trackEvent).toHaveBeenCalledWith(
-        'Savings Updated',
-        expect.objectContaining({
-          amount: 0,
-          frequency: null,
-          is_setup: false,
-        })
-      );
+      expect(mockShowConfirm).toHaveBeenCalled();
     });
+
+    // Clearing data should not trigger SAVINGS_UPDATED analytics
+    expect(mockTrackEvent).not.toHaveBeenCalledWith('Savings Updated', expect.anything());
   });
 
   it('does not track analytics when save fails', async () => {
-    const { trackEvent } = require('@/lib/analytics');
-
-    mockSupabase.from.mockReturnValue({
-      update: jest.fn().mockReturnValue({
-        eq: jest.fn().mockResolvedValue({
-          error: new Error('Update failed'),
-        }),
-      }),
+    mockEq.mockResolvedValue({
+      error: new Error('Update failed'),
     });
 
-    const sheetRef = { current: null };
+    const sheetRef = { current: null as EditSavingsSheetRef | null };
     renderWithProviders(
       <EditSavingsSheet ref={sheetRef} profile={mockProfile} onSave={mockOnSave} />
     );
@@ -737,16 +725,19 @@ describe.skip('Analytics Tracking', () => {
       sheetRef.current?.present();
     });
 
-    const amountInput = screen.getByTestId('savings-amount-input');
+    const amountInput = screen.getByTestId('edit-savings-amount-input');
     fireEvent.changeText(amountInput, '75');
 
-    jest.clearAllMocks();
+    mockTrackEvent.mockClear();
 
-    const saveButton = screen.getByTestId('save-savings-button');
+    const saveButton = screen.getByTestId('edit-savings-save-button');
     fireEvent.press(saveButton);
 
+    // Wait for the save operation to fail (component shows error)
     await waitFor(() => {
-      expect(trackEvent).not.toHaveBeenCalled();
+      expect(screen.getByText('Failed to save. Please try again.')).toBeTruthy();
     });
+
+    expect(mockTrackEvent).not.toHaveBeenCalled();
   });
 });

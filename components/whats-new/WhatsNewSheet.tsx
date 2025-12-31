@@ -11,12 +11,8 @@
 // =============================================================================
 import React, { forwardRef, useRef, useImperativeHandle, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import {
-  BottomSheetScrollView,
-  BottomSheetFooter,
-  BottomSheetFooterProps,
-} from '@gorhom/bottom-sheet';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { X, Sparkles } from 'lucide-react-native';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import GlassBottomSheet, { type GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import WhatsNewVersionSection from './WhatsNewVersionSection';
@@ -80,11 +76,10 @@ const SNAP_POINTS = ['90%'];
  * Bottom sheet modal displaying What's New release history.
  *
  * Features:
- * - Displays "What's New?" title
+ * - Displays "What's New?" title with X close button
  * - Renders scrollable list of collapsible version sections
  * - Marks new (unseen) versions with badges
  * - Automatically expands the first new version
- * - "Got it!" button to dismiss the sheet
  * - Imperative API via ref for presentation control
  *
  * @param props - Component props containing releases, lastSeenVersion, and dismiss callback
@@ -110,7 +105,6 @@ const SNAP_POINTS = ['90%'];
 const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
   ({ releases, lastSeenVersion, onDismiss }, ref) => {
     const { theme } = useTheme();
-    const insets = useSafeAreaInsets();
     const bottomSheetRef = useRef<GlassBottomSheetRef>(null);
     const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -133,36 +127,12 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
     }));
 
     /**
-     * Handles the "Got it!" button press by dismissing the sheet.
+     * Handles the close button press by dismissing the sheet.
      * The onDismiss callback will be triggered by GlassBottomSheet.
      */
-    const handleGotIt = useCallback(() => {
+    const handleClose = useCallback(() => {
       bottomSheetRef.current?.dismiss();
     }, []);
-
-    /**
-     * Renders the footer with the dismiss button.
-     * Using BottomSheetFooter ensures the button is always visible at the bottom,
-     * even when scrolling through many releases.
-     */
-    const renderFooter = useCallback(
-      (props: BottomSheetFooterProps) => (
-        <BottomSheetFooter {...props} bottomInset={insets.bottom}>
-          <View style={styles.footer}>
-            <TouchableOpacity
-              testID="whats-new-got-it-button"
-              style={styles.button}
-              onPress={handleGotIt}
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss What's New"
-            >
-              <Text style={styles.buttonText}>Got it!</Text>
-            </TouchableOpacity>
-          </View>
-        </BottomSheetFooter>
-      ),
-      [insets.bottom, styles, handleGotIt]
-    );
 
     /**
      * Compute which release should be expanded by default.
@@ -194,17 +164,29 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
     }, [lastSeenVersion, newReleasesCount]);
 
     return (
-      <GlassBottomSheet
-        ref={bottomSheetRef}
-        snapPoints={SNAP_POINTS}
-        onDismiss={onDismiss}
-        footerComponent={renderFooter}
-      >
-        <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{"What's New?"}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
+      <GlassBottomSheet ref={bottomSheetRef} snapPoints={SNAP_POINTS} onDismiss={onDismiss}>
+        <View style={styles.header}>
+          <View style={styles.headerIcon}>
+            <Sparkles size={24} color={theme.primary} />
           </View>
+          <Text style={styles.title}>{"What's New?"}</Text>
+          <TouchableOpacity
+            testID="whats-new-close-button"
+            style={styles.closeButton}
+            onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close What's New"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <X size={24} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.subtitle}>{subtitle}</Text>
 
           <View style={styles.releases}>
             {releases.map((release) => (
@@ -230,51 +212,45 @@ WhatsNewSheet.displayName = 'WhatsNewSheet';
 
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
-    scrollContent: {
-      paddingHorizontal: 20,
-      // Extra padding at bottom to account for the fixed footer
-      paddingBottom: 100,
-    },
     header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 24,
+      paddingHorizontal: 20,
       paddingTop: 8,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    headerIcon: {
+      width: 24,
     },
     title: {
-      fontSize: 24,
+      fontSize: 20,
       fontFamily: theme.fontRegular,
       fontWeight: '700',
       color: theme.text,
+      flex: 1,
       textAlign: 'center',
+    },
+    closeButton: {
+      padding: 4,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingBottom: 40,
     },
     subtitle: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
-      fontWeight: '400',
       color: theme.textSecondary,
       textAlign: 'center',
-      marginTop: 4,
+      marginTop: 8,
+      marginBottom: 24,
+      lineHeight: 20,
     },
     releases: {
       marginBottom: 24,
-    },
-    footer: {
-      paddingHorizontal: 20,
-      paddingTop: 12,
-      paddingBottom: 16,
-      backgroundColor: 'transparent',
-    },
-    button: {
-      backgroundColor: theme.primary,
-      paddingVertical: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-    },
-    buttonText: {
-      fontSize: 18,
-      fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.white,
     },
   });
 

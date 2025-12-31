@@ -143,4 +143,5 @@ module.exports = {
   RotateCcw: createIconMock('RotateCcw'),
   DollarSign: createIconMock('DollarSign'),
   Layout: createIconMock('Layout'),
+  Sparkles: createIconMock('Sparkles'),
 };
