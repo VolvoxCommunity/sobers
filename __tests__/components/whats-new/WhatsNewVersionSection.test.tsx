@@ -183,5 +183,146 @@ describe('WhatsNewVersionSection', () => {
       expect(features[1].props.testID).toBe('feature-Fix A');
       expect(features[2].props.testID).toBe('feature-Fix C');
     });
+
+    it('sorts features by displayOrder within same type', () => {
+      const releaseWithOrder: WhatsNewRelease = {
+        ...mockRelease,
+        features: [
+          {
+            id: '1',
+            title: 'Feature C',
+            description: 'D',
+            imageUrl: null,
+            displayOrder: 2,
+            type: 'feature',
+          },
+          {
+            id: '2',
+            title: 'Feature A',
+            description: 'D',
+            imageUrl: null,
+            displayOrder: 0,
+            type: 'feature',
+          },
+          {
+            id: '3',
+            title: 'Feature B',
+            description: 'D',
+            imageUrl: null,
+            displayOrder: 1,
+            type: 'feature',
+          },
+        ],
+      };
+
+      render(
+        <WhatsNewVersionSection release={releaseWithOrder} isNew={false} defaultExpanded={true} />
+      );
+
+      const features = screen.getAllByTestId(/^feature-/);
+      expect(features[0].props.testID).toBe('feature-Feature A');
+      expect(features[1].props.testID).toBe('feature-Feature B');
+      expect(features[2].props.testID).toBe('feature-Feature C');
+    });
+  });
+
+  describe('accessibility', () => {
+    it('has correct accessibility role on header', () => {
+      render(
+        <WhatsNewVersionSection release={mockRelease} isNew={false} defaultExpanded={false} />
+      );
+
+      const header = screen.getByTestId('version-section-header');
+      expect(header.props.accessibilityRole).toBe('button');
+    });
+
+    it('has correct accessibilityLabel when collapsed', () => {
+      render(
+        <WhatsNewVersionSection release={mockRelease} isNew={false} defaultExpanded={false} />
+      );
+
+      const header = screen.getByTestId('version-section-header');
+      expect(header.props.accessibilityLabel).toContain('Holiday Update');
+      expect(header.props.accessibilityLabel).toContain('1.2.0');
+      expect(header.props.accessibilityLabel).toContain('Expand');
+    });
+
+    it('has correct accessibilityLabel when expanded', () => {
+      render(<WhatsNewVersionSection release={mockRelease} isNew={false} defaultExpanded={true} />);
+
+      const header = screen.getByTestId('version-section-header');
+      expect(header.props.accessibilityLabel).toContain('Collapse');
+    });
+
+    it('updates accessibilityState on toggle', () => {
+      render(
+        <WhatsNewVersionSection release={mockRelease} isNew={false} defaultExpanded={false} />
+      );
+
+      const header = screen.getByTestId('version-section-header');
+      expect(header.props.accessibilityState).toEqual({ expanded: false });
+
+      fireEvent.press(header);
+      expect(header.props.accessibilityState).toEqual({ expanded: true });
+    });
+  });
+
+  describe('edge cases', () => {
+    it('renders correctly with empty features array', () => {
+      const releaseWithNoFeatures: WhatsNewRelease = {
+        ...mockRelease,
+        features: [],
+      };
+
+      render(
+        <WhatsNewVersionSection
+          release={releaseWithNoFeatures}
+          isNew={false}
+          defaultExpanded={true}
+        />
+      );
+
+      // Header should still render
+      expect(screen.getByText(/v1\.2\.0/)).toBeTruthy();
+      // No features to display
+      expect(screen.queryByTestId(/^feature-/)).toBeNull();
+    });
+
+    it('renders correctly with single feature', () => {
+      const releaseWithOneFeature: WhatsNewRelease = {
+        ...mockRelease,
+        features: [
+          {
+            id: '1',
+            title: 'Only Feature',
+            description: 'D',
+            imageUrl: null,
+            displayOrder: 0,
+            type: 'feature',
+          },
+        ],
+      };
+
+      render(
+        <WhatsNewVersionSection
+          release={releaseWithOneFeature}
+          isNew={false}
+          defaultExpanded={true}
+        />
+      );
+
+      expect(screen.getByText('Only Feature')).toBeTruthy();
+    });
+
+    it('formats various date formats correctly', () => {
+      const releaseJan: WhatsNewRelease = {
+        ...mockRelease,
+        createdAt: '2025-01-15T12:00:00Z',
+      };
+
+      render(<WhatsNewVersionSection release={releaseJan} isNew={false} defaultExpanded={false} />);
+
+      expect(screen.getByText(/Jan 2025/)).toBeTruthy();
+    });
   });
 });

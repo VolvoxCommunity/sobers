@@ -375,4 +375,138 @@ describe('WhatsNewSheet', () => {
       expect(mockOnDismiss).toHaveBeenCalled();
     });
   });
+
+  describe('edge cases', () => {
+    it('renders correctly with empty releases array', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet ref={ref} releases={[]} lastSeenVersion="1.0.0" onDismiss={mockOnDismiss} />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // Title should still render
+      expect(screen.getByText('The Good Stuff')).toBeTruthy();
+      // No version sections
+      expect(screen.queryByTestId(/^version-section-/)).toBeNull();
+      // Got it button should still work
+      expect(screen.getByText('Got it!')).toBeTruthy();
+    });
+
+    it('renders correctly with single release', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      const singleRelease: WhatsNewRelease[] = [
+        {
+          id: 'only-release',
+          version: '1.0.0',
+          title: 'First Release',
+          createdAt: '2024-12-01T00:00:00Z',
+          features: [
+            {
+              id: 'f1',
+              title: 'Feature',
+              description: 'Desc',
+              imageUrl: null,
+              displayOrder: 0,
+              type: 'feature',
+            },
+          ],
+        },
+      ];
+
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={singleRelease}
+          lastSeenVersion={null}
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      expect(screen.getByTestId('version-section-1.0.0')).toBeTruthy();
+      expect(screen.getByTestId('new-badge-1.0.0')).toBeTruthy();
+      expect(screen.getByTestId('expanded-1.0.0')).toBeTruthy();
+    });
+
+    it('handles lastSeenVersion higher than all releases', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="99.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // No versions should be marked as new
+      expect(screen.queryByTestId('new-badge-3.0.0')).toBeNull();
+      expect(screen.queryByTestId('new-badge-2.0.0')).toBeNull();
+      expect(screen.queryByTestId('new-badge-1.0.0')).toBeNull();
+      // No versions should be expanded
+      expect(screen.queryByTestId(/^expanded-/)).toBeNull();
+    });
+
+    it('handles release with empty features array', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      const releaseWithNoFeatures: WhatsNewRelease[] = [
+        {
+          id: 'empty-release',
+          version: '1.0.0',
+          title: 'Empty Release',
+          createdAt: '2024-12-01T00:00:00Z',
+          features: [],
+        },
+      ];
+
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={releaseWithNoFeatures}
+          lastSeenVersion={null}
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // Should still render the version section
+      expect(screen.getByTestId('version-section-1.0.0')).toBeTruthy();
+    });
+
+    it('marks version equal to lastSeenVersion as not new', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="2.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // v3.0.0 is newer than 2.0.0, should have NEW badge
+      expect(screen.getByTestId('new-badge-3.0.0')).toBeTruthy();
+      // v2.0.0 equals lastSeenVersion, should NOT have NEW badge
+      expect(screen.queryByTestId('new-badge-2.0.0')).toBeNull();
+      // v1.0.0 is older, should NOT have NEW badge
+      expect(screen.queryByTestId('new-badge-1.0.0')).toBeNull();
+    });
+  });
 });
