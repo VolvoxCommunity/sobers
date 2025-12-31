@@ -51,6 +51,20 @@ export default function AppLayout(): React.ReactElement {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="settings"
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Settings',
+          headerStyle: { backgroundColor: theme.surface },
+          headerTintColor: theme.text,
+          headerTitleStyle: {
+            fontFamily: 'JetBrainsMono-SemiBold',
+            fontSize: 18,
+          },
+        }}
+      />
     </Stack>
   );
 }

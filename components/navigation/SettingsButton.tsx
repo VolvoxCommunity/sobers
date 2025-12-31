@@ -44,7 +44,7 @@ export default function SettingsButton({
   return (
     <TouchableOpacity
       style={styles.button}
-      onPress={() => router.push('/profile/settings')}
+      onPress={() => router.push('/settings')}
       accessibilityRole="button"
       accessibilityLabel="Open settings"
       accessibilityHint="Navigates to the settings screen"

@@ -13,14 +13,14 @@ import { SettingsContent } from '@/components/settings';
 // =============================================================================
 
 /**
- * Full-screen settings page accessible via the gear icon in the profile tab.
+ * Modal settings screen accessible from any tab via the settings button.
  *
- * Uses the shared SettingsContent component. Navigation uses standard
- * stack presentation with a back button to return to the profile.
+ * Presented as a modal that slides up over the current screen. Uses the shared
+ * SettingsContent component. Dismissing returns to the previous screen.
  *
- * @returns The Settings screen React element
+ * @returns The Settings modal screen React element
  */
-export default function SettingsScreen() {
+export default function SettingsModal() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -46,7 +46,7 @@ export default function SettingsScreen() {
 // =============================================================================
 
 /**
- * Creates StyleSheet for the Settings screen based on current theme.
+ * Creates StyleSheet for the Settings modal based on current theme.
  *
  * @param theme - Theme colors from ThemeContext
  * @returns StyleSheet object with all component styles
