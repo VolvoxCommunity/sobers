@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add full release history view in "The Good Stuff" (formerly What's New) modal with collapsible version sections
+- Add full release history view in What's New modal with collapsible version sections
 - Add WhatsNewVersionSection component with expand/collapse, NEW badge, and feature sorting by type
+- Add dynamic subtitle in What's New modal header showing update count and user viewing state
 - Add semver comparison utilities (`compareSemver`, `sortByVersion`) for version ordering
 - Add database migration to remove `is_active` column from `whats_new_releases` table
 - Add comprehensive edge case and accessibility tests for What's New components (semver, WhatsNewVersionSection, WhatsNewSheet)
@@ -39,9 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Always expand the latest version section by default in What's New modal (previously only expanded if unseen)
+- Use transparent background for What's New modal footer
+- Redesign WhatsNewVersionSection with improved visual hierarchy: colored version badges, metadata row with Ionicons for date and feature/fix counts
 - Refactor useWhatsNew hook to fetch all releases instead of only active release
-- Update WhatsNewSheet to display release history with title "The Good Stuff"
-- Update settings menu item from "What's New" to "The Good Stuff"
+- Update WhatsNewSheet to display release history with "What's New?" title
+- Update settings menu item to "What's New?"
 - Display clickable "Assign a task" link for sponsees with no assigned tasks, navigating to the tasks page
 - Move Settings screen outside tab navigator to hide bottom tabs during navigation (iOS Settings pattern)
 - Update Settings back button to return to previous screen regardless of origin tab
@@ -57,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix What's New RLS policy migration failing on databases with partial manual changes (idempotent policy drops)
 - Fix TaskCreationSheet dropdown options not clickable due to parent scroll view closing dropdowns before item press fires
 - Fix E2E savings tests failing due to incorrect card click (menu button required)
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle

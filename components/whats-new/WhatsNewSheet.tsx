@@ -80,7 +80,7 @@ const SNAP_POINTS = ['90%'];
  * Bottom sheet modal displaying What's New release history.
  *
  * Features:
- * - Displays "The Good Stuff" title
+ * - Displays "What's New?" title
  * - Renders scrollable list of collapsible version sections
  * - Marks new (unseen) versions with badges
  * - Automatically expands the first new version
@@ -166,12 +166,32 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
 
     /**
      * Compute which release should be expanded by default.
-     * Only the first new (unseen) release is expanded.
+     * Always expands the latest version (first in the sorted list).
      */
     const defaultExpandedReleaseId = useMemo(() => {
-      const firstNewRelease = releases.find((r) => isReleaseNew(r.version));
-      return firstNewRelease?.id ?? null;
+      return releases.length > 0 ? releases[0].id : null;
+    }, [releases]);
+
+    /**
+     * Count how many releases are new (unseen by the user).
+     */
+    const newReleasesCount = useMemo(() => {
+      return releases.filter((r) => isReleaseNew(r.version)).length;
     }, [releases, isReleaseNew]);
+
+    /**
+     * Generate dynamic subtitle based on user's viewing state.
+     */
+    const subtitle = useMemo(() => {
+      if (!lastSeenVersion) {
+        return "See what we've been building";
+      }
+      if (newReleasesCount > 0) {
+        const plural = newReleasesCount === 1 ? 'update' : 'updates';
+        return `${newReleasesCount} ${plural} since you last checked`;
+      }
+      return "You're all caught up!";
+    }, [lastSeenVersion, newReleasesCount]);
 
     return (
       <GlassBottomSheet
@@ -182,7 +202,8 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
       >
         <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>The Good Stuff</Text>
+            <Text style={styles.title}>{"What's New?"}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
 
           <View style={styles.releases}>
@@ -226,6 +247,14 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
       textAlign: 'center',
     },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: theme.fontRegular,
+      fontWeight: '400',
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginTop: 4,
+    },
     releases: {
       marginBottom: 24,
     },
@@ -233,7 +262,7 @@ const createStyles = (theme: ThemeColors) =>
       paddingHorizontal: 20,
       paddingTop: 12,
       paddingBottom: 16,
-      backgroundColor: theme.background,
+      backgroundColor: 'transparent',
     },
     button: {
       backgroundColor: theme.primary,

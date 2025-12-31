@@ -943,11 +943,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="View The Good Stuff"
+            accessibilityLabel="View What's New"
           >
             <View style={styles.menuItemLeft}>
               <Sparkles size={20} color={theme.textSecondary} />
-              <Text style={styles.menuItemText}>The Good Stuff</Text>
+              <Text style={styles.menuItemText}>{"What's New?"}</Text>
             </View>
             <ChevronLeft
               size={20}

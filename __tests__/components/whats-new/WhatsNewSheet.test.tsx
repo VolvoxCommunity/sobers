@@ -2,10 +2,10 @@
  * @fileoverview Tests for WhatsNewSheet component
  *
  * Tests the What's New bottom sheet component including:
- * - Rendering "The Good Stuff" title
+ * - Rendering "What's New?" title
  * - Rendering all version sections
  * - Marking new versions with badges
- * - Expanding first new version by default
+ * - Expanding latest version by default
  * - Dismiss button behavior
  * - Imperative ref API
  */
@@ -134,7 +134,7 @@ describe('WhatsNewSheet', () => {
   });
 
   describe('rendering', () => {
-    it("renders 'The Good Stuff' title when presented", () => {
+    it("renders 'What's New?' title when presented", () => {
       const ref = React.createRef<WhatsNewSheetRef>();
       render(
         <WhatsNewSheet
@@ -149,7 +149,7 @@ describe('WhatsNewSheet', () => {
         ref.current?.present();
       });
 
-      expect(screen.getByText('The Good Stuff')).toBeTruthy();
+      expect(screen.getByText("What's New?")).toBeTruthy();
     });
 
     it('renders all version sections', () => {
@@ -184,7 +184,7 @@ describe('WhatsNewSheet', () => {
       );
 
       // Don't present the sheet
-      expect(screen.queryByText('The Good Stuff')).toBeNull();
+      expect(screen.queryByText("What's New?")).toBeNull();
     });
   });
 
@@ -257,7 +257,7 @@ describe('WhatsNewSheet', () => {
       expect(screen.queryByTestId('expanded-1.0.0')).toBeNull();
     });
 
-    it('collapses all sections when user has seen latest', () => {
+    it('expands latest version even when user has seen it', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
       render(
         <WhatsNewSheet
@@ -272,8 +272,8 @@ describe('WhatsNewSheet', () => {
         ref.current?.present();
       });
 
-      // No version is new (user has seen latest), all should be collapsed
-      expect(screen.queryByTestId('expanded-3.0.0')).toBeNull();
+      // Latest version should always be expanded, even if already seen
+      expect(screen.getByTestId('expanded-3.0.0')).toBeTruthy();
       expect(screen.queryByTestId('expanded-2.0.0')).toBeNull();
       expect(screen.queryByTestId('expanded-1.0.0')).toBeNull();
     });
@@ -388,7 +388,7 @@ describe('WhatsNewSheet', () => {
       });
 
       // Title should still render
-      expect(screen.getByText('The Good Stuff')).toBeTruthy();
+      expect(screen.getByText("What's New?")).toBeTruthy();
       // No version sections
       expect(screen.queryByTestId(/^version-section-/)).toBeNull();
       // Got it button should still work
@@ -453,8 +453,10 @@ describe('WhatsNewSheet', () => {
       expect(screen.queryByTestId('new-badge-3.0.0')).toBeNull();
       expect(screen.queryByTestId('new-badge-2.0.0')).toBeNull();
       expect(screen.queryByTestId('new-badge-1.0.0')).toBeNull();
-      // No versions should be expanded
-      expect(screen.queryByTestId(/^expanded-/)).toBeNull();
+      // Latest version should still be expanded (even though not new)
+      expect(screen.getByTestId('expanded-3.0.0')).toBeTruthy();
+      expect(screen.queryByTestId('expanded-2.0.0')).toBeNull();
+      expect(screen.queryByTestId('expanded-1.0.0')).toBeNull();
     });
 
     it('handles release with empty features array', () => {

@@ -2,7 +2,7 @@
  * @fileoverview WhatsNewVersionSection component
  *
  * A collapsible section displaying a single release version with its features.
- * Shows version number, title, date, and optionally a NEW badge.
+ * Shows version badge, title, metadata row with counts, and optionally a NEW badge.
  */
 
 // =============================================================================
@@ -97,6 +97,16 @@ export default function WhatsNewVersionSection({
     });
   }, [release.features]);
 
+  // Count features and fixes
+  const featureCount = useMemo(
+    () => release.features.filter((f) => f.type === 'feature').length,
+    [release.features]
+  );
+  const fixCount = useMemo(
+    () => release.features.filter((f) => f.type === 'fix').length,
+    [release.features]
+  );
+
   const handleToggle = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded((prev) => !prev);
@@ -109,24 +119,54 @@ export default function WhatsNewVersionSection({
         style={styles.header}
         onPress={handleToggle}
         accessibilityRole="button"
-        accessibilityLabel={`${release.title} version ${release.version}. ${isExpanded ? 'Collapse' : 'Expand'} to ${isExpanded ? 'hide' : 'show'} features.`}
+        accessibilityLabel={`${release.title} version ${release.version}. ${featureCount} features, ${fixCount} fixes. ${isExpanded ? 'Collapse' : 'Expand'} to ${isExpanded ? 'hide' : 'show'} details.`}
         accessibilityState={{ expanded: isExpanded }}
       >
-        <View style={styles.headerLeft}>
-          {isNew && (
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>NEW</Text>
+        {/* Top row: Version badge, NEW badge, chevron */}
+        <View style={styles.topRow}>
+          <View style={styles.badgeRow}>
+            <View style={styles.versionBadge}>
+              <Text style={styles.versionText}>{release.version}</Text>
+            </View>
+            {isNew && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>NEW</Text>
+              </View>
+            )}
+          </View>
+          <Ionicons
+            name={isExpanded ? 'chevron-down' : 'chevron-forward'}
+            size={20}
+            color={theme.textSecondary}
+          />
+        </View>
+
+        {/* Title */}
+        <Text style={styles.title}>{release.title}</Text>
+
+        {/* Metadata row */}
+        <View style={styles.metadataRow}>
+          <View style={styles.metadataItem}>
+            <Ionicons name="calendar-outline" size={14} color={theme.textSecondary} />
+            <Text style={styles.metadataText}>{formatReleaseDate(release.createdAt)}</Text>
+          </View>
+          {featureCount > 0 && (
+            <View style={styles.metadataItem}>
+              <Ionicons name="sparkles" size={14} color={theme.textSecondary} />
+              <Text style={styles.metadataText}>
+                {featureCount} {featureCount === 1 ? 'feature' : 'features'}
+              </Text>
             </View>
           )}
-          <Text style={styles.headerText}>
-            v{release.version} · {release.title} · {formatReleaseDate(release.createdAt)}
-          </Text>
+          {fixCount > 0 && (
+            <View style={styles.metadataItem}>
+              <Ionicons name="construct-outline" size={14} color={theme.textSecondary} />
+              <Text style={styles.metadataText}>
+                {fixCount} {fixCount === 1 ? 'fix' : 'fixes'}
+              </Text>
+            </View>
+          )}
         </View>
-        <Ionicons
-          name={isExpanded ? 'chevron-down' : 'chevron-forward'}
-          size={20}
-          color={theme.textSecondary}
-        />
       </Pressable>
 
       {isExpanded && (
@@ -149,7 +189,7 @@ const createStyles = (theme: ThemeColors, isNew: boolean) =>
     container: {
       marginBottom: 12,
       borderRadius: 12,
-      backgroundColor: isNew ? `${theme.primary}08` : theme.card,
+      backgroundColor: theme.card,
       borderWidth: 1,
       borderColor: theme.border,
       borderLeftWidth: isNew ? 4 : 1,
@@ -157,26 +197,33 @@ const createStyles = (theme: ThemeColors, isNew: boolean) =>
       overflow: 'hidden',
     },
     header: {
+      padding: 16,
+    },
+    topRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 16,
+      marginBottom: 8,
     },
-    headerLeft: {
-      flex: 1,
+    badgeRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
     },
-    headerText: {
+    versionBadge: {
+      backgroundColor: isNew ? theme.primary : theme.border,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    versionText: {
       fontSize: 14,
       fontFamily: theme.fontRegular,
-      fontWeight: '600',
-      color: theme.text,
-      flex: 1,
+      fontWeight: '700',
+      color: isNew ? '#ffffff' : theme.text,
     },
     newBadge: {
-      backgroundColor: theme.primary,
+      backgroundColor: theme.success,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 4,
@@ -188,8 +235,35 @@ const createStyles = (theme: ThemeColors, isNew: boolean) =>
       color: '#ffffff',
       letterSpacing: 0.5,
     },
+    title: {
+      fontSize: 16,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 8,
+    },
+    metadataRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    metadataItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    metadataText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      fontWeight: '400',
+      color: theme.textSecondary,
+    },
     content: {
       paddingHorizontal: 16,
       paddingBottom: 16,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+      paddingTop: 12,
     },
   });

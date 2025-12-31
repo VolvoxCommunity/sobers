@@ -22,6 +22,7 @@ const mockTheme = {
   textSecondary: '#666666',
   textTertiary: '#999999',
   primary: '#007AFF',
+  success: '#34C759',
   card: '#ffffff',
   border: '#e0e0e0',
   background: '#f5f5f5',
@@ -85,8 +86,9 @@ describe('WhatsNewVersionSection', () => {
         <WhatsNewVersionSection release={mockRelease} isNew={false} defaultExpanded={false} />
       );
 
-      expect(screen.getByText(/v1\.2\.0/)).toBeTruthy();
-      expect(screen.getByText(/Holiday Update/)).toBeTruthy();
+      // Version badge shows version without "v" prefix
+      expect(screen.getByText('1.2.0')).toBeTruthy();
+      expect(screen.getByText('Holiday Update')).toBeTruthy();
       expect(screen.getByText(/Dec 2024/)).toBeTruthy();
     });
 
@@ -282,8 +284,8 @@ describe('WhatsNewVersionSection', () => {
         />
       );
 
-      // Header should still render
-      expect(screen.getByText(/v1\.2\.0/)).toBeTruthy();
+      // Header should still render (version badge without "v" prefix)
+      expect(screen.getByText('1.2.0')).toBeTruthy();
       // No features to display
       expect(screen.queryByTestId(/^feature-/)).toBeNull();
     });
