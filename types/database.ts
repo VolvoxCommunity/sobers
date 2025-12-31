@@ -82,6 +82,12 @@ export interface Profile {
    * Null if user hasn't seen any What's New content.
    */
   last_seen_version?: string | null;
+  /**
+   * Whether to show 12-step program content (Steps tab).
+   * Default true. When false, the Steps tab is hidden from navigation.
+   * Existing users (null/undefined) are treated as true.
+   */
+  show_twelve_step_content?: boolean;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
