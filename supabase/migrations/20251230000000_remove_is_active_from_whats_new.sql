@@ -4,9 +4,11 @@
 -- Drop the partial index on is_active
 DROP INDEX IF EXISTS idx_whats_new_releases_active;
 
--- Drop existing RLS policies
+-- Drop existing RLS policies (both old and new names for idempotency)
 DROP POLICY IF EXISTS "Anyone can read active releases" ON public.whats_new_releases;
+DROP POLICY IF EXISTS "Anyone can read releases" ON public.whats_new_releases;
 DROP POLICY IF EXISTS "Anyone can read features of active releases" ON public.whats_new_features;
+DROP POLICY IF EXISTS "Anyone can read features" ON public.whats_new_features;
 
 -- Create new permissive RLS policies
 CREATE POLICY "Anyone can read releases"
