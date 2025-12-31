@@ -9,7 +9,13 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React, { forwardRef, useRef, useImperativeHandle, useMemo, useCallback } from 'react';
+import React, {
+  forwardRef,
+  useRef,
+  useImperativeHandle,
+  useMemo,
+  useCallback,
+} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import {
   BottomSheetScrollView,
@@ -164,8 +170,14 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
       [insets.bottom, styles, handleGotIt]
     );
 
-    // Track whether we've found the first new release for default expansion
-    let foundFirstNew = false;
+    /**
+     * Compute which release should be expanded by default.
+     * Only the first new (unseen) release is expanded.
+     */
+    const defaultExpandedReleaseId = useMemo(() => {
+      const firstNewRelease = releases.find((r) => isReleaseNew(r.version));
+      return firstNewRelease?.id ?? null;
+    }, [releases, isReleaseNew]);
 
     return (
       <GlassBottomSheet
@@ -180,20 +192,14 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
           </View>
 
           <View style={styles.releases}>
-            {releases.map((release) => {
-              const isNew = isReleaseNew(release.version);
-              const shouldExpand = isNew && !foundFirstNew;
-              if (shouldExpand) foundFirstNew = true;
-
-              return (
-                <WhatsNewVersionSection
-                  key={release.id}
-                  release={release}
-                  isNew={isNew}
-                  defaultExpanded={shouldExpand}
-                />
-              );
-            })}
+            {releases.map((release) => (
+              <WhatsNewVersionSection
+                key={release.id}
+                release={release}
+                isNew={isReleaseNew(release.version)}
+                defaultExpanded={release.id === defaultExpandedReleaseId}
+              />
+            ))}
           </View>
         </BottomSheetScrollView>
       </GlassBottomSheet>

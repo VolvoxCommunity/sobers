@@ -407,7 +407,7 @@ describe('HomeScreen', () => {
     mockIsLoadingDaysSober = false;
     // Reset new mocks
     mockShouldShowWhatsNew = false;
-    mockActiveRelease = null;
+    mockReleases = [];
     mockMarkAsSeen.mockClear();
     mockWhatsNewPresent.mockClear();
     mockMoneySavedCardOnPress.mockClear();

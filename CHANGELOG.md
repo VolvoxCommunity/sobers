@@ -14,15 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add semver comparison utilities (`compareSemver`, `sortByVersion`) for version ordering
 - Add database migration to remove `is_active` column from `whats_new_releases` table
 - Add comprehensive edge case and accessibility tests for What's New components (semver, WhatsNewVersionSection, WhatsNewSheet)
-
-### Changed
-
-- Refactor useWhatsNew hook to fetch all releases instead of only active release
-- Update WhatsNewSheet to display release history with title "The Good Stuff"
-- Update settings menu item from "What's New" to "The Good Stuff"
-
-### Added
-
 - Add Amplitude Analytics integration for product analytics with native and web platform support
 - Add 35+ analytics events with Title Case naming (e.g., "Screen Viewed", "Task Completed") for comprehensive user engagement tracking
 - Add 9 user properties for cohort analysis: days_sober_bucket, steps_completed_bucket, has_sponsor, has_sponsees, theme_preference, notifications_enabled, app_version, platform, device_type
@@ -46,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refactor useWhatsNew hook to fetch all releases instead of only active release
+- Update WhatsNewSheet to display release history with title "The Good Stuff"
+- Update settings menu item from "What's New" to "The Good Stuff"
 - Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
