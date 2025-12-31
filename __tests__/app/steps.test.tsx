@@ -123,6 +123,7 @@ jest.mock('@/contexts/AuthContext', () => ({
 // Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => ({
   CheckCircle: () => null,
+  Settings: () => null,
 }));
 
 // Mock logger

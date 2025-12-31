@@ -38,7 +38,7 @@ jest.mock('@/lib/supabase', () => ({
       if (table === 'tasks') {
         return {
           select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockImplementation((field: string, value: string) => {
+            eq: jest.fn().mockImplementation((field: string, _value: string) => {
               if (field === 'sponsee_id') {
                 return {
                   order: jest.fn().mockResolvedValue({ data: mockMyTasks, error: null }),
@@ -138,6 +138,7 @@ jest.mock('lucide-react-native', () => ({
   Plus: () => null,
   Clock: () => null,
   Trash2: () => null,
+  Settings: () => null,
 }));
 
 // Mock SegmentedControl
@@ -149,7 +150,7 @@ jest.mock('@/components/SegmentedControl', () => {
     __esModule: true,
     default: ({
       segments,
-      activeIndex,
+      activeIndex: _activeIndex,
       onChange,
     }: {
       segments: string[];

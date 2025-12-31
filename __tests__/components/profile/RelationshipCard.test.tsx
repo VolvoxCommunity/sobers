@@ -43,6 +43,7 @@ jest.mock('lucide-react-native', () => ({
   Heart: 'Heart',
   UserMinus: 'UserMinus',
   CheckCircle: 'CheckCircle',
+  Plus: 'Plus',
 }));
 
 // =============================================================================
@@ -316,6 +317,88 @@ describe('RelationshipCard', () => {
       );
 
       expect(screen.getByText('5/5 tasks completed')).toBeTruthy();
+    });
+
+    it('displays "Assign a task" link when no tasks are assigned and onAssignTask provided', () => {
+      const taskStats = { total: 0, completed: 0 };
+      const mockOnAssignTask = jest.fn();
+
+      render(
+        <RelationshipCard
+          userId="user-123"
+          profile={mockProfile}
+          connectedAt="2024-01-01T00:00:00Z"
+          relationshipType="sponsee"
+          theme={mockTheme}
+          onDisconnect={mockOnDisconnect}
+          taskStats={taskStats}
+          onAssignTask={mockOnAssignTask}
+        />
+      );
+
+      expect(screen.getByText('Assign a task')).toBeTruthy();
+      expect(screen.queryByText('0/0 tasks completed')).toBeNull();
+    });
+
+    it('does not display "Assign a task" link when no tasks but onAssignTask not provided', () => {
+      const taskStats = { total: 0, completed: 0 };
+
+      render(
+        <RelationshipCard
+          userId="user-123"
+          profile={mockProfile}
+          connectedAt="2024-01-01T00:00:00Z"
+          relationshipType="sponsee"
+          theme={mockTheme}
+          onDisconnect={mockOnDisconnect}
+          taskStats={taskStats}
+        />
+      );
+
+      expect(screen.queryByText('Assign a task')).toBeNull();
+      expect(screen.queryByText('0/0 tasks completed')).toBeNull();
+    });
+
+    it('calls onAssignTask when "Assign a task" link is pressed', () => {
+      const taskStats = { total: 0, completed: 0 };
+      const mockOnAssignTask = jest.fn();
+
+      render(
+        <RelationshipCard
+          userId="user-123"
+          profile={mockProfile}
+          connectedAt="2024-01-01T00:00:00Z"
+          relationshipType="sponsee"
+          theme={mockTheme}
+          onDisconnect={mockOnDisconnect}
+          taskStats={taskStats}
+          onAssignTask={mockOnAssignTask}
+        />
+      );
+
+      fireEvent.press(screen.getByText('Assign a task'));
+      expect(mockOnAssignTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('has correct accessibility label for "Assign a task" link', () => {
+      const taskStats = { total: 0, completed: 0 };
+      const mockOnAssignTask = jest.fn();
+
+      render(
+        <RelationshipCard
+          userId="user-123"
+          profile={mockProfile}
+          connectedAt="2024-01-01T00:00:00Z"
+          relationshipType="sponsee"
+          theme={mockTheme}
+          onDisconnect={mockOnDisconnect}
+          taskStats={taskStats}
+          onAssignTask={mockOnAssignTask}
+        />
+      );
+
+      const assignTaskLink = screen.getByLabelText('Assign a task');
+      expect(assignTaskLink).toBeTruthy();
     });
   });
 

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add semver comparison utilities (`compareSemver`, `sortByVersion`) for version ordering
 - Add database migration to remove `is_active` column from `whats_new_releases` table
 - Add comprehensive edge case and accessibility tests for What's New components (semver, WhatsNewVersionSection, WhatsNewSheet)
+- Add settings cogwheel button to all main screens (Home, Journey, Tasks, Steps) for quick access to settings on mobile
+- Add settings icon to web top navigation bar
 - Add Amplitude Analytics integration for product analytics with native and web platform support
 - Add 35+ analytics events with Title Case naming (e.g., "Screen Viewed", "Task Completed") for comprehensive user engagement tracking
 - Add 9 user properties for cohort analysis: days_sober_bucket, steps_completed_bucket, has_sponsor, has_sponsees, theme_preference, notifications_enabled, app_version, platform, device_type
@@ -40,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor useWhatsNew hook to fetch all releases instead of only active release
 - Update WhatsNewSheet to display release history with title "The Good Stuff"
 - Update settings menu item from "What's New" to "The Good Stuff"
+- Display clickable "Assign a task" link for sponsees with no assigned tasks, navigating to the tasks page
+- Move Settings to a nested stack inside the profile tab with standard push navigation and back button (keeps tab bar visible)
 - Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
@@ -52,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix TaskCreationSheet dropdown options not clickable due to parent scroll view closing dropdowns before item press fires
 - Fix E2E savings tests failing due to incorrect card click (menu button required)
 - Improve test coverage: add tests for alert module public API, SettingsContent build info, and savings card toggle
 - Fix keyboard pushing content up excessively in EditSavingsSheet by using single snap point

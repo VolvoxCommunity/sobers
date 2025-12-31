@@ -13,13 +13,10 @@ import { SettingsContent } from '@/components/settings';
 // =============================================================================
 
 /**
- * Full-screen settings page that serves as a fallback route.
+ * Full-screen settings page accessible via the gear icon in the profile tab.
  *
- * Primary access to settings is via the bottom sheet in profile.tsx.
- * This route exists for deep linking and as an alternative access pattern.
- *
- * Uses the shared SettingsContent component to ensure consistency
- * with the bottom sheet implementation.
+ * Uses the shared SettingsContent component. Navigation uses standard
+ * stack presentation with a back button to return to the profile.
  *
  * @returns The Settings screen React element
  */

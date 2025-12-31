@@ -2,8 +2,9 @@
 // Imports
 // =============================================================================
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import SettingsButton from '@/components/navigation/SettingsButton';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { Task, Profile } from '@/types/database';
@@ -303,10 +304,17 @@ export default function TasksScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tasks</Text>
-        <Text style={styles.headerSubtitle}>
-          {viewMode === 'my-tasks' ? 'Track your step progress' : 'Track and assign sponsee tasks'}
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Tasks</Text>
+            <Text style={styles.headerSubtitle}>
+              {viewMode === 'my-tasks'
+                ? 'Track your step progress'
+                : 'Track and assign sponsee tasks'}
+            </Text>
+          </View>
+          {Platform.OS !== 'web' && <SettingsButton />}
+        </View>
       </View>
 
       <SegmentedControl
@@ -396,6 +404,14 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.card,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    headerText: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: 28,

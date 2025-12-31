@@ -2,9 +2,8 @@
 // Imports
 // =============================================================================
 import React from 'react';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { Stack, Redirect, useRouter } from 'expo-router';
-import { X } from 'lucide-react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Stack, Redirect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -22,7 +21,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 export default function AppLayout(): React.ReactElement {
   const { user, profile, loading } = useAuth();
   const { theme } = useTheme();
-  const router = useRouter();
 
   // Show loading indicator while auth state is being determined
   // This is acceptable in a nested layout per Expo Router docs
@@ -53,34 +51,6 @@ export default function AppLayout(): React.ReactElement {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      {/* Settings route with modal presentation */}
-      <Stack.Screen
-        name="settings"
-        options={{
-          presentation: 'formSheet',
-          gestureEnabled: true,
-          headerShown: true,
-          title: 'Settings',
-          headerStyle: { backgroundColor: theme.surface },
-          headerTintColor: theme.text,
-          headerTitleStyle: {
-            fontFamily: 'JetBrainsMono-SemiBold',
-            fontSize: 18,
-          },
-          headerLeft: () => null,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              accessibilityLabel="Close settings"
-              accessibilityRole="button"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <X size={22} color={theme.textSecondary} strokeWidth={2} />
-            </TouchableOpacity>
-          ),
-          contentStyle: { backgroundColor: theme.background },
-        }}
-      />
     </Stack>
   );
 }

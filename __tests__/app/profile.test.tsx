@@ -185,6 +185,7 @@ jest.mock('lucide-react-native', () => ({
   Calendar: () => null,
   AlertCircle: () => null,
   CheckCircle: () => null,
+  Plus: () => null,
   Settings: () => null,
   X: () => null,
   // Icons used by SettingsSheet
@@ -1228,12 +1229,12 @@ describe('ProfileScreen', () => {
       ];
     });
 
-    it('shows task completion stats for sponsee', async () => {
+    it('shows "Assign a task" link when no tasks assigned to sponsee', async () => {
       render(<ProfileScreen />);
 
       await waitFor(() => {
-        // Stats format: "X/Y tasks"
-        expect(screen.getByText(/tasks/)).toBeTruthy();
+        // When no tasks are assigned, show the assign link
+        expect(screen.getByText('Assign a task')).toBeTruthy();
       });
     });
   });

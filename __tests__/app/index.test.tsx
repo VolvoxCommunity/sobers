@@ -179,6 +179,7 @@ jest.mock('lucide-react-native', () => ({
   MoreVertical: () => null,
   Edit3: () => null,
   EyeOff: () => null,
+  Settings: () => null,
 }));
 
 // Mock TaskCreationSheet

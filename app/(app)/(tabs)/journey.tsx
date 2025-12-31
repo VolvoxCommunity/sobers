@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import SettingsButton from '@/components/navigation/SettingsButton';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { UserStepProgress, SlipUp, Task } from '@/types/database';
@@ -357,8 +358,13 @@ export default function JourneyScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your Journey</Text>
-        <Text style={styles.headerSubtitle}>Every day is a victory</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Your Journey</Text>
+            <Text style={styles.headerSubtitle}>Every day is a victory</Text>
+          </View>
+          {Platform.OS !== 'web' && <SettingsButton />}
+        </View>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: tabBarHeight }}>
@@ -495,6 +501,14 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.card,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    headerText: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: 28,

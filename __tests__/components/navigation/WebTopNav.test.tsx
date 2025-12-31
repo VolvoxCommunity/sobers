@@ -14,6 +14,7 @@ jest.mock('expo-router', () => ({
 jest.mock('lucide-react-native', () => ({
   Home: () => null,
   BookOpen: () => null,
+  Settings: () => null,
 }));
 
 describe('WebTopNav', () => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
+import SettingsButton from './SettingsButton';
 
 type IconComponent = React.ComponentType<{ size?: number; color?: string }>;
 
@@ -39,34 +40,37 @@ export default function WebTopNav({ items }: WebTopNavProps): React.ReactElement
 
   return (
     <View style={styles.container}>
-      <View style={styles.nav}>
-        {items.map((item) => {
-          const active = isActive(item.route);
-          const IconComponent = item.icon;
+      <View style={styles.navWrapper}>
+        <View style={styles.nav}>
+          {items.map((item) => {
+            const active = isActive(item.route);
+            const IconComponent = item.icon;
 
-          return (
-            <Pressable
-              key={item.route}
-              style={[styles.navItem, active && styles.navItemActive]}
-              onPress={() => router.push(item.route as never)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={item.label}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <IconComponent size={20} color={active ? theme.primary : theme.textSecondary} />
-              <Text
-                style={[
-                  styles.navLabel,
-                  active && styles.navLabelActive,
-                  { color: active ? theme.primary : theme.textSecondary },
-                ]}
+            return (
+              <Pressable
+                key={item.route}
+                style={[styles.navItem, active && styles.navItemActive]}
+                onPress={() => router.push(item.route as never)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={item.label}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+                <IconComponent size={20} color={active ? theme.primary : theme.textSecondary} />
+                <Text
+                  style={[
+                    styles.navLabel,
+                    active && styles.navLabelActive,
+                    { color: active ? theme.primary : theme.textSecondary },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <SettingsButton size={20} />
       </View>
     </View>
   );
@@ -81,13 +85,19 @@ const createStyles = (theme: ThemeColors) =>
       paddingVertical: 8,
       paddingHorizontal: 16,
     },
+    navWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      maxWidth: 900,
+      marginHorizontal: 'auto',
+    },
     nav: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 32,
-      maxWidth: 800,
-      marginHorizontal: 'auto',
+      flex: 1,
     },
     navItem: {
       flexDirection: 'row',

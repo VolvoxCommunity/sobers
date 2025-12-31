@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import { StepContent, UserStepProgress } from '@/types/database';
 import { CheckCircle } from 'lucide-react-native';
 import { logger, LogCategory } from '@/lib/logger';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
+import SettingsButton from '@/components/navigation/SettingsButton';
 
 /**
  * Render the Steps screen showing the 12 steps with per-step completion indicators and navigation to each step's detail screen.
@@ -111,8 +112,13 @@ export default function StepsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>The 12 Steps</Text>
-        <Text style={styles.headerSubtitle}>Your path to recovery</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>The 12 Steps</Text>
+            <Text style={styles.headerSubtitle}>Your path to recovery</Text>
+          </View>
+          {Platform.OS !== 'web' && <SettingsButton />}
+        </View>
       </View>
 
       <ScrollView
@@ -184,6 +190,14 @@ const createStyles = (theme: ThemeColors) =>
       backgroundColor: theme.card,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    headerText: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: 28,

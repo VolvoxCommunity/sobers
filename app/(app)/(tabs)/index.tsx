@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  Platform,
+} from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -26,6 +34,7 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import { useWhatsNew } from '@/lib/whats-new';
 import { WhatsNewSheet, WhatsNewSheetRef } from '@/components/whats-new';
+import SettingsButton from '@/components/navigation/SettingsButton';
 
 /**
  * Render the home dashboard showing sobriety summary, active sponsor/sponsee relationships, recent assigned tasks, and quick actions.
@@ -251,14 +260,19 @@ export default function HomeScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {profile?.display_name || 'Friend'}</Text>
-        <Text style={styles.date}>
-          {new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>Hello, {profile?.display_name || 'Friend'}</Text>
+            <Text style={styles.date}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </View>
+          {Platform.OS !== 'web' && <SettingsButton />}
+        </View>
       </View>
 
       <View style={styles.sobrietyCard}>
@@ -508,6 +522,14 @@ const createStyles = (theme: ThemeColors) =>
     header: {
       padding: 24,
       paddingTop: 60,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    headerText: {
+      flex: 1,
     },
     greeting: {
       fontSize: 28,

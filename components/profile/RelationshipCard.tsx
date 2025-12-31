@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Heart, UserMinus, CheckCircle } from 'lucide-react-native';
+import { Heart, UserMinus, CheckCircle, Plus } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import type { Profile } from '@/types/database';
@@ -37,6 +37,8 @@ interface RelationshipCardProps {
   onDisconnect: () => void;
   /** Optional task statistics (only shown for sponsees) */
   taskStats?: TaskStats;
+  /** Optional callback when "Assign a task" link is pressed (only shown when no tasks assigned) */
+  onAssignTask?: () => void;
 }
 
 // =============================================================================
@@ -61,6 +63,7 @@ interface RelationshipCardProps {
  *   theme={theme}
  *   onDisconnect={() => {}}
  *   taskStats={{ total: 5, completed: 3 }}
+ *   onAssignTask={() => router.push('/tasks')}
  * />
  * ```
  */
@@ -72,6 +75,7 @@ export default function RelationshipCard({
   theme,
   onDisconnect,
   taskStats,
+  onAssignTask,
 }: RelationshipCardProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { daysSober, loading: loadingDaysSober } = useDaysSober(userId);
@@ -110,7 +114,7 @@ export default function RelationshipCard({
               </Text>
             </View>
           )}
-          {taskStats && relationshipType === 'sponsee' && (
+          {taskStats && relationshipType === 'sponsee' && taskStats.total > 0 && (
             <View
               style={styles.taskStatsInfo}
               accessibilityLabel={`${taskStats.completed} out of ${taskStats.total} tasks completed`}
@@ -120,6 +124,18 @@ export default function RelationshipCard({
                 {taskStats.completed}/{taskStats.total} tasks completed
               </Text>
             </View>
+          )}
+          {taskStats && relationshipType === 'sponsee' && taskStats.total === 0 && onAssignTask && (
+            <TouchableOpacity
+              style={styles.assignTaskLink}
+              onPress={onAssignTask}
+              accessibilityRole="link"
+              accessibilityLabel="Assign a task"
+              accessibilityHint="Opens the task creation screen"
+            >
+              <Plus size={14} color={theme.primary} />
+              <Text style={styles.assignTaskText}>Assign a task</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -211,6 +227,18 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 12,
       fontFamily: theme.fontRegular,
       color: theme.success,
+      fontWeight: '600',
+    },
+    assignTaskLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 6,
+    },
+    assignTaskText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.primary,
       fontWeight: '600',
     },
     disconnectButton: {

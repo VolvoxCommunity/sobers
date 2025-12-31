@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -21,7 +22,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import type { SponsorSponseeRelationship } from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatDateWithTimezone, parseDateAsLocal, getUserTimezone } from '@/lib/date';
-import SettingsSheet, { SettingsSheetRef } from '@/components/SettingsSheet';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 import EnterInviteCodeSheet, {
   EnterInviteCodeSheetRef,
@@ -43,10 +43,10 @@ import InviteCodeSection from '@/components/profile/InviteCodeSection';
 export default function ProfileScreen() {
   const { user, profile, refreshProfile } = useAuth();
   const { theme } = useTheme();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   // Account for native tab bar height and safe area
   const scrollPadding = useTabBarPadding();
-  const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const inviteCodeSheetRef = useRef<EnterInviteCodeSheetRef>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -571,7 +571,7 @@ export default function ProfileScreen() {
           Profile
         </Text>
         <TouchableOpacity
-          onPress={() => settingsSheetRef.current?.present()}
+          onPress={() => router.push('/profile/settings')}
           style={styles.settingsButton}
           accessibilityRole="button"
           accessibilityLabel="Open settings"
@@ -628,6 +628,7 @@ export default function ProfileScreen() {
                 onDisconnect={() =>
                   disconnectRelationship(rel.id, true, rel.sponsee?.display_name || 'Unknown')
                 }
+                onAssignTask={() => router.push('/tasks')}
               />
             ))}
           </InviteCodeSection>
@@ -770,9 +771,6 @@ export default function ProfileScreen() {
             maximumDate={maximumDate}
           />
         )}
-
-        {/* Settings Sheet */}
-        <SettingsSheet ref={settingsSheetRef} />
 
         {/* Log Slip Up Sheet */}
         {profile && (

@@ -6,49 +6,26 @@
  * - Redirect to /login when user is not authenticated
  * - Redirect to /onboarding when profile is incomplete
  * - Rendering protected routes when user is fully authenticated
- * - Settings modal with close button functionality
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 // =============================================================================
 // Mocks
 // =============================================================================
 
 // Mock expo-router
-const mockReplace = jest.fn();
-const mockBack = jest.fn();
-
 jest.mock('expo-router', () => {
   const React = require('react');
   const { View, Text } = require('react-native');
   return {
-    useRouter: () => ({
-      replace: mockReplace,
-      back: mockBack,
-    }),
     Stack: Object.assign(
       ({ children }: { children: React.ReactNode }) =>
         React.createElement(View, { testID: 'stack-navigator' }, children),
       {
-        Screen: ({
-          name,
-          options,
-        }: {
-          name: string;
-          options?: {
-            headerLeft?: () => React.ReactNode;
-            headerRight?: () => React.ReactNode;
-          };
-        }) =>
-          React.createElement(
-            View,
-            { testID: `screen-${name}` },
-            // Render headerLeft and headerRight if provided to ensure coverage
-            options?.headerLeft?.(),
-            options?.headerRight?.()
-          ),
+        Screen: ({ name }: { name: string }) =>
+          React.createElement(View, { testID: `screen-${name}` }),
       }
     ),
     Redirect: ({ href }: { href: string }) =>
@@ -85,16 +62,6 @@ jest.mock('@/contexts/ThemeContext', () => ({
     isDark: false,
   }),
 }));
-
-// Mock lucide-react-native
-jest.mock('lucide-react-native', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    X: (props: Record<string, unknown>) =>
-      React.createElement(View, { testID: 'x-icon', ...props }),
-  };
-});
 
 // =============================================================================
 // Test Suite
@@ -239,39 +206,12 @@ describe('AppLayout', () => {
       expect(screen.getByTestId('screen-(tabs)')).toBeTruthy();
     });
 
-    it('renders settings screen', () => {
-      const AppLayout = getAppLayout();
-      render(<AppLayout />);
-
-      expect(screen.getByTestId('screen-settings')).toBeTruthy();
-    });
-
     it('does not redirect when profile is complete', () => {
       const AppLayout = getAppLayout();
       render(<AppLayout />);
 
       expect(screen.queryByTestId('redirect-/login')).toBeNull();
       expect(screen.queryByTestId('redirect-/onboarding')).toBeNull();
-    });
-  });
-
-  describe('settings close button', () => {
-    it('calls router.back when settings close button is pressed', () => {
-      mockUser = { id: 'user-123' };
-      mockProfile = {
-        display_name: 'John D.',
-        sobriety_date: '2024-01-01',
-      };
-      mockLoading = false;
-
-      const AppLayout = getAppLayout();
-      render(<AppLayout />);
-
-      // The settings screen renders with headerRight that includes a close button
-      const closeButton = screen.getByLabelText('Close settings');
-      fireEvent.press(closeButton);
-
-      expect(mockBack).toHaveBeenCalled();
     });
   });
 
