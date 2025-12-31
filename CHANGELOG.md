@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add WhatsNewVersionSection collapsible component for displaying release versions with expandable feature lists
 - Add semver comparison utilities for sorting release versions in What's New feature
 - Add createdAt field to WhatsNewRelease interface for release date display
 
