@@ -13,10 +13,10 @@ import { SettingsContent } from '@/components/settings';
 // =============================================================================
 
 /**
- * Full-screen settings page accessible via the gear icon in the profile tab.
+ * Full-screen settings page accessible from any screen via the settings button.
  *
- * Uses the shared SettingsContent component. Navigation uses standard
- * stack presentation with a back button to return to the profile.
+ * Presented outside the tab navigator to hide the bottom tabs. Uses standard
+ * stack navigation so the back button returns to wherever the user came from.
  *
  * @returns The Settings screen React element
  */

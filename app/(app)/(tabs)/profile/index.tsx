@@ -571,7 +571,7 @@ export default function ProfileScreen() {
           Profile
         </Text>
         <TouchableOpacity
-          onPress={() => router.push('/profile/settings')}
+          onPress={() => router.push('/settings')}
           style={styles.settingsButton}
           accessibilityRole="button"
           accessibilityLabel="Open settings"
