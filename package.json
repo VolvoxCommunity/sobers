@@ -33,7 +33,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "^2.33.0",
+    "@amplitude/analytics-browser": "^2.33.1",
     "@amplitude/analytics-react-native": "^1.5.32",
     "@bottom-tabs/react-navigation": "^1.1.0",
     "@date-fns/tz": "^1.4.1",
