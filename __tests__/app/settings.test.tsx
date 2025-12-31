@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for app/settings.tsx
+ * @fileoverview Tests for app/(app)/(tabs)/profile/settings.tsx
  *
  * Tests the settings screen including:
  * - Header and navigation
@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import SettingsScreen from '@/app/(app)/settings';
+import SettingsScreen from '@/app/(app)/(tabs)/profile/settings';
 
 // Import Toast mock for assertions
 import Toast from 'react-native-toast-message';
