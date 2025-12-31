@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Display clickable "Assign a task" link for sponsees with no assigned tasks, navigating to the tasks page
-- Change Settings to present as a modal from any screen, allowing navigation back to the originating page instead of always returning to Profile
+- Move Settings to a nested stack inside the profile tab with standard push navigation and back button (keeps tab bar visible)
 - Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)

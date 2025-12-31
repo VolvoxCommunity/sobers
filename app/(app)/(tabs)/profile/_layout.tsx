@@ -2,6 +2,7 @@
 // Imports
 // =============================================================================
 import { Stack } from 'expo-router';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // =============================================================================
 // Constants
@@ -18,12 +19,14 @@ export const unstable_settings = {
 /**
  * Stack navigator for the profile tab.
  *
- * Contains just the profile index screen. Settings is handled as a modal
- * at the app level to allow returning to any screen.
+ * Enables navigation from the profile screen to settings and other
+ * profile-related screens while keeping the tab bar visible.
  *
  * @returns A Stack navigator for profile-related screens
  */
 export default function ProfileLayout() {
+  const { theme } = useTheme();
+
   return (
     <Stack
       screenOptions={{
@@ -31,6 +34,20 @@ export default function ProfileLayout() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen
+        name="settings"
+        options={{
+          headerShown: true,
+          title: 'Settings',
+          headerStyle: { backgroundColor: theme.surface },
+          headerTintColor: theme.text,
+          headerTitleStyle: {
+            fontFamily: 'JetBrainsMono-SemiBold',
+            fontSize: 18,
+          },
+          headerBackTitle: 'Profile',
+        }}
+      />
     </Stack>
   );
 }
