@@ -48,7 +48,7 @@ export default function HomeScreen() {
   const taskSheetRef = useRef<TaskCreationSheetRef>(null);
   const savingsSheetRef = useRef<EditSavingsSheetRef>(null);
   const whatsNewRef = useRef<WhatsNewSheetRef>(null);
-  const { shouldShowWhatsNew, activeRelease, markAsSeen } = useWhatsNew();
+  const { shouldShowWhatsNew, releases, markAsSeen } = useWhatsNew();
   const hasShownWhatsNewThisSession = useRef(false);
 
   const fetchData = useCallback(async () => {
@@ -429,12 +429,8 @@ export default function HomeScreen() {
         />
       )}
 
-      {activeRelease && (
-        <WhatsNewSheet
-          ref={whatsNewRef}
-          release={activeRelease}
-          onDismiss={handleWhatsNewDismiss}
-        />
+      {releases.length > 0 && (
+        <WhatsNewSheet ref={whatsNewRef} release={releases[0]} onDismiss={handleWhatsNewDismiss} />
       )}
 
       {tasks.length > 0 && (

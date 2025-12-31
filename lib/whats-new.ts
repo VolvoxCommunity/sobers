@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger, LogCategory } from '@/lib/logger';
+import { compareSemver } from '@/lib/semver';
 
 // =============================================================================
 // Types
@@ -36,6 +37,7 @@ export interface WhatsNewRelease {
   id: string;
   version: string;
   title: string;
+  createdAt: string;
   features: WhatsNewFeature[];
 }
 
@@ -45,11 +47,11 @@ export interface WhatsNewRelease {
 export interface UseWhatsNewResult {
   /** Whether there's unseen content to show */
   shouldShowWhatsNew: boolean;
-  /** The active release data, if any */
-  activeRelease: WhatsNewRelease | null;
+  /** All releases sorted by version descending */
+  releases: WhatsNewRelease[];
   /** Whether data is currently loading */
   isLoading: boolean;
-  /** Mark the current release as seen */
+  /** Mark the latest release as seen */
   markAsSeen: () => Promise<void>;
   /** Refetch release data */
   refetch: () => Promise<void>;
@@ -71,14 +73,15 @@ const SUPABASE_STORAGE_URL = supabaseUrl
 /**
  * Hook to manage What's New release data and seen state.
  *
- * Fetches the active release from Supabase and compares against
- * the user's last_seen_version to determine if the popup should show.
+ * Fetches all releases from Supabase sorted by version descending
+ * and compares against the user's last_seen_version to determine
+ * if the popup should show.
  *
  * @returns Object with release data, loading state, and actions
  *
  * @example
  * ```tsx
- * const { shouldShowWhatsNew, activeRelease, markAsSeen } = useWhatsNew();
+ * const { shouldShowWhatsNew, releases, markAsSeen } = useWhatsNew();
  *
  * useEffect(() => {
  *   if (shouldShowWhatsNew) {
@@ -89,84 +92,91 @@ const SUPABASE_STORAGE_URL = supabaseUrl
  */
 export function useWhatsNew(): UseWhatsNewResult {
   const { profile, refreshProfile } = useAuth();
-  const [activeRelease, setActiveRelease] = useState<WhatsNewRelease | null>(null);
+  const [releases, setReleases] = useState<WhatsNewRelease[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Fetches the active release and its features from Supabase.
+   * Fetches all releases and their features from Supabase.
    */
-  const fetchActiveRelease = useCallback(async () => {
+  const fetchReleases = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      // Fetch active release
-      const { data: releaseData, error: releaseError } = await supabase
+      // Fetch all releases
+      const { data: releasesData, error: releasesError } = await supabase
         .from('whats_new_releases')
-        .select('id, version, title')
-        .eq('is_active', true)
-        .single();
+        .select('id, version, title, created_at')
+        .order('created_at', { ascending: false });
 
-      if (releaseError) {
-        // No active release is not an error condition
-        if (releaseError.code === 'PGRST116') {
-          setActiveRelease(null);
-          return;
-        }
-        throw releaseError;
+      if (releasesError) {
+        throw releasesError;
       }
 
-      if (!releaseData) {
-        setActiveRelease(null);
+      if (!releasesData || releasesData.length === 0) {
+        setReleases([]);
         return;
       }
 
-      // Fetch features for this release
+      // Fetch features for all releases
+      const releaseIds = releasesData.map((r) => r.id);
       const { data: featuresData, error: featuresError } = await supabase
         .from('whats_new_features')
-        .select('id, title, description, image_path, display_order, type')
-        .eq('release_id', releaseData.id)
+        .select('id, title, description, image_path, display_order, type, release_id')
+        .in('release_id', releaseIds)
         .order('display_order', { ascending: true });
 
       if (featuresError) {
         throw featuresError;
       }
 
-      // Transform features with full image URLs
-      const features: WhatsNewFeature[] = (featuresData || []).map((f) => ({
-        id: f.id,
-        title: f.title,
-        description: f.description,
-        imageUrl: f.image_path ? `${SUPABASE_STORAGE_URL}/${f.image_path}` : null,
-        displayOrder: f.display_order,
-        type: (f.type as WhatsNewFeatureType) || 'feature',
-      }));
-
-      setActiveRelease({
-        id: releaseData.id,
-        version: releaseData.version,
-        title: releaseData.title,
-        features,
+      // Group features by release_id using a Map
+      const featuresByRelease = new Map<string, WhatsNewFeature[]>();
+      (featuresData || []).forEach((f) => {
+        const feature: WhatsNewFeature = {
+          id: f.id,
+          title: f.title,
+          description: f.description,
+          imageUrl: f.image_path ? `${SUPABASE_STORAGE_URL}/${f.image_path}` : null,
+          displayOrder: f.display_order,
+          type: (f.type as WhatsNewFeatureType) || 'feature',
+        };
+        const existing = featuresByRelease.get(f.release_id) || [];
+        existing.push(feature);
+        featuresByRelease.set(f.release_id, existing);
       });
+
+      // Build releases with features and sort by semver descending
+      const transformedReleases: WhatsNewRelease[] = releasesData
+        .map((r) => ({
+          id: r.id,
+          version: r.version,
+          title: r.title,
+          createdAt: r.created_at,
+          features: featuresByRelease.get(r.id) || [],
+        }))
+        .sort((a, b) => compareSemver(b.version, a.version));
+
+      setReleases(transformedReleases);
     } catch (error) {
-      logger.error("Failed to fetch What's New release", error as Error, {
+      logger.error("Failed to fetch What's New releases", error as Error, {
         category: LogCategory.DATABASE,
       });
-      setActiveRelease(null);
+      setReleases([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   /**
-   * Marks the current release as seen by updating the profile.
+   * Marks the latest release as seen by updating the profile.
    */
   const markAsSeen = useCallback(async () => {
-    if (!profile?.id || !activeRelease) return;
+    if (!profile?.id || releases.length === 0) return;
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ last_seen_version: activeRelease.version })
+        .update({ last_seen_version: releases[0].version })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -179,26 +189,26 @@ export function useWhatsNew(): UseWhatsNewResult {
       });
       // Don't throw - this is a non-critical operation
     }
-  }, [profile?.id, activeRelease, refreshProfile]);
+  }, [profile?.id, releases, refreshProfile]);
 
   // Fetch on mount
   useEffect(() => {
-    fetchActiveRelease();
-  }, [fetchActiveRelease]);
+    fetchReleases();
+  }, [fetchReleases]);
 
   // Determine if we should show based on version comparison
-  // Only show when: not loading, has active release, user has a profile, and version differs
+  // Only show when: not loading, has releases, user has a profile, and latest version differs
   const shouldShowWhatsNew =
     !isLoading &&
-    activeRelease !== null &&
+    releases.length > 0 &&
     profile !== null &&
-    profile.last_seen_version !== activeRelease.version;
+    profile.last_seen_version !== releases[0].version;
 
   return {
     shouldShowWhatsNew,
-    activeRelease,
+    releases,
     isLoading,
     markAsSeen,
-    refetch: fetchActiveRelease,
+    refetch: fetchReleases,
   };
 }

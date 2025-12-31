@@ -302,12 +302,18 @@ jest.mock('@/components/whats-new', () => {
 
 // Mock useWhatsNew hook
 let mockShouldShowWhatsNew = false;
-let mockActiveRelease: { version: string; title: string } | null = null;
+let mockReleases: {
+  version: string;
+  title: string;
+  id: string;
+  createdAt: string;
+  features: [];
+}[] = [];
 const mockMarkAsSeen = jest.fn();
 jest.mock('@/lib/whats-new', () => ({
   useWhatsNew: jest.fn(() => ({
     shouldShowWhatsNew: mockShouldShowWhatsNew,
-    activeRelease: mockActiveRelease,
+    releases: mockReleases,
     markAsSeen: mockMarkAsSeen,
   })),
 }));
@@ -1625,13 +1631,21 @@ describe('HomeScreen', () => {
 
     it("auto-shows What's New sheet after delay when shouldShowWhatsNew is true", async () => {
       mockShouldShowWhatsNew = true;
-      mockActiveRelease = { version: '1.0.0', title: 'New Features' };
+      mockReleases = [
+        {
+          version: '1.0.0',
+          title: 'New Features',
+          id: 'r1',
+          createdAt: '2024-12-01',
+          features: [],
+        },
+      ];
 
       // Update the mock to return these values
       const useWhatsNewModule = require('@/lib/whats-new');
       useWhatsNewModule.useWhatsNew.mockReturnValue({
         shouldShowWhatsNew: true,
-        activeRelease: { version: '1.0.0', title: 'New Features' },
+        releases: mockReleases,
         markAsSeen: mockMarkAsSeen,
       });
 
@@ -1650,12 +1664,12 @@ describe('HomeScreen', () => {
 
     it("does not auto-show What's New when shouldShowWhatsNew is false", async () => {
       mockShouldShowWhatsNew = false;
-      mockActiveRelease = null;
+      mockReleases = [];
 
       const useWhatsNewModule = require('@/lib/whats-new');
       useWhatsNewModule.useWhatsNew.mockReturnValue({
         shouldShowWhatsNew: false,
-        activeRelease: null,
+        releases: [],
         markAsSeen: mockMarkAsSeen,
       });
 
@@ -1670,12 +1684,20 @@ describe('HomeScreen', () => {
     });
 
     it("calls markAsSeen when What's New sheet is dismissed", async () => {
-      mockActiveRelease = { version: '1.0.0', title: 'New Features' };
+      mockReleases = [
+        {
+          version: '1.0.0',
+          title: 'New Features',
+          id: 'r1',
+          createdAt: '2024-12-01',
+          features: [],
+        },
+      ];
 
       const useWhatsNewModule = require('@/lib/whats-new');
       useWhatsNewModule.useWhatsNew.mockReturnValue({
         shouldShowWhatsNew: false,
-        activeRelease: { version: '1.0.0', title: 'New Features' },
+        releases: mockReleases,
         markAsSeen: mockMarkAsSeen,
       });
 
@@ -1693,13 +1715,13 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('does not render WhatsNewSheet when activeRelease is null', async () => {
-      mockActiveRelease = null;
+    it('does not render WhatsNewSheet when releases array is empty', async () => {
+      mockReleases = [];
 
       const useWhatsNewModule = require('@/lib/whats-new');
       useWhatsNewModule.useWhatsNew.mockReturnValue({
         shouldShowWhatsNew: false,
-        activeRelease: null,
+        releases: [],
         markAsSeen: mockMarkAsSeen,
       });
 

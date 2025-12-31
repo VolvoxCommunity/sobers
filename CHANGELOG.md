@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add semver comparison utilities for sorting release versions in What's New feature
+- Add createdAt field to WhatsNewRelease interface for release date display
+
+### Changed
+
+- Refactor useWhatsNew hook to fetch all releases instead of only the active one
+- Change useWhatsNew return type from `activeRelease: WhatsNewRelease | null` to `releases: WhatsNewRelease[]`
+- Sort releases by semantic version descending (newest first) using semver utilities
+- Group features by release_id when fetching from Supabase for multi-release support
+
+### Added
+
 - Add Amplitude Analytics integration for product analytics with native and web platform support
 - Add 35+ analytics events with Title Case naming (e.g., "Screen Viewed", "Task Completed") for comprehensive user engagement tracking
 - Add 9 user properties for cohort analysis: days_sober_bucket, steps_completed_bucket, has_sponsor, has_sponsees, theme_preference, notifications_enabled, app_version, platform, device_type
