@@ -250,4 +250,3 @@ const createStyles = (theme: ThemeColors) =>
   });
 
 export default WhatsNewSheet;
-
