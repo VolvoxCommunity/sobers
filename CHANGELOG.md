@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Merge Account and Journey sections into unified "Your Journey" section in Settings for streamlined user experience
 - Move journey start date editing from profile screen to settings for cleaner profile UI
 - Always expand the latest version section by default in What's New modal (previously only expanded if unseen)
 - Redesign What's New modal header to match other modals: sparkles icon, centered title, X close button, bottom border, subtitle in scroll content

@@ -447,8 +447,7 @@ function DevToolsSection({ theme, styles, profile, refreshProfile }: DevToolsSec
  * Shared settings UI content used by both the bottom sheet and full-screen route.
  *
  * Contains all settings sections:
- * - Account (display name editing)
- * - Journey (sobriety start date editing)
+ * - Your Journey (display name and sobriety start date editing)
  * - Appearance (theme selection)
  * - Dashboard (savings card visibility)
  * - About (external links)
@@ -814,9 +813,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   // ---------------------------------------------------------------------------
   return (
     <>
-      {/* Account Section */}
+      {/* Your Journey Section - Merged Account and Journey */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>Your Journey</Text>
         <View style={styles.card}>
           <Pressable
             style={styles.menuItem}
@@ -845,13 +844,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               style={{ transform: [{ rotate: '180deg' }] }}
             />
           </Pressable>
-        </View>
-      </View>
-
-      {/* Journey Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Journey</Text>
-        <View style={styles.card}>
+          <View style={styles.separator} />
           <Pressable
             style={styles.menuItem}
             testID="settings-journey-date-row"
