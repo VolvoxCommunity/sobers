@@ -23,12 +23,28 @@ import { Platform } from 'react-native';
 
 // Import after mocks are set up
 import TabsLayout from '@/app/(app)/(tabs)/_layout';
+import { useAuth } from '@/contexts/AuthContext';
 
 jest.mock('@/assets/icons/home.svg', () => 'mock-home-icon');
 jest.mock('@/assets/icons/book-open.svg', () => 'mock-book-icon');
 jest.mock('@/assets/icons/trending-up.svg', () => 'mock-trending-icon');
 jest.mock('@/assets/icons/check-square.svg', () => 'mock-tasks-icon');
 jest.mock('@/assets/icons/user.svg', () => 'mock-profile-icon');
+
+// Mock profile for useAuth
+const mockProfile = {
+  id: 'test-user-id',
+  display_name: 'Test User',
+  sobriety_date: '2024-01-01',
+  show_twelve_step_content: true,
+};
+
+// Mock useAuth hook
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(() => ({
+    profile: mockProfile,
+  })),
+}));
 
 // Store captured tabBarIcon callbacks for testing
 // Note: Variable must be prefixed with 'mock' to be allowed in jest.mock() factory
@@ -342,6 +358,115 @@ describe('TabsLayout', () => {
       rerender(<TabsLayout />);
 
       expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
+    });
+  });
+
+  describe('conditional Steps tab visibility', () => {
+    beforeEach(() => {
+      setPlatform('ios');
+    });
+
+    it('shows Steps tab when show_twelve_step_content is true', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: true },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+    });
+
+    it('hides Steps tab when show_twelve_step_content is false', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: false },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.queryByTestId('tab-screen-steps')).toBeNull();
+    });
+
+    it('shows Steps tab when show_twelve_step_content is undefined (existing users)', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: undefined },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+    });
+
+    it('shows Steps tab when show_twelve_step_content is null (existing users)', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: null },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+    });
+
+    it('shows Steps tab when profile is null', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: null,
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+    });
+
+    it('hides Steps tab on web when show_twelve_step_content is false', () => {
+      setPlatform('web');
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: false },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.queryByTestId('expo-tab-screen-steps')).toBeNull();
+    });
+
+    it('shows Steps tab on web when show_twelve_step_content is true', () => {
+      setPlatform('web');
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: true },
+      });
+
+      render(<TabsLayout />);
+
+      expect(screen.getByTestId('expo-tab-screen-steps')).toBeTruthy();
+    });
+
+    it('updates tab visibility when preference changes', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: true },
+      });
+
+      const { rerender } = render(<TabsLayout />);
+      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+
+      // Change preference
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: false },
+      });
+
+      rerender(<TabsLayout />);
+      expect(screen.queryByTestId('tab-screen-steps')).toBeNull();
+    });
+
+    it('shows other tabs regardless of Steps visibility', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, show_twelve_step_content: false },
+      });
+
+      render(<TabsLayout />);
+
+      // All other tabs should still be visible
+      expect(screen.getByTestId('tab-screen-index')).toBeTruthy();
+      expect(screen.getByTestId('tab-screen-journey')).toBeTruthy();
+      expect(screen.getByTestId('tab-screen-tasks')).toBeTruthy();
+      expect(screen.getByTestId('tab-screen-profile')).toBeTruthy();
     });
   });
 });

@@ -1,11 +1,12 @@
 // =============================================================================
 // Imports
 // =============================================================================
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Home, BookOpen, TrendingUp, CheckSquare, User } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { SFSymbol } from 'sf-symbols-typescript';
 import WebTopNav from '@/components/navigation/WebTopNav';
 // Platform-specific import: .native.tsx on mobile, .web.tsx (stub) on web
@@ -89,10 +90,18 @@ const tabRoutes: TabRoute[] = [
  */
 export default function TabLayout(): React.ReactElement {
   const { theme, isDark } = useTheme();
+  const { profile } = useAuth();
+
+  // Filter tab routes based on user preferences
+  // Show Steps tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
+  const visibleTabRoutes = useMemo(() => {
+    const showSteps = profile?.show_twelve_step_content !== false;
+    return showSteps ? tabRoutes : tabRoutes.filter((route) => route.name !== 'steps');
+  }, [profile?.show_twelve_step_content]);
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {
-    const webNavItems = tabRoutes.map((route) => ({
+    const webNavItems = visibleTabRoutes.map((route) => ({
       route: route.name === 'index' ? '/' : `/${route.name}`,
       label: route.title,
       icon: route.icon,
@@ -107,7 +116,7 @@ export default function TabLayout(): React.ReactElement {
             tabBarStyle: { display: 'none' },
           }}
         >
-          {tabRoutes.map((route) => (
+          {visibleTabRoutes.map((route) => (
             <Tabs.Screen key={route.name} name={route.name} />
           ))}
           {/* Hidden route - accessible via navigation but not shown in nav */}
@@ -130,7 +139,7 @@ export default function TabLayout(): React.ReactElement {
         backgroundColor: isDark ? theme.surface : theme.card,
       }}
     >
-      {tabRoutes.map((route) => (
+      {visibleTabRoutes.map((route) => (
         <NativeTabs.Screen
           key={route.name}
           name={route.name}
