@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change useWhatsNew return type from `activeRelease: WhatsNewRelease | null` to `releases: WhatsNewRelease[]`
 - Sort releases by semantic version descending (newest first) using semver utilities
 - Group features by release_id when fetching from Supabase for multi-release support
+- Update WhatsNewSheet to display full release history with collapsible version sections
+- Change WhatsNewSheet title from release-specific to "The Good Stuff" for release history view
+- Update WhatsNewSheet props from single `release` to `releases` array with `lastSeenVersion` for new release detection
 
 ### Added
 

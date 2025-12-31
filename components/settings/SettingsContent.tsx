@@ -1280,7 +1280,12 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
        * it there. The home screen handles marking releases as seen.
        */}
       {releases.length > 0 && (
-        <WhatsNewSheet ref={whatsNewRef} release={releases[0]} onDismiss={() => {}} />
+        <WhatsNewSheet
+          ref={whatsNewRef}
+          releases={releases}
+          lastSeenVersion={profile?.last_seen_version ?? null}
+          onDismiss={() => {}}
+        />
       )}
     </>
   );

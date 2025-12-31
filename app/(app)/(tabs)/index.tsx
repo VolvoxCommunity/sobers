@@ -430,7 +430,12 @@ export default function HomeScreen() {
       )}
 
       {releases.length > 0 && (
-        <WhatsNewSheet ref={whatsNewRef} release={releases[0]} onDismiss={handleWhatsNewDismiss} />
+        <WhatsNewSheet
+          ref={whatsNewRef}
+          releases={releases}
+          lastSeenVersion={profile?.last_seen_version ?? null}
+          onDismiss={handleWhatsNewDismiss}
+        />
       )}
 
       {tasks.length > 0 && (

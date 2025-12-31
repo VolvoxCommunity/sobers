@@ -2,8 +2,10 @@
  * @fileoverview Tests for WhatsNewSheet component
  *
  * Tests the What's New bottom sheet component including:
- * - Rendering release title and version
- * - Rendering all feature cards
+ * - Rendering "The Good Stuff" title
+ * - Rendering all version sections
+ * - Marking new versions with badges
+ * - Expanding first new version by default
  * - Dismiss button behavior
  * - Imperative ref API
  */
@@ -38,43 +40,93 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
 }));
 
-// Mock WhatsNewFeatureCard to simplify testing
-jest.mock('@/components/whats-new/WhatsNewFeatureCard', () => {
+// Mock WhatsNewVersionSection to simplify testing
+jest.mock('@/components/whats-new/WhatsNewVersionSection', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   const { View, Text } = require('react-native');
   return {
     __esModule: true,
-    default: ({ feature }: { feature: { title: string } }) =>
+    default: ({
+      release,
+      isNew,
+      defaultExpanded,
+    }: {
+      release: { version: string };
+      isNew: boolean;
+      defaultExpanded: boolean;
+    }) =>
       React.createElement(
         View,
-        { testID: `feature-card-${feature.title.replace(/\s+/g, '-').toLowerCase()}` },
-        React.createElement(Text, null, feature.title)
+        { testID: `version-section-${release.version}` },
+        React.createElement(Text, null, `v${release.version}`),
+        isNew && React.createElement(Text, { testID: `new-badge-${release.version}` }, 'NEW'),
+        defaultExpanded &&
+          React.createElement(Text, { testID: `expanded-${release.version}` }, 'EXPANDED')
       ),
   };
 });
+
+// =============================================================================
+// Test Data
+// =============================================================================
+
+const mockReleases: WhatsNewRelease[] = [
+  {
+    id: 'release-3',
+    version: '3.0.0',
+    title: 'Latest Update',
+    createdAt: '2025-01-01T00:00:00Z',
+    features: [
+      {
+        id: 'f1',
+        title: 'Feature 1',
+        description: 'Desc',
+        imageUrl: null,
+        displayOrder: 0,
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    id: 'release-2',
+    version: '2.0.0',
+    title: 'Major Update',
+    createdAt: '2024-12-01T00:00:00Z',
+    features: [
+      {
+        id: 'f2',
+        title: 'Feature 2',
+        description: 'Desc',
+        imageUrl: null,
+        displayOrder: 0,
+        type: 'feature',
+      },
+    ],
+  },
+  {
+    id: 'release-1',
+    version: '1.0.0',
+    title: 'Initial Release',
+    createdAt: '2024-11-01T00:00:00Z',
+    features: [
+      {
+        id: 'f3',
+        title: 'Feature 3',
+        description: 'Desc',
+        imageUrl: null,
+        displayOrder: 0,
+        type: 'feature',
+      },
+    ],
+  },
+];
 
 // =============================================================================
 // Tests
 // =============================================================================
 
 describe('WhatsNewSheet', () => {
-  const mockRelease: WhatsNewRelease = {
-    id: 'release-1',
-    version: '1.2.0',
-    title: "What's New in Sobers",
-    features: [
-      {
-        id: 'feature-1',
-        title: 'Money Saved Dashboard',
-        description: 'Track your savings',
-        imageUrl: null,
-        displayOrder: 0,
-        type: 'feature',
-      },
-    ],
-  };
-
   const mockOnDismiss = jest.fn();
 
   beforeEach(() => {
@@ -82,77 +134,162 @@ describe('WhatsNewSheet', () => {
   });
 
   describe('rendering', () => {
-    it('renders release title and version when presented', () => {
+    it("renders 'The Good Stuff' title when presented", () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
-
-      // Present the sheet (wrap in act to handle state update)
-      act(() => {
-        ref.current?.present();
-      });
-
-      expect(screen.getByText("What's New in Sobers")).toBeTruthy();
-      expect(screen.getByText('Version 1.2.0')).toBeTruthy();
-    });
-
-    it('renders all features', () => {
-      const ref = React.createRef<WhatsNewSheetRef>();
-      const releaseWithMultipleFeatures: WhatsNewRelease = {
-        ...mockRelease,
-        features: [
-          {
-            id: '1',
-            title: 'Feature 1',
-            description: 'Desc 1',
-            imageUrl: null,
-            displayOrder: 0,
-            type: 'feature',
-          },
-          {
-            id: '2',
-            title: 'Feature 2',
-            description: 'Desc 2',
-            imageUrl: null,
-            displayOrder: 1,
-            type: 'fix',
-          },
-          {
-            id: '3',
-            title: 'Feature 3',
-            description: 'Desc 3',
-            imageUrl: null,
-            displayOrder: 2,
-            type: 'feature',
-          },
-        ],
-      };
-
       render(
-        <WhatsNewSheet ref={ref} release={releaseWithMultipleFeatures} onDismiss={mockOnDismiss} />
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
       );
 
       act(() => {
         ref.current?.present();
       });
 
-      expect(screen.getByText('Feature 1')).toBeTruthy();
-      expect(screen.getByText('Feature 2')).toBeTruthy();
-      expect(screen.getByText('Feature 3')).toBeTruthy();
+      expect(screen.getByText('The Good Stuff')).toBeTruthy();
+    });
+
+    it('renders all version sections', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      expect(screen.getByTestId('version-section-3.0.0')).toBeTruthy();
+      expect(screen.getByTestId('version-section-2.0.0')).toBeTruthy();
+      expect(screen.getByTestId('version-section-1.0.0')).toBeTruthy();
     });
 
     it('does not render content when not presented', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       // Don't present the sheet
-      expect(screen.queryByText("What's New in Sobers")).toBeNull();
+      expect(screen.queryByText('The Good Stuff')).toBeNull();
+    });
+  });
+
+  describe('new version detection', () => {
+    it('marks versions after lastSeenVersion as new', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // v3.0.0 and v2.0.0 are newer than 1.0.0, should have NEW badge
+      expect(screen.getByTestId('new-badge-3.0.0')).toBeTruthy();
+      expect(screen.getByTestId('new-badge-2.0.0')).toBeTruthy();
+      // v1.0.0 is not newer than 1.0.0, should NOT have NEW badge
+      expect(screen.queryByTestId('new-badge-1.0.0')).toBeNull();
+    });
+
+    it('marks all versions as new when lastSeenVersion is null', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion={null}
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // All versions should have NEW badge when no version has been seen
+      expect(screen.getByTestId('new-badge-3.0.0')).toBeTruthy();
+      expect(screen.getByTestId('new-badge-2.0.0')).toBeTruthy();
+      expect(screen.getByTestId('new-badge-1.0.0')).toBeTruthy();
+    });
+  });
+
+  describe('default expansion', () => {
+    it('expands first new version by default', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // v3.0.0 is the first new version (newest), should be expanded
+      expect(screen.getByTestId('expanded-3.0.0')).toBeTruthy();
+      // v2.0.0 is also new but not the first, should NOT be expanded
+      expect(screen.queryByTestId('expanded-2.0.0')).toBeNull();
+      // v1.0.0 is not new, should NOT be expanded
+      expect(screen.queryByTestId('expanded-1.0.0')).toBeNull();
+    });
+
+    it('collapses all sections when user has seen latest', () => {
+      const ref = React.createRef<WhatsNewSheetRef>();
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="3.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
+
+      act(() => {
+        ref.current?.present();
+      });
+
+      // No version is new (user has seen latest), all should be collapsed
+      expect(screen.queryByTestId('expanded-3.0.0')).toBeNull();
+      expect(screen.queryByTestId('expanded-2.0.0')).toBeNull();
+      expect(screen.queryByTestId('expanded-1.0.0')).toBeNull();
     });
   });
 
   describe('dismiss behavior', () => {
     it('calls onDismiss when Got it button is pressed', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       act(() => {
         ref.current?.present();
@@ -166,7 +303,14 @@ describe('WhatsNewSheet', () => {
 
     it('has accessible button with correct role and label', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       act(() => {
         ref.current?.present();
@@ -182,7 +326,14 @@ describe('WhatsNewSheet', () => {
   describe('imperative API', () => {
     it('exposes present method via ref', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       expect(ref.current).toBeTruthy();
       expect(typeof ref.current?.present).toBe('function');
@@ -190,14 +341,28 @@ describe('WhatsNewSheet', () => {
 
     it('exposes dismiss method via ref', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       expect(typeof ref.current?.dismiss).toBe('function');
     });
 
     it('calling dismiss via ref triggers onDismiss callback', () => {
       const ref = React.createRef<WhatsNewSheetRef>();
-      render(<WhatsNewSheet ref={ref} release={mockRelease} onDismiss={mockOnDismiss} />);
+      render(
+        <WhatsNewSheet
+          ref={ref}
+          releases={mockReleases}
+          lastSeenVersion="1.0.0"
+          onDismiss={mockOnDismiss}
+        />
+      );
 
       act(() => {
         ref.current?.present();

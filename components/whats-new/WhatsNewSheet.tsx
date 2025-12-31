@@ -1,9 +1,9 @@
 /**
  * @fileoverview WhatsNewSheet component
  *
- * A bottom sheet modal that displays new features and updates to the user.
- * Uses GlassBottomSheet for the container and renders feature cards inside
- * a scrollable content area.
+ * A bottom sheet modal that displays release history to the user.
+ * Uses GlassBottomSheet for the container and renders collapsible
+ * version sections inside a scrollable content area.
  */
 
 // =============================================================================
@@ -19,7 +19,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import GlassBottomSheet, { type GlassBottomSheetRef } from '@/components/GlassBottomSheet';
-import WhatsNewFeatureCard from './WhatsNewFeatureCard';
+import WhatsNewVersionSection from './WhatsNewVersionSection';
+import { compareSemver } from '@/lib/semver';
 import type { WhatsNewRelease } from '@/lib/whats-new';
 
 // =============================================================================
@@ -56,8 +57,10 @@ export interface WhatsNewSheetRef {
  * Props for the WhatsNewSheet component.
  */
 interface WhatsNewSheetProps {
-  /** The release data to display, including version, title, and features */
-  release: WhatsNewRelease;
+  /** All releases to display, sorted by version descending */
+  releases: WhatsNewRelease[];
+  /** User's last seen version (null if never seen any) */
+  lastSeenVersion: string | null;
   /** Callback fired when the sheet is dismissed */
   onDismiss: () => void;
 }
@@ -74,15 +77,17 @@ const SNAP_POINTS = ['90%'];
 // =============================================================================
 
 /**
- * Bottom sheet modal displaying What's New release information.
+ * Bottom sheet modal displaying What's New release history.
  *
  * Features:
- * - Displays release title and version number
- * - Renders scrollable list of feature cards
+ * - Displays "The Good Stuff" title
+ * - Renders scrollable list of collapsible version sections
+ * - Marks new (unseen) versions with badges
+ * - Automatically expands the first new version
  * - "Got it!" button to dismiss the sheet
  * - Imperative API via ref for presentation control
  *
- * @param props - Component props containing release data and dismiss callback
+ * @param props - Component props containing releases, lastSeenVersion, and dismiss callback
  * @param ref - Ref for imperative control (present/dismiss)
  *
  * @example
@@ -92,7 +97,8 @@ const SNAP_POINTS = ['90%'];
  * return (
  *   <WhatsNewSheet
  *     ref={sheetRef}
- *     release={activeRelease}
+ *     releases={allReleases}
+ *     lastSeenVersion={profile?.last_seen_version ?? null}
  *     onDismiss={() => markAsSeen()}
  *   />
  * );
@@ -102,19 +108,23 @@ const SNAP_POINTS = ['90%'];
  * ```
  */
 const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
-  ({ release, onDismiss }, ref) => {
+  ({ releases, lastSeenVersion, onDismiss }, ref) => {
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const bottomSheetRef = useRef<GlassBottomSheetRef>(null);
     const styles = useMemo(() => createStyles(theme), [theme]);
 
-    // Sort features: 'feature' type first, then 'fix' type
-    const sortedFeatures = useMemo(() => {
-      return [...release.features].sort((a, b) => {
-        if (a.type === b.type) return a.displayOrder - b.displayOrder;
-        return a.type === 'feature' ? -1 : 1;
-      });
-    }, [release.features]);
+    /**
+     * Determines if a release version is "new" (unseen by the user).
+     * A release is new if its version is greater than the last seen version.
+     */
+    const isReleaseNew = useCallback(
+      (version: string): boolean => {
+        if (!lastSeenVersion) return true; // Never seen any version = all are new
+        return compareSemver(version, lastSeenVersion) > 0;
+      },
+      [lastSeenVersion]
+    );
 
     // Expose present/dismiss methods via ref
     useImperativeHandle(ref, () => ({
@@ -133,7 +143,7 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
     /**
      * Renders the footer with the dismiss button.
      * Using BottomSheetFooter ensures the button is always visible at the bottom,
-     * even when scrolling through many features.
+     * even when scrolling through many releases.
      */
     const renderFooter = useCallback(
       (props: BottomSheetFooterProps) => (
@@ -154,6 +164,9 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
       [insets.bottom, styles, handleGotIt]
     );
 
+    // Track whether we've found the first new release for default expansion
+    let foundFirstNew = false;
+
     return (
       <GlassBottomSheet
         ref={bottomSheetRef}
@@ -163,14 +176,24 @@ const WhatsNewSheet = forwardRef<WhatsNewSheetRef, WhatsNewSheetProps>(
       >
         <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>{release.title}</Text>
-            <Text style={styles.version}>Version {release.version}</Text>
+            <Text style={styles.title}>The Good Stuff</Text>
           </View>
 
-          <View style={styles.features}>
-            {sortedFeatures.map((feature) => (
-              <WhatsNewFeatureCard key={feature.id} feature={feature} />
-            ))}
+          <View style={styles.releases}>
+            {releases.map((release) => {
+              const isNew = isReleaseNew(release.version);
+              const shouldExpand = isNew && !foundFirstNew;
+              if (shouldExpand) foundFirstNew = true;
+
+              return (
+                <WhatsNewVersionSection
+                  key={release.id}
+                  release={release}
+                  isNew={isNew}
+                  defaultExpanded={shouldExpand}
+                />
+              );
+            })}
           </View>
         </BottomSheetScrollView>
       </GlassBottomSheet>
@@ -203,13 +226,7 @@ const createStyles = (theme: ThemeColors) =>
       color: theme.text,
       textAlign: 'center',
     },
-    version: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-      marginTop: 4,
-    },
-    features: {
+    releases: {
       marginBottom: 24,
     },
     footer: {
