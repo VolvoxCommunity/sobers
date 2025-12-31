@@ -45,7 +45,7 @@ export default function ProfileLayout() {
             fontFamily: 'JetBrainsMono-SemiBold',
             fontSize: 18,
           },
-          headerBackTitle: 'Profile',
+          headerBackTitle: '',
         }}
       />
     </Stack>
