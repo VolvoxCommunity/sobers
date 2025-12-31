@@ -11,3 +11,4 @@
 
 export { default as WhatsNewSheet, type WhatsNewSheetRef } from './WhatsNewSheet';
 export { default as WhatsNewFeatureCard } from './WhatsNewFeatureCard';
+export { default as WhatsNewVersionSection } from './WhatsNewVersionSection';

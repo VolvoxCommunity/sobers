@@ -118,7 +118,7 @@ jest.mock('lucide-react-native', () => ({
 jest.mock('@/lib/whats-new', () => ({
   useWhatsNew: () => ({
     shouldShowWhatsNew: false,
-    activeRelease: null,
+    releases: [],
     isLoading: false,
     markAsSeen: jest.fn(),
     refetch: jest.fn(),

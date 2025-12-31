@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add full release history view in "The Good Stuff" (formerly What's New) modal with collapsible version sections
+- Add WhatsNewVersionSection component with expand/collapse, NEW badge, and feature sorting by type
+- Add semver comparison utilities (`compareSemver`, `sortByVersion`) for version ordering
+- Add database migration to remove `is_active` column from `whats_new_releases` table
+- Add comprehensive edge case and accessibility tests for What's New components (semver, WhatsNewVersionSection, WhatsNewSheet)
 - Add settings cogwheel button to all main screens (Home, Journey, Tasks, Steps) for quick access to settings on mobile
 - Add settings icon to web top navigation bar
 - Add Amplitude Analytics integration for product analytics with native and web platform support
@@ -34,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refactor useWhatsNew hook to fetch all releases instead of only active release
+- Update WhatsNewSheet to display release history with title "The Good Stuff"
+- Update settings menu item from "What's New" to "The Good Stuff"
 - Display clickable "Assign a task" link for sponsees with no assigned tasks, navigating to the tasks page
 - Move Settings to a nested stack inside the profile tab with standard push navigation and back button (keeps tab bar visible)
 - Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support

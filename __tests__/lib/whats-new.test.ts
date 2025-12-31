@@ -68,6 +68,7 @@ const mockActiveRelease = {
   id: 'release-1',
   version: '2.0.0',
   title: "What's New in Sobers",
+  created_at: '2024-12-01T00:00:00Z',
 };
 
 const mockFeatures = [
@@ -78,6 +79,7 @@ const mockFeatures = [
     image_path: 'dark-mode.png',
     display_order: 1,
     type: 'feature',
+    release_id: 'release-1',
   },
   {
     id: 'feature-2',
@@ -86,6 +88,58 @@ const mockFeatures = [
     image_path: null,
     display_order: 2,
     type: 'fix',
+    release_id: 'release-1',
+  },
+];
+
+const mockMultipleReleases = [
+  {
+    id: 'release-3',
+    version: '3.0.0',
+    title: 'Major Update',
+    created_at: '2024-12-01T00:00:00Z',
+  },
+  {
+    id: 'release-2',
+    version: '2.0.0',
+    title: 'Feature Release',
+    created_at: '2024-11-01T00:00:00Z',
+  },
+  {
+    id: 'release-1',
+    version: '1.0.0',
+    title: 'Initial Release',
+    created_at: '2024-10-01T00:00:00Z',
+  },
+];
+
+const mockMultipleFeatures = [
+  {
+    id: 'feature-1',
+    title: 'Dark Mode',
+    description: 'Now supports dark mode for easier viewing at night.',
+    image_path: 'dark-mode.png',
+    display_order: 1,
+    type: 'feature',
+    release_id: 'release-3',
+  },
+  {
+    id: 'feature-2',
+    title: 'Improved Calendar',
+    description: 'Track your progress with our new calendar view.',
+    image_path: null,
+    display_order: 2,
+    type: 'fix',
+    release_id: 'release-3',
+  },
+  {
+    id: 'feature-3',
+    title: 'Feature Release Feature',
+    description: 'A feature from the 2.0.0 release.',
+    image_path: null,
+    display_order: 1,
+    type: 'feature',
+    release_id: 'release-2',
   },
 ];
 
@@ -101,19 +155,35 @@ describe('useWhatsNew', () => {
     mockProfile.id = 'user-123';
     mockProfile.last_seen_version = null;
 
-    // Default mock: no active release
-    mockSupabaseFrom.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({
-        data: null,
-        error: { code: 'PGRST116', message: 'No rows found' },
-      }),
-    }));
+    // Default mock: no releases
+    mockSupabaseFrom.mockImplementation((table: string) => {
+      if (table === 'whats_new_releases') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        };
+      }
+      if (table === 'whats_new_features') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          order: jest.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+      };
+    });
   });
 
-  describe('when no active release exists', () => {
+  describe('when no releases exist', () => {
     it('returns shouldShowWhatsNew as false', async () => {
       const { result } = renderHook(() => useWhatsNew());
 
@@ -122,19 +192,25 @@ describe('useWhatsNew', () => {
       });
 
       expect(result.current.shouldShowWhatsNew).toBe(false);
-      expect(result.current.activeRelease).toBeNull();
+      expect(result.current.releases).toEqual([]);
     });
 
-    it('handles PGRST116 error gracefully (no rows found)', async () => {
-      mockSupabaseFrom.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: null,
-          error: { code: 'PGRST116', message: 'No rows found' },
-        }),
-      }));
+    it('handles empty releases array gracefully', async () => {
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [],
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
 
       const { result } = renderHook(() => useWhatsNew());
 
@@ -143,13 +219,13 @@ describe('useWhatsNew', () => {
       });
 
       expect(result.current.shouldShowWhatsNew).toBe(false);
-      expect(result.current.activeRelease).toBeNull();
-      // Should not log error for expected "no rows" case
+      expect(result.current.releases).toEqual([]);
+      // Should not log error for empty case
       expect(mockLoggerError).not.toHaveBeenCalled();
     });
   });
 
-  describe('when active release exists and user has not seen it', () => {
+  describe('when releases exist and user has not seen latest', () => {
     beforeEach(() => {
       mockProfile.last_seen_version = null;
 
@@ -157,9 +233,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -167,7 +242,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -191,20 +266,22 @@ describe('useWhatsNew', () => {
       expect(result.current.shouldShowWhatsNew).toBe(true);
     });
 
-    it('returns the active release data', async () => {
+    it('returns the releases array with latest first', async () => {
       const { result } = renderHook(() => useWhatsNew());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.activeRelease).toEqual({
+      expect(result.current.releases).toHaveLength(1);
+      expect(result.current.releases[0]).toEqual({
         id: 'release-1',
         version: '2.0.0',
         title: "What's New in Sobers",
+        createdAt: '2024-12-01T00:00:00Z',
         features: expect.any(Array),
       });
-      expect(result.current.activeRelease?.features).toHaveLength(2);
+      expect(result.current.releases[0].features).toHaveLength(2);
     });
 
     it('transforms features with correct image URLs', async () => {
@@ -214,7 +291,7 @@ describe('useWhatsNew', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      const features = result.current.activeRelease?.features;
+      const features = result.current.releases[0]?.features;
 
       // Feature with image_path should have full URL
       expect(features?.[0]).toEqual({
@@ -244,13 +321,13 @@ describe('useWhatsNew', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      const features = result.current.activeRelease?.features;
+      const features = result.current.releases[0]?.features;
       expect(features?.[0].displayOrder).toBe(1);
       expect(features?.[1].displayOrder).toBe(2);
     });
   });
 
-  describe('when active release exists and user already saw it', () => {
+  describe('when releases exist and user already saw latest', () => {
     beforeEach(() => {
       mockProfile.last_seen_version = '2.0.0'; // Same as release version
 
@@ -258,9 +335,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -268,7 +344,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -292,15 +368,15 @@ describe('useWhatsNew', () => {
       expect(result.current.shouldShowWhatsNew).toBe(false);
     });
 
-    it('still returns the active release data', async () => {
+    it('still returns the releases data', async () => {
       const { result } = renderHook(() => useWhatsNew());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.activeRelease).not.toBeNull();
-      expect(result.current.activeRelease?.version).toBe('2.0.0');
+      expect(result.current.releases).toHaveLength(1);
+      expect(result.current.releases[0].version).toBe('2.0.0');
     });
   });
 
@@ -312,9 +388,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -322,7 +397,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -383,17 +458,23 @@ describe('useWhatsNew', () => {
       mockProfile.id = originalId;
     });
 
-    it('does nothing when no active release exists', async () => {
-      // Reset to no active release
-      mockSupabaseFrom.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: null,
-          error: { code: 'PGRST116', message: 'No rows found' },
-        }),
-      }));
+    it('does nothing when no releases exist', async () => {
+      // Reset to no releases
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [],
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
 
       const { result } = renderHook(() => useWhatsNew());
 
@@ -414,9 +495,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -424,7 +504,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -470,14 +550,13 @@ describe('useWhatsNew', () => {
   });
 
   describe('refetch', () => {
-    it('refetches active release data', async () => {
+    it('refetches release data', async () => {
       mockSupabaseFrom.mockImplementation((table: string) => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -485,7 +564,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -518,46 +597,10 @@ describe('useWhatsNew', () => {
 
   describe('error handling', () => {
     it('handles release fetch error gracefully', async () => {
-      mockSupabaseFrom.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: null,
-          error: { code: '500', message: 'Internal server error' },
-        }),
-      }));
-
-      const { result } = renderHook(() => useWhatsNew());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.shouldShowWhatsNew).toBe(false);
-      expect(result.current.activeRelease).toBeNull();
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        "Failed to fetch What's New release",
-        expect.any(Object),
-        expect.objectContaining({ category: 'DATABASE' })
-      );
-    });
-
-    it('handles features fetch error gracefully', async () => {
       mockSupabaseFrom.mockImplementation((table: string) => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
-              error: null,
-            }),
-          };
-        }
-        if (table === 'whats_new_features') {
-          return {
-            select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: null,
               error: { code: '500', message: 'Internal server error' },
@@ -577,23 +620,40 @@ describe('useWhatsNew', () => {
       });
 
       expect(result.current.shouldShowWhatsNew).toBe(false);
-      expect(result.current.activeRelease).toBeNull();
+      expect(result.current.releases).toEqual([]);
       expect(mockLoggerError).toHaveBeenCalledWith(
-        "Failed to fetch What's New release",
+        "Failed to fetch What's New releases",
         expect.any(Object),
         expect.objectContaining({ category: 'DATABASE' })
       );
     });
 
-    it('handles null release data gracefully', async () => {
-      mockSupabaseFrom.mockImplementation(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-      }));
+    it('handles features fetch error gracefully', async () => {
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: null,
+              error: { code: '500', message: 'Internal server error' },
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
 
       const { result } = renderHook(() => useWhatsNew());
 
@@ -602,7 +662,39 @@ describe('useWhatsNew', () => {
       });
 
       expect(result.current.shouldShowWhatsNew).toBe(false);
-      expect(result.current.activeRelease).toBeNull();
+      expect(result.current.releases).toEqual([]);
+      expect(mockLoggerError).toHaveBeenCalledWith(
+        "Failed to fetch What's New releases",
+        expect.any(Object),
+        expect.objectContaining({ category: 'DATABASE' })
+      );
+    });
+
+    it('handles null release data gracefully', async () => {
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      const { result } = renderHook(() => useWhatsNew());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.shouldShowWhatsNew).toBe(false);
+      expect(result.current.releases).toEqual([]);
     });
   });
 
@@ -628,9 +720,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -638,7 +729,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -677,9 +768,8 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_releases') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: mockActiveRelease,
+            order: jest.fn().mockResolvedValue({
+              data: [mockActiveRelease],
               error: null,
             }),
           };
@@ -687,7 +777,7 @@ describe('useWhatsNew', () => {
         if (table === 'whats_new_features') {
           return {
             select: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
             order: jest.fn().mockResolvedValue({
               data: mockFeatures,
               error: null,
@@ -744,10 +834,129 @@ describe('useWhatsNew', () => {
 
       // Check that all required properties exist with correct types
       expect(typeof result.current.shouldShowWhatsNew).toBe('boolean');
-      expect('activeRelease' in result.current).toBe(true);
+      expect('releases' in result.current).toBe(true);
+      expect(Array.isArray(result.current.releases)).toBe(true);
       expect(typeof result.current.isLoading).toBe('boolean');
       expect(typeof result.current.markAsSeen).toBe('function');
       expect(typeof result.current.refetch).toBe('function');
+    });
+  });
+
+  describe('multiple releases', () => {
+    beforeEach(() => {
+      mockProfile.last_seen_version = '2.0.0';
+
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: mockMultipleReleases,
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: mockMultipleFeatures,
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+    });
+
+    it('returns all releases sorted by version descending', async () => {
+      const { result } = renderHook(() => useWhatsNew());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(result.current.releases).toHaveLength(3);
+      expect(result.current.releases[0].version).toBe('3.0.0');
+      expect(result.current.releases[1].version).toBe('2.0.0');
+      expect(result.current.releases[2].version).toBe('1.0.0');
+    });
+
+    it('includes createdAt in release data', async () => {
+      const { result } = renderHook(() => useWhatsNew());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(result.current.releases[0].createdAt).toBe('2024-12-01T00:00:00Z');
+      expect(result.current.releases[1].createdAt).toBe('2024-11-01T00:00:00Z');
+      expect(result.current.releases[2].createdAt).toBe('2024-10-01T00:00:00Z');
+    });
+
+    it('shouldShowWhatsNew is true when latest version differs from last_seen_version', async () => {
+      const { result } = renderHook(() => useWhatsNew());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      // Latest is 3.0.0, user saw 2.0.0
+      expect(result.current.shouldShowWhatsNew).toBe(true);
+    });
+
+    it('groups features by release', async () => {
+      const { result } = renderHook(() => useWhatsNew());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      // Release 3.0.0 should have 2 features
+      expect(result.current.releases[0].features).toHaveLength(2);
+      // Release 2.0.0 should have 1 feature
+      expect(result.current.releases[1].features).toHaveLength(1);
+      // Release 1.0.0 should have 0 features
+      expect(result.current.releases[2].features).toHaveLength(0);
+    });
+
+    it('markAsSeen updates with latest release version', async () => {
+      mockSupabaseFrom.mockImplementation((table: string) => {
+        if (table === 'whats_new_releases') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: mockMultipleReleases,
+              error: null,
+            }),
+          };
+        }
+        if (table === 'whats_new_features') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            in: jest.fn().mockReturnThis(),
+            order: jest.fn().mockResolvedValue({
+              data: mockMultipleFeatures,
+              error: null,
+            }),
+          };
+        }
+        if (table === 'profiles') {
+          return {
+            update: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+        };
+      });
+
+      const { result } = renderHook(() => useWhatsNew());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      await act(async () => {
+        await result.current.markAsSeen();
+      });
+
+      expect(mockSupabaseFrom).toHaveBeenCalledWith('profiles');
+      expect(mockRefreshProfile).toHaveBeenCalled();
     });
   });
 });

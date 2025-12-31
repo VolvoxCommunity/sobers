@@ -469,7 +469,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const { signOut, deleteAccount, profile, refreshProfile } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const whatsNewRef = useRef<WhatsNewSheetRef>(null);
-  const { activeRelease } = useWhatsNew();
+  const { releases } = useWhatsNew();
 
   // ---------------------------------------------------------------------------
   // State
@@ -936,18 +936,18 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             testID="settings-whats-new-row"
             style={styles.menuItem}
             onPress={() => {
-              if (activeRelease) {
+              if (releases.length > 0) {
                 whatsNewRef.current?.present();
               } else {
                 showToast.info("You're all caught up! No new updates.");
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="View What's New"
+            accessibilityLabel="View The Good Stuff"
           >
             <View style={styles.menuItemLeft}>
               <Sparkles size={20} color={theme.textSecondary} />
-              <Text style={styles.menuItemText}>What&apos;s New</Text>
+              <Text style={styles.menuItemText}>The Good Stuff</Text>
             </View>
             <ChevronLeft
               size={20}
@@ -1279,8 +1279,13 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
        * auto-popup on the home screen can still trigger for users who haven't dismissed
        * it there. The home screen handles marking releases as seen.
        */}
-      {activeRelease && (
-        <WhatsNewSheet ref={whatsNewRef} release={activeRelease} onDismiss={() => {}} />
+      {releases.length > 0 && (
+        <WhatsNewSheet
+          ref={whatsNewRef}
+          releases={releases}
+          lastSeenVersion={profile?.last_seen_version ?? null}
+          onDismiss={() => {}}
+        />
       )}
     </>
   );
