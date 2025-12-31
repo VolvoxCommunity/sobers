@@ -9,19 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add WhatsNewVersionSection collapsible component for displaying release versions with expandable feature lists
-- Add semver comparison utilities for sorting release versions in What's New feature
-- Add createdAt field to WhatsNewRelease interface for release date display
+- Add full release history view in "The Good Stuff" (formerly What's New) modal with collapsible version sections
+- Add WhatsNewVersionSection component with expand/collapse, NEW badge, and feature sorting by type
+- Add semver comparison utilities (`compareSemver`, `sortByVersion`) for version ordering
+- Add database migration to remove `is_active` column from `whats_new_releases` table
 
 ### Changed
 
-- Refactor useWhatsNew hook to fetch all releases instead of only the active one
-- Change useWhatsNew return type from `activeRelease: WhatsNewRelease | null` to `releases: WhatsNewRelease[]`
-- Sort releases by semantic version descending (newest first) using semver utilities
-- Group features by release_id when fetching from Supabase for multi-release support
-- Update WhatsNewSheet to display full release history with collapsible version sections
-- Change WhatsNewSheet title from release-specific to "The Good Stuff" for release history view
-- Update WhatsNewSheet props from single `release` to `releases` array with `lastSeenVersion` for new release detection
+- Refactor useWhatsNew hook to fetch all releases instead of only active release
+- Update WhatsNewSheet to display release history with title "The Good Stuff"
+- Update settings menu item from "What's New" to "The Good Stuff"
 
 ### Added
 
