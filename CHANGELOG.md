@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
+
 ### Added
 
 - Add "Include 12-Step Content" toggle in onboarding Preferences card (enabled by default)

@@ -92,12 +92,15 @@ export default function TabLayout(): React.ReactElement {
   const { theme, isDark } = useTheme();
   const { profile } = useAuth();
 
-  // Filter tab routes based on user preferences
+  // Determine if Steps tab should be visible
   // Show Steps tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
+  const showSteps = profile?.show_twelve_step_content !== false;
+
+  // Filter tab routes for web navigation items only
+  // Native tabs use tabBarItemHidden instead of conditional rendering
   const visibleTabRoutes = useMemo(() => {
-    const showSteps = profile?.show_twelve_step_content !== false;
     return showSteps ? tabRoutes : tabRoutes.filter((route) => route.name !== 'steps');
-  }, [profile?.show_twelve_step_content]);
+  }, [showSteps]);
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {
@@ -130,6 +133,10 @@ export default function TabLayout(): React.ReactElement {
   // Uses react-native-bottom-tabs for truly native tab bars:
   // - iOS: UITabBarController with SF Symbols and native blur
   // - Android: BottomNavigationView with Material Design
+  //
+  // IMPORTANT: Native tab bars don't support dynamic children well.
+  // All screens must be rendered at mount time, using tabBarItemHidden to
+  // control visibility instead of conditional rendering.
   return (
     <NativeTabs
       labeled={true}
@@ -139,7 +146,7 @@ export default function TabLayout(): React.ReactElement {
         backgroundColor: isDark ? theme.surface : theme.card,
       }}
     >
-      {visibleTabRoutes.map((route) => (
+      {tabRoutes.map((route) => (
         <NativeTabs.Screen
           key={route.name}
           name={route.name}
@@ -150,6 +157,8 @@ export default function TabLayout(): React.ReactElement {
               Platform.OS === 'ios'
                 ? { sfSymbol: route.sfSymbol }
                 : androidIcons[route.androidIconKey],
+            // Hide Steps tab when user has disabled 12-step content
+            tabBarItemHidden: route.name === 'steps' && !showSteps,
           }}
         />
       ))}
