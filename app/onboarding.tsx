@@ -113,8 +113,10 @@ export default function OnboardingScreen() {
   // Track when we're waiting for profile to update after form submission
   const [awaitingProfileUpdate, setAwaitingProfileUpdate] = useState(false);
 
-  // Preferences state
-  const [showTwelveStepContent, setShowTwelveStepContent] = useState(true);
+  // Preferences state - initialize from profile to preserve existing preference on re-onboarding
+  const [showTwelveStepContent, setShowTwelveStepContent] = useState(
+    () => profile?.show_twelve_step_content !== false
+  );
 
   // Savings tracking state (optional feature)
   const [isSavingsEnabled, setIsSavingsEnabled] = useState(false);
