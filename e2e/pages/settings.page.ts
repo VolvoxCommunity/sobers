@@ -8,6 +8,7 @@ import { BasePage } from './base.page';
  * - settings-theme-toggle ✅ (line 727, wraps theme options)
  * - settings-logout-button ✅ (line 939)
  * - settings-delete-account-button ✅ (line 976)
+ * - settings-journey-date-row ✅ (line 890, edit sobriety date)
  *
  * Missing testIDs (need to be added to SettingsContent.tsx):
  * - settings-notifications-toggle - no notifications toggle in current UI
@@ -19,6 +20,7 @@ export class SettingsPage extends BasePage {
   readonly themeToggle: Locator;
   readonly logoutButton: Locator;
   readonly deleteAccountButton: Locator;
+  readonly editSobrietyDateButton: Locator;
 
   // Locators needing testIDs to be added to components
   readonly notificationsToggle: Locator;
@@ -31,6 +33,7 @@ export class SettingsPage extends BasePage {
     this.themeToggle = page.getByTestId('settings-theme-toggle');
     this.logoutButton = page.getByTestId('settings-logout-button');
     this.deleteAccountButton = page.getByTestId('settings-delete-account-button');
+    this.editSobrietyDateButton = page.getByTestId('settings-journey-date-row');
 
     // Missing testIDs - these locators will fail until testIDs are added to components
     this.notificationsToggle = page.getByTestId('settings-notifications-toggle');

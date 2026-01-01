@@ -39,7 +39,9 @@ test.describe('Profile Edit', () => {
     await expect(profilePage.logSlipUpButton).toBeVisible();
   });
 
-  test('should display edit sobriety date button', async () => {
-    await expect(profilePage.editSobrietyDateButton).toBeVisible();
+  test('should display edit sobriety date button in settings', async () => {
+    // Edit sobriety date was moved to settings
+    await profilePage.openSettings();
+    await expect(settingsPage.editSobrietyDateButton).toBeVisible();
   });
 });

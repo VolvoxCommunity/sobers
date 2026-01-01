@@ -7,12 +7,13 @@ import { BasePage } from './base.page';
  * Available testIDs in the app:
  * - profile-sobriety-stats ✅ (SobrietyStats.tsx)
  * - profile-days-sober ✅ (SobrietyStats.tsx)
- * - profile-edit-date-button ✅ (SobrietyStats.tsx)
  * - profile-log-slip-up-button ✅ (SobrietyStats.tsx)
  * - profile-sponsor-invite-code-section ✅ (InviteCodeSection.tsx with testIDPrefix="sponsor")
  * - profile-sponsor-action-button ✅ (InviteCodeSection.tsx - Generate Invite Code)
  * - profile-sponsee-invite-code-section ✅ (InviteCodeSection.tsx with testIDPrefix="sponsee")
  * - profile-sponsee-action-button ✅ (InviteCodeSection.tsx - Enter Invite Code)
+ *
+ * Note: Edit sobriety date was moved to Settings (settings-journey-date-row)
  *
  * Missing testIDs (need to be added to components):
  * - profile-display-name - needs to be added to ProfileContent
