@@ -7,7 +7,6 @@ import {
   Platform,
   TextInput,
   Linking,
-  Switch,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
@@ -560,12 +559,9 @@ export default function OnboardingScreen() {
                     Show the 12 Steps tab for step-by-step recovery guidance
                   </Text>
                 </View>
-                <Switch
-                  value={showTwelveStepContent}
-                  onValueChange={setShowTwelveStepContent}
-                  trackColor={{ false: theme.border, true: theme.primaryLight }}
-                  thumbColor={showTwelveStepContent ? theme.primary : theme.textTertiary}
-                />
+                <View style={[styles.toggle, showTwelveStepContent && styles.toggleActive]}>
+                  <Text style={styles.toggleText}>{showTwelveStepContent ? 'ON' : 'OFF'}</Text>
+                </View>
               </TouchableOpacity>
 
               <View style={styles.divider} />
@@ -586,12 +582,9 @@ export default function OnboardingScreen() {
                     See how much you&apos;re saving in your recovery journey
                   </Text>
                 </View>
-                <Switch
-                  value={isSavingsEnabled}
-                  onValueChange={setIsSavingsEnabled}
-                  trackColor={{ false: theme.border, true: theme.primaryLight }}
-                  thumbColor={isSavingsEnabled ? theme.primary : theme.textTertiary}
-                />
+                <View style={[styles.toggle, isSavingsEnabled && styles.toggleActive]}>
+                  <Text style={styles.toggleText}>{isSavingsEnabled ? 'ON' : 'OFF'}</Text>
+                </View>
               </TouchableOpacity>
 
               {isSavingsEnabled && (
@@ -985,6 +978,21 @@ const createStyles = (theme: ThemeColors) =>
       fontFamily: theme.fontRegular,
       color: theme.textSecondary,
       lineHeight: 18,
+    },
+    toggle: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: theme.borderLight,
+    },
+    toggleActive: {
+      backgroundColor: theme.primary,
+    },
+    toggleText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      fontWeight: '600',
+      color: theme.white,
     },
     inputsContainer: {
       marginTop: 20,
