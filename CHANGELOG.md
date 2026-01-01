@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace Firebase Analytics with Amplitude SDK for improved cross-platform analytics support
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
+- Reduce Amplitude SDK log level from Debug to Warn to eliminate verbose internal logging in debug mode
 
 ### Removed
 
