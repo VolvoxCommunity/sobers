@@ -279,9 +279,13 @@ function getSupabaseClient(): SupabaseClient {
 
 // Export a Proxy to allow lazy initialization
 export const supabase = new Proxy({} as SupabaseClient, {
-  get: (_, prop) => {
+  get: (_, prop: string | symbol) => {
     const client = getSupabaseClient();
-    const value = (client as any)[prop];
+    // Handle symbol properties (e.g., Symbol.toStringTag) using Reflect
+    if (typeof prop !== 'string') {
+      return Reflect.get(client, prop);
+    }
+    const value = client[prop as keyof SupabaseClient];
     if (typeof value === 'function') {
       return value.bind(client);
     }

@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
 - Reduce Amplitude SDK log level from Debug to Warn to eliminate verbose internal logging in debug mode
+- Strengthen type definitions by replacing `any` with proper types: add `NotificationData` union type for notification payloads, add `SanitizedValue` type for Sentry privacy utilities, use `keyof SupabaseClient` for Supabase proxy, add `NotificationDataByType` mapping and `TypedNotification` generic for type-safe notification handling, add explicit primitive type checking in sanitizeObject to filter non-serializable types (symbol, bigint, function)
 
 ### Removed
 

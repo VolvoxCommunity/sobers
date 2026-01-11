@@ -11,6 +11,70 @@ export type NotificationType =
   | 'task_completed';
 
 // =============================================================================
+// Notification Data Types
+// =============================================================================
+
+/** Data payload for task_assigned notifications */
+export interface TaskAssignedNotificationData {
+  step_number?: number | null;
+  task_title: string;
+}
+
+/** Data payload for task_completed notifications */
+export interface TaskCompletedNotificationData {
+  task_id: string;
+  step_number?: number | null;
+}
+
+/** Data payload for milestone notifications (e.g., slip-ups) */
+export interface MilestoneNotificationData {
+  sponsee_id: string;
+  slip_up_date: string;
+}
+
+/** Data payload for connection_request notifications */
+export interface ConnectionRequestNotificationData {
+  sponsee_id?: string;
+  sponsor_id?: string;
+  relationship_id?: string;
+}
+
+/** Data payload for message notifications */
+export interface MessageNotificationData {
+  message_id?: string;
+  sender_id?: string;
+}
+
+/** Union type for all notification data payloads */
+export type NotificationData =
+  | TaskAssignedNotificationData
+  | TaskCompletedNotificationData
+  | MilestoneNotificationData
+  | ConnectionRequestNotificationData
+  | MessageNotificationData;
+
+/** Maps each NotificationType to its corresponding data payload type */
+export type NotificationDataByType = {
+  task_assigned: TaskAssignedNotificationData;
+  task_completed: TaskCompletedNotificationData;
+  milestone: MilestoneNotificationData;
+  connection_request: ConnectionRequestNotificationData;
+  message: MessageNotificationData;
+};
+
+/** Type-safe notification with discriminated data based on notification type */
+export type TypedNotification<T extends NotificationType = NotificationType> = {
+  id: string;
+  user_id: string;
+  type: T;
+  title: string;
+  content: string;
+  data: NotificationDataByType[T];
+  read_at?: string;
+  created_at: string;
+};
+
+// =============================================================================
 // Database Interfaces
 // =============================================================================
 
@@ -175,7 +239,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   content: string;
-  data: any;
+  data: NotificationData;
   read_at?: string;
   created_at: string;
 }

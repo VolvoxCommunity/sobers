@@ -231,27 +231,65 @@ function sanitizeConsoleBreadcrumbData(data: Record<string, unknown>): Record<st
   return sanitized;
 }
 
+/** Represents a sanitized value that may contain filtered or circular markers */
+type SanitizedValue =
+  | string
+  | number
+  | boolean
+  | null
+  | '[Filtered]'
+  | '[Circular]'
+  | SanitizedValue[]
+  | { [key: string]: SanitizedValue };
+
 /**
  * Recursively sanitize object by replacing sensitive fields with '[Filtered]'
  * Handles circular references by tracking visited objects
  */
-function sanitizeObject(obj: any, visited = new WeakSet()): any {
-  if (!obj || typeof obj !== 'object') {
-    return obj;
+function sanitizeObject(obj: unknown, visited = new WeakSet<object>()): SanitizedValue {
+  // Handle null and undefined
+  if (obj === null) {
+    return null;
+  }
+  if (obj === undefined) {
+    return null; // Convert undefined to null for JSON compatibility
+  }
+
+  // Handle valid primitive types
+  const objType = typeof obj;
+  if (objType === 'string') {
+    return obj as string;
+  }
+  if (objType === 'number') {
+    return obj as number;
+  }
+  if (objType === 'boolean') {
+    return obj as boolean;
+  }
+
+  // Filter out non-serializable primitive types (symbol, bigint, function)
+  if (objType === 'symbol' || objType === 'bigint' || objType === 'function') {
+    return '[Filtered]';
+  }
+
+  // At this point, obj must be an object type
+  if (objType !== 'object') {
+    // Safety check for any unexpected types
+    return '[Filtered]';
   }
 
   // Detect circular references
-  if (visited.has(obj)) {
+  if (visited.has(obj as object)) {
     return '[Circular]';
   }
 
-  visited.add(obj);
+  visited.add(obj as object);
 
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeObject(item, visited));
   }
 
-  const sanitized: any = {};
+  const sanitized: Record<string, SanitizedValue> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (SENSITIVE_FIELDS.includes(key.toLowerCase())) {
       sanitized[key] = '[Filtered]';
@@ -264,7 +302,8 @@ function sanitizeObject(obj: any, visited = new WeakSet()): any {
     } else if (typeof value === 'object') {
       sanitized[key] = sanitizeObject(value, visited);
     } else {
-      sanitized[key] = value;
+      // Recursively handle to ensure non-serializable primitives are filtered
+      sanitized[key] = sanitizeObject(value, visited);
     }
   }
 
