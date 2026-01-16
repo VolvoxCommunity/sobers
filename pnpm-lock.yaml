@@ -133,7 +133,7 @@ importers:
         version: 15.0.10(expo@54.0.30)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       lucide-react-native:
         specifier: ^0.562.0
-        version: 0.562.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        version: 0.562.0(react-native-svg@15.15.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -165,8 +165,8 @@ importers:
         specifier: ~4.19.0
         version: 4.19.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native-svg:
-        specifier: ^15.12.1
-        version: 15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        specifier: ^15.15.1
+        version: 15.15.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native-toast-message:
         specifier: ^2.3.3
         version: 2.3.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -291,6 +291,10 @@ packages:
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/code-frame@7.28.6':
+    resolution: {integrity: sha512-JYgintcMjRiCvS8mMECzaEn+m3PfoQiyqukOMCCVQtoJGYJw8j/8LBJEiqkHLkfwCcs74E3pbAUFNg7d9VNJ+Q==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/compat-data@7.28.5':
     resolution: {integrity: sha512-6uFXyCayocRbqhZOB+6XcuZbkMNimwfVGFji8CTZnCzOHVGvDqzvitu1re2AU5LROliz7eQPhB8CpAMvnx9EjA==}
     engines: {node: '>=6.9.0'}
@@ -301,6 +305,10 @@ packages:
 
   '@babel/generator@7.28.5':
     resolution: {integrity: sha512-3EwLFhZ38J4VyIP6WNtt2kUdW9dokXA9Cr4IVIFHuCpZ3H8/YFOl5JjZHisrn1fATPBmKKqXzDFvh9fUwHz6CQ==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/generator@7.28.6':
+    resolution: {integrity: sha512-lOoVRwADj8hjf7al89tvQ2a1lf53Z+7tiXMgpZJL3maQPDxh0DgLMN62B2MKUOFcoodBHLMbDM6WAbKgNy5Suw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-annotate-as-pure@7.27.3':
@@ -396,6 +404,11 @@ packages:
 
   '@babel/parser@7.28.5':
     resolution: {integrity: sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  '@babel/parser@7.28.6':
+    resolution: {integrity: sha512-TeR9zWR18BvbfPmGbLampPMW+uW1NZnJlRuuHso8i87QZNq2JRF9i6RgxRqtEq+wQGsS19NNTWr2duhnE49mfQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -779,12 +792,24 @@ packages:
     resolution: {integrity: sha512-LPDZ85aEJyYSd18/DkjNh4/y1ntkE5KwUHWTiqgRxruuZL2F1yuHligVHLvcHY2vMHXttKFpJn6LwfI7cw7ODw==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/template@7.28.6':
+    resolution: {integrity: sha512-YA6Ma2KsCdGb+WC6UpBVFJGXL58MDA6oyONbjyF/+5sBgxY/dwkhLogbMT2GXXyU84/IhRw/2D1Os1B/giz+BQ==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/traverse@7.28.5':
     resolution: {integrity: sha512-TCCj4t55U90khlYkVV/0TfkJkAkUg3jZFA3Neb7unZT8CPok7iiRfaX0F+WnqWqt7OxhOn0uBKXCw4lbL8W0aQ==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/traverse@7.28.6':
+    resolution: {integrity: sha512-fgWX62k02qtjqdSNTAGxmKYY/7FSL9WAS1o2Hu5+I5m9T0yxZzr4cnrfXQ/MX0rIifthCSs6FKTlzYbJcPtMNg==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/types@7.28.6':
+    resolution: {integrity: sha512-0ZrskXVEHSWIqZM/sQZ4EV3jZJXRkio/WCxaqKZP1g//CEWEPSfeZFcms4XeKBCHU0ZKnIkdJeU/kF+eRp5lBg==}
     engines: {node: '>=6.9.0'}
 
   '@bcoe/v8-coverage@0.2.3':
@@ -4608,8 +4633,8 @@ packages:
       react: '*'
       react-native: '*'
 
-  react-native-svg@15.12.1:
-    resolution: {integrity: sha512-vCuZJDf8a5aNC2dlMovEv4Z0jjEUET53lm/iILFnFewa15b4atjVxU6Wirm6O9y6dEsdjDZVD7Q3QM4T1wlI8g==}
+  react-native-svg@15.15.1:
+    resolution: {integrity: sha512-ZUD1xwc3Hwo4cOmOLumjJVoc7lEf9oQFlHnLmgccLC19fNm6LVEdtB+Cnip6gEi0PG3wfvVzskViEtrySQP8Fw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -5601,6 +5626,12 @@ snapshots:
       js-tokens: 4.0.0
       picocolors: 1.1.1
 
+  '@babel/code-frame@7.28.6':
+    dependencies:
+      '@babel/helper-validator-identifier': 7.28.5
+      js-tokens: 4.0.0
+      picocolors: 1.1.1
+
   '@babel/compat-data@7.28.5': {}
 
   '@babel/core@7.28.5':
@@ -5627,6 +5658,14 @@ snapshots:
     dependencies:
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
+      jsesc: 3.1.0
+
+  '@babel/generator@7.28.6':
+    dependencies:
+      '@babel/parser': 7.28.6
+      '@babel/types': 7.28.6
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
@@ -5738,9 +5777,9 @@ snapshots:
 
   '@babel/helper-wrap-function@7.28.3':
     dependencies:
-      '@babel/template': 7.27.2
+      '@babel/template': 7.28.6
       '@babel/traverse': 7.28.5
-      '@babel/types': 7.28.5
+      '@babel/types': 7.28.6
     transitivePeerDependencies:
       - supports-color
 
@@ -5759,6 +5798,10 @@ snapshots:
   '@babel/parser@7.28.5':
     dependencies:
       '@babel/types': 7.28.5
+
+  '@babel/parser@7.28.6':
+    dependencies:
+      '@babel/types': 7.28.6
 
   '@babel/plugin-proposal-decorators@7.28.0(@babel/core@7.28.5)':
     dependencies:
@@ -6184,6 +6227,12 @@ snapshots:
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
 
+  '@babel/template@7.28.6':
+    dependencies:
+      '@babel/code-frame': 7.28.6
+      '@babel/parser': 7.28.6
+      '@babel/types': 7.28.6
+
   '@babel/traverse@7.28.5':
     dependencies:
       '@babel/code-frame': 7.27.1
@@ -6196,7 +6245,24 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@babel/traverse@7.28.6':
+    dependencies:
+      '@babel/code-frame': 7.28.6
+      '@babel/generator': 7.28.6
+      '@babel/helper-globals': 7.28.0
+      '@babel/parser': 7.28.6
+      '@babel/template': 7.28.6
+      '@babel/types': 7.28.6
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@babel/types@7.28.5':
+    dependencies:
+      '@babel/helper-string-parser': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
+
+  '@babel/types@7.28.6':
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
@@ -10212,11 +10278,11 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react-native@0.562.0(react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+  lucide-react-native@0.562.0(react-native-svg@15.15.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
-      react-native-svg: 15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      react-native-svg: 15.15.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
 
   make-dir@4.0.0:
     dependencies:
@@ -10316,7 +10382,7 @@ snapshots:
   metro-source-map@0.83.3:
     dependencies:
       '@babel/traverse': 7.28.5
-      '@babel/traverse--for-generate-function-map': '@babel/traverse@7.28.5'
+      '@babel/traverse--for-generate-function-map': '@babel/traverse@7.28.6'
       '@babel/types': 7.28.5
       flow-enums-runtime: 0.0.6
       invariant: 2.2.4
@@ -10866,7 +10932,7 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
       warn-once: 0.1.1
 
-  react-native-svg@15.12.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+  react-native-svg@15.15.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:
       css-select: 5.2.2
       css-tree: 1.1.3
