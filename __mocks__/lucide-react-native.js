@@ -145,4 +145,5 @@ module.exports = {
   Layout: createIconMock('Layout'),
   Sparkles: createIconMock('Sparkles'),
   Flame: createIconMock('Flame'),
+  QrCode: createIconMock('QrCode'),
 };

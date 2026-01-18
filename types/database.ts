@@ -10,6 +10,28 @@ export type NotificationType =
   | 'connection_request'
   | 'task_completed';
 
+/**
+ * User's stated intent for sponsor/sponsee connections.
+ * Used for opt-in matching and invite code context.
+ */
+export type ConnectionIntent =
+  | 'not_looking'
+  | 'seeking_sponsor'
+  | 'open_to_sponsoring'
+  | 'open_to_both';
+
+/**
+ * External platform handles for out-of-app communication.
+ * Only revealed with mutual consent per-connection.
+ */
+export interface ExternalHandles {
+  discord?: string;
+  telegram?: string;
+  whatsapp?: string;
+  signal?: string;
+  phone?: string;
+}
+
 // =============================================================================
 // Database Interfaces
 // =============================================================================
@@ -89,6 +111,16 @@ export interface Profile {
    * Existing users (null/undefined) are treated as true.
    */
   show_program_content?: boolean;
+  /**
+   * User's stated intent for sponsor/sponsee connections.
+   * Used for opt-in matching and invite code context.
+   */
+  connection_intent?: ConnectionIntent | null;
+  /**
+   * External platform handles stored privately.
+   * Only revealed with mutual consent per-connection.
+   */
+  external_handles?: ExternalHandles;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
@@ -106,6 +138,14 @@ export interface SponsorSponseeRelationship {
   status: RelationshipStatus;
   connected_at: string;
   disconnected_at?: string;
+  /**
+   * Whether sponsor has opted in to reveal their external handles to this sponsee.
+   */
+  sponsor_reveal_consent?: boolean;
+  /**
+   * Whether sponsee has opted in to reveal their external handles to this sponsor.
+   */
+  sponsee_reveal_consent?: boolean;
   created_at: string;
   sponsor?: Profile;
   sponsee?: Profile;
@@ -118,6 +158,14 @@ export interface InviteCode {
   expires_at: string;
   used_by?: string;
   used_at?: string;
+  /**
+   * Timestamp when the invite code was manually revoked by the sponsor.
+   */
+  revoked_at?: string | null;
+  /**
+   * The connection intent the sponsor had when creating this invite code.
+   */
+  intent?: ConnectionIntent | null;
   created_at: string;
   sponsor?: Profile;
 }

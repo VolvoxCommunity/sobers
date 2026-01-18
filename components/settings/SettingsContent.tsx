@@ -64,9 +64,11 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import { useWhatsNew } from '@/lib/whats-new';
 import { WhatsNewSheet, type WhatsNewSheetRef } from '@/components/whats-new';
+import ExternalHandlesSection from './ExternalHandlesSection';
 import packageJson from '../../package.json';
 
 import type { SettingsContentProps } from './types';
+import type { ExternalHandles } from '@/types/database';
 import { EXTERNAL_LINKS, noop } from './constants';
 import { getBuildInfo, formatBuildInfoForCopy } from './utils';
 
@@ -490,6 +492,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const [isSavingTwelveStep, setIsSavingTwelveStep] = useState(false);
+  const [isSavingHandles, setIsSavingHandles] = useState(false);
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
   const buildInfo = getBuildInfo();
@@ -765,6 +768,37 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       setIsSavingTwelveStep(false);
     }
   }, [profile?.id, profile?.show_program_content, isSavingTwelveStep, refreshProfile]);
+
+  /**
+   * Updates the user's external handles (Discord, Telegram, etc.).
+   * These are stored privately and only revealed with mutual consent.
+   */
+  const handleExternalHandlesChange = useCallback(
+    async (handles: ExternalHandles) => {
+      if (!profile?.id || isSavingHandles) return;
+
+      setIsSavingHandles(true);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ external_handles: handles })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        await refreshProfile();
+        // No toast - inline editing feels better without interruptions
+      } catch (error: unknown) {
+        logger.error('External handles update failed', error as Error, {
+          category: LogCategory.DATABASE,
+        });
+        showToast.error('Failed to save contact info');
+      } finally {
+        setIsSavingHandles(false);
+      }
+    },
+    [profile?.id, isSavingHandles, refreshProfile]
+  );
 
   /**
    * Opens the sobriety date picker with the current sobriety date pre-selected.
@@ -1076,6 +1110,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           </Pressable>
         </View>
       </View>
+
+      {/* External Contacts Section */}
+      <ExternalHandlesSection
+        value={profile?.external_handles}
+        onChange={handleExternalHandlesChange}
+        theme={theme}
+        disabled={isSavingHandles}
+      />
 
       {/* About Section */}
       <View style={styles.section}>

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Heart, UserMinus, CheckCircle, Plus } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import { useDaysSober } from '@/hooks/useDaysSober';
-import type { Profile } from '@/types/database';
+import type { Profile, ExternalHandles, SponsorSponseeRelationship } from '@/types/database';
+import SymmetricRevealSection from './SymmetricRevealSection';
 
 // =============================================================================
 // Types & Interfaces
@@ -39,6 +40,12 @@ interface RelationshipCardProps {
   taskStats?: TaskStats;
   /** Optional callback when "Assign a task" link is pressed (only shown when no tasks assigned) */
   onAssignTask?: () => void;
+  /** Full relationship object for symmetric reveal consent */
+  relationship?: SponsorSponseeRelationship;
+  /** Current user's external handles */
+  myHandles?: ExternalHandles;
+  /** Callback when consent changes */
+  onConsentChange?: (consent: boolean) => void;
 }
 
 // =============================================================================
@@ -76,6 +83,9 @@ export default function RelationshipCard({
   onDisconnect,
   taskStats,
   onAssignTask,
+  relationship,
+  myHandles,
+  onConsentChange,
 }: RelationshipCardProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { daysSober, loading: loadingDaysSober } = useDaysSober(userId);
@@ -139,6 +149,28 @@ export default function RelationshipCard({
           )}
         </View>
       </View>
+
+      {/* Symmetric Reveal Section */}
+      {relationship && onConsentChange && (
+        <SymmetricRevealSection
+          myConsent={
+            relationshipType === 'sponsor'
+              ? !!relationship.sponsor_reveal_consent
+              : !!relationship.sponsee_reveal_consent
+          }
+          theirConsent={
+            relationshipType === 'sponsor'
+              ? !!relationship.sponsee_reveal_consent
+              : !!relationship.sponsor_reveal_consent
+          }
+          otherProfile={profile}
+          myHandles={myHandles}
+          relationshipType={relationshipType}
+          theme={theme}
+          onConsentChange={onConsentChange}
+        />
+      )}
+
       <TouchableOpacity
         style={styles.disconnectButton}
         onPress={onDisconnect}
