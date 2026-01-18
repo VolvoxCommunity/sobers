@@ -1,15 +1,33 @@
-/**
- * Platform icon mappings for external contact handles.
- * Centralizes icon rendering for Discord, Telegram, WhatsApp, Signal, Phone, etc.
- */
+// =============================================================================
+// Imports
+// =============================================================================
 
 import React from 'react';
 import { MessageCircle, Send, Phone, Shield } from 'lucide-react-native';
+
+// =============================================================================
+// Types & Interfaces
+// =============================================================================
 
 /**
  * Supported platform keys for external handles.
  */
 export type PlatformKey = 'discord' | 'telegram' | 'whatsapp' | 'signal' | 'phone';
+
+/**
+ * Theme colors interface for icon rendering.
+ */
+interface IconTheme {
+  primary: string;
+  info: string;
+  success: string;
+  warning: string;
+  textSecondary: string;
+}
+
+// =============================================================================
+// Constants
+// =============================================================================
 
 /**
  * Human-readable labels for platform keys.
@@ -22,22 +40,15 @@ export const platformLabels: Record<string, string> = {
   phone: 'Phone',
 };
 
+// =============================================================================
+// Helpers
+// =============================================================================
+
 /**
  * Get human-readable label for a platform key.
  */
 export function getPlatformLabel(key: string): string {
   return platformLabels[key] || key;
-}
-
-/**
- * Theme colors interface for icon rendering.
- */
-interface IconTheme {
-  primary: string;
-  info: string;
-  success: string;
-  warning: string;
-  textSecondary: string;
 }
 
 /**
