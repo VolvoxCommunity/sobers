@@ -23,9 +23,9 @@ interface SymmetricRevealSectionProps {
   /** The relationship ID for consent-checked handle fetching */
   relationshipId: string;
   /** Whether the current user has opted in to reveal */
-  myConsent: boolean;
+  hasMyConsent: boolean;
   /** Whether the other user has opted in to reveal */
-  theirConsent: boolean;
+  hasTheirConsent: boolean;
   /** The other user's profile (for displaying revealed handles) */
   otherProfile: Profile | null;
   /** Current user's handles (for displaying when mutual) */
@@ -37,7 +37,7 @@ interface SymmetricRevealSectionProps {
   /** Callback when consent toggle changes */
   onConsentChange: (consent: boolean) => void;
   /** Whether actions are disabled */
-  disabled?: boolean;
+  isDisabled?: boolean;
 }
 
 // =============================================================================
@@ -47,10 +47,10 @@ interface SymmetricRevealSectionProps {
 /**
  * Get the reveal state based on both parties' consent.
  */
-function getRevealState(myConsent: boolean, theirConsent: boolean): RevealState {
-  if (myConsent && theirConsent) return 'mutual';
-  if (myConsent && !theirConsent) return 'you_pending';
-  if (!myConsent && theirConsent) return 'them_pending';
+function getRevealState(hasMyConsent: boolean, hasTheirConsent: boolean): RevealState {
+  if (hasMyConsent && hasTheirConsent) return 'mutual';
+  if (hasMyConsent && !hasTheirConsent) return 'you_pending';
+  if (!hasMyConsent && hasTheirConsent) return 'them_pending';
   return 'none';
 }
 
@@ -65,8 +65,8 @@ function getRevealState(myConsent: boolean, theirConsent: boolean): RevealState 
  * @example
  * ```tsx
  * <SymmetricRevealSection
- *   myConsent={relationship.sponsee_reveal_consent}
- *   theirConsent={relationship.sponsor_reveal_consent}
+ *   hasMyConsent={relationship.sponsee_reveal_consent}
+ *   hasTheirConsent={relationship.sponsor_reveal_consent}
  *   otherProfile={relationship.sponsor}
  *   myHandles={profile.external_handles}
  *   relationshipType="sponsor"
@@ -77,17 +77,17 @@ function getRevealState(myConsent: boolean, theirConsent: boolean): RevealState 
  */
 export default function SymmetricRevealSection({
   relationshipId,
-  myConsent,
-  theirConsent,
+  hasMyConsent,
+  hasTheirConsent,
   otherProfile,
   myHandles,
   relationshipType,
   theme,
   onConsentChange,
-  disabled = false,
+  isDisabled = false,
 }: SymmetricRevealSectionProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const revealState = getRevealState(myConsent, theirConsent);
+  const revealState = getRevealState(hasMyConsent, hasTheirConsent);
 
   // State for consent-checked handles fetched via RPC
   const [otherHandles, setOtherHandles] = useState<ExternalHandles>({});
@@ -164,7 +164,7 @@ export default function SymmetricRevealSection({
       {/* Consent Toggle */}
       <View style={styles.consentRow}>
         <View style={styles.consentInfo}>
-          {myConsent ? (
+          {hasMyConsent ? (
             <Eye size={18} color={theme.primary} />
           ) : (
             <EyeOff size={18} color={theme.textSecondary} />
@@ -172,7 +172,7 @@ export default function SymmetricRevealSection({
           <View style={styles.consentText}>
             <Text style={styles.consentLabel}>Share my contact info</Text>
             <Text style={styles.consentDescription}>
-              {myConsent
+              {hasMyConsent
                 ? hasMyHandles
                   ? 'Your handles will be visible when mutual'
                   : 'Add contact methods in Settings first'
@@ -181,11 +181,11 @@ export default function SymmetricRevealSection({
           </View>
         </View>
         <Switch
-          value={myConsent}
+          value={hasMyConsent}
           onValueChange={onConsentChange}
-          disabled={disabled}
+          disabled={isDisabled}
           trackColor={{ false: theme.border, true: theme.primaryLight }}
-          thumbColor={myConsent ? theme.primary : theme.card}
+          thumbColor={hasMyConsent ? theme.primary : theme.card}
           accessibilityLabel="Toggle contact info sharing"
         />
       </View>

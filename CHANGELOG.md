@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix clipboard copy errors not handled in PersistentInviteCard
 - Fix togglePlatform UI/data state mixing in ExternalHandlesSection
 - Fix flaky time-utils test by using deterministic fake timers
-- Fix boolean prop naming inconsistency (disabled → isDisabled, loadingInviteCode → isLoadingInviteCode)
+- Fix boolean prop naming inconsistency (myConsent → hasMyConsent, theirConsent → hasTheirConsent, disabled → isDisabled, loadingInviteCode → isLoadingInviteCode)
 - Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
 - Fix empty external handle values shown in SymmetricRevealSection
 - Fix timer display not showing minutes when hours = 0 in FindSupportSection
