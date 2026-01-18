@@ -72,6 +72,9 @@ export default function PersistentInviteCard({
 
   // Update timer every minute
   useEffect(() => {
+    // Update immediately when expires_at changes (avoids stale display)
+    setTimeRemaining(getTimeRemaining(inviteCode.expires_at, 3));
+
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining(inviteCode.expires_at, 3));
     }, 60000);
@@ -80,14 +83,17 @@ export default function PersistentInviteCard({
   }, [inviteCode.expires_at]);
 
   const handleCopy = async () => {
-    if (Platform.OS === 'web') {
-      await navigator.clipboard.writeText(inviteCode.code);
+    try {
+      if (Platform.OS === 'web') {
+        await navigator.clipboard.writeText(inviteCode.code);
+      } else {
+        // Use expo-clipboard for React Native
+        const { setStringAsync } = await import('expo-clipboard');
+        await setStringAsync(inviteCode.code);
+      }
       showToast.success('Code copied to clipboard');
-    } else {
-      // Use expo-clipboard for React Native
-      const { setStringAsync } = await import('expo-clipboard');
-      await setStringAsync(inviteCode.code);
-      showToast.success('Code copied to clipboard');
+    } catch {
+      showToast.error('Failed to copy code');
     }
   };
 
