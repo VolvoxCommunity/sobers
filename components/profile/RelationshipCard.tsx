@@ -154,14 +154,16 @@ export default function RelationshipCard({
       {relationship && onConsentChange && (
         <SymmetricRevealSection
           myConsent={
-            relationshipType === 'sponsor'
-              ? !!relationship.sponsor_reveal_consent
-              : !!relationship.sponsee_reveal_consent
-          }
-          theirConsent={
+            // When viewing my sponsor, I'm the sponsee; when viewing my sponsee, I'm the sponsor
             relationshipType === 'sponsor'
               ? !!relationship.sponsee_reveal_consent
               : !!relationship.sponsor_reveal_consent
+          }
+          theirConsent={
+            // Their consent is the opposite field
+            relationshipType === 'sponsor'
+              ? !!relationship.sponsor_reveal_consent
+              : !!relationship.sponsee_reveal_consent
           }
           otherProfile={profile}
           myHandles={myHandles}

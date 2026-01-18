@@ -176,3 +176,309 @@ CREATE POLICY "Users can update their relationships"
   ON public.sponsor_sponsee_relationships FOR UPDATE TO authenticated
   USING (sponsor_id = auth.uid() OR sponsee_id = auth.uid())
   WITH CHECK (sponsor_id = auth.uid() OR sponsee_id = auth.uid());
+
+-- =============================================================================
+-- Opt-in Matching System (connection_matches table)
+-- =============================================================================
+
+-- Create enum type for match status
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'match_status_type') THEN
+    CREATE TYPE match_status_type AS ENUM (
+      'pending',
+      'accepted',
+      'rejected',
+      'expired'
+    );
+  END IF;
+END$$;
+
+-- Create connection_matches table for opt-in matching
+-- System proposes matches based on mutual opposite needs (seeking_sponsor ↔ open_to_sponsoring)
+-- Both parties must accept to create a relationship
+CREATE TABLE IF NOT EXISTS public.connection_matches (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  -- The user seeking a sponsor
+  seeker_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  -- The potential sponsor/provider
+  provider_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  -- Bilateral acceptance (null = pending, true = accepted, false = rejected)
+  seeker_accepted boolean DEFAULT NULL,
+  provider_accepted boolean DEFAULT NULL,
+  -- Overall match status
+  status match_status_type DEFAULT 'pending' NOT NULL,
+  -- Relationship created when both accept
+  relationship_id uuid REFERENCES public.sponsor_sponsee_relationships(id) ON DELETE SET NULL,
+  -- Timestamps
+  created_at timestamptz DEFAULT now() NOT NULL,
+  expires_at timestamptz DEFAULT (now() + interval '7 days') NOT NULL,
+  resolved_at timestamptz DEFAULT NULL,
+  -- Prevent duplicate active matches between same users
+  CONSTRAINT unique_active_match UNIQUE(seeker_id, provider_id)
+);
+
+-- Add comments for documentation
+COMMENT ON TABLE public.connection_matches IS
+  'Stores system-proposed matches between users seeking sponsors and those open to sponsoring. Both parties must accept.';
+
+COMMENT ON COLUMN public.connection_matches.seeker_id IS
+  'User with intent seeking_sponsor or open_to_both who initiated the match request';
+
+COMMENT ON COLUMN public.connection_matches.provider_id IS
+  'User with intent open_to_sponsoring or open_to_both proposed as potential sponsor';
+
+COMMENT ON COLUMN public.connection_matches.seeker_accepted IS
+  'Seeker acceptance: null=pending, true=accepted, false=rejected';
+
+COMMENT ON COLUMN public.connection_matches.provider_accepted IS
+  'Provider acceptance: null=pending, true=accepted, false=rejected';
+
+-- Create indexes for efficient queries
+CREATE INDEX IF NOT EXISTS idx_connection_matches_seeker
+  ON public.connection_matches(seeker_id)
+  WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_connection_matches_provider
+  ON public.connection_matches(provider_id)
+  WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_connection_matches_status
+  ON public.connection_matches(status)
+  WHERE status = 'pending';
+
+-- =============================================================================
+-- Connection Matches RLS Policies
+-- =============================================================================
+
+ALTER TABLE public.connection_matches ENABLE ROW LEVEL SECURITY;
+
+-- Users can view matches where they are seeker or provider
+DROP POLICY IF EXISTS "Users can view their own matches" ON public.connection_matches;
+CREATE POLICY "Users can view their own matches"
+  ON public.connection_matches FOR SELECT TO authenticated
+  USING (seeker_id = auth.uid() OR provider_id = auth.uid());
+
+-- Users can update matches where they are seeker or provider (for accepting/rejecting)
+DROP POLICY IF EXISTS "Users can update their own matches" ON public.connection_matches;
+CREATE POLICY "Users can update their own matches"
+  ON public.connection_matches FOR UPDATE TO authenticated
+  USING (seeker_id = auth.uid() OR provider_id = auth.uid())
+  WITH CHECK (seeker_id = auth.uid() OR provider_id = auth.uid());
+
+-- Only authenticated users with seeking intent can create match requests
+-- (In practice, this would be done via a server function, but policy allows it)
+DROP POLICY IF EXISTS "Users can create match requests" ON public.connection_matches;
+CREATE POLICY "Users can create match requests"
+  ON public.connection_matches FOR INSERT TO authenticated
+  WITH CHECK (seeker_id = auth.uid());
+
+-- =============================================================================
+-- Function to find potential matches
+-- =============================================================================
+
+-- Function to find users with complementary intents
+CREATE OR REPLACE FUNCTION public.find_potential_matches(user_id uuid, max_results integer DEFAULT 5)
+RETURNS TABLE (
+  matched_user_id uuid,
+  matched_intent connection_intent_type,
+  display_name text
+) AS $$
+DECLARE
+  user_intent connection_intent_type;
+BEGIN
+  -- Get the requesting user's intent
+  SELECT connection_intent INTO user_intent
+  FROM public.profiles
+  WHERE id = user_id;
+
+  -- Return empty if user has no intent set or is not looking
+  IF user_intent IS NULL OR user_intent = 'not_looking' THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    p.id as matched_user_id,
+    p.connection_intent as matched_intent,
+    p.display_name
+  FROM public.profiles p
+  WHERE
+    p.id != user_id
+    -- Match complementary intents
+    AND (
+      -- User is seeking sponsor -> match with those open to sponsoring
+      (user_intent IN ('seeking_sponsor', 'open_to_both')
+        AND p.connection_intent IN ('open_to_sponsoring', 'open_to_both'))
+      OR
+      -- User is open to sponsoring -> match with those seeking sponsor
+      (user_intent IN ('open_to_sponsoring', 'open_to_both')
+        AND p.connection_intent IN ('seeking_sponsor', 'open_to_both'))
+    )
+    -- Exclude users with ACTIVE relationships only (allow re-matching after disconnect)
+    AND NOT EXISTS (
+      SELECT 1 FROM public.sponsor_sponsee_relationships r
+      WHERE r.status = 'active'
+        AND ((r.sponsor_id = user_id AND r.sponsee_id = p.id)
+          OR (r.sponsor_id = p.id AND r.sponsee_id = user_id))
+    )
+    -- Exclude users with pending matches with this user
+    AND NOT EXISTS (
+      SELECT 1 FROM public.connection_matches m
+      WHERE m.status = 'pending'
+        AND ((m.seeker_id = user_id AND m.provider_id = p.id)
+          OR (m.seeker_id = p.id AND m.provider_id = user_id))
+    )
+  LIMIT max_results;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.find_potential_matches(uuid, integer) TO authenticated;
+
+-- =============================================================================
+-- Function to handle match acceptance
+-- =============================================================================
+
+-- Function to accept a match and create relationship if both accepted
+CREATE OR REPLACE FUNCTION public.accept_match(match_id uuid)
+RETURNS public.connection_matches AS $$
+DECLARE
+  match_record public.connection_matches;
+  new_relationship_id uuid;
+  existing_relationship_id uuid;
+  current_user_id uuid;
+BEGIN
+  current_user_id := auth.uid();
+
+  -- Get and lock the match record
+  SELECT * INTO match_record
+  FROM public.connection_matches
+  WHERE id = match_id
+  FOR UPDATE;
+
+  -- Verify user is part of this match
+  IF match_record.seeker_id != current_user_id AND match_record.provider_id != current_user_id THEN
+    RAISE EXCEPTION 'User is not part of this match';
+  END IF;
+
+  -- Verify match is still pending
+  IF match_record.status != 'pending' THEN
+    RAISE EXCEPTION 'Match is no longer pending';
+  END IF;
+
+  -- Verify match hasn't expired
+  IF match_record.expires_at < now() THEN
+    UPDATE public.connection_matches SET status = 'expired', resolved_at = now()
+    WHERE id = match_id;
+    RAISE EXCEPTION 'Match has expired';
+  END IF;
+
+  -- Update the appropriate acceptance field
+  IF match_record.seeker_id = current_user_id THEN
+    UPDATE public.connection_matches SET seeker_accepted = true WHERE id = match_id;
+    match_record.seeker_accepted := true;
+  ELSE
+    UPDATE public.connection_matches SET provider_accepted = true WHERE id = match_id;
+    match_record.provider_accepted := true;
+  END IF;
+
+  -- Check if both have now accepted
+  IF match_record.seeker_accepted = true AND match_record.provider_accepted = true THEN
+    -- Check for existing relationship (may be inactive from previous disconnect)
+    SELECT id INTO existing_relationship_id
+    FROM public.sponsor_sponsee_relationships
+    WHERE sponsor_id = match_record.provider_id
+      AND sponsee_id = match_record.seeker_id;
+
+    IF existing_relationship_id IS NOT NULL THEN
+      -- Reactivate existing relationship
+      UPDATE public.sponsor_sponsee_relationships
+      SET status = 'active', connected_at = now(), disconnected_at = NULL
+      WHERE id = existing_relationship_id;
+      new_relationship_id := existing_relationship_id;
+    ELSE
+      -- Create new sponsor-sponsee relationship
+      INSERT INTO public.sponsor_sponsee_relationships (
+        sponsor_id,
+        sponsee_id,
+        status,
+        connected_at
+      ) VALUES (
+        match_record.provider_id,  -- Provider becomes sponsor
+        match_record.seeker_id,    -- Seeker becomes sponsee
+        'active',
+        now()
+      ) RETURNING id INTO new_relationship_id;
+    END IF;
+
+    -- Update match as accepted with relationship reference
+    UPDATE public.connection_matches
+    SET
+      status = 'accepted',
+      relationship_id = new_relationship_id,
+      resolved_at = now()
+    WHERE id = match_id;
+
+    match_record.status := 'accepted';
+    match_record.relationship_id := new_relationship_id;
+    match_record.resolved_at := now();
+  END IF;
+
+  RETURN match_record;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.accept_match(uuid) TO authenticated;
+
+-- =============================================================================
+-- Function to reject a match
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION public.reject_match(match_id uuid)
+RETURNS public.connection_matches AS $$
+DECLARE
+  match_record public.connection_matches;
+  current_user_id uuid;
+BEGIN
+  current_user_id := auth.uid();
+
+  -- Get and lock the match record
+  SELECT * INTO match_record
+  FROM public.connection_matches
+  WHERE id = match_id
+  FOR UPDATE;
+
+  -- Verify user is part of this match
+  IF match_record.seeker_id != current_user_id AND match_record.provider_id != current_user_id THEN
+    RAISE EXCEPTION 'User is not part of this match';
+  END IF;
+
+  -- Verify match is still pending
+  IF match_record.status != 'pending' THEN
+    RAISE EXCEPTION 'Match is no longer pending';
+  END IF;
+
+  -- Update the match as rejected
+  IF match_record.seeker_id = current_user_id THEN
+    UPDATE public.connection_matches
+    SET seeker_accepted = false, status = 'rejected', resolved_at = now()
+    WHERE id = match_id;
+    match_record.seeker_accepted := false;
+  ELSE
+    UPDATE public.connection_matches
+    SET provider_accepted = false, status = 'rejected', resolved_at = now()
+    WHERE id = match_id;
+    match_record.provider_accepted := false;
+  END IF;
+
+  match_record.status := 'rejected';
+  match_record.resolved_at := now();
+
+  RETURN match_record;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.reject_match(uuid) TO authenticated;

@@ -15,7 +15,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import { Settings } from 'lucide-react-native';
-import type { SponsorSponseeRelationship, InviteCode, ConnectionIntent } from '@/types/database';
+import type {
+  SponsorSponseeRelationship,
+  InviteCode,
+  ConnectionIntent,
+  ConnectionMatch,
+} from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 import EnterInviteCodeSheet, {
@@ -30,6 +35,7 @@ import RelationshipCard from '@/components/profile/RelationshipCard';
 import InviteCodeSection from '@/components/profile/InviteCodeSection';
 import ConnectionIntentSelector from '@/components/profile/ConnectionIntentSelector';
 import PersistentInviteCard from '@/components/profile/PersistentInviteCard';
+import FindSupportSection from '@/components/profile/FindSupportSection';
 
 /**
  * Render the authenticated user's profile, sobriety stats, and sponsor/sponsee management interface,
@@ -59,6 +65,7 @@ export default function ProfileScreen() {
   }>({});
   const [activeInviteCode, setActiveInviteCode] = useState<InviteCode | null>(null);
   const [loadingInviteCode, setLoadingInviteCode] = useState(false);
+  const [pendingMatches, setPendingMatches] = useState<ConnectionMatch[]>([]);
 
   /**
    * Fetches the user's active invite code (not used, not revoked, not expired).
@@ -93,6 +100,36 @@ export default function ProfileScreen() {
       });
     } finally {
       setLoadingInviteCode(false);
+    }
+  }, [profile]);
+
+  /**
+   * Fetches pending connection matches for the current user.
+   */
+  const fetchPendingMatches = useCallback(async () => {
+    if (!profile) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('connection_matches')
+        .select('*, seeker:seeker_id(id, display_name), provider:provider_id(id, display_name)')
+        .or(`seeker_id.eq.${profile.id},provider_id.eq.${profile.id}`)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        logger.error('Failed to fetch pending matches', error, {
+          category: LogCategory.DATABASE,
+        });
+        return;
+      }
+
+      setPendingMatches(data || []);
+    } catch (error) {
+      logger.error('Fetch pending matches failed', error as Error, {
+        category: LogCategory.DATABASE,
+      });
     }
   }, [profile]);
 
@@ -278,7 +315,8 @@ export default function ProfileScreen() {
   useEffect(() => {
     fetchRelationships();
     fetchActiveInviteCode();
-  }, [profile, fetchRelationships, fetchActiveInviteCode]);
+    fetchPendingMatches();
+  }, [profile, fetchRelationships, fetchActiveInviteCode, fetchPendingMatches]);
 
   // Use hook for current user's days sober
   const {
@@ -636,6 +674,22 @@ export default function ProfileScreen() {
           }}
           theme={theme}
         />
+
+        {/* Find Support Section (Opt-in Matching) */}
+        {profile && (
+          <View style={styles.section}>
+            <FindSupportSection
+              userId={profile.id}
+              intent={profile.connection_intent}
+              theme={theme}
+              pendingMatches={pendingMatches}
+              onMatchUpdate={() => {
+                fetchPendingMatches();
+                fetchRelationships();
+              }}
+            />
+          </View>
+        )}
 
         {loadingRelationships ? (
           <View style={styles.section}>
