@@ -4,7 +4,7 @@ import { Heart, UserMinus, CheckCircle, Plus } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import type { Profile, ExternalHandles, SponsorSponseeRelationship } from '@/types/database';
-import SymmetricRevealSection from './SymmetricRevealSection';
+import SymmetricRevealSection from '@/components/profile/SymmetricRevealSection';
 
 // =============================================================================
 // Types & Interfaces
