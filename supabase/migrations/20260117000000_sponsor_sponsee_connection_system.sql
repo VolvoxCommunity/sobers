@@ -236,10 +236,18 @@ CREATE TABLE IF NOT EXISTS public.connection_matches (
   -- Timestamps
   created_at timestamptz DEFAULT now() NOT NULL,
   expires_at timestamptz DEFAULT (now() + interval '7 days') NOT NULL,
-  resolved_at timestamptz DEFAULT NULL,
-  -- Prevent duplicate active matches between same users
-  CONSTRAINT unique_active_match UNIQUE(seeker_id, provider_id)
+  resolved_at timestamptz DEFAULT NULL
 );
+
+-- Drop old unconditional constraint if it exists (for existing databases)
+ALTER TABLE public.connection_matches DROP CONSTRAINT IF EXISTS unique_active_match;
+
+-- Partial unique index: only prevent duplicates for PENDING matches
+-- This allows rematching after rejection or expiry
+DROP INDEX IF EXISTS idx_connection_matches_unique_pending;
+CREATE UNIQUE INDEX idx_connection_matches_unique_pending
+  ON public.connection_matches(seeker_id, provider_id)
+  WHERE status = 'pending';
 
 -- Add comments for documentation
 COMMENT ON TABLE public.connection_matches IS
