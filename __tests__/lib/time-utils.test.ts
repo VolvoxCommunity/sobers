@@ -51,11 +51,18 @@ describe('time-utils', () => {
     });
 
     it('handles edge case of exactly now', () => {
-      const now = new Date().toISOString();
+      // Use fake timers to avoid race condition between timestamp creation and comparison
+      const mockTime = 1705589400000; // 2024-01-18T12:00:00Z
+      jest.useFakeTimers();
+      jest.setSystemTime(mockTime);
+
+      const now = new Date(mockTime).toISOString();
       const result = getTimeRemaining(now);
 
       // Should be expired since we're at or past the time
       expect(result.isExpired).toBe(true);
+
+      jest.useRealTimers();
     });
   });
 
