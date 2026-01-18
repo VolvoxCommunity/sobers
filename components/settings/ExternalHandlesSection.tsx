@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { MessageCircle, Phone, Send, Shield, Plus, X } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import type { ExternalHandles } from '@/types/database';
@@ -33,8 +40,8 @@ interface ExternalHandlesSectionProps {
   onChange: (handles: ExternalHandles) => void;
   /** Theme object from ThemeContext */
   theme: ThemeColors;
-  /** Whether the section is disabled */
-  disabled?: boolean;
+  /** Whether changes are being saved (shows indicator, doesn't disable input) */
+  isSaving?: boolean;
 }
 
 // =============================================================================
@@ -58,7 +65,7 @@ export default function ExternalHandlesSection({
   value = {},
   onChange,
   theme,
-  disabled = false,
+  isSaving = false,
 }: ExternalHandlesSectionProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [expandedPlatforms, setExpandedPlatforms] = useState<Set<string>>(() => {
@@ -137,9 +144,17 @@ export default function ExternalHandlesSection({
     <View style={styles.container} testID="external-handles-section">
       <View style={styles.header}>
         <Text style={styles.title}>External Contacts</Text>
-        <View style={styles.privacyBadge}>
-          <Shield size={12} color={theme.success} />
-          <Text style={styles.privacyText}>Private</Text>
+        <View style={styles.headerRight}>
+          {isSaving && (
+            <View style={styles.savingIndicator}>
+              <ActivityIndicator size="small" color={theme.textSecondary} />
+              <Text style={styles.savingText}>Saving...</Text>
+            </View>
+          )}
+          <View style={styles.privacyBadge}>
+            <Shield size={12} color={theme.success} />
+            <Text style={styles.privacyText}>Private</Text>
+          </View>
         </View>
       </View>
       <Text style={styles.subtitle}>
@@ -159,7 +174,6 @@ export default function ExternalHandlesSection({
                 onChangeText={(text) => handleChange(platform.key, text)}
                 placeholder={platform.placeholder}
                 placeholderTextColor={theme.textSecondary}
-                editable={!disabled}
                 autoCapitalize="none"
                 autoCorrect={false}
                 testID={`handle-input-${platform.key}`}
@@ -170,7 +184,6 @@ export default function ExternalHandlesSection({
               style={styles.removeButton}
               accessibilityRole="button"
               accessibilityLabel={`Remove ${platform.label}`}
-              disabled={disabled}
             >
               <X size={18} color={theme.danger} />
             </TouchableOpacity>
@@ -188,7 +201,6 @@ export default function ExternalHandlesSection({
                 key={platform.key}
                 style={styles.addButton}
                 onPress={() => togglePlatform(platform.key)}
-                disabled={disabled}
                 accessibilityRole="button"
                 accessibilityLabel={`Add ${platform.label}`}
               >
@@ -218,6 +230,21 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 4,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    savingIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    savingText: {
+      fontSize: 12,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
     },
     title: {
       fontSize: 18,
