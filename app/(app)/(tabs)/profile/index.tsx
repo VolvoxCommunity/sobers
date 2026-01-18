@@ -225,9 +225,10 @@ export default function ProfileScreen() {
 
     setLoadingRelationships(true);
     try {
+      // Only fetch non-sensitive profile fields (external_handles requires consent)
       const { data: asSponsee, error: asSponseeError } = await supabase
         .from('sponsor_sponsee_relationships')
-        .select('*, sponsor:sponsor_id(*)')
+        .select('*, sponsor:sponsor_id(id, display_name, sobriety_date, avatar_url)')
         .eq('sponsee_id', profile.id)
         .eq('status', 'active');
 
@@ -242,9 +243,10 @@ export default function ProfileScreen() {
         return;
       }
 
+      // Only fetch non-sensitive profile fields (external_handles requires consent)
       const { data: asSponsor, error: asSponsorError } = await supabase
         .from('sponsor_sponsee_relationships')
-        .select('*, sponsee:sponsee_id(*)')
+        .select('*, sponsee:sponsee_id(id, display_name, sobriety_date, avatar_url)')
         .eq('sponsor_id', profile.id)
         .eq('status', 'active');
 

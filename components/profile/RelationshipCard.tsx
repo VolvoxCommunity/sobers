@@ -153,6 +153,7 @@ export default function RelationshipCard({
       {/* Symmetric Reveal Section */}
       {relationship && onConsentChange && (
         <SymmetricRevealSection
+          relationshipId={relationship.id}
           myConsent={
             // When viewing my sponsor, I'm the sponsee; when viewing my sponsee, I'm the sponsor
             relationshipType === 'sponsor'

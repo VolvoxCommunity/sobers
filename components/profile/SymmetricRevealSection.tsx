@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
 import { Eye, EyeOff, Check, Clock } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import type { ExternalHandles, Profile } from '@/types/database';
 import { getPlatformIcon, getPlatformLabel } from '@/lib/platform-icons';
+import { supabase } from '@/lib/supabase';
+import { logger, LogCategory } from '@/lib/logger';
 
 // =============================================================================
 // Types & Interfaces
@@ -18,6 +20,8 @@ type RevealState = 'none' | 'you_pending' | 'them_pending' | 'mutual';
  * Props for the SymmetricRevealSection component.
  */
 interface SymmetricRevealSectionProps {
+  /** The relationship ID for consent-checked handle fetching */
+  relationshipId: string;
   /** Whether the current user has opted in to reveal */
   myConsent: boolean;
   /** Whether the other user has opted in to reveal */
@@ -72,6 +76,7 @@ function getRevealState(myConsent: boolean, theirConsent: boolean): RevealState 
  * ```
  */
 export default function SymmetricRevealSection({
+  relationshipId,
   myConsent,
   theirConsent,
   otherProfile,
@@ -84,10 +89,50 @@ export default function SymmetricRevealSection({
   const styles = useMemo(() => createStyles(theme), [theme]);
   const revealState = getRevealState(myConsent, theirConsent);
 
+  // State for consent-checked handles fetched via RPC
+  const [otherHandles, setOtherHandles] = useState<ExternalHandles>({});
+  const [isLoadingHandles, setIsLoadingHandles] = useState(false);
+
   const otherName = otherProfile?.display_name || 'Unknown';
-  const otherHandles = otherProfile?.external_handles || {};
-  const hasOtherHandles = Object.keys(otherHandles).length > 0;
   const hasMyHandles = myHandles && Object.keys(myHandles).length > 0;
+
+  // Fetch handles only when there's mutual consent (via secure RPC)
+  useEffect(() => {
+    if (revealState !== 'mutual') {
+      setOtherHandles({});
+      return;
+    }
+
+    const fetchHandles = async () => {
+      setIsLoadingHandles(true);
+      try {
+        const { data, error } = await supabase.rpc('get_handles_with_consent', {
+          relationship_id: relationshipId,
+        });
+
+        if (error) {
+          logger.error('Failed to fetch handles with consent', new Error(error.message), {
+            category: LogCategory.DATABASE,
+          });
+          return;
+        }
+
+        setOtherHandles((data as ExternalHandles) || {});
+      } catch (err) {
+        logger.error('Unexpected error fetching handles', err as Error, {
+          category: LogCategory.DATABASE,
+        });
+      } finally {
+        setIsLoadingHandles(false);
+      }
+    };
+
+    fetchHandles();
+  }, [revealState, relationshipId]);
+
+  // Filter out empty handle values
+  const filteredHandles = Object.entries(otherHandles).filter(([_, v]) => Boolean(v));
+  const hasOtherHandles = filteredHandles.length > 0;
 
   return (
     <View style={styles.container} testID="symmetric-reveal-section">
@@ -160,11 +205,17 @@ export default function SymmetricRevealSection({
       </View>
 
       {/* Revealed Handles */}
-      {revealState === 'mutual' && hasOtherHandles && (
+      {revealState === 'mutual' && isLoadingHandles && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={theme.primary} />
+          <Text style={styles.loadingText}>Loading contact info...</Text>
+        </View>
+      )}
+      {revealState === 'mutual' && !isLoadingHandles && hasOtherHandles && (
         <View style={styles.handlesContainer}>
           <Text style={styles.handlesTitle}>{otherName}&apos;s Contact Info</Text>
           <View style={styles.handlesList}>
-            {Object.entries(otherHandles).map(([key, value]) => (
+            {filteredHandles.map(([key, value]) => (
               <View key={key} style={styles.handleRow}>
                 {getPlatformIcon(key, theme)}
                 <Text style={styles.handlePlatform}>{getPlatformLabel(key)}:</Text>
@@ -178,7 +229,7 @@ export default function SymmetricRevealSection({
       )}
 
       {/* No handles warning */}
-      {revealState === 'mutual' && !hasOtherHandles && (
+      {revealState === 'mutual' && !isLoadingHandles && !hasOtherHandles && (
         <View style={styles.noHandlesContainer}>
           <Text style={styles.noHandlesText}>
             {otherName} hasn&apos;t added any contact methods yet.
@@ -303,5 +354,18 @@ const createStyles = (theme: ThemeColors) =>
       fontSize: 13,
       fontFamily: theme.fontRegular,
       color: theme.warning,
+    },
+    loadingContainer: {
+      marginTop: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      gap: 8,
+    },
+    loadingText: {
+      fontSize: 13,
+      fontFamily: theme.fontRegular,
+      color: theme.textSecondary,
     },
   });
