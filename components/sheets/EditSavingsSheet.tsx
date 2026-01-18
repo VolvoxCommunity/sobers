@@ -10,7 +10,8 @@ import React, {
   useMemo,
 } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { SheetInputComponent } from '@/lib/sheet-input';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { X, DollarSign } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
@@ -310,7 +311,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
             <Text style={styles.label}>Amount</Text>
             <View style={styles.amountInputContainer}>
               <DollarSign size={20} color={theme.textSecondary} style={styles.dollarIcon} />
-              <BottomSheetTextInput
+              <SheetInputComponent
                 testID="edit-savings-amount-input"
                 style={styles.amountInput}
                 value={amount}

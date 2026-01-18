@@ -3,7 +3,8 @@
 // =============================================================================
 import React, { useState, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { SheetInputComponent } from '@/lib/sheet-input';
 import { ThemeColors } from '@/contexts/ThemeContext';
 import { X, QrCode } from 'lucide-react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
@@ -228,7 +229,7 @@ const EnterInviteCodeSheet = forwardRef<EnterInviteCodeSheetRef, EnterInviteCode
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Invite Code</Text>
-            <BottomSheetTextInput
+            <SheetInputComponent
               style={styles.input}
               value={inviteCode}
               onChangeText={handleChangeText}
