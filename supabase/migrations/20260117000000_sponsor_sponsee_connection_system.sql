@@ -513,3 +513,59 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permission
 GRANT EXECUTE ON FUNCTION public.reject_match(uuid) TO authenticated;
+
+-- =============================================================================
+-- Function to get external handles with consent verification
+-- =============================================================================
+
+-- This function returns the external_handles of a user only when both parties
+-- in a sponsor/sponsee relationship have consented to reveal their contact info.
+-- This ensures handles are never sent to the client without proper consent.
+CREATE OR REPLACE FUNCTION public.get_handles_with_consent(relationship_id uuid)
+RETURNS jsonb AS $$
+DECLARE
+  rel_record public.sponsor_sponsee_relationships;
+  requesting_user_id uuid;
+  target_user_id uuid;
+  target_handles jsonb;
+BEGIN
+  requesting_user_id := auth.uid();
+
+  -- Get the relationship record
+  SELECT * INTO rel_record
+  FROM public.sponsor_sponsee_relationships
+  WHERE id = relationship_id;
+
+  -- Verify user is part of this relationship
+  IF rel_record.sponsor_id != requesting_user_id AND rel_record.sponsee_id != requesting_user_id THEN
+    RAISE EXCEPTION 'User is not part of this relationship';
+  END IF;
+
+  -- Verify relationship is active
+  IF rel_record.status != 'active' THEN
+    RETURN NULL;
+  END IF;
+
+  -- Check for mutual consent
+  IF NOT (rel_record.sponsor_reveal_consent AND rel_record.sponsee_reveal_consent) THEN
+    RETURN NULL;
+  END IF;
+
+  -- Determine whose handles to return (the other person's)
+  IF requesting_user_id = rel_record.sponsor_id THEN
+    target_user_id := rel_record.sponsee_id;
+  ELSE
+    target_user_id := rel_record.sponsor_id;
+  END IF;
+
+  -- Fetch and return the target user's handles
+  SELECT external_handles INTO target_handles
+  FROM public.profiles
+  WHERE id = target_user_id;
+
+  RETURN COALESCE(target_handles, '{}'::jsonb);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.get_handles_with_consent(uuid) TO authenticated;
