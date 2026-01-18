@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update Settings toggle label from "Include 12-Step Content" to "Show 12-Step Program" with expanded description
 - Extract `getTimeRemaining` and `formatTimeRemaining` to shared `lib/time-utils.ts` (DRY refactor)
 - Extract `getPlatformIcon` and `getPlatformLabel` to shared `lib/platform-icons.tsx` (DRY refactor)
+- Extract `SheetInputComponent` to shared `lib/sheet-input.tsx` for platform-specific bottom sheet inputs
+- Add canonical section dividers to `lib/platform-icons.tsx` for better code organization
+- Add size verification tests to platform-icons test suite
 
 ### Removed
 
@@ -38,6 +41,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
 - Fix bottom sheet text inputs not working on web by using platform-specific InputComponent pattern
+- Fix UPDATE policy missing `revoked_at` check in invite_codes RLS migration
+- Fix overly broad RLS policy for profile viewing via invite code, replaced with SECURITY DEFINER RPC
+- Fix UNIQUE constraint preventing sponsor/sponsee rematches after disconnect, converted to partial index
+- Fix external handles exposure in profile queries before consent check
+- Fix RLS violation when providers create connection matches directly
+- Fix external handles DB write on every keystroke, added debouncing with draft state
+- Fix timer showing stale values on mount, now updates immediately when expires_at changes
+- Fix clipboard copy errors not handled in PersistentInviteCard
+- Fix togglePlatform UI/data state mixing in ExternalHandlesSection
+- Fix flaky time-utils test by using deterministic fake timers
+- Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
+- Fix empty external handle values shown in SymmetricRevealSection
 
 ## [1.3.0] - 2026-01-27
 
