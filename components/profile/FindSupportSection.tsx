@@ -6,6 +6,7 @@ import type { ConnectionMatch, ConnectionIntent, PotentialMatch } from '@/types/
 import { supabase } from '@/lib/supabase';
 import { showToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
+import { getTimeRemaining } from '@/lib/time-utils';
 
 // =============================================================================
 // Types & Interfaces
@@ -32,30 +33,6 @@ interface FindSupportSectionProps {
 // =============================================================================
 // Helper Functions
 // =============================================================================
-
-/**
- * Get time remaining until match expires.
- */
-function getTimeRemaining(expiresAt: string): {
-  days: number;
-  hours: number;
-  isExpired: boolean;
-  isExpiringSoon: boolean;
-} {
-  const now = new Date().getTime();
-  const expiry = new Date(expiresAt).getTime();
-  const diff = expiry - now;
-
-  if (diff <= 0) {
-    return { days: 0, hours: 0, isExpired: true, isExpiringSoon: false };
-  }
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const isExpiringSoon = days < 2;
-
-  return { days, hours, isExpired: false, isExpiringSoon };
-}
 
 /**
  * Format the user's role in this match (seeker or provider).

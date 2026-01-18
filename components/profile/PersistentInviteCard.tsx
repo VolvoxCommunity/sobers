@@ -4,6 +4,7 @@ import { Copy, Share2, RefreshCw, Trash2, Clock } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import type { InviteCode } from '@/types/database';
 import { showToast } from '@/lib/toast';
+import { getTimeRemaining, formatTimeRemaining, TimeRemaining } from '@/lib/time-utils';
 
 // =============================================================================
 // Types & Interfaces
@@ -30,39 +31,12 @@ interface PersistentInviteCardProps {
 // =============================================================================
 
 /**
- * Calculate time remaining until expiration.
+ * Format time remaining with "remaining" suffix for invite cards.
  */
-function getTimeRemaining(expiresAt: string): {
-  days: number;
-  hours: number;
-  minutes: number;
-  isExpired: boolean;
-  isExpiringSoon: boolean;
-} {
-  const now = new Date().getTime();
-  const expiry = new Date(expiresAt).getTime();
-  const diff = expiry - now;
-
-  if (diff <= 0) {
-    return { days: 0, hours: 0, minutes: 0, isExpired: true, isExpiringSoon: false };
-  }
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const isExpiringSoon = days < 3;
-
-  return { days, hours, minutes, isExpired: false, isExpiringSoon };
-}
-
-/**
- * Format time remaining as a human-readable string.
- */
-function formatTimeRemaining(time: ReturnType<typeof getTimeRemaining>): string {
+function formatInviteTimeRemaining(time: TimeRemaining): string {
   if (time.isExpired) return 'Expired';
-  if (time.days > 0) return `${time.days}d ${time.hours}h remaining`;
-  if (time.hours > 0) return `${time.hours}h ${time.minutes}m remaining`;
-  return `${time.minutes}m remaining`;
+  const formatted = formatTimeRemaining(time, 'short');
+  return `${formatted} remaining`;
 }
 
 // =============================================================================
@@ -91,12 +65,15 @@ export default function PersistentInviteCard({
   disabled = false,
 }: PersistentInviteCardProps): React.JSX.Element {
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const [timeRemaining, setTimeRemaining] = useState(() => getTimeRemaining(inviteCode.expires_at));
+  // Use 3 days for "expiring soon" threshold on invite codes
+  const [timeRemaining, setTimeRemaining] = useState(() =>
+    getTimeRemaining(inviteCode.expires_at, 3)
+  );
 
   // Update timer every minute
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeRemaining(getTimeRemaining(inviteCode.expires_at));
+      setTimeRemaining(getTimeRemaining(inviteCode.expires_at, 3));
     }, 60000);
 
     return () => clearInterval(interval);
@@ -187,7 +164,7 @@ export default function PersistentInviteCard({
                 timeRemaining.isExpiringSoon && styles.statusTextExpiringSoon,
               ]}
             >
-              {formatTimeRemaining(timeRemaining)}
+              {formatInviteTimeRemaining(timeRemaining)}
             </Text>
           </View>
         )}
