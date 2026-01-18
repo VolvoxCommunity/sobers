@@ -493,6 +493,9 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const [isSavingTwelveStep, setIsSavingTwelveStep] = useState(false);
   const [isSavingHandles, setIsSavingHandles] = useState(false);
+  // Draft state for external handles to allow immediate UI updates while debouncing DB writes
+  const [draftHandles, setDraftHandles] = useState<ExternalHandles | null>(null);
+  const handlesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
   const buildInfo = getBuildInfo();
@@ -772,32 +775,46 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   /**
    * Updates the user's external handles (Discord, Telegram, etc.).
    * These are stored privately and only revealed with mutual consent.
+   * Uses debouncing to avoid DB writes on every keystroke.
    */
   const handleExternalHandlesChange = useCallback(
-    async (handles: ExternalHandles) => {
-      if (!profile?.id || isSavingHandles) return;
+    (handles: ExternalHandles) => {
+      if (!profile?.id) return;
 
-      setIsSavingHandles(true);
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ external_handles: handles })
-          .eq('id', profile.id);
+      // Update draft state immediately for responsive UI
+      setDraftHandles(handles);
 
-        if (error) throw error;
-
-        await refreshProfile();
-        // No toast - inline editing feels better without interruptions
-      } catch (error: unknown) {
-        logger.error('External handles update failed', error as Error, {
-          category: LogCategory.DATABASE,
-        });
-        showToast.error('Failed to save contact info');
-      } finally {
-        setIsSavingHandles(false);
+      // Clear existing debounce timeout
+      if (handlesDebounceRef.current) {
+        clearTimeout(handlesDebounceRef.current);
       }
+
+      // Debounce the actual database write
+      handlesDebounceRef.current = setTimeout(async () => {
+        setIsSavingHandles(true);
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ external_handles: handles })
+            .eq('id', profile.id);
+
+          if (error) throw error;
+
+          await refreshProfile();
+          // Clear draft state after successful save
+          setDraftHandles(null);
+          // No toast - inline editing feels better without interruptions
+        } catch (error: unknown) {
+          logger.error('External handles update failed', error as Error, {
+            category: LogCategory.DATABASE,
+          });
+          showToast.error('Failed to save contact info');
+        } finally {
+          setIsSavingHandles(false);
+        }
+      }, 500);
     },
-    [profile?.id, isSavingHandles, refreshProfile]
+    [profile?.id, refreshProfile]
   );
 
   /**
@@ -1113,10 +1130,10 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
       {/* External Contacts Section */}
       <ExternalHandlesSection
-        value={profile?.external_handles}
+        value={draftHandles ?? profile?.external_handles}
         onChange={handleExternalHandlesChange}
         theme={theme}
-        disabled={isSavingHandles}
+        isSaving={isSavingHandles}
       />
 
       {/* About Section */}
