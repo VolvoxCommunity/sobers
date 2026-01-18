@@ -18,6 +18,7 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
+  TextInput,
 } from 'react-native';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +29,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { logger, LogCategory } from '@/lib/logger';
 import { formatLocalDate, parseDateAsLocal } from '@/lib/date';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
+
+// Use regular TextInput on web to avoid BottomSheetTextInput compatibility issues
+const InputComponent = Platform.OS === 'web' ? TextInput : BottomSheetTextInput;
 
 // =============================================================================
 // Types & Interfaces
@@ -510,7 +514,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Task Title *</Text>
-            <BottomSheetTextInput
+            <InputComponent
               style={styles.input}
               value={customTitle}
               onChangeText={setCustomTitle}
@@ -522,7 +526,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Task Description *</Text>
-            <BottomSheetTextInput
+            <InputComponent
               style={[styles.input, styles.textArea]}
               value={customDescription}
               onChangeText={setCustomDescription}

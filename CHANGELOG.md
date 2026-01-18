@@ -10,9 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
+- Fix bottom sheet text inputs not working on web by using platform-specific InputComponent pattern
 
 ### Added
 
+- Add sponsor/sponsee connection system with Intent & Ownership pattern
+- Add `ConnectionIntent` type with `not_looking`, `seeking_sponsor`, `open_to_sponsoring`, `open_to_both` options
+- Add `ConnectionIntentSelector` component for users to set their connection preferences on profile
+- Add `PersistentInviteCard` component showing active invite codes with expiration timer, copy, share, regenerate, and revoke actions
+- Add `SymmetricRevealSection` component for mutual consent contact sharing within relationships
+- Add `ExternalHandlesSection` in Settings for storing private contact info (Discord, Telegram, WhatsApp, Signal, Phone)
+- Add `external_handles` JSONB field to profiles for storing contact info privately
+- Add `sponsor_reveal_consent` and `sponsee_reveal_consent` columns to relationships for symmetric reveal
+- Add `revoked_at` and `intent` columns to invite_codes for better invite management
+- Add database migration with RLS policies for connection intent, external handles, and symmetric reveal
 - Add "Include 12-Step Content" toggle in onboarding Preferences card (enabled by default)
 - Add "Include 12-Step Content" toggle in Settings to show or hide the Steps tab
 - Add conditional Steps tab visibility based on user preference (hidden when 12-step content disabled)

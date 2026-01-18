@@ -9,12 +9,23 @@ import React, {
   useRef,
   useEffect,
 } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  Platform,
+} from 'react-native';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { X, CheckCircle } from 'lucide-react-native';
 import { ThemeColors } from '@/contexts/ThemeContext';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
 import type { Task } from '@/types/database';
+
+// Use regular TextInput on web to avoid BottomSheetTextInput compatibility issues
+const InputComponent = Platform.OS === 'web' ? TextInput : BottomSheetTextInput;
 
 // =============================================================================
 // Types & Interfaces
@@ -236,7 +247,7 @@ const TaskCompletionSheet = forwardRef<TaskCompletionSheetRef, TaskCompletionShe
                 <Text style={styles.helpText}>
                   Share your reflections, insights, or any challenges you faced with this task.
                 </Text>
-                <BottomSheetTextInput
+                <InputComponent
                   style={styles.textArea}
                   value={notes}
                   onChangeText={setNotes}

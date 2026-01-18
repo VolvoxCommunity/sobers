@@ -68,12 +68,36 @@ jest.mock('@/lib/supabase', () => ({
       }
       if (table === 'invite_codes') {
         return {
-          insert: jest.fn().mockResolvedValue({ error: null }),
+          insert: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: {
+                  id: 'invite-123',
+                  code: 'TESTCODE',
+                  sponsor_id: 'user-123',
+                  expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  created_at: new Date().toISOString(),
+                },
+                error: null,
+              }),
+            }),
+          }),
+          update: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ error: null }),
+            }),
+          }),
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              gt: jest.fn().mockReturnValue({
+              is: jest.fn().mockReturnValue({
                 is: jest.fn().mockReturnValue({
-                  single: jest.fn().mockResolvedValue({ data: null, error: null }),
+                  gt: jest.fn().mockReturnValue({
+                    order: jest.fn().mockReturnValue({
+                      limit: jest.fn().mockReturnValue({
+                        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                      }),
+                    }),
+                  }),
                 }),
               }),
               maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
@@ -208,6 +232,19 @@ jest.mock('lucide-react-native', () => ({
   ChevronLeft: () => null,
   Layout: () => null,
   Sparkles: () => null,
+  // Icons used by ConnectionIntentSelector
+  Search: () => null,
+  Users: () => null,
+  UserPlus: () => null,
+  // Icons used by PersistentInviteCard
+  Clock: () => null,
+  // Icons used by SymmetricRevealSection
+  Eye: () => null,
+  EyeOff: () => null,
+  MessageCircle: () => null,
+  Phone: () => null,
+  Send: () => null,
+  Check: () => null,
 }));
 
 // Mock useWhatsNew hook
@@ -1332,7 +1369,6 @@ describe('ProfileScreen', () => {
     });
 
     it('generates invite code when pressed', async () => {
-      const { Alert } = jest.requireMock('react-native');
       render(<ProfileScreen />);
 
       await waitFor(() => {
@@ -1342,10 +1378,8 @@ describe('ProfileScreen', () => {
       fireEvent.press(screen.getByText('Generate Invite Code'));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          'Invite Code Generated',
-          expect.stringContaining('Your invite code is:'),
-          expect.any(Array)
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'success', text1: 'New invite code generated' })
         );
       });
     });
@@ -1385,7 +1419,29 @@ describe('ProfileScreen', () => {
       supabase.from.mockImplementation((table: string) => {
         if (table === 'invite_codes') {
           return {
-            insert: jest.fn().mockResolvedValue({ error: new Error('Database error') }),
+            insert: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: null,
+                  error: new Error('Database error'),
+                }),
+              }),
+            }),
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                is: jest.fn().mockReturnValue({
+                  is: jest.fn().mockReturnValue({
+                    gt: jest.fn().mockReturnValue({
+                      order: jest.fn().mockReturnValue({
+                        limit: jest.fn().mockReturnValue({
+                          maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
           };
         }
         if (table === 'sponsor_sponsee_relationships') {

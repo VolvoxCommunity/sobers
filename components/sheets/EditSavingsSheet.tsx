@@ -9,7 +9,15 @@ import React, {
   useRef,
   useMemo,
 } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  TextInput,
+  Platform,
+} from 'react-native';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { X, DollarSign } from 'lucide-react-native';
@@ -22,6 +30,9 @@ import { trackEvent } from '@/lib/analytics';
 import { AnalyticsEvents } from '@/types/analytics';
 import type { Profile } from '@/types/database';
 import type { SpendingFrequency } from '@/lib/savings';
+
+// Use regular TextInput on web to avoid BottomSheetTextInput compatibility issues
+const InputComponent = Platform.OS === 'web' ? TextInput : BottomSheetTextInput;
 
 // =============================================================================
 // Types & Interfaces
@@ -310,7 +321,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
             <Text style={styles.label}>Amount</Text>
             <View style={styles.amountInputContainer}>
               <DollarSign size={20} color={theme.textSecondary} style={styles.dollarIcon} />
-              <BottomSheetTextInput
+              <InputComponent
                 testID="edit-savings-amount-input"
                 style={styles.amountInput}
                 value={amount}
