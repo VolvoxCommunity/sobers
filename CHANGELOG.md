@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move Steps screens from `/steps` to `/program/steps`
 - Update Settings toggle label from "Include 12-Step Content" to "Show 12-Step Program" with expanded description
+- Extract `getTimeRemaining` and `formatTimeRemaining` to shared `lib/time-utils.ts` (DRY refactor)
+- Extract `getPlatformIcon` and `getPlatformLabel` to shared `lib/platform-icons.tsx` (DRY refactor)
 
 ### Removed
 

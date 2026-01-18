@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
-import { Eye, EyeOff, MessageCircle, Phone, Send, Shield, Check, Clock } from 'lucide-react-native';
+import { Eye, EyeOff, Check, Clock } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
 import type { ExternalHandles, Profile } from '@/types/database';
+import { getPlatformIcon, getPlatformLabel } from '@/lib/platform-icons';
 
 // =============================================================================
 // Types & Interfaces
@@ -47,39 +48,6 @@ function getRevealState(myConsent: boolean, theirConsent: boolean): RevealState 
   if (myConsent && !theirConsent) return 'you_pending';
   if (!myConsent && theirConsent) return 'them_pending';
   return 'none';
-}
-
-/**
- * Get icon for a platform.
- */
-function getPlatformIcon(key: string, theme: ThemeColors): React.ReactNode {
-  switch (key) {
-    case 'discord':
-      return <MessageCircle size={16} color={theme.primary} />;
-    case 'telegram':
-      return <Send size={16} color={theme.info} />;
-    case 'whatsapp':
-    case 'phone':
-      return <Phone size={16} color={theme.success} />;
-    case 'signal':
-      return <Shield size={16} color={theme.warning} />;
-    default:
-      return <MessageCircle size={16} color={theme.textSecondary} />;
-  }
-}
-
-/**
- * Get label for a platform key.
- */
-function getPlatformLabel(key: string): string {
-  const labels: Record<string, string> = {
-    discord: 'Discord',
-    telegram: 'Telegram',
-    whatsapp: 'WhatsApp',
-    signal: 'Signal',
-    phone: 'Phone',
-  };
-  return labels[key] || key;
 }
 
 // =============================================================================
