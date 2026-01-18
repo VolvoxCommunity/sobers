@@ -64,7 +64,7 @@ export default function ProfileScreen() {
     [key: string]: { total: number; completed: number };
   }>({});
   const [activeInviteCode, setActiveInviteCode] = useState<InviteCode | null>(null);
-  const [loadingInviteCode, setLoadingInviteCode] = useState(false);
+  const [isLoadingInviteCode, setLoadingInviteCode] = useState(false);
   const [pendingMatches, setPendingMatches] = useState<ConnectionMatch[]>([]);
 
   /**
@@ -724,7 +724,7 @@ export default function ProfileScreen() {
                 theme={theme}
                 onRegenerate={regenerateInviteCode}
                 onRevoke={revokeInviteCode}
-                disabled={loadingInviteCode}
+                disabled={isLoadingInviteCode}
               />
             )}
             {sponseeRelationships.map((rel) => (

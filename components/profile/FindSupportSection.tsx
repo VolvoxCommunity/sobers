@@ -27,7 +27,7 @@ interface FindSupportSectionProps {
   /** Callback to refresh matches after action */
   onMatchUpdate: () => void;
   /** Whether the section is disabled */
-  disabled?: boolean;
+  isDisabled?: boolean;
 }
 
 // =============================================================================
@@ -83,7 +83,7 @@ export default function FindSupportSection({
   theme,
   pendingMatches,
   onMatchUpdate,
-  disabled = false,
+  isDisabled = false,
 }: FindSupportSectionProps): React.JSX.Element | null {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [isSearching, setIsSearching] = useState(false);
@@ -94,7 +94,7 @@ export default function FindSupportSection({
 
   const findMatches = useCallback(async () => {
     if (!shouldShow) return;
-    if (disabled || isSearching) return;
+    if (isDisabled || isSearching) return;
 
     setIsSearching(true);
     try {
@@ -155,11 +155,11 @@ export default function FindSupportSection({
     } finally {
       setIsSearching(false);
     }
-  }, [userId, intent, disabled, isSearching, onMatchUpdate, shouldShow]);
+  }, [userId, intent, isDisabled, isSearching, onMatchUpdate, shouldShow]);
 
   const acceptMatch = useCallback(
     async (matchId: string) => {
-      if (disabled || isProcessing) return;
+      if (isDisabled || isProcessing) return;
 
       setIsProcessing(matchId);
       try {
@@ -191,12 +191,12 @@ export default function FindSupportSection({
         setIsProcessing(null);
       }
     },
-    [disabled, isProcessing, onMatchUpdate]
+    [isDisabled, isProcessing, onMatchUpdate]
   );
 
   const rejectMatch = useCallback(
     async (matchId: string) => {
-      if (disabled || isProcessing) return;
+      if (isDisabled || isProcessing) return;
 
       setIsProcessing(matchId);
       try {
@@ -223,7 +223,7 @@ export default function FindSupportSection({
         setIsProcessing(null);
       }
     },
-    [disabled, isProcessing, onMatchUpdate]
+    [isDisabled, isProcessing, onMatchUpdate]
   );
 
   // Separate matches by user's role and acceptance status
@@ -299,7 +299,7 @@ export default function FindSupportSection({
                   <TouchableOpacity
                     style={[styles.actionButton, styles.rejectButton]}
                     onPress={() => rejectMatch(match.id)}
-                    disabled={disabled || isProcessingThis}
+                    disabled={isDisabled || isProcessingThis}
                     accessibilityRole="button"
                     accessibilityLabel="Decline match"
                   >
@@ -312,7 +312,7 @@ export default function FindSupportSection({
                   <TouchableOpacity
                     style={[styles.actionButton, styles.acceptButton]}
                     onPress={() => acceptMatch(match.id)}
-                    disabled={disabled || isProcessingThis}
+                    disabled={isDisabled || isProcessingThis}
                     accessibilityRole="button"
                     accessibilityLabel="Accept match"
                   >
@@ -364,7 +364,7 @@ export default function FindSupportSection({
       <TouchableOpacity
         style={[styles.findButton, isSearching && styles.findButtonDisabled]}
         onPress={findMatches}
-        disabled={disabled || isSearching}
+        disabled={isDisabled || isSearching}
         accessibilityRole="button"
         accessibilityLabel="Find new matches"
         testID="find-matches-button"
