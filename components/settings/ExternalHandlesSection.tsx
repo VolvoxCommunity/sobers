@@ -124,17 +124,24 @@ export default function ExternalHandlesSection({
   };
 
   const togglePlatform = (key: PlatformKey) => {
+    // Check if collapsing (currently expanded)
+    const isCollapsing = expandedPlatforms.has(key);
+
+    // Update UI state first
     setExpandedPlatforms((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
+      if (isCollapsing) {
         next.delete(key);
-        // Clear the value when collapsing
-        handleChange(key, '');
       } else {
         next.add(key);
       }
       return next;
     });
+
+    // Clear data separately when collapsing (not inside state updater)
+    if (isCollapsing) {
+      handleChange(key, '');
+    }
   };
 
   const visiblePlatforms = platforms.filter((p) => expandedPlatforms.has(p.key));
