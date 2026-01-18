@@ -103,12 +103,12 @@ CREATE POLICY "Sponsors can view their own invite codes"
   ON public.invite_codes FOR SELECT TO authenticated
   USING (sponsor_id = auth.uid());
 
--- Allow users to update invite codes when claiming them
+-- Allow users to update invite codes when claiming them (must not be revoked)
 DROP POLICY IF EXISTS "Users can update invite codes when using them" ON public.invite_codes;
 CREATE POLICY "Users can update invite codes when using them"
   ON public.invite_codes FOR UPDATE TO authenticated
-  USING (expires_at > now() AND used_by IS NULL)
-  WITH CHECK (used_by = auth.uid());
+  USING (expires_at > now() AND used_by IS NULL AND revoked_at IS NULL)
+  WITH CHECK (used_by = auth.uid() AND revoked_at IS NULL);
 
 -- =============================================================================
 -- Profile RLS Policies for Connection Flow
