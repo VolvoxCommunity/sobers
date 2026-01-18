@@ -64,7 +64,7 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import { useWhatsNew } from '@/lib/whats-new';
 import { WhatsNewSheet, type WhatsNewSheetRef } from '@/components/whats-new';
-import ExternalHandlesSection from './ExternalHandlesSection';
+import ExternalHandlesSection from '@/components/settings/ExternalHandlesSection';
 import packageJson from '../../package.json';
 
 import type { SettingsContentProps } from './types';
