@@ -77,7 +77,17 @@ describe('platform-icons', () => {
 
     it('respects custom size parameter', () => {
       const icon = getPlatformIcon('discord', mockTheme, 24);
-      expect(icon).toBeTruthy();
+      const { root } = render(<View testID="icon-container">{icon}</View>);
+      // Find the icon element (Svg component from lucide-react-native)
+      const iconElement = root.findByProps({ testID: 'icon-container' }).props.children;
+      expect(iconElement.props.size).toBe(24);
+    });
+
+    it('uses default size of 16 when not specified', () => {
+      const icon = getPlatformIcon('telegram', mockTheme);
+      const { root } = render(<View testID="icon-container">{icon}</View>);
+      const iconElement = root.findByProps({ testID: 'icon-container' }).props.children;
+      expect(iconElement.props.size).toBe(16);
     });
   });
 });
