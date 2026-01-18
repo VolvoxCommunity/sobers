@@ -114,19 +114,42 @@ CREATE POLICY "Users can update invite codes when using them"
 -- Profile RLS Policies for Connection Flow
 -- =============================================================================
 
--- Allow users to view sponsor profiles when they have a valid invite code
+-- Remove overly broad policy - replaced with SECURITY DEFINER function below
 DROP POLICY IF EXISTS "Users can view sponsor profile via invite code" ON public.profiles;
-CREATE POLICY "Users can view sponsor profile via invite code"
-  ON public.profiles FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.invite_codes
-      WHERE sponsor_id = profiles.id
-        AND expires_at > now()
-        AND used_by IS NULL
-        AND revoked_at IS NULL
-    )
-  );
+
+-- =============================================================================
+-- Function to get sponsor profile by invite code (secure alternative to RLS)
+-- =============================================================================
+
+-- This function allows users to look up a sponsor's profile ONLY when they
+-- have the actual invite code. This is more secure than an RLS policy that
+-- would allow viewing any sponsor with an active invite code.
+CREATE OR REPLACE FUNCTION public.get_sponsor_profile_by_invite_code(invite_code TEXT)
+RETURNS TABLE (
+  id uuid,
+  display_name text,
+  sobriety_date date,
+  avatar_url text
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    p.id,
+    p.display_name,
+    p.sobriety_date,
+    p.avatar_url
+  FROM public.profiles p
+  JOIN public.invite_codes ic ON ic.sponsor_id = p.id
+  WHERE ic.code = invite_code
+    AND ic.expires_at > now()
+    AND ic.used_by IS NULL
+    AND ic.revoked_at IS NULL
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.get_sponsor_profile_by_invite_code(TEXT) TO authenticated;
 
 -- Allow sponsees to view their sponsor's profile
 DROP POLICY IF EXISTS "Users can view their sponsor's profile" ON public.profiles;
