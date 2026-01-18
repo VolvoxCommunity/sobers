@@ -17,7 +17,7 @@ export type PlatformKey = 'discord' | 'telegram' | 'whatsapp' | 'signal' | 'phon
 /**
  * Theme colors interface for icon rendering.
  */
-interface IconTheme {
+export interface IconTheme {
   primary: string;
   info: string;
   success: string;
@@ -32,7 +32,7 @@ interface IconTheme {
 /**
  * Human-readable labels for platform keys.
  */
-export const platformLabels: Record<string, string> = {
+export const platformLabels: Record<PlatformKey, string> = {
   discord: 'Discord',
   telegram: 'Telegram',
   whatsapp: 'WhatsApp',
@@ -48,7 +48,7 @@ export const platformLabels: Record<string, string> = {
  * Get human-readable label for a platform key.
  */
 export function getPlatformLabel(key: string): string {
-  return platformLabels[key] || key;
+  return (platformLabels as Record<string, string>)[key] || key;
 }
 
 /**

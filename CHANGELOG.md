@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extract `SheetInputComponent` to shared `lib/sheet-input.tsx` for platform-specific bottom sheet inputs
 - Add canonical section dividers to `lib/platform-icons.tsx` for better code organization
 - Add size verification tests to platform-icons test suite
+- Replace `Math.random()` with cryptographically secure `expo-crypto` for invite code generation
+- Memoize `handleConnectionIntentChange` with `useCallback` for performance optimization
+- Export `IconTheme` interface from `lib/platform-icons.tsx` for type safety
+- Strengthen `platformLabels` typing with `Record<PlatformKey, string>` constraint
 
 ### Removed
 
@@ -53,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix flaky time-utils test by using deterministic fake timers
 - Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
 - Fix empty external handle values shown in SymmetricRevealSection
+- Fix timer display not showing minutes when hours = 0 in FindSupportSection
+- Fix potential memory leak in SymmetricRevealSection by adding isMounted cleanup guard
 
 ## [1.3.0] - 2026-01-27
 

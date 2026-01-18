@@ -290,7 +290,9 @@ export default function FindSupportSection({
                       >
                         {timeLeft.days > 0
                           ? `${timeLeft.days}d ${timeLeft.hours}h left`
-                          : `${timeLeft.hours}h left`}
+                          : timeLeft.hours > 0
+                            ? `${timeLeft.hours}h ${timeLeft.minutes}m left`
+                            : `${timeLeft.minutes}m left`}
                       </Text>
                     </View>
                   </View>
@@ -352,7 +354,11 @@ export default function FindSupportSection({
                 <Text
                   style={[styles.matchExpiry, timeLeft.isExpiringSoon && styles.matchExpiryWarn]}
                 >
-                  {timeLeft.days > 0 ? `${timeLeft.days}d` : `${timeLeft.hours}h`}
+                  {timeLeft.days > 0
+                    ? `${timeLeft.days}d`
+                    : timeLeft.hours > 0
+                      ? `${timeLeft.hours}h`
+                      : `${timeLeft.minutes}m`}
                 </Text>
               </View>
             );

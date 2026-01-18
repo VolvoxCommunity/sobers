@@ -98,6 +98,8 @@ export default function SymmetricRevealSection({
 
   // Fetch handles only when there's mutual consent (via secure RPC)
   useEffect(() => {
+    let isMounted = true;
+
     if (revealState !== 'mutual') {
       setOtherHandles({});
       return;
@@ -110,6 +112,9 @@ export default function SymmetricRevealSection({
           relationship_id: relationshipId,
         });
 
+        // Guard: Only update state if component is still mounted
+        if (!isMounted) return;
+
         if (error) {
           logger.error('Failed to fetch handles with consent', new Error(error.message), {
             category: LogCategory.DATABASE,
@@ -119,15 +124,24 @@ export default function SymmetricRevealSection({
 
         setOtherHandles((data as ExternalHandles) || {});
       } catch (err) {
+        // Guard: Only update state if component is still mounted
+        if (!isMounted) return;
+
         logger.error('Unexpected error fetching handles', err as Error, {
           category: LogCategory.DATABASE,
         });
       } finally {
-        setIsLoadingHandles(false);
+        if (isMounted) {
+          setIsLoadingHandles(false);
+        }
       }
     };
 
     fetchHandles();
+
+    return () => {
+      isMounted = false;
+    };
   }, [revealState, relationshipId]);
 
   // Filter out empty handle values

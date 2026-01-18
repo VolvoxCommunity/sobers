@@ -737,6 +737,19 @@ jest.mock('expo-application', () => ({
   applicationName: 'Sobers',
 }));
 
+// Mock expo-crypto for cryptographically secure random generation
+jest.mock('expo-crypto', () => ({
+  getRandomBytesAsync: jest.fn().mockImplementation((length) => {
+    // Generate deterministic mock bytes for testing
+    const bytes = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      bytes[i] = (i * 17 + 42) % 256;
+    }
+    return Promise.resolve(bytes);
+  }),
+  randomUUID: jest.fn().mockReturnValue('mock-uuid-1234-5678-9abc-def012345678'),
+}));
+
 // Mock @amplitude/analytics-react-native
 jest.mock('@amplitude/analytics-react-native', () => ({
   init: jest.fn().mockReturnValue({ promise: Promise.resolve() }),
