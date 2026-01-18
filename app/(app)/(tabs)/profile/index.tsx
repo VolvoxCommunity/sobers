@@ -10,6 +10,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Crypto from 'expo-crypto';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
@@ -188,8 +189,13 @@ export default function ProfileScreen() {
           .eq('id', activeInviteCode.id);
       }
 
-      // Generate new code
-      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      // Generate new code using cryptographically secure random bytes
+      const randomBytes = await Crypto.getRandomBytesAsync(6);
+      const code = Array.from(randomBytes)
+        .map((b) => b.toString(36).padStart(2, '0'))
+        .join('')
+        .substring(0, 8)
+        .toUpperCase();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
 
@@ -219,6 +225,29 @@ export default function ProfileScreen() {
       setLoadingInviteCode(false);
     }
   }, [profile, activeInviteCode]);
+
+  /**
+   * Handles connection intent change from the selector.
+   */
+  const handleConnectionIntentChange = useCallback(
+    async (intent: ConnectionIntent | null) => {
+      if (!profile) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ connection_intent: intent })
+        .eq('id', profile.id);
+      if (error) {
+        showToast.error('Failed to update connection intent');
+        logger.error('Failed to update connection intent', error, {
+          category: LogCategory.DATABASE,
+        });
+      } else {
+        await refreshProfile();
+        showToast.success('Connection intent updated');
+      }
+    },
+    [profile, refreshProfile]
+  );
 
   const fetchRelationships = useCallback(async () => {
     if (!profile) return;
@@ -658,22 +687,7 @@ export default function ProfileScreen() {
         {/* Connection Intent Selector */}
         <ConnectionIntentSelector
           value={profile?.connection_intent ?? null}
-          onChange={async (intent: ConnectionIntent | null) => {
-            if (!profile) return;
-            const { error } = await supabase
-              .from('profiles')
-              .update({ connection_intent: intent })
-              .eq('id', profile.id);
-            if (error) {
-              showToast.error('Failed to update connection intent');
-              logger.error('Failed to update connection intent', error, {
-                category: LogCategory.DATABASE,
-              });
-            } else {
-              await refreshProfile();
-              showToast.success('Connection intent updated');
-            }
-          }}
+          onChange={handleConnectionIntentChange}
           theme={theme}
         />
 
