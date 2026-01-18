@@ -121,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
 - Fix empty external handle values shown in SymmetricRevealSection
 - Fix timer display not showing minutes when hours = 0 in FindSupportSection
-- Fix potential memory leak in SymmetricRevealSection by adding isMounted cleanup guard
+- Fix potential memory leak in SymmetricRevealSection using ref-based mount guard pattern
 
 ## [1.2.1] - 2025-12-25
 

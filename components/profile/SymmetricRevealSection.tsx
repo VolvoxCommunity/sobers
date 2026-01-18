@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
 import { Eye, EyeOff, Check, Clock } from 'lucide-react-native';
 import type { ThemeColors } from '@/contexts/ThemeContext';
@@ -93,12 +93,23 @@ export default function SymmetricRevealSection({
   const [otherHandles, setOtherHandles] = useState<ExternalHandles>({});
   const [isLoadingHandles, setIsLoadingHandles] = useState(false);
 
+  // Ref-based mount guard to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
+  // Cleanup ref on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const otherName = otherProfile?.display_name || 'Unknown';
   const hasMyHandles = myHandles && Object.keys(myHandles).length > 0;
 
   // Fetch handles only when there's mutual consent (via secure RPC)
   useEffect(() => {
-    let isMounted = true;
+    // Per-effect active flag for cancellation
+    let isActive = true;
 
     if (revealState !== 'mutual') {
       setOtherHandles({});
@@ -112,8 +123,8 @@ export default function SymmetricRevealSection({
           relationship_id: relationshipId,
         });
 
-        // Guard: Only update state if component is still mounted
-        if (!isMounted) return;
+        // Guard: Only update state if effect is still active and component is mounted
+        if (!isActive || !isMountedRef.current) return;
 
         if (error) {
           logger.error('Failed to fetch handles with consent', new Error(error.message), {
@@ -124,14 +135,14 @@ export default function SymmetricRevealSection({
 
         setOtherHandles((data as ExternalHandles) || {});
       } catch (err) {
-        // Guard: Only update state if component is still mounted
-        if (!isMounted) return;
+        // Guard: Only update state if effect is still active and component is mounted
+        if (!isActive || !isMountedRef.current) return;
 
         logger.error('Unexpected error fetching handles', err as Error, {
           category: LogCategory.DATABASE,
         });
       } finally {
-        if (isMounted) {
+        if (isActive && isMountedRef.current) {
           setIsLoadingHandles(false);
         }
       }
@@ -140,7 +151,7 @@ export default function SymmetricRevealSection({
     fetchHandles();
 
     return () => {
-      isMounted = false;
+      isActive = false;
     };
   }, [revealState, relationshipId]);
 
