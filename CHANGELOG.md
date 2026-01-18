@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `external_handles` JSONB field to profiles for storing contact info privately
 - Add `sponsor_reveal_consent` and `sponsee_reveal_consent` columns to relationships for symmetric reveal
 - Add `revoked_at` and `intent` columns to invite_codes for better invite management
-- Add database migration with RLS policies for connection intent, external handles, and symmetric reveal
+- Add `FindSupportSection` component for opt-in matching to find sponsors/sponsees based on complementary intents
+- Add `connection_matches` table with bilateral acceptance pattern (both parties must accept to connect)
+- Add `find_potential_matches`, `accept_match`, and `reject_match` database functions for matching workflow
+- Add database migration with RLS policies for connection intent, external handles, symmetric reveal, and opt-in matching
 
 ### Changed
 
