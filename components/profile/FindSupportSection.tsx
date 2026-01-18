@@ -5,7 +5,7 @@ import type { ThemeColors } from '@/contexts/ThemeContext';
 import type { ConnectionMatch, ConnectionIntent, PotentialMatch } from '@/types/database';
 import { supabase } from '@/lib/supabase';
 import { showToast } from '@/lib/toast';
-import { logger } from '@/lib/logger';
+import { logger, LogCategory } from '@/lib/logger';
 import { getTimeRemaining } from '@/lib/time-utils';
 
 // =============================================================================
@@ -105,7 +105,9 @@ export default function FindSupportSection({
       });
 
       if (error) {
-        logger.error('Failed to find matches', new Error(error.message));
+        logger.error('Failed to find matches', new Error(error.message), {
+          category: LogCategory.DATABASE,
+        });
         showToast.error('Failed to find matches');
         return;
       }
@@ -118,24 +120,37 @@ export default function FindSupportSection({
       }
 
       // Create match requests for each potential match
+      // Only seekers can create matches directly (RLS policy: seeker_id = auth.uid())
+      // Providers wait to be matched by seekers
       const isSeeking = intent === 'seeking_sponsor' || intent === 'open_to_both';
 
+      if (!isSeeking) {
+        // Providers can't directly create matches - they're shown to seekers
+        showToast.info(
+          'Providers are matched by seekers. Update your intent if you want to find a sponsor.'
+        );
+        return;
+      }
+
       for (const match of potentialMatches) {
-        const matchData = isSeeking
-          ? { seeker_id: userId, provider_id: match.matched_user_id }
-          : { seeker_id: match.matched_user_id, provider_id: userId };
+        const matchData = { seeker_id: userId, provider_id: match.matched_user_id };
 
         const { error: insertError } = await supabase.from('connection_matches').insert(matchData);
 
         if (insertError && !insertError.message.includes('unique')) {
-          logger.warn('Failed to create match', { errorMessage: insertError.message });
+          logger.warn('Failed to create match', {
+            category: LogCategory.DATABASE,
+            errorMessage: insertError.message,
+          });
         }
       }
 
       showToast.success(`Found ${potentialMatches.length} potential match(es)!`);
       onMatchUpdate();
     } catch (error) {
-      logger.error('Error finding matches', error as Error);
+      logger.error('Error finding matches', error as Error, {
+        category: LogCategory.DATABASE,
+      });
       showToast.error('Something went wrong');
     } finally {
       setIsSearching(false);
@@ -153,7 +168,9 @@ export default function FindSupportSection({
         });
 
         if (error) {
-          logger.error('Failed to accept match', new Error(error.message));
+          logger.error('Failed to accept match', new Error(error.message), {
+            category: LogCategory.DATABASE,
+          });
           showToast.error('Failed to accept match');
           return;
         }
@@ -166,7 +183,9 @@ export default function FindSupportSection({
         }
         onMatchUpdate();
       } catch (error) {
-        logger.error('Error accepting match', error as Error);
+        logger.error('Error accepting match', error as Error, {
+          category: LogCategory.DATABASE,
+        });
         showToast.error('Something went wrong');
       } finally {
         setIsProcessing(null);
@@ -186,7 +205,9 @@ export default function FindSupportSection({
         });
 
         if (error) {
-          logger.error('Failed to reject match', new Error(error.message));
+          logger.error('Failed to reject match', new Error(error.message), {
+            category: LogCategory.DATABASE,
+          });
           showToast.error('Failed to decline match');
           return;
         }
@@ -194,7 +215,9 @@ export default function FindSupportSection({
         showToast.info('Match declined');
         onMatchUpdate();
       } catch (error) {
-        logger.error('Error rejecting match', error as Error);
+        logger.error('Error rejecting match', error as Error, {
+          category: LogCategory.DATABASE,
+        });
         showToast.error('Something went wrong');
       } finally {
         setIsProcessing(null);
