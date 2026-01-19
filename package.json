@@ -50,7 +50,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@vercel/analytics": "^1.6.1",
     "date-fns": "^4.1.0",
-    "expo": "~54.0.32",
+    "expo": "~54.0.31",
     "expo-apple-authentication": "~8.0.8",
     "expo-application": "^7.0.8",
     "expo-auth-session": "^7.0.10",
