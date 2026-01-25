@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Program section replacing Steps tab with 5 sub-sections: Steps, Daily, Prayers, Literature, Meetings
+- Add horizontal top tabs navigation within Program section
+- Add database tables for daily readings, prayers, literature, meetings, and program stats
+- Add TypeScript types for all new Program section entities
 - Add "Show 12 Step Program" toggle in onboarding Preferences card (enabled by default)
 - Add "Show 12 Step Program" toggle in Settings to show or hide the Program tab
 - Add conditional Steps tab visibility based on user preference (hidden when 12-step content disabled)
@@ -45,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename `show_twelve_step_content` to `show_program_content` in profiles
+- Move Steps screens from `/steps` to `/program/steps`
 - Update Settings toggle label from "Include 12-Step Content" to "Show 12 Step Program" with expanded description covering steps, daily readings, prayers, literature, and meeting tracker
 - Restructure onboarding from 3 cards to 2 cards: merge "About You" and "Your Journey" into single "Your Journey" card, move savings tracking to new "Preferences" card
 - Rename Settings "Dashboard" section to "Features" to better reflect its purpose
