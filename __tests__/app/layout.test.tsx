@@ -318,8 +318,8 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
-    it('renders without error for steps route', () => {
-      mockPathname = '/steps';
+    it('renders without error for program route', () => {
+      mockPathname = '/program';
 
       const RootLayout = getLayout();
       render(<RootLayout />);
@@ -328,7 +328,7 @@ describe('RootLayout', () => {
     });
 
     it('renders without error for dynamic step detail routes', () => {
-      mockPathname = '/steps/abc-123-uuid';
+      mockPathname = '/program/steps/abc-123-uuid';
 
       const RootLayout = getLayout();
       render(<RootLayout />);

@@ -490,7 +490,7 @@ export default function HomeScreen() {
       <View testID="home-quick-actions" style={styles.quickActions}>
         <TouchableOpacity
           style={styles.actionCard}
-          onPress={() => router.push('/steps')}
+          onPress={() => router.push('/program')}
           accessibilityRole="button"
           accessibilityLabel="Open 12 Steps, Learn and Reflect"
         >

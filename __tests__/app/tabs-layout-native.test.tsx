@@ -208,7 +208,7 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       expect(screen.getByTestId('tab-screen-index')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-steps')).toBeTruthy();
+      expect(screen.getByTestId('tab-screen-program')).toBeTruthy();
       expect(screen.getByTestId('tab-screen-journey')).toBeTruthy();
       expect(screen.getByTestId('tab-screen-tasks')).toBeTruthy();
       expect(screen.getByTestId('tab-screen-profile')).toBeTruthy();
@@ -238,7 +238,7 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       expect(screen.getByTestId('expo-tab-screen-index')).toBeTruthy();
-      expect(screen.getByTestId('expo-tab-screen-steps')).toBeTruthy();
+      expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-journey')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-tasks')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-profile')).toBeTruthy();
@@ -280,7 +280,7 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       expect(mockCapturedTabBarIcons['index']()).toEqual({ sfSymbol: 'house.fill' });
-      expect(mockCapturedTabBarIcons['steps']()).toEqual({ sfSymbol: 'book.fill' });
+      expect(mockCapturedTabBarIcons['program']()).toEqual({ sfSymbol: 'heart.fill' });
       expect(mockCapturedTabBarIcons['journey']()).toEqual({
         sfSymbol: 'chart.line.uptrend.xyaxis',
       });
@@ -294,7 +294,7 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       expect(mockCapturedTabBarIcons['index']()).toBe('mock-home-icon');
-      expect(mockCapturedTabBarIcons['steps']()).toBe('mock-book-icon');
+      expect(mockCapturedTabBarIcons['program']()).toBe('mock-book-icon');
       expect(mockCapturedTabBarIcons['journey']()).toBe('mock-trending-icon');
       expect(mockCapturedTabBarIcons['tasks']()).toBe('mock-tasks-icon');
       expect(mockCapturedTabBarIcons['profile']()).toBe('mock-profile-icon');
@@ -361,26 +361,26 @@ describe('TabsLayout', () => {
     });
   });
 
-  describe('conditional Steps tab visibility', () => {
+  describe('conditional Program tab visibility', () => {
     beforeEach(() => {
       setPlatform('ios');
     });
 
-    it('shows Steps tab when show_program_content is true', () => {
+    it('shows Program tab when show_program_content is true', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: true },
       });
 
       render(<TabsLayout />);
 
-      const stepsScreen = screen.getByTestId('tab-screen-steps');
-      expect(stepsScreen).toBeTruthy();
+      const programScreen = screen.getByTestId('tab-screen-program');
+      expect(programScreen).toBeTruthy();
       // Verify tabBarItemHidden is not set (visible)
-      const options = JSON.parse(stepsScreen.props['data-options']);
+      const options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('hides Steps tab on native when show_program_content is false', () => {
+    it('hides Program tab on native when show_program_content is false', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: false },
       });
@@ -388,52 +388,52 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       // On native, the screen is still rendered but hidden via tabBarItemHidden
-      const stepsScreen = screen.getByTestId('tab-screen-steps');
-      expect(stepsScreen).toBeTruthy();
-      const options = JSON.parse(stepsScreen.props['data-options']);
+      const programScreen = screen.getByTestId('tab-screen-program');
+      expect(programScreen).toBeTruthy();
+      const options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBe(true);
     });
 
-    it('shows Steps tab when show_program_content is undefined (existing users)', () => {
+    it('shows Program tab when show_program_content is undefined (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: undefined },
       });
 
       render(<TabsLayout />);
 
-      const stepsScreen = screen.getByTestId('tab-screen-steps');
-      expect(stepsScreen).toBeTruthy();
-      const options = JSON.parse(stepsScreen.props['data-options']);
+      const programScreen = screen.getByTestId('tab-screen-program');
+      expect(programScreen).toBeTruthy();
+      const options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('shows Steps tab when show_program_content is null (existing users)', () => {
+    it('shows Program tab when show_program_content is null (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: null },
       });
 
       render(<TabsLayout />);
 
-      const stepsScreen = screen.getByTestId('tab-screen-steps');
-      expect(stepsScreen).toBeTruthy();
-      const options = JSON.parse(stepsScreen.props['data-options']);
+      const programScreen = screen.getByTestId('tab-screen-program');
+      expect(programScreen).toBeTruthy();
+      const options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('shows Steps tab when profile is null', () => {
+    it('shows Program tab when profile is null', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: null,
       });
 
       render(<TabsLayout />);
 
-      const stepsScreen = screen.getByTestId('tab-screen-steps');
-      expect(stepsScreen).toBeTruthy();
-      const options = JSON.parse(stepsScreen.props['data-options']);
+      const programScreen = screen.getByTestId('tab-screen-program');
+      expect(programScreen).toBeTruthy();
+      const options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('hides Steps tab on web when show_program_content is false', () => {
+    it('hides Program tab on web when show_program_content is false', () => {
       setPlatform('web');
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: false },
@@ -442,10 +442,10 @@ describe('TabsLayout', () => {
       render(<TabsLayout />);
 
       // On web, the screen is not rendered at all (conditional rendering)
-      expect(screen.queryByTestId('expo-tab-screen-steps')).toBeNull();
+      expect(screen.queryByTestId('expo-tab-screen-program')).toBeNull();
     });
 
-    it('shows Steps tab on web when show_program_content is true', () => {
+    it('shows Program tab on web when show_program_content is true', () => {
       setPlatform('web');
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: true },
@@ -453,7 +453,7 @@ describe('TabsLayout', () => {
 
       render(<TabsLayout />);
 
-      expect(screen.getByTestId('expo-tab-screen-steps')).toBeTruthy();
+      expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
     });
 
     it('updates tab visibility when preference changes on native', () => {
@@ -462,8 +462,8 @@ describe('TabsLayout', () => {
       });
 
       const { rerender } = render(<TabsLayout />);
-      let stepsScreen = screen.getByTestId('tab-screen-steps');
-      let options = JSON.parse(stepsScreen.props['data-options']);
+      let programScreen = screen.getByTestId('tab-screen-program');
+      let options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
 
       // Change preference
@@ -472,12 +472,12 @@ describe('TabsLayout', () => {
       });
 
       rerender(<TabsLayout />);
-      stepsScreen = screen.getByTestId('tab-screen-steps');
-      options = JSON.parse(stepsScreen.props['data-options']);
+      programScreen = screen.getByTestId('tab-screen-program');
+      options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBe(true);
     });
 
-    it('shows other tabs regardless of Steps visibility', () => {
+    it('shows other tabs regardless of Program visibility', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: false },
       });

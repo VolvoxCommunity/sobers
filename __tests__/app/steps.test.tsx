@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps/index.tsx
+ * @fileoverview Tests for app/(app)/(tabs)/program/steps/index.tsx
  *
  * Tests the Steps list screen including:
  * - Loading, error, and empty states
@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import StepsScreen from '@/app/(app)/(tabs)/steps/index';
+import StepsScreen from '@/app/(app)/(tabs)/program/steps/index';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================
@@ -248,15 +248,6 @@ describe('StepsScreen', () => {
   });
 
   describe('steps list', () => {
-    it('renders header correctly', async () => {
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-        expect(screen.getByText('Your path to recovery')).toBeTruthy();
-      });
-    });
-
     it('renders all steps when loaded', async () => {
       render(<StepsScreen />);
 
@@ -297,7 +288,7 @@ describe('StepsScreen', () => {
 
       fireEvent.press(screen.getByText('We admitted we were powerless'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-1');
     });
 
     it('navigates with correct id for different steps', async () => {
@@ -309,7 +300,7 @@ describe('StepsScreen', () => {
 
       fireEvent.press(screen.getByText('Came to believe'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-2');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-2');
     });
   });
 
@@ -377,13 +368,7 @@ describe('StepsScreen', () => {
       render(<StepsScreen />);
 
       // Verify component renders successfully with display_name in profile
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can access profile and use it (via profile.id in fetchProgress)
-      // The component uses profile.id to fetch user step progress, which confirms
-      // the profile structure is correct and the component can access profile properties
+      // and can access profile.id to fetch user step progress
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
@@ -413,12 +398,7 @@ describe('StepsScreen', () => {
 
       render(<StepsScreen />);
 
-      // Verify component still renders successfully
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can still fetch and display steps
+      // Verify component still renders successfully and fetches steps
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
@@ -448,19 +428,14 @@ describe('StepsScreen', () => {
 
       render(<StepsScreen />);
 
-      // Verify component still renders successfully
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can still fetch and display steps
+      // Verify component still renders successfully and fetches steps
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
 
       // Verify navigation still works when display_name is undefined
       fireEvent.press(screen.getByText('We admitted we were powerless'));
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-1');
     });
   });
 

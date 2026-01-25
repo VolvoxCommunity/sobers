@@ -20,7 +20,7 @@ jest.mock('lucide-react-native', () => ({
 describe('WebTopNav', () => {
   const items = [
     { route: '/', label: 'Home', icon: Home },
-    { route: '/steps', label: 'Steps', icon: BookOpen },
+    { route: '/program', label: 'Program', icon: BookOpen },
   ];
 
   beforeEach(() => {
@@ -30,13 +30,13 @@ describe('WebTopNav', () => {
   it('renders all navigation items', () => {
     renderWithProviders(<WebTopNav items={items} />);
     expect(screen.getByText('Home')).toBeTruthy();
-    expect(screen.getByText('Steps')).toBeTruthy();
+    expect(screen.getByText('Program')).toBeTruthy();
   });
 
   it('navigates when item is pressed', () => {
     renderWithProviders(<WebTopNav items={items} />);
-    fireEvent.press(screen.getByText('Steps'));
-    expect(mockRouterPush).toHaveBeenCalledWith('/steps');
+    fireEvent.press(screen.getByText('Program'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/program');
   });
 
   it('renders active route item with visual indication', () => {
@@ -48,9 +48,9 @@ describe('WebTopNav', () => {
 
     // Home should be rendered as active since pathname is '/'
     expect(screen.getByText('Home')).toBeTruthy();
-    expect(screen.getByText('Steps')).toBeTruthy();
+    expect(screen.getByText('Program')).toBeTruthy();
 
-    // The component should render both items - one active (Home) and one inactive (Steps)
+    // The component should render both items - one active (Home) and one inactive (Program)
     // Testing the visual styling is covered by the component rendering without errors
     // and both items being visible
   });

@@ -605,7 +605,7 @@ describe('HomeScreen', () => {
       });
     });
 
-    it('navigates to steps when 12 Steps card is pressed', async () => {
+    it('navigates to program when 12 Steps card is pressed', async () => {
       render(<HomeScreen />);
 
       await waitFor(() => {
@@ -614,7 +614,7 @@ describe('HomeScreen', () => {
 
       fireEvent.press(screen.getByText('12 Steps'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps');
+      expect(mockPush).toHaveBeenCalledWith('/program');
     });
 
     it('navigates to tasks when Manage Tasks card is pressed', async () => {
