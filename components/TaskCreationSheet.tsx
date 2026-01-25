@@ -19,7 +19,8 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { SheetInputComponent } from '@/lib/sheet-input';
 import { supabase } from '@/lib/supabase';
 import { TaskTemplate, Profile } from '@/types/database';
 import { ThemeColors } from '@/contexts/ThemeContext';
@@ -510,7 +511,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Task Title *</Text>
-            <BottomSheetTextInput
+            <SheetInputComponent
               style={styles.input}
               value={customTitle}
               onChangeText={setCustomTitle}
@@ -522,7 +523,7 @@ const TaskCreationSheet = forwardRef<TaskCreationSheetRef, TaskCreationSheetProp
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Task Description *</Text>
-            <BottomSheetTextInput
+            <SheetInputComponent
               style={[styles.input, styles.textArea]}
               value={customDescription}
               onChangeText={setCustomDescription}

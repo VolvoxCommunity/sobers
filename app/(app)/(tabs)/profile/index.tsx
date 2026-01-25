@@ -4,32 +4,39 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Share,
-  Platform,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Crypto from 'expo-crypto';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
 import { useDaysSober } from '@/hooks/useDaysSober';
 import { Settings } from 'lucide-react-native';
-import type { SponsorSponseeRelationship } from '@/types/database';
+import type {
+  SponsorSponseeRelationship,
+  InviteCode,
+  ConnectionIntent,
+  ConnectionMatch,
+} from '@/types/database';
 import { logger, LogCategory } from '@/lib/logger';
 import LogSlipUpSheet, { LogSlipUpSheetRef } from '@/components/sheets/LogSlipUpSheet';
 import EnterInviteCodeSheet, {
   EnterInviteCodeSheetRef,
 } from '@/components/sheets/EnterInviteCodeSheet';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
-import { showAlert, showConfirm } from '@/lib/alert';
+import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import SobrietyStats from '@/components/profile/SobrietyStats';
 import RelationshipCard from '@/components/profile/RelationshipCard';
 import InviteCodeSection from '@/components/profile/InviteCodeSection';
+import ConnectionIntentSelector from '@/components/profile/ConnectionIntentSelector';
+import PersistentInviteCard from '@/components/profile/PersistentInviteCard';
+import FindSupportSection from '@/components/profile/FindSupportSection';
 
 /**
  * Render the authenticated user's profile, sobriety stats, and sponsor/sponsee management interface,
@@ -57,15 +64,200 @@ export default function ProfileScreen() {
   const [sponseeTaskStats, setSponseeTaskStats] = useState<{
     [key: string]: { total: number; completed: number };
   }>({});
+  const [activeInviteCode, setActiveInviteCode] = useState<InviteCode | null>(null);
+  const [isLoadingInviteCode, setLoadingInviteCode] = useState(false);
+  const [pendingMatches, setPendingMatches] = useState<ConnectionMatch[]>([]);
+
+  /**
+   * Fetches the user's active invite code (not used, not revoked, not expired).
+   */
+  const fetchActiveInviteCode = useCallback(async () => {
+    if (!profile) return;
+
+    setLoadingInviteCode(true);
+    try {
+      const { data, error } = await supabase
+        .from('invite_codes')
+        .select('*')
+        .eq('sponsor_id', profile.id)
+        .is('used_by', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        logger.error('Failed to fetch active invite code', error, {
+          category: LogCategory.DATABASE,
+        });
+        return;
+      }
+
+      setActiveInviteCode(data);
+    } catch (error) {
+      logger.error('Fetch active invite code failed', error as Error, {
+        category: LogCategory.DATABASE,
+      });
+    } finally {
+      setLoadingInviteCode(false);
+    }
+  }, [profile]);
+
+  /**
+   * Fetches pending connection matches for the current user.
+   */
+  const fetchPendingMatches = useCallback(async () => {
+    if (!profile) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('connection_matches')
+        .select('*, seeker:seeker_id(id, display_name), provider:provider_id(id, display_name)')
+        .or(`seeker_id.eq.${profile.id},provider_id.eq.${profile.id}`)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        logger.error('Failed to fetch pending matches', error, {
+          category: LogCategory.DATABASE,
+        });
+        return;
+      }
+
+      setPendingMatches(data || []);
+    } catch (error) {
+      logger.error('Fetch pending matches failed', error as Error, {
+        category: LogCategory.DATABASE,
+      });
+    }
+  }, [profile]);
+
+  /**
+   * Revokes the current active invite code.
+   */
+  const revokeInviteCode = useCallback(async () => {
+    if (!activeInviteCode) return;
+
+    const confirmed = await showConfirm(
+      'Revoke Invite Code',
+      'This will invalidate the current invite code. Anyone with this code will no longer be able to use it.',
+      'Revoke',
+      'Cancel',
+      true
+    );
+
+    if (!confirmed) return;
+
+    setLoadingInviteCode(true);
+    try {
+      const { error } = await supabase
+        .from('invite_codes')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', activeInviteCode.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setActiveInviteCode(null);
+      showToast.success('Invite code revoked');
+    } catch (error) {
+      logger.error('Failed to revoke invite code', error as Error, {
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to revoke invite code');
+    } finally {
+      setLoadingInviteCode(false);
+    }
+  }, [activeInviteCode]);
+
+  /**
+   * Regenerates invite code (revokes old, creates new).
+   */
+  const regenerateInviteCode = useCallback(async () => {
+    if (!profile) return;
+
+    setLoadingInviteCode(true);
+    try {
+      // Revoke existing code if any (silently)
+      if (activeInviteCode) {
+        await supabase
+          .from('invite_codes')
+          .update({ revoked_at: new Date().toISOString() })
+          .eq('id', activeInviteCode.id);
+      }
+
+      // Generate new code using cryptographically secure random bytes
+      const randomBytes = await Crypto.getRandomBytesAsync(6);
+      const code = Array.from(randomBytes)
+        .map((b) => b.toString(36).padStart(2, '0'))
+        .join('')
+        .substring(0, 8)
+        .toUpperCase();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      const { data, error } = await supabase
+        .from('invite_codes')
+        .insert({
+          code,
+          sponsor_id: profile.id,
+          expires_at: expiresAt.toISOString(),
+          intent: profile.connection_intent,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setActiveInviteCode(data);
+      showToast.success('New invite code generated');
+    } catch (error) {
+      logger.error('Failed to regenerate invite code', error as Error, {
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to generate invite code');
+    } finally {
+      setLoadingInviteCode(false);
+    }
+  }, [profile, activeInviteCode]);
+
+  /**
+   * Handles connection intent change from the selector.
+   */
+  const handleConnectionIntentChange = useCallback(
+    async (intent: ConnectionIntent | null) => {
+      if (!profile) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ connection_intent: intent })
+        .eq('id', profile.id);
+      if (error) {
+        showToast.error('Failed to update connection intent');
+        logger.error('Failed to update connection intent', error, {
+          category: LogCategory.DATABASE,
+        });
+      } else {
+        await refreshProfile();
+        showToast.success('Connection intent updated');
+      }
+    },
+    [profile, refreshProfile]
+  );
 
   const fetchRelationships = useCallback(async () => {
     if (!profile) return;
 
     setLoadingRelationships(true);
     try {
+      // Only fetch non-sensitive profile fields (external_handles requires consent)
       const { data: asSponsee, error: asSponseeError } = await supabase
         .from('sponsor_sponsee_relationships')
-        .select('*, sponsor:sponsor_id(*)')
+        .select('*, sponsor:sponsor_id(id, display_name, sobriety_date, avatar_url)')
         .eq('sponsee_id', profile.id)
         .eq('status', 'active');
 
@@ -80,9 +272,10 @@ export default function ProfileScreen() {
         return;
       }
 
+      // Only fetch non-sensitive profile fields (external_handles requires consent)
       const { data: asSponsor, error: asSponsorError } = await supabase
         .from('sponsor_sponsee_relationships')
-        .select('*, sponsee:sponsee_id(*)')
+        .select('*, sponsee:sponsee_id(id, display_name, sobriety_date, avatar_url)')
         .eq('sponsor_id', profile.id)
         .eq('status', 'active');
 
@@ -152,7 +345,9 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     fetchRelationships();
-  }, [profile, fetchRelationships]);
+    fetchActiveInviteCode();
+    fetchPendingMatches();
+  }, [profile, fetchRelationships, fetchActiveInviteCode, fetchPendingMatches]);
 
   // Use hook for current user's days sober
   const {
@@ -162,52 +357,6 @@ export default function ProfileScreen() {
     hasSlipUps,
     loading: loadingDaysSober,
   } = useDaysSober();
-
-  const generateInviteCode = async () => {
-    if (!profile) return;
-
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
-    const { error } = await supabase.from('invite_codes').insert({
-      code,
-      sponsor_id: profile.id,
-      expires_at: expiresAt.toISOString(),
-    });
-
-    if (error) {
-      showToast.error('Failed to generate invite code');
-    } else {
-      if (Platform.OS === 'web') {
-        const shouldCopy = await showConfirm(
-          'Invite Code Generated',
-          `Your invite code is: ${code}\n\nShare this with your sponsee to connect.`,
-          'Copy to Clipboard',
-          'Cancel'
-        );
-        if (shouldCopy) {
-          navigator.clipboard.writeText(code);
-          showToast.success('Invite code copied to clipboard!');
-        }
-      } else {
-        showAlert(
-          'Invite Code Generated',
-          `Your invite code is: ${code}\n\nShare this with your sponsee to connect.`,
-          [
-            {
-              text: 'Share',
-              onPress: () =>
-                Share.share({
-                  message: `Join me on Sobers! Use invite code: ${code}`,
-                }),
-            },
-            { text: 'OK' },
-          ]
-        );
-      }
-    }
-  };
 
   /**
    * Handles connecting to a sponsor using an invite code.
@@ -462,6 +611,35 @@ export default function ProfileScreen() {
     inviteCodeSheetRef.current?.present();
   };
 
+  /**
+   * Updates the reveal consent for a relationship.
+   * @param relationshipId - The relationship ID
+   * @param isSponsor - Whether current user is the sponsor in this relationship
+   * @param consent - The new consent value
+   */
+  const updateRevealConsent = async (
+    relationshipId: string,
+    isSponsor: boolean,
+    consent: boolean
+  ) => {
+    const columnToUpdate = isSponsor ? 'sponsor_reveal_consent' : 'sponsee_reveal_consent';
+
+    const { error } = await supabase
+      .from('sponsor_sponsee_relationships')
+      .update({ [columnToUpdate]: consent })
+      .eq('id', relationshipId);
+
+    if (error) {
+      logger.error('Failed to update reveal consent', error, {
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to update contact sharing preference');
+    } else {
+      await fetchRelationships();
+      showToast.success(consent ? 'Contact sharing enabled' : 'Contact sharing disabled');
+    }
+  };
+
   const styles = useMemo(() => createStyles(theme, insets), [theme, insets]);
 
   return (
@@ -506,6 +684,29 @@ export default function ProfileScreen() {
           onLogSlipUp={handleLogSlipUp}
         />
 
+        {/* Connection Intent Selector */}
+        <ConnectionIntentSelector
+          value={profile?.connection_intent ?? null}
+          onChange={handleConnectionIntentChange}
+          theme={theme}
+        />
+
+        {/* Find Support Section (Opt-in Matching) */}
+        {profile && (
+          <View style={styles.section}>
+            <FindSupportSection
+              userId={profile.id}
+              intent={profile.connection_intent}
+              theme={theme}
+              pendingMatches={pendingMatches}
+              onMatchUpdate={() => {
+                fetchPendingMatches();
+                fetchRelationships();
+              }}
+            />
+          </View>
+        )}
+
         {loadingRelationships ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Your Sponsees</Text>
@@ -516,16 +717,30 @@ export default function ProfileScreen() {
         ) : (
           <InviteCodeSection
             title="Your Sponsees"
-            isEmpty={sponseeRelationships.length === 0}
+            isEmpty={sponseeRelationships.length === 0 && !activeInviteCode}
             emptyMessage="No sponsees yet. Generate an invite code to get started."
             primaryButtonLabel={
-              sponseeRelationships.length > 0 ? 'Generate New Invite Code' : 'Generate Invite Code'
+              activeInviteCode
+                ? '' // Hide primary button when there's an active code (actions are on the card)
+                : sponseeRelationships.length > 0
+                  ? 'Generate New Invite Code'
+                  : 'Generate Invite Code'
             }
-            showGenerateNew={sponseeRelationships.length > 0}
+            showGenerateNew={sponseeRelationships.length > 0 && !activeInviteCode}
             theme={theme}
-            onPrimaryAction={generateInviteCode}
+            onPrimaryAction={regenerateInviteCode}
             testIDPrefix="sponsor"
           >
+            {/* Show active invite code card */}
+            {activeInviteCode && (
+              <PersistentInviteCard
+                inviteCode={activeInviteCode}
+                theme={theme}
+                onRegenerate={regenerateInviteCode}
+                onRevoke={revokeInviteCode}
+                disabled={isLoadingInviteCode}
+              />
+            )}
             {sponseeRelationships.map((rel) => (
               <RelationshipCard
                 key={rel.id}
@@ -539,6 +754,9 @@ export default function ProfileScreen() {
                   disconnectRelationship(rel.id, true, rel.sponsee?.display_name || 'Unknown')
                 }
                 onAssignTask={() => router.push('/tasks')}
+                relationship={rel}
+                myHandles={profile?.external_handles}
+                onConsentChange={(consent) => updateRevealConsent(rel.id, true, consent)}
               />
             ))}
           </InviteCodeSection>
@@ -576,6 +794,9 @@ export default function ProfileScreen() {
                 onDisconnect={() =>
                   disconnectRelationship(rel.id, false, rel.sponsor?.display_name || 'Unknown')
                 }
+                relationship={rel}
+                myHandles={profile?.external_handles}
+                onConsentChange={(consent) => updateRevealConsent(rel.id, false, consent)}
               />
             ))}
           </InviteCodeSection>

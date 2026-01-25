@@ -7,12 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
-
 ### Added
 
+- Add sponsor/sponsee connection system with Intent & Ownership pattern
+- Add `ConnectionIntent` type with `not_looking`, `seeking_sponsor`, `open_to_sponsoring`, `open_to_both` options
+- Add `ConnectionIntentSelector` component for users to set their connection preferences on profile
+- Add `PersistentInviteCard` component showing active invite codes with expiration timer, copy, share, regenerate, and revoke actions
+- Add `SymmetricRevealSection` component for mutual consent contact sharing within relationships
+- Add `ExternalHandlesSection` in Settings for storing private contact info (Discord, Telegram, WhatsApp, Signal, Phone)
+- Add `external_handles` JSONB field to profiles for storing contact info privately
+- Add `sponsor_reveal_consent` and `sponsee_reveal_consent` columns to relationships for symmetric reveal
+- Add `revoked_at` and `intent` columns to invite_codes for better invite management
+- Add `FindSupportSection` component for opt-in matching to find sponsors/sponsees based on complementary intents
+- Add `connection_matches` table with bilateral acceptance pattern (both parties must accept to connect)
+- Add `find_potential_matches`, `accept_match`, and `reject_match` database functions for matching workflow
+- Add database migration with RLS policies for connection intent, external handles, symmetric reveal, and opt-in matching
 - Add "Include 12-Step Content" toggle in onboarding Preferences card (enabled by default)
 - Add "Include 12-Step Content" toggle in Settings to show or hide the Steps tab
 - Add conditional Steps tab visibility based on user preference (hidden when 12-step content disabled)
@@ -66,6 +75,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update analytics module architecture with platform-specific implementations (native/web) using Metro bundler resolution
 - Lower branch coverage threshold from 85% to 83% to account for untestable code paths (DevToolsSection, platform-specific conditionals)
 - Reduce Amplitude SDK log level from Debug to Warn to eliminate verbose internal logging in debug mode
+- Extract `getTimeRemaining` and `formatTimeRemaining` to shared `lib/time-utils.ts` (DRY refactor)
+- Extract `getPlatformIcon` and `getPlatformLabel` to shared `lib/platform-icons.tsx` (DRY refactor)
+- Extract `SheetInputComponent` to shared `lib/sheet-input.tsx` for platform-specific bottom sheet inputs
+- Add canonical section dividers to `lib/platform-icons.tsx` for better code organization
+- Add size verification tests to platform-icons test suite
+- Replace `Math.random()` with cryptographically secure `expo-crypto` for invite code generation
+- Memoize `handleConnectionIntentChange` with `useCallback` for performance optimization
+- Export `IconTheme` interface from `lib/platform-icons.tsx` for type safety
+- Strengthen `platformLabels` typing with `Record<PlatformKey, string>` constraint
 
 ### Removed
 
@@ -76,6 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
+- Fix bottom sheet text inputs not working on web by using platform-specific InputComponent pattern
 - Fix analytics test mocks in EditSavingsSheet, SettingsContent, and onboarding tests (correct property names, add missing mock functions)
 - Fix What's New RLS policy migration failing on databases with partial manual changes (idempotent policy drops)
 - Fix TaskCreationSheet dropdown options not clickable due to parent scroll view closing dropdowns before item press fires
@@ -87,6 +107,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix calculateStepsCompletedBucket returning incorrect bucket for negative values
 - Fix E2E settings close test failing after settings refactor (now uses browser back navigation)
 - Fix flaky E2E savings tracking tests by adding proper wait conditions after save
+- Fix UPDATE policy missing `revoked_at` check in invite_codes RLS migration
+- Fix overly broad RLS policy for profile viewing via invite code, replaced with SECURITY DEFINER RPC
+- Fix UNIQUE constraint preventing sponsor/sponsee rematches after disconnect, converted to partial index
+- Fix external handles exposure in profile queries before consent check
+- Fix RLS violation when providers create connection matches directly
+- Fix external handles DB write on every keystroke, added debouncing with draft state
+- Fix timer showing stale values on mount, now updates immediately when expires_at changes
+- Fix clipboard copy errors not handled in PersistentInviteCard
+- Fix togglePlatform UI/data state mixing in ExternalHandlesSection
+- Fix flaky time-utils test by using deterministic fake timers
+- Fix boolean prop naming inconsistency (myConsent → hasMyConsent, theirConsent → hasTheirConsent, disabled → isDisabled, loadingInviteCode → isLoadingInviteCode)
+- Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
+- Fix empty external handle values shown in SymmetricRevealSection
+- Fix timer display not showing minutes when hours = 0 in FindSupportSection
+- Fix potential memory leak in SymmetricRevealSection using ref-based mount guard pattern
 
 ## [1.2.1] - 2025-12-25
 

@@ -204,6 +204,20 @@ jest.mock('lucide-react-native', () => ({
   ChevronLeft: () => null,
   Layout: () => null,
   Sparkles: () => null,
+  // ConnectionIntentSelector icons
+  Search: () => null,
+  Users: () => null,
+  UserPlus: () => null,
+  // PersistentInviteCard icons
+  Clock: () => null,
+  Plus: () => null,
+  // SymmetricRevealSection icons
+  Eye: () => null,
+  EyeOff: () => null,
+  MessageCircle: () => null,
+  Phone: () => null,
+  Send: () => null,
+  Check: () => null,
 }));
 
 // Mock useWhatsNew hook
