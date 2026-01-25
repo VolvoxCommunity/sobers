@@ -737,11 +737,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
     setIsSavingTwelveStep(true);
     try {
-      const currentValue = profile.show_twelve_step_content !== false;
+      const currentValue = profile.show_program_content !== false;
       const newValue = !currentValue;
       const { error } = await supabase
         .from('profiles')
-        .update({ show_twelve_step_content: newValue })
+        .update({ show_program_content: newValue })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -750,7 +750,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
       // Track settings change
       trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
-        setting: 'show_twelve_step_content',
+        setting: 'show_program_content',
         value: newValue,
       });
 
@@ -764,7 +764,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
     } finally {
       setIsSavingTwelveStep(false);
     }
-  }, [profile?.id, profile?.show_twelve_step_content, isSavingTwelveStep, refreshProfile]);
+  }, [profile?.id, profile?.show_program_content, isSavingTwelveStep, refreshProfile]);
 
   /**
    * Opens the sobriety date picker with the current sobriety date pre-selected.
@@ -1021,7 +1021,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             onPress={handleToggleTwelveStepContent}
             disabled={isSavingTwelveStep}
             accessibilityRole="switch"
-            accessibilityState={{ checked: profile?.show_twelve_step_content !== false }}
+            accessibilityState={{ checked: profile?.show_program_content !== false }}
             accessibilityLabel="Include 12-Step Content"
           >
             <View style={styles.menuItemLeft}>
@@ -1037,11 +1037,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               <View
                 style={[
                   styles.toggle,
-                  profile?.show_twelve_step_content !== false && styles.toggleActive,
+                  profile?.show_program_content !== false && styles.toggleActive,
                 ]}
               >
                 <Text style={styles.toggleText}>
-                  {profile?.show_twelve_step_content !== false ? 'ON' : 'OFF'}
+                  {profile?.show_program_content !== false ? 'ON' : 'OFF'}
                 </Text>
               </View>
             )}

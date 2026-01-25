@@ -1190,7 +1190,7 @@ describe('Analytics Tracking', () => {
       });
     });
 
-    it('includes show_twelve_step_content in profile upsert', async () => {
+    it('includes show_program_content in profile upsert', async () => {
       let capturedUpsertData: Record<string, unknown> | null = null;
       const mockUpsertFn = jest.fn((data) => {
         capturedUpsertData = data;
@@ -1221,12 +1221,12 @@ describe('Analytics Tracking', () => {
         expect(mockUpsertFn).toHaveBeenCalled();
       });
 
-      // Verify show_twelve_step_content is included (defaults to true)
+      // Verify show_program_content is included (defaults to true)
       expect(capturedUpsertData).not.toBeNull();
-      expect(capturedUpsertData!.show_twelve_step_content).toBe(true);
+      expect(capturedUpsertData!.show_program_content).toBe(true);
     });
 
-    it('includes show_twelve_step_content=false when toggled off', async () => {
+    it('includes show_program_content=false when toggled off', async () => {
       let capturedUpsertData: Record<string, unknown> | null = null;
       const mockUpsertFn = jest.fn((data) => {
         capturedUpsertData = data;
@@ -1261,9 +1261,9 @@ describe('Analytics Tracking', () => {
         expect(mockUpsertFn).toHaveBeenCalled();
       });
 
-      // Verify show_twelve_step_content is false
+      // Verify show_program_content is false
       expect(capturedUpsertData).not.toBeNull();
-      expect(capturedUpsertData!.show_twelve_step_content).toBe(false);
+      expect(capturedUpsertData!.show_program_content).toBe(false);
     });
   });
 

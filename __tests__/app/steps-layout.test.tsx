@@ -70,7 +70,7 @@ const mockProfile = {
   id: 'test-user-id',
   display_name: 'Test User',
   sobriety_date: '2024-01-01',
-  show_twelve_step_content: true,
+  show_program_content: true,
 };
 
 // Mock useAuth hook
@@ -104,7 +104,7 @@ describe('StepsLayout', () => {
     mockReplace.mockClear();
     // Default to showing 12-step content
     (useAuth as jest.Mock).mockReturnValue({
-      profile: { ...mockProfile, show_twelve_step_content: true },
+      profile: { ...mockProfile, show_program_content: true },
     });
   });
 
@@ -178,9 +178,9 @@ describe('StepsLayout', () => {
   });
 
   describe('redirect when 12-step content disabled', () => {
-    it('redirects to home when show_twelve_step_content is false', () => {
+    it('redirects to home when show_program_content is false', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       render(<StepsLayout />);
@@ -188,9 +188,9 @@ describe('StepsLayout', () => {
       expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
     });
 
-    it('does not redirect when show_twelve_step_content is true', () => {
+    it('does not redirect when show_program_content is true', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: true },
+        profile: { ...mockProfile, show_program_content: true },
       });
 
       render(<StepsLayout />);
@@ -198,9 +198,9 @@ describe('StepsLayout', () => {
       expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    it('does not redirect when show_twelve_step_content is undefined (existing users)', () => {
+    it('does not redirect when show_program_content is undefined (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: undefined },
+        profile: { ...mockProfile, show_program_content: undefined },
       });
 
       render(<StepsLayout />);
@@ -208,9 +208,9 @@ describe('StepsLayout', () => {
       expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    it('does not redirect when show_twelve_step_content is null (existing users)', () => {
+    it('does not redirect when show_program_content is null (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: null },
+        profile: { ...mockProfile, show_program_content: null },
       });
 
       render(<StepsLayout />);
@@ -230,7 +230,7 @@ describe('StepsLayout', () => {
 
     it('renders stack navigator even when redirecting', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       render(<StepsLayout />);
