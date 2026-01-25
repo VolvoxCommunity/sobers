@@ -36,7 +36,7 @@ const mockProfile = {
   id: 'test-user-id',
   display_name: 'Test User',
   sobriety_date: '2024-01-01',
-  show_twelve_step_content: true,
+  show_program_content: true,
 };
 
 // Mock useAuth hook
@@ -366,9 +366,9 @@ describe('TabsLayout', () => {
       setPlatform('ios');
     });
 
-    it('shows Steps tab when show_twelve_step_content is true', () => {
+    it('shows Steps tab when show_program_content is true', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: true },
+        profile: { ...mockProfile, show_program_content: true },
       });
 
       render(<TabsLayout />);
@@ -380,9 +380,9 @@ describe('TabsLayout', () => {
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('hides Steps tab on native when show_twelve_step_content is false', () => {
+    it('hides Steps tab on native when show_program_content is false', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       render(<TabsLayout />);
@@ -394,9 +394,9 @@ describe('TabsLayout', () => {
       expect(options.tabBarItemHidden).toBe(true);
     });
 
-    it('shows Steps tab when show_twelve_step_content is undefined (existing users)', () => {
+    it('shows Steps tab when show_program_content is undefined (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: undefined },
+        profile: { ...mockProfile, show_program_content: undefined },
       });
 
       render(<TabsLayout />);
@@ -407,9 +407,9 @@ describe('TabsLayout', () => {
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('shows Steps tab when show_twelve_step_content is null (existing users)', () => {
+    it('shows Steps tab when show_program_content is null (existing users)', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: null },
+        profile: { ...mockProfile, show_program_content: null },
       });
 
       render(<TabsLayout />);
@@ -433,10 +433,10 @@ describe('TabsLayout', () => {
       expect(options.tabBarItemHidden).toBeFalsy();
     });
 
-    it('hides Steps tab on web when show_twelve_step_content is false', () => {
+    it('hides Steps tab on web when show_program_content is false', () => {
       setPlatform('web');
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       render(<TabsLayout />);
@@ -445,10 +445,10 @@ describe('TabsLayout', () => {
       expect(screen.queryByTestId('expo-tab-screen-steps')).toBeNull();
     });
 
-    it('shows Steps tab on web when show_twelve_step_content is true', () => {
+    it('shows Steps tab on web when show_program_content is true', () => {
       setPlatform('web');
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: true },
+        profile: { ...mockProfile, show_program_content: true },
       });
 
       render(<TabsLayout />);
@@ -458,7 +458,7 @@ describe('TabsLayout', () => {
 
     it('updates tab visibility when preference changes on native', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: true },
+        profile: { ...mockProfile, show_program_content: true },
       });
 
       const { rerender } = render(<TabsLayout />);
@@ -468,7 +468,7 @@ describe('TabsLayout', () => {
 
       // Change preference
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       rerender(<TabsLayout />);
@@ -479,7 +479,7 @@ describe('TabsLayout', () => {
 
     it('shows other tabs regardless of Steps visibility', () => {
       (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
+        profile: { ...mockProfile, show_program_content: false },
       });
 
       render(<TabsLayout />);

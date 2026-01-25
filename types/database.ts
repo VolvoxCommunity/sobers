@@ -83,11 +83,12 @@ export interface Profile {
    */
   last_seen_version?: string | null;
   /**
-   * Whether to show 12-step program content (Steps tab).
-   * Default true. When false, the Steps tab is hidden from navigation.
+   * Whether to show 12-step program content (Program tab).
+   * Default true. When false, the Program tab is hidden from navigation
+   * and related Home screen cards are hidden.
    * Existing users (null/undefined) are treated as true.
    */
-  show_twelve_step_content?: boolean;
+  show_program_content?: boolean;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
@@ -188,6 +189,163 @@ export interface UserStepProgress {
   completed_at?: string;
   notes?: string;
   created_at: string;
+  updated_at: string;
+}
+
+// =============================================================================
+// Program Section Types
+// =============================================================================
+
+export type ProgramType = 'aa' | 'na';
+export type PrayerCategory = 'step' | 'common' | 'aa' | 'na';
+export type MeetingType = 'aa' | 'na' | 'other';
+export type ReadingPreference = 'aa' | 'na' | 'both';
+
+/**
+ * Daily reading content (fallback for external APIs).
+ */
+export interface DailyReading {
+  id: string;
+  program: ProgramType;
+  month: number;
+  day: number;
+  title: string;
+  content: string;
+  source?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User's preferred reading program.
+ */
+export interface UserReadingPreferences {
+  id: string;
+  user_id: string;
+  preferred_program: ReadingPreference;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Record of a user viewing a daily reading.
+ */
+export interface UserReadingHistory {
+  id: string;
+  user_id: string;
+  reading_date: string;
+  program: ProgramType;
+  viewed_at: string;
+}
+
+/**
+ * Prayer content.
+ */
+export interface Prayer {
+  id: string;
+  title: string;
+  content: string;
+  category: PrayerCategory;
+  step_number?: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User's favorited prayer.
+ */
+export interface UserPrayerFavorite {
+  id: string;
+  user_id: string;
+  prayer_id: string;
+  created_at: string;
+  prayer?: Prayer;
+}
+
+/**
+ * Record of a user viewing a prayer.
+ */
+export interface UserPrayerHistory {
+  id: string;
+  user_id: string;
+  prayer_id: string;
+  viewed_at: string;
+}
+
+/**
+ * Literature book metadata.
+ */
+export interface LiteratureBook {
+  id: string;
+  title: string;
+  program: ProgramType;
+  chapter_count: number;
+  external_url?: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  chapters?: LiteratureChapter[];
+}
+
+/**
+ * Literature book chapter.
+ */
+export interface LiteratureChapter {
+  id: string;
+  book_id: string;
+  chapter_number: number;
+  title: string;
+  page_range?: string;
+  created_at: string;
+}
+
+/**
+ * User's added/visible book.
+ */
+export interface UserLiteratureBook {
+  id: string;
+  user_id: string;
+  book_id: string;
+  is_visible: boolean;
+  added_at: string;
+  book?: LiteratureBook;
+}
+
+/**
+ * User's chapter completion.
+ */
+export interface UserLiteratureProgress {
+  id: string;
+  user_id: string;
+  chapter_id: string;
+  completed_at: string;
+}
+
+/**
+ * User's logged meeting.
+ */
+export interface UserMeeting {
+  id: string;
+  user_id: string;
+  meeting_name: string;
+  meeting_type: MeetingType;
+  location?: string;
+  attended_at: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Cached user program statistics.
+ */
+export interface UserProgramStats {
+  id: string;
+  user_id: string;
+  reading_current_streak: number;
+  reading_longest_streak: number;
+  reading_total_count: number;
   updated_at: string;
 }
 

@@ -17,10 +17,10 @@ export default function StepsLayout() {
   // Redirect to home if 12-step content is disabled
   // Only redirect when explicitly set to false (treat null/undefined as true for backwards compatibility)
   useEffect(() => {
-    if (profile?.show_twelve_step_content === false) {
+    if (profile?.show_program_content === false) {
       router.replace('/(app)/(tabs)');
     }
-  }, [profile?.show_twelve_step_content, router]);
+  }, [profile?.show_program_content, router]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

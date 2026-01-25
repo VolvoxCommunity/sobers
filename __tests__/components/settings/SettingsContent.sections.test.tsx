@@ -318,14 +318,14 @@ describe('SettingsContent - Section Structure', () => {
       expect(screen.getByTestId('settings-twelve-step-toggle')).toBeTruthy();
     });
 
-    it('displays 12-step toggle as ON when show_twelve_step_content is true or undefined', () => {
+    it('displays 12-step toggle as ON when show_program_content is true or undefined', () => {
       render(<SettingsContent onDismiss={mockOnDismiss} />);
 
-      // Default profile has show_twelve_step_content undefined, treated as true
+      // Default profile has show_program_content undefined, treated as true
       const toggle = screen.getByTestId('settings-twelve-step-toggle');
       expect(toggle).toBeTruthy();
 
-      // Toggle should show ON (profile.show_twelve_step_content !== false)
+      // Toggle should show ON (profile.show_program_content !== false)
       // Use within to scope the query to the specific toggle element
       expect(within(toggle).getByText('ON')).toBeTruthy();
     });
