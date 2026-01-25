@@ -1022,13 +1022,16 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             disabled={isSavingTwelveStep}
             accessibilityRole="switch"
             accessibilityState={{ checked: profile?.show_program_content !== false }}
-            accessibilityLabel="Include 12-Step Content"
+            accessibilityLabel="Show 12 Step Program"
           >
             <View style={styles.menuItemLeft}>
               <BookOpen size={20} color={theme.textSecondary} />
               <View>
-                <Text style={styles.menuItemText}>Include 12-Step Content</Text>
-                <Text style={styles.menuItemSubtext}>Show the 12 Steps tab</Text>
+                <Text style={styles.menuItemText}>Show 12 Step Program</Text>
+                <Text style={styles.menuItemSubtext}>
+                  Display the Program tab with steps, daily readings, prayers, literature, and
+                  meeting tracker
+                </Text>
               </View>
             </View>
             {isSavingTwelveStep ? (
