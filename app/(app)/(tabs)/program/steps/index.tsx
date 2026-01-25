@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,12 +8,12 @@ import { StepContent, UserStepProgress } from '@/types/database';
 import { CheckCircle } from 'lucide-react-native';
 import { logger, LogCategory } from '@/lib/logger';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
-import SettingsButton from '@/components/navigation/SettingsButton';
 
 /**
  * Render the Steps screen showing the 12 steps with per-step completion indicators and navigation to each step's detail screen.
  *
- * Shows header and a scrollable list, and reflects loading, error, and empty states.
+ * Shows a scrollable list and reflects loading, error, and empty states.
+ * Header is provided by the parent Program layout.
  *
  * @returns The React element for the Steps list screen
  */
@@ -104,23 +104,13 @@ export default function StepsScreen() {
    * @param step - The step that was selected
    */
   const handleStepPress = (step: StepContent) => {
-    router.push(`/steps/${step.id}`);
+    router.push(`/program/steps/${step.id}`);
   };
 
   const styles = createStyles(theme);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>The 12 Steps</Text>
-            <Text style={styles.headerSubtitle}>Your path to recovery</Text>
-          </View>
-          {Platform.OS !== 'web' && <SettingsButton />}
-        </View>
-      </View>
-
       <ScrollView
         testID="steps-list"
         style={styles.content}
@@ -183,33 +173,6 @@ const createStyles = (theme: ThemeColors) =>
     container: {
       flex: 1,
       backgroundColor: theme.background,
-    },
-    header: {
-      padding: 24,
-      paddingTop: 60,
-      backgroundColor: theme.card,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border,
-    },
-    headerContent: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-    },
-    headerText: {
-      flex: 1,
-    },
-    headerTitle: {
-      fontSize: 28,
-      fontFamily: theme.fontRegular,
-      fontWeight: '700',
-      color: theme.text,
-    },
-    headerSubtitle: {
-      fontSize: 14,
-      fontFamily: theme.fontRegular,
-      color: theme.textSecondary,
-      marginTop: 4,
     },
     content: {
       flex: 1,
