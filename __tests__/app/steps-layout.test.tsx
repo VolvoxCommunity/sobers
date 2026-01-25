@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps/_layout.tsx
+ * @fileoverview Tests for app/(app)/(tabs)/program/steps/_layout.tsx
  *
  * Tests the steps navigation stack layout including:
  * - Stack navigator configuration
@@ -11,10 +11,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
-import StepsLayout from '@/app/(app)/(tabs)/steps/_layout';
-
-// Import useAuth after mock
-import { useAuth } from '@/contexts/AuthContext';
+import StepsLayout from '@/app/(app)/(tabs)/program/steps/_layout';
 
 // =============================================================================
 // Mocks
@@ -54,42 +51,9 @@ MockScreen.displayName = 'MockScreen';
 // Attach Screen to Stack
 MockStack.Screen = MockScreen;
 
-// Mock router for redirect testing
-const mockReplace = jest.fn();
-
 // Mock expo-router Stack with Screen subcomponent
 jest.mock('expo-router', () => ({
   Stack: MockStack,
-  useRouter: () => ({
-    replace: mockReplace,
-  }),
-}));
-
-// Mock profile for useAuth
-const mockProfile = {
-  id: 'test-user-id',
-  display_name: 'Test User',
-  sobriety_date: '2024-01-01',
-  show_program_content: true,
-};
-
-// Mock useAuth hook
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(() => ({
-    profile: mockProfile,
-  })),
-}));
-
-// Mock ThemeContext
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      background: '#FFFFFF',
-      text: '#000000',
-      primary: '#007AFF',
-    },
-    isDark: false,
-  }),
 }));
 
 // =============================================================================
@@ -101,11 +65,6 @@ describe('StepsLayout', () => {
     jest.clearAllMocks();
     capturedScreenOptions = null;
     capturedScreens.length = 0;
-    mockReplace.mockClear();
-    // Default to showing 12-step content
-    (useAuth as jest.Mock).mockReturnValue({
-      profile: { ...mockProfile, show_program_content: true },
-    });
   });
 
   describe('rendering', () => {
@@ -177,66 +136,6 @@ describe('StepsLayout', () => {
     });
   });
 
-  describe('redirect when 12-step content disabled', () => {
-    it('redirects to home when show_program_content is false', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: false },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
-    });
-
-    it('does not redirect when show_program_content is true', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: true },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when show_program_content is undefined (existing users)', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: undefined },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when show_program_content is null (existing users)', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: null },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when profile is null', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: null,
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('renders stack navigator even when redirecting', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: false },
-      });
-
-      render(<StepsLayout />);
-
-      // The stack navigator should still render (redirect happens via useEffect)
-      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
-    });
-  });
+  // Note: Redirect logic is handled by the parent Program layout, not this component.
+  // Tests for redirect behavior belong in the Program layout tests.
 });
