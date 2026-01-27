@@ -183,6 +183,9 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
     devDependencies:
+      '@babel/types':
+        specifier: ^7.28.6
+        version: 7.28.6
       '@playwright/test':
         specifier: ^1.58.0
         version: 1.58.0
