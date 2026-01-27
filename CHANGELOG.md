@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
 - Fix Vercel deployment failing due to babel-jest/jest-environment-jsdom version mismatch (revert to 29.x to match jest)
-- Fix Vercel deployment failing with missing @babel/types (add as explicit devDependency for pnpm hoisting)
+- Fix Vercel deployment failing with missing @babel/types (configure pnpm hoisted node-linker)
 
 ### Added
 
