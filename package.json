@@ -92,6 +92,7 @@
     "sf-symbols-typescript": "^2.2.0"
   },
   "devDependencies": {
+    "@babel/types": "^7.28.6",
     "@playwright/test": "^1.58.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
