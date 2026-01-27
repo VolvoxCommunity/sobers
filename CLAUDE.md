@@ -25,23 +25,40 @@ pnpm test -- -t "pattern"         # By name
 1. Write/update tests (TDD: RED → GREEN → REFACTOR)
 2. Run: `pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test`
 3. Visual verification for UI changes (use Chrome DevTools MCP)
-4. **Update CHANGELOG.md** - Add entry under `[Unreleased]` section (Added/Changed/Fixed/Removed)
+4. **Update CHANGELOG.md** - Add entry under `[Unreleased]` section for user-facing changes only
 5. Commit with conventional commits: `<type>(<scope>): <description>`
 
 **TDD is required** - write failing test first, then implementation.
 
-## CHANGELOG Maintenance (CRITICAL)
+## CHANGELOG Maintenance
 
-**⚠️ AUTOMATIC UPDATE REQUIRED: After completing ANY task, IMMEDIATELY update CHANGELOG.md**
+**Update CHANGELOG.md for user-facing changes only.**
 
-The `[Unreleased]` section MUST be kept current at all times. This is non-negotiable.
+The changelog is for end users to understand what changed between releases—not a log of all development activity.
 
 **Reference:** [Keep a Changelog v1.1.0](https://keepachangelog.com/en/1.1.0/)
 
+### What to Include (User-Facing Changes)
+
+- New features users can see or interact with
+- Bug fixes that affected user experience
+- Changes to existing functionality users will notice
+- Deprecations users need to be aware of
+- Security fixes
+
+### What NOT to Include
+
+- Internal refactors that don't change behavior
+- Test additions or modifications
+- CI/CD pipeline changes
+- Documentation updates (unless user-facing docs)
+- Dependency updates (unless they fix user-visible bugs)
+- Code style/formatting changes
+- Developer tooling changes
+
 ### Guiding Principles
 
-- **For humans, not machines** - Write clear, readable entries (not commit messages)
-- **Every change documented** - No selective recording; all changes matter
+- **For end users, not developers** - Write clear entries describing user impact
 - **Reverse chronological** - Newest entries at the top
 - **ISO 8601 dates** - Use `YYYY-MM-DD` format (e.g., 2025-12-17)
 
@@ -52,35 +69,35 @@ The `[Unreleased]` section MUST be kept current at all times. This is non-negoti
 
 ### Added
 
-- New features, capabilities, components, files
+- New user-facing features and capabilities
 
 ### Changed
 
-- Modifications to existing functionality, refactors, updates
+- User-visible modifications to existing functionality
 
 ### Deprecated
 
-- Features marked for removal in upcoming releases
+- Features users should know will be removed
 
 ### Removed
 
-- Deleted features, removed files, eliminated functionality
+- User-facing features that have been deleted
 
 ### Fixed
 
-- Bug fixes, error corrections, issue resolutions
+- Bug fixes that impacted user experience
 
 ### Security
 
-- Vulnerability patches, security improvements
+- Security fixes users should be aware of
 ```
 
 ### What to Avoid
 
 - ❌ Copying git commit messages verbatim
-- ❌ Omitting deprecation warnings
+- ❌ Including internal refactors or test changes
 - ❌ Using ambiguous date formats (MM/DD/YY)
-- ❌ Skipping "minor" changes
+- ❌ Logging every change regardless of user impact
 
 ### Examples of Good Entries
 
@@ -88,10 +105,14 @@ The `[Unreleased]` section MUST be kept current at all times. This is non-negoti
 - `- Update profile screen to display days sober count`
 - `- Deprecate legacy API v1 endpoints (removal in v3.0)`
 - `- Fix navigation crash on Android back button press`
-- `- Remove unused utility functions from helpers module`
 - `- Security: Migrate auth tokens to SecureStore`
 
-**Never skip this step.** The changelog is the project's memory of all changes.
+### Examples of What NOT to Log
+
+- ❌ `- Refactor auth context for better maintainability`
+- ❌ `- Add unit tests for profile screen`
+- ❌ `- Update CI workflow to run on Node 20`
+- ❌ `- Remove unused utility functions from helpers module`
 
 ## Architecture
 

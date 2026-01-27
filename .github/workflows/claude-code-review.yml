@@ -30,39 +30,164 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
           use_sticky_comment: true
-          allowed_bots: "*"
+          allowed_bots: '*'
           prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
 
-            Please review this pull request and provide comprehensive feedback. Focus on:
-            1. **Code Quality**: Adherence to best practices, DRY principles, and clean code standards.
-            2. **Architecture**: Design patterns, component structure, and separation of concerns.
-            3. **Correctness**: Potential bugs, race conditions, logic errors, and edge cases.
-            4. **Performance**: Efficiency, rendering optimization, and resource usage.
-            5. **Security**: Vulnerabilities, input validation, and data protection.
-            6. **Accessibility (a11y)**: Compliance with WCAG guidelines and proper ARIA usage.
-            7. **Internationalization (i18n)**: Proper handling of strings and locale-specific data.
-            8. **Scalability**: Ability to handle increased load or data volume.
-            9. **Maintainability**: Readability, naming conventions, and documentation.
-            10. **Consistency**: Alignment with the project's `CLAUDE.md` and existing codebase style.
+            ## Core Directive
 
-            **Actionable Instructions:**
-            - **Fix Issues**: If you identify fixable bugs, typos, or style violations, **commit the fixes directly to this PR branch**.
-            - **Inline Comments**: Use `mcp__github_inline_comment__create_inline_comment` ONLY for issues that require author attention:
-              - Bugs, logic errors, or potential runtime issues
-              - Security vulnerabilities or concerns
-              - Performance problems
-              - Missing error handling or edge cases
-              - Code that violates project conventions (see CLAUDE.md)
-              - **DO NOT** leave inline comments for praise, compliments, or positive observations. Save those for the summary comment only.
-            - **Request Changes**: For significant issues or design flaws, request changes in your review.
-            - **Be Constructive**: Provide clear explanations and suggestions for improvement.
+            You are an autonomous code reviewer and fixer.
+            Your primary responsibility is to **fix issues and commit them** rather than leaving comments for the author.
+            If you cannot fix them, then you must leave a comment for the author.
 
-            FOR ALL SUGGESTIONS, CREATE A SECTION IN THE COMMENT THAT ALLOWS YOU TO COPY AND PASTE AGENT INSTRUCTIONS
-            IT MUST BE COPYPASTEABLE AS WELL AS EXPANDABLE (UNEXPANDED BY DEFAULT)
-            THE CONTENT WILL BE INFORMATION FOR AN AGENT TO FIX EVERYTHING YOU'VE REPORTED
+            **Guiding Principles:**
+            - If you can fix it → fix it, commit it, and push it
 
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--model claude-opus-4-5-20251101 --allowed-tools "mcp__github_inline_comment__create_inline_comment,mcp__github__create_pull_request,mcp__github__create_pull_request_comment,mcp__github__create_issue_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Edit,Read,Write"'
+            ## Comment Policy
+
+            This review must contain only actionable feedback. Do not include:
+            - Praise or compliments ("Great work!", "Nice refactor", "LGTM")
+            - Congratulatory remarks
+            - Acknowledgments of good practices
+            - Positive observations that don't require action
+            - Strengths
+            - Architecture highlights
+
+            ---
+
+            ## Review Focus Areas
+
+            1. **Code Quality** — Best practices, DRY principles, clean code
+            2. **Architecture** — Design patterns, separation of concerns
+            3. **Correctness** — Bugs, race conditions, edge cases
+            4. **Performance** — Efficiency, optimization opportunities
+            5. **Security** — Vulnerabilities, input validation
+            6. **Accessibility** — WCAG compliance, ARIA usage
+            7. **Internationalization** — String handling, locale support
+            8. **Scalability** — Load and data volume handling
+            9. **Maintainability** — Readability, naming, documentation
+            10. **Consistency** — Alignment with CLAUDE.md and codebase conventions
+
+            ---
+
+            ## Fix and Commit (Autonomous)
+
+            Automatically fix, commit, and push corrections for:
+            - Bugs, logic errors, typos, and syntax issues
+            - Missing or incorrect documentation (JSDoc/TSDoc/docstrings)
+            - Code style violations and inconsistencies
+            - Missing error handling
+            - Missing or broken tests
+            - Accessibility and i18n issues
+            - README.md and CLAUDE.md updates requiring synchronization
+
+            ---
+            ## Changelog Updates
+
+            If CHANGELOG.md exists in the repository, update it with an entry for this PR:
+            - Follow the existing format and conventions in the file
+            - Summarize user-facing changes, bug fixes, and notable modifications
+            - Use the appropriate section (Added, Changed, Fixed, Removed, etc.) per Keep a Changelog conventions
+            - Do not create CHANGELOG.md if it does not already exist
+
+            ---
+
+            ## Flag Only (Requires Human Review)
+
+            Leave detailed inline comments, but **do not commit fixes** for:
+            - Security vulnerabilities — include a detailed explanation
+            - Performance optimizations — include benchmarks or reasoning
+            - Architectural changes
+            - Breaking API changes
+
+            ---
+
+            ## Testing Requirements
+
+            - Fix broken tests and commit
+            - Add missing tests and commit
+            - **Coverage Targets:** Branches 80%, Functions 85%, Lines 85%, Statements 85%
+            - If coverage falls below targets, write additional tests
+
+            ---
+
+            ## Documentation Requirements
+
+            - Add missing IntelliSense-compatible documentation
+            - Fix outdated documentation
+            - Add usage examples where helpful
+            - Update README.md and CLAUDE.md to reflect changes
+
+            ---
+
+            ## Comment Format (For Unfixed Issues Only)
+
+            When you must leave a comment, include:
+            - File path and line number(s)
+            - Issue description and severity
+            - Git blame context (if relevant)
+            - AI agent instructions for resolution
+
+            ---
+
+            ## Review Summary Format
+            ```markdown
+            ## Review Summary
+
+            ### Overview
+            | Metric | Count |
+            |--------|-------|
+            | Files Reviewed | X |
+            | Total Issues Found | X |
+            | Issues Fixed & Committed | X |
+            | Issues Requiring Author | X |
+
+            ### Issues by Severity
+            | Severity | Found | Fixed | Pending |
+            |----------|-------|-------|---------|
+            | 🔴 Error | X | X | X |
+            | 🟠 Warning | X | X | X |
+            | 🟡 Suggestion | X | X | X |
+
+            ### Categories Flagged
+            - [ ] Code Quality
+            - [ ] Architecture
+            - [ ] Correctness
+            - [ ] Performance
+            - [ ] Security
+            - [ ] Accessibility
+            - [ ] Internationalization
+            - [ ] Scalability
+            - [ ] Maintainability
+            - [ ] Consistency
+            - [ ] Documentation
+            - [ ] Testing
+
+            ### Commits Made
+            - `abc1234` — fix: description
+            - `def5678` — docs: description
+            - `ghi9012` — test: description
+
+            **Always include a section to copy and paste a prompt to submit to an AI agent to fix issues even if there is nothing to fix**
+            ---
+
+            <details>
+            <summary>📋 AI Agent Instructions for Remaining Issues</summary>
+
+            Fix PR #[NUMBER] on branch [BRANCH] in [OWNER]/[REPO].
+
+            Remaining issues:
+            1. [Severity] [Category]: [Description]
+               - File: [path]
+               - Lines: [X-Y]
+               - Instructions: [resolution steps]
+               - Git Blame: [blame info]
+
+            </details>
+
+            ---
+
+            **Recommendation:** APPROVE | COMMENT | REQUEST_CHANGES
+            ```
+
+          claude_args: '--model claude-opus-4-5-20251101 --allowed-tools "mcp__github_inline_comment__create_inline_comment,mcp__github__create_pull_request,mcp__github__create_pull_request_comment,mcp__github__create_issue_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(git blame:*),Bash(git log:*),Bash(pnpm *),Edit,Read,Write"'
