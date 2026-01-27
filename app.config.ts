@@ -3,12 +3,7 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 /**
  * Expo configuration for Sobers app.
  *
- * @remarks
- * This configuration includes EAS Update settings for over-the-air updates.
- * The runtime version uses the SDK version policy for managed workflow compatibility.
- *
- * @see {@link https://docs.expo.dev/eas-update/getting-started/ EAS Update Documentation}
- * @see {@link https://docs.expo.dev/distribution/runtime-versions/ Runtime Version Documentation}
+ * @see {@link https://docs.expo.dev/workflow/configuration/ Expo Configuration}
  */
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -34,21 +29,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'sobers',
   userInterfaceStyle: 'automatic',
   icon: './assets/images/logo.png',
-  version: '1.2.1',
+  version: '1.3.0',
   orientation: 'portrait',
   newArchEnabled: true,
-  // =============================================================================
-  // EAS Update Configuration
-  // =============================================================================
-  runtimeVersion: {
-    policy: 'sdkVersion',
-  },
-  updates: {
-    url: 'https://u.expo.dev/d17ee0bf-d2d6-4a29-9348-8dc79fffb815',
-    enabled: true,
-    checkAutomatically: 'ON_LOAD',
-    fallbackToCacheTimeout: 0,
-  },
   // ===========================================================================
   // iOS Configuration
   // ===========================================================================
