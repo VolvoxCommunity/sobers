@@ -66,7 +66,7 @@ export default function ProgramLayout(): React.ReactElement {
         </View>
 
         {/* Top Tab Bar */}
-        <View style={styles.tabBar} testID="program-tab-bar">
+        <View style={styles.tabBar} testID="program-tab-bar" accessibilityRole="tablist">
           {TAB_ITEMS.map((tab) => {
             const isActive = activeTab === tab.name;
             const Icon = tab.icon;
@@ -76,6 +76,9 @@ export default function ProgramLayout(): React.ReactElement {
                 style={[styles.tab, isActive && styles.tabActive]}
                 onPress={() => handleTabPress(tab.name)}
                 testID={`program-tab-${tab.name}`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
+                accessibilityLabel={`${tab.label} tab`}
               >
                 <Icon size={18} color={isActive ? theme.primary : theme.textSecondary} />
                 <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
