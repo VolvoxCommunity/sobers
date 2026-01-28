@@ -12,7 +12,7 @@ export class StepsPage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/steps');
+    await this.page.goto('/program/steps');
     await this.waitForPageLoad();
   }
 
@@ -50,7 +50,7 @@ export class StepDetailPage extends BasePage {
 
   async expectOnStepDetailPage(): Promise<void> {
     // Steps use UUID-based URLs, not numeric step numbers
-    await expect(this.page).toHaveURL(/\/steps\/[a-f0-9-]+$/);
+    await expect(this.page).toHaveURL(/\/program\/steps\/[a-f0-9-]+$/);
     await expect(this.stepTitle).toBeVisible();
   }
 
