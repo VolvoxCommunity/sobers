@@ -18,7 +18,8 @@
 // =============================================================================
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import { Platform } from 'react-native';
 
 // Import after mocks are set up
@@ -187,7 +188,7 @@ describe('TabsLayout', () => {
     it('renders NativeBottomTabs on iOS', () => {
       setPlatform('ios');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
       expect(screen.queryByTestId('web-top-nav')).toBeNull();
@@ -196,7 +197,7 @@ describe('TabsLayout', () => {
     it('renders NativeBottomTabs on Android', () => {
       setPlatform('android');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
       expect(screen.queryByTestId('web-top-nav')).toBeNull();
@@ -205,7 +206,7 @@ describe('TabsLayout', () => {
     it('renders all tab screens on native', () => {
       setPlatform('ios');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('tab-screen-index')).toBeTruthy();
       expect(screen.getByTestId('tab-screen-program')).toBeTruthy();
@@ -222,20 +223,20 @@ describe('TabsLayout', () => {
     });
 
     it('renders WebTopNav on web', () => {
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('web-top-nav')).toBeTruthy();
       expect(screen.queryByTestId('native-bottom-tabs')).toBeNull();
     });
 
     it('renders Expo Tabs on web (hidden)', () => {
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('expo-tabs')).toBeTruthy();
     });
 
     it('renders all expo tab screens on web', () => {
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('expo-tab-screen-index')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
@@ -250,7 +251,7 @@ describe('TabsLayout', () => {
     it('returns SF Symbol config on iOS', () => {
       setPlatform('ios');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       // Execute the captured tabBarIcon callback for the index tab
       const indexIcon = mockCapturedTabBarIcons['index'];
@@ -263,7 +264,7 @@ describe('TabsLayout', () => {
     it('returns Android icon config on Android', () => {
       setPlatform('android');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       // Execute the captured tabBarIcon callback for the index tab
       const indexIcon = mockCapturedTabBarIcons['index'];
@@ -277,7 +278,7 @@ describe('TabsLayout', () => {
     it('provides correct SF Symbols for all tabs on iOS', () => {
       setPlatform('ios');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(mockCapturedTabBarIcons['index']()).toEqual({ sfSymbol: 'house.fill' });
       expect(mockCapturedTabBarIcons['program']()).toEqual({ sfSymbol: 'heart.fill' });
@@ -291,7 +292,7 @@ describe('TabsLayout', () => {
     it('provides correct Android icons for all tabs on Android', () => {
       setPlatform('android');
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(mockCapturedTabBarIcons['index']()).toBe('mock-home-icon');
       expect(mockCapturedTabBarIcons['program']()).toBe('mock-book-icon');
@@ -304,7 +305,7 @@ describe('TabsLayout', () => {
   describe('platform switching', () => {
     it('switches from native to web navigation when platform changes', () => {
       setPlatform('ios');
-      const { rerender } = render(<TabsLayout />);
+      const { rerender } = renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
 
@@ -318,7 +319,7 @@ describe('TabsLayout', () => {
 
     it('switches from web to native navigation when platform changes', () => {
       setPlatform('web');
-      const { rerender } = render(<TabsLayout />);
+      const { rerender } = renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('web-top-nav')).toBeTruthy();
 
@@ -333,13 +334,13 @@ describe('TabsLayout', () => {
 
   describe('rendering', () => {
     it('renders without errors', () => {
-      const { toJSON } = render(<TabsLayout />);
+      const { toJSON } = renderWithProviders(<TabsLayout />);
 
       expect(toJSON()).toBeTruthy();
     });
 
     it('renders consistently after re-render', () => {
-      const { rerender } = render(<TabsLayout />);
+      const { rerender } = renderWithProviders(<TabsLayout />);
 
       rerender(<TabsLayout />);
 
@@ -349,7 +350,7 @@ describe('TabsLayout', () => {
 
   describe('edge cases', () => {
     it('handles rapid platform changes', () => {
-      const { rerender } = render(<TabsLayout />);
+      const { rerender } = renderWithProviders(<TabsLayout />);
 
       setPlatform('web');
       rerender(<TabsLayout />);
@@ -371,7 +372,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: true },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       const programScreen = screen.getByTestId('tab-screen-program');
       expect(programScreen).toBeTruthy();
@@ -385,7 +386,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: false },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       // On native, the screen is still rendered but hidden via tabBarItemHidden
       const programScreen = screen.getByTestId('tab-screen-program');
@@ -399,7 +400,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: undefined },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       const programScreen = screen.getByTestId('tab-screen-program');
       expect(programScreen).toBeTruthy();
@@ -412,7 +413,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: null },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       const programScreen = screen.getByTestId('tab-screen-program');
       expect(programScreen).toBeTruthy();
@@ -425,7 +426,7 @@ describe('TabsLayout', () => {
         profile: null,
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       const programScreen = screen.getByTestId('tab-screen-program');
       expect(programScreen).toBeTruthy();
@@ -439,7 +440,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: false },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       // On web, the screen is not rendered at all (conditional rendering)
       expect(screen.queryByTestId('expo-tab-screen-program')).toBeNull();
@@ -451,7 +452,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: true },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
     });
@@ -461,7 +462,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: true },
       });
 
-      const { rerender } = render(<TabsLayout />);
+      const { rerender } = renderWithProviders(<TabsLayout />);
       let programScreen = screen.getByTestId('tab-screen-program');
       let options = JSON.parse(programScreen.props['data-options']);
       expect(options.tabBarItemHidden).toBeFalsy();
@@ -482,7 +483,7 @@ describe('TabsLayout', () => {
         profile: { ...mockProfile, show_program_content: false },
       });
 
-      render(<TabsLayout />);
+      renderWithProviders(<TabsLayout />);
 
       // All other tabs should still be visible (not hidden)
       const indexScreen = screen.getByTestId('tab-screen-index');
