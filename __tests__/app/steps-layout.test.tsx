@@ -26,15 +26,15 @@ import StepsLayout from '@/app/(app)/(tabs)/program/steps/_layout';
 let mockCapturedScreenOptions: Record<string, unknown> | null = null;
 const mockCapturedScreens: { name: string; options?: Record<string, unknown> }[] = [];
 
-let mockShouldShowProgramContent: boolean | undefined = true;
+let shouldShowProgramContentMock: boolean | undefined = true;
 let mockIsLoading = false;
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     profile:
-      mockShouldShowProgramContent === undefined
+      shouldShowProgramContentMock === undefined
         ? null
-        : { show_program_content: mockShouldShowProgramContent },
+        : { show_program_content: shouldShowProgramContentMock },
     loading: mockIsLoading,
   }),
 }));
@@ -88,7 +88,7 @@ describe('StepsLayout', () => {
     jest.clearAllMocks();
     mockCapturedScreenOptions = null;
     mockCapturedScreens.length = 0;
-    mockShouldShowProgramContent = true;
+    shouldShowProgramContentMock = true;
     mockIsLoading = false;
   });
 
@@ -146,14 +146,14 @@ describe('StepsLayout', () => {
 
   describe('program opt-out', () => {
     it('redirects when program content is disabled', () => {
-      mockShouldShowProgramContent = false;
+      shouldShowProgramContentMock = false;
       renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('redirect')).toBeTruthy();
     });
 
     it('does not redirect while auth is loading', () => {
-      mockShouldShowProgramContent = false;
+      shouldShowProgramContentMock = false;
       mockIsLoading = true;
       renderWithProviders(<StepsLayout />);
 
