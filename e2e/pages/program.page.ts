@@ -61,10 +61,7 @@ export class PlaceholderPage extends BasePage {
   readonly title: Locator;
   readonly subtitle: Locator;
 
-  constructor(
-    page: Page,
-    private readonly screenName: string
-  ) {
+  constructor(page: Page, screenName: string) {
     super(page);
     this.screen = page.getByTestId(`${screenName}-screen`);
     this.title = page.getByTestId(`${screenName}-title`);

@@ -14,3 +14,11 @@ export {
 } from './profile.page';
 export { SettingsPage } from './settings.page';
 export { EditSavingsSheet } from './savings.page';
+export {
+  ProgramPage,
+  PlaceholderPage,
+  createDailyReadingsPage,
+  createPrayersPage,
+  createLiteraturePage,
+  createMeetingsPage,
+} from './program.page';
