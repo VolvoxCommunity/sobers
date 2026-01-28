@@ -12,6 +12,21 @@
 
 ---
 
+> **Implementation Note:** The SQL snippets in this plan represent the initial design.
+> The shipped migrations in `supabase/migrations/20260124*.sql` include additional
+> refinements made during implementation:
+>
+> - `valid_month_day` CHECK constraint in `daily_readings` to validate date combinations
+> - Idempotent trigger statements (`DROP TRIGGER IF EXISTS ... CREATE TRIGGER`)
+> - `step_number`/`category` consistency CHECK in `prayers` table
+> - Numeric range CHECKs in `literature_books` and `literature_chapters`
+> - `WITH CHECK` clauses on UPDATE policies for complete RLS coverage
+> - Index on `user_prayer_history` for efficient queries
+>
+> **Always reference the actual migration files for the authoritative schema.**
+
+---
+
 ## Phase 1: Database Schema & Types
 
 ### Task 1.1: Create Database Migration for Daily Readings Tables
