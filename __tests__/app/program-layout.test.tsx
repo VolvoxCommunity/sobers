@@ -9,7 +9,6 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import ProgramLayout from '@/app/(app)/(tabs)/program/_layout';
 
@@ -41,7 +40,10 @@ const mockPush = jest.fn();
 let mockPathname = '/program/steps';
 
 jest.mock('expo-router', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require('react-native');
 
   // Mock Tabs component
   function MockTabs({
@@ -50,11 +52,7 @@ jest.mock('expo-router', () => {
     children: React.ReactNode;
     screenOptions?: Record<string, unknown>;
   }) {
-    return (
-      <View testID="tabs-navigator">
-        {children}
-      </View>
-    );
+    return <View testID="tabs-navigator">{children}</View>;
   }
   MockTabs.displayName = 'MockTabs';
 
