@@ -1,13 +1,22 @@
+// =============================================================================
+// Imports
+// =============================================================================
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 
+// =============================================================================
+// Types
+// =============================================================================
 interface PlaceholderScreenProps {
   title: string;
   subtitle?: string;
 }
 
+// =============================================================================
+// Component
+// =============================================================================
 /**
  * Reusable placeholder screen for Program section tabs that are coming soon.
  */
@@ -29,6 +38,9 @@ export default function PlaceholderScreen({
   );
 }
 
+// =============================================================================
+// Styles
+// =============================================================================
 const createStyles = (theme: ThemeColors) =>
   StyleSheet.create({
     container: {
