@@ -9,7 +9,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { screen, fireEvent } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import ProgramLayout from '@/app/(app)/(tabs)/program/_layout';
 
 // =============================================================================
@@ -107,13 +108,13 @@ describe('ProgramLayout', () => {
 
   describe('rendering', () => {
     it('renders the header with title', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByText('Program')).toBeTruthy();
     });
 
     it('renders all five tabs', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByText('Steps')).toBeTruthy();
       expect(screen.getByText('Daily')).toBeTruthy();
@@ -123,13 +124,13 @@ describe('ProgramLayout', () => {
     });
 
     it('renders tabs navigator', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByTestId('tabs-navigator')).toBeTruthy();
     });
 
     it('registers all tab screens', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByTestId('tabs-screen-steps')).toBeTruthy();
       expect(screen.getByTestId('tabs-screen-daily')).toBeTruthy();
@@ -141,7 +142,7 @@ describe('ProgramLayout', () => {
 
   describe('tab navigation', () => {
     it('navigates to steps when Steps tab is pressed', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Steps'));
 
@@ -149,7 +150,7 @@ describe('ProgramLayout', () => {
     });
 
     it('navigates to daily when Daily tab is pressed', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Daily'));
 
@@ -157,7 +158,7 @@ describe('ProgramLayout', () => {
     });
 
     it('navigates to prayers when Prayers tab is pressed', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Prayers'));
 
@@ -165,7 +166,7 @@ describe('ProgramLayout', () => {
     });
 
     it('navigates to literature when Lit tab is pressed', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Lit'));
 
@@ -173,7 +174,7 @@ describe('ProgramLayout', () => {
     });
 
     it('navigates to meetings when Meet tab is pressed', () => {
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Meet'));
 
@@ -184,7 +185,7 @@ describe('ProgramLayout', () => {
   describe('active tab state', () => {
     it('defaults to steps tab when on /program/steps', () => {
       mockPathname = '/program/steps';
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       // Component renders without error with steps as active
       expect(screen.getByText('Steps')).toBeTruthy();
@@ -192,21 +193,21 @@ describe('ProgramLayout', () => {
 
     it('shows daily as active when on /program/daily', () => {
       mockPathname = '/program/daily';
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByText('Daily')).toBeTruthy();
     });
 
     it('shows prayers as active when on /program/prayers', () => {
       mockPathname = '/program/prayers';
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByText('Prayers')).toBeTruthy();
     });
 
     it('defaults to steps for unknown paths', () => {
       mockPathname = '/program/unknown';
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       // Should still render without error
       expect(screen.getByText('Steps')).toBeTruthy();
@@ -215,7 +216,7 @@ describe('ProgramLayout', () => {
 
   describe('edge cases', () => {
     it('renders consistently across multiple renders', () => {
-      const { rerender } = render(<ProgramLayout />);
+      const { rerender } = renderWithProviders(<ProgramLayout />);
 
       rerender(<ProgramLayout />);
 
@@ -224,7 +225,7 @@ describe('ProgramLayout', () => {
 
     it('handles deep paths correctly', () => {
       mockPathname = '/program/steps/step-1';
-      render(<ProgramLayout />);
+      renderWithProviders(<ProgramLayout />);
 
       // Should show steps as active for nested routes
       expect(screen.getByText('Steps')).toBeTruthy();

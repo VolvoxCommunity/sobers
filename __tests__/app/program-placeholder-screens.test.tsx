@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import DailyReadingsScreen from '@/app/(app)/(tabs)/program/daily';
 import PrayersScreen from '@/app/(app)/(tabs)/program/prayers';
 import LiteratureScreen from '@/app/(app)/(tabs)/program/literature';
@@ -45,19 +46,19 @@ jest.mock('@/hooks/useTabBarPadding', () => ({
 describe('Program Placeholder Screens', () => {
   describe('DailyReadingsScreen', () => {
     it('renders the Daily Readings title', () => {
-      render(<DailyReadingsScreen />);
+      renderWithProviders(<DailyReadingsScreen />);
 
       expect(screen.getByText('Daily Readings')).toBeTruthy();
     });
 
     it('renders the Coming soon subtitle', () => {
-      render(<DailyReadingsScreen />);
+      renderWithProviders(<DailyReadingsScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
 
     it('renders without crashing', () => {
-      const { toJSON } = render(<DailyReadingsScreen />);
+      const { toJSON } = renderWithProviders(<DailyReadingsScreen />);
 
       expect(toJSON()).toBeTruthy();
     });
@@ -65,19 +66,19 @@ describe('Program Placeholder Screens', () => {
 
   describe('PrayersScreen', () => {
     it('renders the Prayers title', () => {
-      render(<PrayersScreen />);
+      renderWithProviders(<PrayersScreen />);
 
       expect(screen.getByText('Prayers')).toBeTruthy();
     });
 
     it('renders the Coming soon subtitle', () => {
-      render(<PrayersScreen />);
+      renderWithProviders(<PrayersScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
 
     it('renders without crashing', () => {
-      const { toJSON } = render(<PrayersScreen />);
+      const { toJSON } = renderWithProviders(<PrayersScreen />);
 
       expect(toJSON()).toBeTruthy();
     });
@@ -85,19 +86,19 @@ describe('Program Placeholder Screens', () => {
 
   describe('LiteratureScreen', () => {
     it('renders the Literature title', () => {
-      render(<LiteratureScreen />);
+      renderWithProviders(<LiteratureScreen />);
 
       expect(screen.getByText('Literature')).toBeTruthy();
     });
 
     it('renders the Coming soon subtitle', () => {
-      render(<LiteratureScreen />);
+      renderWithProviders(<LiteratureScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
 
     it('renders without crashing', () => {
-      const { toJSON } = render(<LiteratureScreen />);
+      const { toJSON } = renderWithProviders(<LiteratureScreen />);
 
       expect(toJSON()).toBeTruthy();
     });
@@ -105,19 +106,19 @@ describe('Program Placeholder Screens', () => {
 
   describe('MeetingsScreen', () => {
     it('renders the Meetings title', () => {
-      render(<MeetingsScreen />);
+      renderWithProviders(<MeetingsScreen />);
 
       expect(screen.getByText('Meetings')).toBeTruthy();
     });
 
     it('renders the Coming soon subtitle', () => {
-      render(<MeetingsScreen />);
+      renderWithProviders(<MeetingsScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
 
     it('renders without crashing', () => {
-      const { toJSON } = render(<MeetingsScreen />);
+      const { toJSON } = renderWithProviders(<MeetingsScreen />);
 
       expect(toJSON()).toBeTruthy();
     });

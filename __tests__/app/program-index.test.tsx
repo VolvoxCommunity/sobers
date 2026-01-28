@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import ProgramIndex from '@/app/(app)/(tabs)/program/index';
 
 // =============================================================================
@@ -38,19 +39,19 @@ describe('ProgramIndex', () => {
 
   describe('redirect behavior', () => {
     it('redirects to /program/steps', () => {
-      render(<ProgramIndex />);
+      renderWithProviders(<ProgramIndex />);
 
       expect(redirectHref).toBe('/program/steps');
     });
 
     it('renders Redirect component', () => {
-      render(<ProgramIndex />);
+      renderWithProviders(<ProgramIndex />);
 
       expect(screen.getByTestId('redirect')).toBeTruthy();
     });
 
     it('passes correct href to Redirect', () => {
-      render(<ProgramIndex />);
+      renderWithProviders(<ProgramIndex />);
 
       expect(screen.getByTestId('redirect-href').props.children).toBe('/program/steps');
     });
