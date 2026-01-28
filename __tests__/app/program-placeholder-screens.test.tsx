@@ -62,12 +62,6 @@ describe('Program Placeholder Screens', () => {
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
-
-    it('renders without crashing', () => {
-      const { toJSON } = renderWithProviders(<DailyReadingsScreen />);
-
-      expect(toJSON()).toBeTruthy();
-    });
   });
 
   describe('PrayersScreen', () => {
@@ -81,12 +75,6 @@ describe('Program Placeholder Screens', () => {
       renderWithProviders(<PrayersScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
-    });
-
-    it('renders without crashing', () => {
-      const { toJSON } = renderWithProviders(<PrayersScreen />);
-
-      expect(toJSON()).toBeTruthy();
     });
   });
 
@@ -102,12 +90,6 @@ describe('Program Placeholder Screens', () => {
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
-
-    it('renders without crashing', () => {
-      const { toJSON } = renderWithProviders(<LiteratureScreen />);
-
-      expect(toJSON()).toBeTruthy();
-    });
   });
 
   describe('MeetingsScreen', () => {
@@ -121,12 +103,6 @@ describe('Program Placeholder Screens', () => {
       renderWithProviders(<MeetingsScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
-    });
-
-    it('renders without crashing', () => {
-      const { toJSON } = renderWithProviders(<MeetingsScreen />);
-
-      expect(toJSON()).toBeTruthy();
     });
   });
 });
