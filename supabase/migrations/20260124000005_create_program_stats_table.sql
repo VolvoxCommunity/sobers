@@ -33,4 +33,5 @@ CREATE POLICY "Users can insert own program stats"
 
 CREATE POLICY "Users can update own program stats"
   ON public.user_program_stats FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
