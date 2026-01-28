@@ -50,7 +50,7 @@ app/(app)/(tabs)/program/
 -- Fallback content if external APIs unavailable
 daily_readings (
   id uuid PRIMARY KEY,
-  program text,          -- 'aa' | 'na'
+  program text CHECK (program IN ('aa', 'na')),
   month int,
   day int,
   title text,
@@ -59,24 +59,34 @@ daily_readings (
   UNIQUE(program, month, day)
 )
 
+-- Index for fast lookups by program and date
+CREATE INDEX idx_daily_readings_lookup ON daily_readings(program, month, day);
+
 -- User preferences for reading program
+-- Note: When preferred_program = 'both', the UI displays readings side-by-side
+-- with a toggle to switch between AA and NA views
 user_reading_preferences (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id),
-  preferred_program text DEFAULT 'aa', -- 'aa' | 'na' | 'both'
+  preferred_program text DEFAULT 'aa' CHECK (preferred_program IN ('aa', 'na', 'both')),
   created_at timestamptz,
   updated_at timestamptz
 )
 
 -- Track which readings user has viewed
+-- Note: reflection_date is the date of the reading content (not when viewed - that's viewed_at)
+-- AA and NA readings are tracked separately (user can mark both as read on the same day)
 user_reading_history (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id),
-  reading_date date,           -- The date of the reading
-  program text,                -- 'aa' | 'na'
+  reflection_date date,        -- The date of the reading content
+  program text CHECK (program IN ('aa', 'na')),
   viewed_at timestamptz,
-  UNIQUE(user_id, reading_date, program)
+  UNIQUE(user_id, reflection_date, program)
 )
+
+-- Index for streak calculations and history lookups
+CREATE INDEX idx_user_reading_history_user_date ON user_reading_history(user_id, reflection_date DESC);
 ```
 
 ### Prayers
@@ -87,10 +97,13 @@ prayers (
   id uuid PRIMARY KEY,
   title text,
   content text,
-  category text,        -- 'step' | 'common' | 'aa' | 'na'
+  category text CHECK (category IN ('step', 'common', 'aa', 'na')),
   step_number int,      -- NULL if not step-specific
   sort_order int
 )
+
+-- Index for categorized listings
+CREATE INDEX idx_prayers_category ON prayers(category, sort_order);
 
 -- User's favorited prayers
 user_prayer_favorites (
@@ -101,13 +114,21 @@ user_prayer_favorites (
   UNIQUE(user_id, prayer_id)
 )
 
+-- Index for listing user's favorites
+CREATE INDEX idx_user_prayer_favorites_user ON user_prayer_favorites(user_id);
+
 -- Track prayers viewed
+-- Note: Allows multiple records for same user/prayer to track repeated views over time
+-- Use GROUP BY and MAX(viewed_at) to get most recent view per prayer
 user_prayer_history (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id),
   prayer_id uuid REFERENCES prayers(id),
   viewed_at timestamptz
 )
+
+-- Index for recent history lookups
+CREATE INDEX idx_user_prayer_history_user ON user_prayer_history(user_id, viewed_at DESC);
 ```
 
 ### Literature
@@ -117,7 +138,7 @@ user_prayer_history (
 literature_books (
   id uuid PRIMARY KEY,
   title text,              -- "Alcoholics Anonymous (Big Book)"
-  program text,            -- 'aa' | 'na'
+  program text CHECK (program IN ('aa', 'na')),
   chapter_count int,
   external_url text,       -- Link to purchase/read
   sort_order int
@@ -132,7 +153,12 @@ literature_chapters (
   page_range text          -- "1-14"
 )
 
+-- Index for chapter listings by book
+CREATE INDEX idx_literature_chapters_book ON literature_chapters(book_id, chapter_number);
+
 -- User's visible books (show/hide functionality)
+-- Note: Rows are only created when a user explicitly adds a book to their list.
+-- is_visible allows hiding without deleting (preserves progress data).
 user_literature_books (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id),
@@ -142,6 +168,9 @@ user_literature_books (
   UNIQUE(user_id, book_id)
 )
 
+-- Index for filtering visible books per user
+CREATE INDEX idx_user_literature_books_user_visible ON user_literature_books(user_id, is_visible);
+
 -- Chapter completion tracking
 user_literature_progress (
   id uuid PRIMARY KEY,
@@ -150,6 +179,9 @@ user_literature_progress (
   completed_at timestamptz,
   UNIQUE(user_id, chapter_id)
 )
+
+-- Index for progress lookups and calculations
+CREATE INDEX idx_user_literature_progress_user ON user_literature_progress(user_id, chapter_id);
 ```
 
 ### Meetings
@@ -160,18 +192,26 @@ user_meetings (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id),
   meeting_name text,
-  meeting_type text,       -- 'aa' | 'na' | 'other'
+  meeting_type text CHECK (meeting_type IN ('aa', 'na', 'other')),
   location text,           -- Optional
   attended_at timestamptz,
   notes text,              -- Optional personal notes
   created_at timestamptz
 )
+
+-- Index for meetings grouped by week
+CREATE INDEX idx_user_meetings_user_attended ON user_meetings(user_id, attended_at DESC);
+
+-- Index for meeting names auto-suggest
+CREATE INDEX idx_user_meetings_user_name ON user_meetings(user_id, meeting_name);
 ```
 
 ### Statistics
 
 ```sql
 -- Cached stats for fast Home screen loading
+-- Updated via database trigger on user_reading_history INSERT/DELETE
+-- Trigger function: update_user_program_stats()
 user_program_stats (
   id uuid PRIMARY KEY,
   user_id uuid REFERENCES profiles(id) UNIQUE,
@@ -180,6 +220,20 @@ user_program_stats (
   reading_total_count int DEFAULT 0,
   updated_at timestamptz
 )
+
+-- Trigger to maintain cached stats in real-time
+CREATE OR REPLACE FUNCTION update_user_program_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Recalculate stats for affected user
+  -- Implementation calculates streaks and totals from user_reading_history
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_reading_stats
+AFTER INSERT OR DELETE ON user_reading_history
+FOR EACH ROW EXECUTE FUNCTION update_user_program_stats();
 ```
 
 ## Screen Designs
@@ -201,6 +255,21 @@ user_program_stats (
 
 1. External API (AA Daily Reflections, NA Just for Today)
 2. Supabase fallback (`daily_readings` table)
+
+**Mark as Read Implementation:**
+
+| UI State              | Query                                                                                          | Mutation                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Check if already read | `SELECT * FROM user_reading_history WHERE user_id = ? AND reflection_date = ? AND program = ?` | -                                                                                                             |
+| Mark as read          | -                                                                                              | `INSERT INTO user_reading_history (user_id, reflection_date, program, viewed_at) VALUES (?, today, ?, now())` |
+| Show checkmark        | If query returns row                                                                           | -                                                                                                             |
+| Show button           | If query returns no row                                                                        | -                                                                                                             |
+
+**Program toggle behavior:**
+
+- AA and NA readings are tracked separately
+- Switching between AA/NA re-queries for that program's read status
+- User can mark both AA and NA as read on the same day
 
 ### Prayers Tab
 
@@ -315,6 +384,12 @@ user_program_stats (
 | -------------------------- | ---------------------- |
 | `show_twelve_step_content` | `show_program_content` |
 
+**Naming rationale:** The column is intentionally named generically (`show_program_content`)
+to allow for potential future expansion to other program types beyond 12-step content.
+The UI uses the specific label "Show 12 Step Program" because that accurately describes
+the current functionality. If additional program types are added in the future, the
+column can support them without migration, and the UI label can be updated accordingly.
+
 ### Settings UI
 
 ```text
@@ -369,8 +444,82 @@ Seed `literature_books` and `literature_chapters` with:
 
 ### Migration Strategy
 
-1. Create new database tables
-2. Rename `show_twelve_step_content` to `show_program_content`
-3. Move existing steps screens to new location
-4. Build new screens incrementally
-5. Seed prayer and literature content
+#### Phase 1: Database Changes (deploy behind feature flag)
+
+1. **Create new tables** (can be deployed independently):
+
+   ```sql
+   -- Run in transaction
+   BEGIN;
+   CREATE TABLE daily_readings (...);
+   CREATE TABLE user_reading_preferences (...);
+   CREATE TABLE user_reading_history (...);
+   CREATE TABLE prayers (...);
+   CREATE TABLE user_prayer_favorites (...);
+   CREATE TABLE user_prayer_history (...);
+   CREATE TABLE literature_books (...);
+   CREATE TABLE literature_chapters (...);
+   CREATE TABLE user_literature_books (...);
+   CREATE TABLE user_literature_progress (...);
+   CREATE TABLE user_meetings (...);
+   CREATE TABLE user_program_stats (...);
+   COMMIT;
+   ```
+
+2. **Column rename migration** (idempotent):
+
+   ```sql
+   -- Check if old column exists before renaming
+   DO $$
+   BEGIN
+     IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'profiles' AND column_name = 'show_twelve_step_content') THEN
+       ALTER TABLE profiles RENAME COLUMN show_twelve_step_content TO show_program_content;
+     END IF;
+   END $$;
+   ```
+
+   Existing user preferences are preserved (column data unchanged).
+
+3. **Seed static content** (prayers, literature_books, literature_chapters)
+
+#### Phase 2: UI Deployment
+
+4. Move existing steps screens to new location
+5. Build new screens incrementally
+6. Enable feature flag to show new Program tab
+
+#### Default Values for New Tables
+
+- `user_reading_preferences`: Created on first access to Daily Readings tab (lazy initialization)
+- `user_program_stats`: Created via trigger on first `user_reading_history` insert
+
+#### Rollback Strategy
+
+**If rollback needed after Phase 1:**
+
+```sql
+-- Reverse column rename
+ALTER TABLE profiles RENAME COLUMN show_program_content TO show_twelve_step_content;
+
+-- New tables can remain (empty) or be dropped
+-- No FK dependencies from existing tables, safe to drop
+DROP TABLE IF EXISTS user_program_stats CASCADE;
+DROP TABLE IF EXISTS user_meetings CASCADE;
+DROP TABLE IF EXISTS user_literature_progress CASCADE;
+DROP TABLE IF EXISTS user_literature_books CASCADE;
+DROP TABLE IF EXISTS literature_chapters CASCADE;
+DROP TABLE IF EXISTS literature_books CASCADE;
+DROP TABLE IF EXISTS user_prayer_history CASCADE;
+DROP TABLE IF EXISTS user_prayer_favorites CASCADE;
+DROP TABLE IF EXISTS prayers CASCADE;
+DROP TABLE IF EXISTS user_reading_history CASCADE;
+DROP TABLE IF EXISTS user_reading_preferences CASCADE;
+DROP TABLE IF EXISTS daily_readings CASCADE;
+```
+
+**If rollback needed after Phase 2:**
+
+- Disable feature flag to hide new UI
+- Database can remain as-is (no data loss)
+- Revert app code to previous version
