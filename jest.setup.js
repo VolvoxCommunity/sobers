@@ -1,3 +1,6 @@
+// Set deterministic timezone for date/time tests
+process.env.TZ = 'UTC';
+
 // Mock React Native
 jest.mock('react-native', () => {
   const React = require('react');
