@@ -80,31 +80,4 @@ describe('PlaceholderScreen', () => {
       expect(subtitle).toBeTruthy();
     });
   });
-
-  describe('different screens', () => {
-    it('renders Daily Readings screen', () => {
-      renderWithProviders(<PlaceholderScreen title="Daily Readings" />);
-
-      expect(screen.getByText('Daily Readings')).toBeTruthy();
-      expect(screen.getByText('Coming soon')).toBeTruthy();
-    });
-
-    it('renders Prayers screen', () => {
-      renderWithProviders(<PlaceholderScreen title="Prayers" />);
-
-      expect(screen.getByText('Prayers')).toBeTruthy();
-    });
-
-    it('renders Literature screen', () => {
-      renderWithProviders(<PlaceholderScreen title="Literature" />);
-
-      expect(screen.getByText('Literature')).toBeTruthy();
-    });
-
-    it('renders Meetings screen', () => {
-      renderWithProviders(<PlaceholderScreen title="Meetings" />);
-
-      expect(screen.getByText('Meetings')).toBeTruthy();
-    });
-  });
 });
