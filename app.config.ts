@@ -107,4 +107,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
     reactCompiler: true,
   },
+  // ===========================================================================
+  // OTA Updates Configuration
+  // ===========================================================================
+  updates: {
+    url: 'https://u.expo.dev/d17ee0bf-d2d6-4a29-9348-8dc79fffb815',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
 });
