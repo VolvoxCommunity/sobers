@@ -63,28 +63,35 @@ test.describe('Savings Tracking', () => {
     });
 
     test('should update amount and save', async ({ page }) => {
+      await expect(page).toHaveURL(/.*\/(app)?$/);
       const hasCard = await homePage.hasMoneySavedCard();
       if (hasCard) {
         await editSheet.fillAmount('75');
         await editSheet.save();
 
-        // Wait for the money saved card to reappear after sheet closes
         await expect(homePage.moneySavedCard).toBeVisible({ timeout: 10000 });
 
-        // Verify update reflected in card
         const totalText = await homePage.getMoneySavedTotal();
         expect(totalText).toBeTruthy();
       }
     });
 
     test('should change frequency', async ({ page }) => {
+      await expect(page).toHaveURL(/.*\/(app)?$/);
       const hasCard = await homePage.hasMoneySavedCard();
       if (hasCard) {
         await editSheet.selectFrequency('monthly');
         await editSheet.save();
 
-        // Wait for the money saved card to reappear after sheet closes
         await expect(homePage.moneySavedCard).toBeVisible({ timeout: 10000 });
+      }
+    });
+
+    test('should show clear tracking button', async ({ page }) => {
+      await expect(page).toHaveURL(/.*\/(app)?$/);
+      const hasCard = await homePage.hasMoneySavedCard();
+      if (hasCard) {
+        await expect(editSheet.clearButton).toBeVisible();
       }
     });
   });
