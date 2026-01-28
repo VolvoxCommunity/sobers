@@ -10,7 +10,8 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import StepsLayout from '@/app/(app)/(tabs)/program/steps/_layout';
 
 // =============================================================================
@@ -21,13 +22,13 @@ import StepsLayout from '@/app/(app)/(tabs)/program/steps/_layout';
 let mockCapturedScreenOptions: Record<string, unknown> | null = null;
 const mockCapturedScreens: { name: string; options?: Record<string, unknown> }[] = [];
 
-let mockShouldShowProgramContent: boolean | null = true;
+let mockShouldShowProgramContent: boolean | undefined = true;
 let mockIsLoading = false;
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     profile:
-      mockShouldShowProgramContent === null
+      mockShouldShowProgramContent === undefined
         ? null
         : { show_program_content: mockShouldShowProgramContent },
     loading: mockIsLoading,
@@ -89,13 +90,13 @@ describe('StepsLayout', () => {
 
   describe('rendering', () => {
     it('renders stack navigator', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders without errors', () => {
-      const { toJSON } = render(<StepsLayout />);
+      const { toJSON } = renderWithProviders(<StepsLayout />);
 
       expect(toJSON()).toBeTruthy();
     });
@@ -103,13 +104,13 @@ describe('StepsLayout', () => {
 
   describe('navigation structure', () => {
     it('configures Stack with headerShown false', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(mockCapturedScreenOptions).toEqual({ headerShown: false });
     });
 
     it('registers both index and detail screens', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       const screenNames = mockCapturedScreens.map((s) => s.name);
       expect(screenNames).toContain('index');
@@ -117,7 +118,7 @@ describe('StepsLayout', () => {
     });
 
     it('configures detail screen with slide_from_right animation', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       const detailScreen = mockCapturedScreens.find((s) => s.name === '[id]');
       expect(detailScreen?.options).toEqual({ animation: 'slide_from_right' });
@@ -126,7 +127,7 @@ describe('StepsLayout', () => {
 
   describe('header configuration', () => {
     it('hides headers globally via screenOptions', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(mockCapturedScreenOptions?.headerShown).toBe(false);
     });
@@ -134,7 +135,7 @@ describe('StepsLayout', () => {
     it('handles dark theme rendering', () => {
       // The component uses useAuth which is mocked at module level
       // Theme rendering is not affected since no theme values are used
-      const { toJSON } = render(<StepsLayout />);
+      const { toJSON } = renderWithProviders(<StepsLayout />);
       expect(toJSON()).toBeTruthy();
     });
   });
@@ -142,7 +143,7 @@ describe('StepsLayout', () => {
   describe('program opt-out', () => {
     it('redirects when program content is disabled', () => {
       mockShouldShowProgramContent = false;
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('redirect')).toBeTruthy();
     });
@@ -150,7 +151,7 @@ describe('StepsLayout', () => {
     it('does not redirect while auth is loading', () => {
       mockShouldShowProgramContent = false;
       mockIsLoading = true;
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.queryByTestId('redirect')).toBeNull();
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
@@ -159,13 +160,13 @@ describe('StepsLayout', () => {
 
   describe('edge cases', () => {
     it('renders with mocked theme values', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders consistently across multiple renders', () => {
-      const { rerender } = render(<StepsLayout />);
+      const { rerender } = renderWithProviders(<StepsLayout />);
 
       rerender(<StepsLayout />);
 
