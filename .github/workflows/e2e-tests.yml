@@ -52,7 +52,7 @@ jobs:
   e2e:
     needs: build-web
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     permissions:
       contents: read
     strategy:
