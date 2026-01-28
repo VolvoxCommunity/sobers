@@ -161,7 +161,7 @@ function RootLayoutNav(): React.ReactElement {
    * Maps the current pathname to a human-readable page title.
    * Used for the browser tab title on web.
    *
-   * Note: Dynamic routes like /steps/[id] use UUIDs in the URL, so we show
+   * Note: Dynamic routes like /program/steps/[id] use UUIDs in the URL, so we show
    * a generic "Step Details" title. The actual step number (1-12) is only
    * available from the database after the step data is fetched.
    */
@@ -181,7 +181,7 @@ function RootLayoutNav(): React.ReactElement {
       '/manage-tasks': 'Manage Tasks',
       '/profile': 'Profile',
       '/settings': 'Settings',
-      '/steps': 'Steps',
+      '/program/steps': 'Program',
     };
 
     // Check for exact match first
@@ -189,12 +189,12 @@ function RootLayoutNav(): React.ReactElement {
       return `${titles[pathname]} | Sobers`;
     }
 
-    // Handle dynamic routes like /steps/[id]
+    // Handle dynamic routes like /program/steps/[id]
     // Note: The URL contains the step's UUID, not the step number (1-12).
     // The step number is only available from the database, so we use a generic title here.
     // This could be enhanced in the future by adding the step number to the route params
     // or using a separate metadata API to fetch the step number for more specific titles (better for SEO).
-    if (pathname.startsWith('/steps/')) {
+    if (pathname.startsWith('/program/steps/')) {
       return 'Step Details | Sobers';
     }
 
