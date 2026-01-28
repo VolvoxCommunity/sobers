@@ -94,13 +94,13 @@ export default function TabLayout(): React.ReactElement {
 
   // Determine if Program tab should be visible
   // Show Program tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
-  const showProgram = profile?.show_program_content !== false;
+  const shouldShowProgram = profile?.show_program_content !== false;
 
   // Filter tab routes for web navigation items only
   // Native tabs use tabBarItemHidden instead of conditional rendering
   const visibleTabRoutes = useMemo(() => {
-    return showProgram ? tabRoutes : tabRoutes.filter((route) => route.name !== 'program');
-  }, [showProgram]);
+    return shouldShowProgram ? tabRoutes : tabRoutes.filter((route) => route.name !== 'program');
+  }, [shouldShowProgram]);
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {
@@ -158,7 +158,7 @@ export default function TabLayout(): React.ReactElement {
                 ? { sfSymbol: route.sfSymbol }
                 : androidIcons[route.androidIconKey],
             // Hide Program tab when user has disabled 12-step content
-            tabBarItemHidden: route.name === 'program' && !showProgram,
+            tabBarItemHidden: route.name === 'program' && !shouldShowProgram,
           }}
         />
       ))}
