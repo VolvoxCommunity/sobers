@@ -41,11 +41,16 @@ const mockProfile = {
 };
 
 // Mock useAuth hook
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(() => ({
-    profile: mockProfile,
-  })),
-}));
+jest.mock('@/contexts/AuthContext', () => {
+  const React = require('react');
+  return {
+    useAuth: jest.fn(() => ({
+      profile: mockProfile,
+    })),
+    AuthProvider: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+  };
+});
 
 // Store captured tabBarIcon callbacks for testing
 // Note: Variable must be prefixed with 'mock' to be allowed in jest.mock() factory

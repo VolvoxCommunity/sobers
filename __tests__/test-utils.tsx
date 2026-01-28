@@ -3,37 +3,26 @@
  *
  * Provides shared test helpers for wrapping components with required providers.
  * All tests should use renderWithProviders instead of custom wrapper implementations.
+ *
+ * Note: This wrapper uses minimal mock providers to avoid conflicts with test-specific
+ * mocks. Individual tests can override contexts via jest.mock() as needed.
  */
 
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react-native';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 /**
- * Wrapper component that provides all required contexts for tests.
+ * Wrapper component that provides minimal context for tests.
  *
- * Includes:
- * - KeyboardProvider (react-native-keyboard-controller)
- * - BottomSheetModalProvider (@gorhom/bottom-sheet)
- * - AuthProvider (authentication context)
- * - ThemeProvider (theming context)
+ * Uses React.Fragment to avoid conflicts with test-specific mocks while still
+ * providing a consistent wrapper interface. Individual tests can mock contexts
+ * like AuthContext and ThemeContext as needed.
  *
- * @param children - React children to wrap with providers
- * @returns Component tree with providers
+ * @param children - React children to wrap
+ * @returns Component tree (minimal wrapper)
  */
 const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <KeyboardProvider>
-      <BottomSheetModalProvider>
-        <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </AuthProvider>
-      </BottomSheetModalProvider>
-    </KeyboardProvider>
-  );
+  return <>{children}</>;
 };
 
 /**
