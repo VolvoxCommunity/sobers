@@ -82,7 +82,8 @@ CREATE POLICY "Users can insert own literature books"
 
 CREATE POLICY "Users can update own literature books"
   ON public.user_literature_books FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete own literature books"
   ON public.user_literature_books FOR DELETE
