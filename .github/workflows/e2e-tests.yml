@@ -11,18 +11,48 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-# Minimal permissions for security (required secrets)
-# - EXPO_PUBLIC_SUPABASE_URL: Supabase project URL
-# - EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: Supabase publishable key
-# - E2E_SUPABASE_SERVICE_KEY: Supabase service role key (for test data management)
-# - E2E_TEST_PASSWORD: Password for E2E test user accounts
 permissions:
   contents: read
 
 jobs:
-  e2e:
+  # Build web app once and share with all E2E shards
+  build-web:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6.0.1
+
+      - uses: pnpm/action-setup@4.2.0
+        with:
+          version: 10.28.2
+
+      - uses: actions/setup-node@v6.2.0
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build web app
+        run: pnpm build:web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v6
+        with:
+          name: web-build
+          path: dist/
+          retention-days: 1
+
+  e2e:
+    needs: build-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     strategy:
@@ -34,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.1
 
-      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+      - uses: pnpm/action-setup@4.2.0
         with:
           version: 10.28.2
 
@@ -51,7 +81,7 @@ jobs:
         run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.2
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -65,11 +95,11 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
-      - name: Build web app
-        run: pnpm build:web
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Download web build
+        uses: actions/download-artifact@v7
+        with:
+          name: web-build
+          path: dist/
 
       - name: Start web server
         run: npx serve dist -l 8081 &
@@ -101,7 +131,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.1
 
-      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+      - uses: pnpm/action-setup@4.2.0
         with:
           version: 10.28.2
 
