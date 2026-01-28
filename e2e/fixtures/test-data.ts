@@ -2,7 +2,7 @@ export const TEST_USERS = {
   primary: {
     id: 'b81936a6-125f-420a-a736-eeb5943c28b1',
     email: 'e2e-primary@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Primary User',
     sobrietyDate: '2024-01-15',
     /** Spending amount for savings tracking E2E tests (USD per week) */
@@ -13,20 +13,20 @@ export const TEST_USERS = {
   sponsor: {
     id: '3a28e197-e07d-4cba-b7e4-01804e7cca73',
     email: 'e2e-sponsor@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Sponsor User',
     sobrietyDate: '2020-06-01',
   },
   sponsee: {
     id: '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
     email: 'e2e-sponsee@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Sponsee User',
     sobrietyDate: '2024-10-01',
   },
   onboarding: {
     email: 'e2e-onboarding@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
   },
 } as const;
 
