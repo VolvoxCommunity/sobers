@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Home, Heart, TrendingUp, CheckSquare, User } from 'lucide-react-native';
+import { Home, Compass, TrendingUp, CheckSquare, User } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SFSymbol } from 'sf-symbols-typescript';
@@ -17,7 +17,7 @@ import { NativeTabs } from '@/components/navigation/NativeBottomTabs';
 // Loaded via require() which Metro bundles as native image assets
 const androidIcons = {
   home: require('@/assets/icons/home.svg'),
-  heart: require('@/assets/icons/heart.svg'),
+  compass: require('@/assets/icons/compass.svg'),
   trending: require('@/assets/icons/trending-up.svg'),
   tasks: require('@/assets/icons/check-square.svg'),
   profile: require('@/assets/icons/user.svg'),
@@ -52,9 +52,9 @@ const tabRoutes: TabRoute[] = [
   {
     name: 'program',
     title: 'Program',
-    sfSymbol: 'heart.fill',
-    androidIconKey: 'heart',
-    icon: Heart,
+    sfSymbol: 'safari.fill',
+    androidIconKey: 'compass',
+    icon: Compass,
   },
   {
     name: 'journey',
