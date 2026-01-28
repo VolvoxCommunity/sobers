@@ -56,5 +56,9 @@ BEGIN
   -- Case 4: Only new column exists - no action needed (migration already complete)
 END $$;
 
+-- Ensure default is set idempotently (handles all cases)
+ALTER TABLE public.profiles
+  ALTER COLUMN show_program_content SET DEFAULT true;
+
 COMMENT ON COLUMN public.profiles.show_program_content IS
   'Whether to show 12-step program content (Program tab). Default true. When false, the Program tab is hidden from navigation.';
