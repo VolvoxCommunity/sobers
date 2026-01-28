@@ -13,10 +13,15 @@ CREATE TABLE IF NOT EXISTS public.prayers (
   title text NOT NULL,
   content text NOT NULL,
   category text NOT NULL CHECK (category IN ('step', 'common', 'aa', 'na')),
-  step_number int CHECK (step_number IS NULL OR (step_number >= 1 AND step_number <= 12)),
+  step_number int CHECK (step_number IS NULL OR (step_number BETWEEN 1 AND 12)),
   sort_order int NOT NULL DEFAULT 0,
   created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+  updated_at timestamptz DEFAULT now(),
+  -- Enforce: step_number required when category='step', NULL otherwise
+  CHECK (
+    (category = 'step' AND step_number IS NOT NULL) OR
+    (category <> 'step' AND step_number IS NULL)
+  )
 );
 
 -- User prayer favorites
