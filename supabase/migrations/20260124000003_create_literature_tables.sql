@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS public.user_literature_progress (
   UNIQUE(user_id, chapter_id)
 );
 
--- Trigger for updated_at
+-- Trigger for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_literature_books_updated_at ON public.literature_books;
 CREATE TRIGGER update_literature_books_updated_at
   BEFORE UPDATE ON public.literature_books
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

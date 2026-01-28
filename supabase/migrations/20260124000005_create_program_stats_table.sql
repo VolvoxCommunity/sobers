@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS public.user_program_stats (
   updated_at timestamptz DEFAULT now()
 );
 
--- Trigger for updated_at
+-- Trigger for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_user_program_stats_updated_at ON public.user_program_stats;
 CREATE TRIGGER update_user_program_stats_updated_at
   BEFORE UPDATE ON public.user_program_stats
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

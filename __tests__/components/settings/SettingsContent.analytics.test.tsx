@@ -21,6 +21,8 @@ const defaultMockProfile = {
   display_name: 'Test User',
   theme: 'system' as const,
   hide_savings_card: false,
+  show_program_content: true,
+  timezone: 'America/New_York',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
   notification_preferences: {
