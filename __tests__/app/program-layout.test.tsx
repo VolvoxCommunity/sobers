@@ -37,6 +37,7 @@ jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => ({
     theme: mockTheme,
     isDark: false,
+    setTheme: jest.fn(),
   }),
 }));
 
