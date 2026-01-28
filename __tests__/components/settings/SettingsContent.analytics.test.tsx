@@ -172,6 +172,9 @@ const mockRefreshProfile = jest.fn().mockResolvedValue(undefined);
 // Mock AuthContext - uses mockProfile variable which can be modified between tests
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
+    user: null,
+    session: null,
+    loading: false,
     signOut: jest.fn(),
     deleteAccount: jest.fn(),
     profile: mockProfile,
@@ -208,6 +211,7 @@ jest.mock('@/contexts/ThemeContext', () => ({
       fontBold: 'JetBrainsMono_700Bold',
     },
     themeMode: 'system',
+    setTheme: jest.fn(),
     setThemeMode: jest.fn(),
     isDark: false,
   }),
