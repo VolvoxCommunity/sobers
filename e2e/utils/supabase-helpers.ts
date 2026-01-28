@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { TEST_USERS } from '../fixtures/test-data';
+import { TEST_USERS, TEST_TASKS, TEST_INVITE_CODES } from '../fixtures/test-data';
 
 // Lazy-initialized client to avoid errors when listing tests without env vars
 let adminClient: SupabaseClient | null = null;
@@ -43,6 +43,8 @@ function getAdminClient(): SupabaseClient {
  */
 export async function resetTestData(): Promise<void> {
   const client = getAdminClient();
+  const now = new Date().toISOString();
+  const inviteExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   // Reset task completions for test users (IDs from test-data.ts fixtures)
   const testUserIds = [TEST_USERS.primary.id, TEST_USERS.sponsor.id, TEST_USERS.sponsee.id];
@@ -52,19 +54,104 @@ export async function resetTestData(): Promise<void> {
   // Reset onboarding user profile
   await client.from('profiles').delete().eq('email', TEST_USERS.onboarding.email);
 
-  // Ensure primary user profile exists (required for login to complete successfully)
-  // Include spending data for savings tracking E2E tests
-  const { error: profileError } = await client.from('profiles').upsert({
-    id: TEST_USERS.primary.id,
-    email: TEST_USERS.primary.email,
-    display_name: TEST_USERS.primary.displayName,
-    sobriety_date: TEST_USERS.primary.sobrietyDate,
-    spend_amount: TEST_USERS.primary.spendAmount,
-    spend_frequency: TEST_USERS.primary.spendFrequency,
-  });
+  const { error: profileError } = await client.from('profiles').upsert([
+    {
+      id: TEST_USERS.primary.id,
+      email: TEST_USERS.primary.email,
+      display_name: TEST_USERS.primary.displayName,
+      sobriety_date: TEST_USERS.primary.sobrietyDate,
+      spend_amount: TEST_USERS.primary.spendAmount,
+      spend_frequency: TEST_USERS.primary.spendFrequency,
+      updated_at: now,
+    },
+    {
+      id: TEST_USERS.sponsor.id,
+      email: TEST_USERS.sponsor.email,
+      display_name: TEST_USERS.sponsor.displayName,
+      sobriety_date: TEST_USERS.sponsor.sobrietyDate,
+      updated_at: now,
+    },
+    {
+      id: TEST_USERS.sponsee.id,
+      email: TEST_USERS.sponsee.email,
+      display_name: TEST_USERS.sponsee.displayName,
+      sobriety_date: TEST_USERS.sponsee.sobrietyDate,
+      updated_at: now,
+    },
+  ]);
 
   if (profileError) {
-    throw new Error(`Failed to ensure test profile: ${profileError.message}`);
+    throw new Error(`Failed to ensure test profiles: ${profileError.message}`);
+  }
+
+  await client
+    .from('sponsor_sponsee_relationships')
+    .delete()
+    .eq('sponsee_id', TEST_USERS.primary.id);
+
+  const { error: relationshipsError } = await client.from('sponsor_sponsee_relationships').upsert([
+    {
+      id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      sponsor_id: TEST_USERS.sponsor.id,
+      sponsee_id: TEST_USERS.sponsee.id,
+      status: 'active',
+      created_at: now,
+    },
+  ]);
+
+  if (relationshipsError) {
+    throw new Error(`Failed to seed relationships: ${relationshipsError.message}`);
+  }
+
+  const { error: tasksError } = await client.from('tasks').upsert([
+    {
+      id: TEST_TASKS.meditation.id,
+      sponsor_id: TEST_USERS.sponsor.id,
+      sponsee_id: TEST_USERS.primary.id,
+      step_number: TEST_TASKS.meditation.stepNumber,
+      title: TEST_TASKS.meditation.title,
+      description: TEST_TASKS.meditation.description,
+      status: TEST_TASKS.meditation.status,
+      created_at: now,
+    },
+    {
+      id: TEST_TASKS.callSponsor.id,
+      sponsor_id: TEST_USERS.sponsor.id,
+      sponsee_id: TEST_USERS.primary.id,
+      step_number: TEST_TASKS.callSponsor.stepNumber,
+      title: TEST_TASKS.callSponsor.title,
+      description: TEST_TASKS.callSponsor.description,
+      status: TEST_TASKS.callSponsor.status,
+      created_at: now,
+    },
+    {
+      id: TEST_TASKS.completed.id,
+      sponsor_id: TEST_USERS.sponsor.id,
+      sponsee_id: TEST_USERS.primary.id,
+      step_number: TEST_TASKS.completed.stepNumber,
+      title: TEST_TASKS.completed.title,
+      description: TEST_TASKS.completed.description,
+      status: TEST_TASKS.completed.status,
+      created_at: now,
+    },
+  ]);
+
+  if (tasksError) {
+    throw new Error(`Failed to seed tasks: ${tasksError.message}`);
+  }
+
+  const { error: inviteError } = await client.from('invite_codes').upsert(
+    {
+      code: TEST_INVITE_CODES.sponsor,
+      sponsor_id: TEST_USERS.sponsor.id,
+      created_at: now,
+      expires_at: inviteExpiry,
+    },
+    { onConflict: 'code' }
+  );
+
+  if (inviteError) {
+    throw new Error(`Failed to seed invite codes: ${inviteError.message}`);
   }
 }
 
@@ -125,7 +212,13 @@ export async function ensureTestUserExists(
 
   if (existingUser?.user) {
     // User exists, update their password to ensure it matches
-    await client.auth.admin.updateUserById(id, { password });
+    const { error: updateError } = await client.auth.admin.updateUserById(id, {
+      email,
+      password,
+    });
+    if (updateError) {
+      throw updateError;
+    }
     return;
   }
 
@@ -137,7 +230,39 @@ export async function ensureTestUserExists(
     email_confirm: true,
   });
 
-  if (error && !error.message.includes('already been registered')) {
+  if (error) {
+    if (error.message.includes('already been registered')) {
+      const { data: usersData, error: listError } = await client.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+
+      if (listError) {
+        throw listError;
+      }
+
+      const existingByEmail = usersData?.users.find((user) => user.email === email);
+
+      if (!existingByEmail) {
+        throw new Error(`User with email ${email} already exists but was not found for reset`);
+      }
+
+      await client.auth.admin.deleteUser(existingByEmail.id);
+
+      const { error: recreateError } = await client.auth.admin.createUser({
+        id,
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (recreateError) {
+        throw recreateError;
+      }
+
+      return;
+    }
+
     throw error;
   }
 }
