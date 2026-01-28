@@ -45,7 +45,8 @@ export default function ProgramLayout(): React.ReactElement {
   // Determine active tab from pathname
   // Guard against null pathname (can occur on first render before router is ready)
   const activeTab = useMemo(() => {
-    const path = (pathname || '').replace('/program/', '').split('/')[0];
+    if (!pathname) return 'steps';
+    const path = pathname.replace('/program/', '').split('/')[0];
     return TAB_ITEMS.find((t) => t.name === path)?.name || 'steps';
   }, [pathname]);
 
