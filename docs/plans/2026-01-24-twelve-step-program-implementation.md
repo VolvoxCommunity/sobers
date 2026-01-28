@@ -20,7 +20,7 @@
 
 - Create: `supabase/migrations/20260124000001_create_daily_readings_tables.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -111,7 +111,7 @@ CREATE POLICY "Users can delete own reading history"
   USING (auth.uid() = user_id);
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000001_create_daily_readings_tables.sql
@@ -126,7 +126,7 @@ git commit -m "feat(db): add daily readings tables and RLS policies"
 
 - Create: `supabase/migrations/20260124000002_create_prayers_tables.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -205,7 +205,7 @@ CREATE POLICY "Users can insert own prayer history"
   WITH CHECK (auth.uid() = user_id);
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000002_create_prayers_tables.sql
@@ -220,7 +220,7 @@ git commit -m "feat(db): add prayers tables and RLS policies"
 
 - Create: `supabase/migrations/20260124000003_create_literature_tables.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -327,7 +327,7 @@ CREATE POLICY "Users can delete own literature progress"
   USING (auth.uid() = user_id);
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000003_create_literature_tables.sql
@@ -342,7 +342,7 @@ git commit -m "feat(db): add literature tables and RLS policies"
 
 - Create: `supabase/migrations/20260124000004_create_meetings_table.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -394,7 +394,7 @@ CREATE POLICY "Users can delete own meetings"
   USING (auth.uid() = user_id);
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000004_create_meetings_table.sql
@@ -409,7 +409,7 @@ git commit -m "feat(db): add user meetings table and RLS policies"
 
 - Create: `supabase/migrations/20260124000005_create_program_stats_table.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -450,7 +450,7 @@ CREATE POLICY "Users can update own program stats"
   USING (auth.uid() = user_id);
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000005_create_program_stats_table.sql
@@ -465,7 +465,7 @@ git commit -m "feat(db): add user program stats table and RLS policies"
 
 - Create: `supabase/migrations/20260124000006_rename_show_program_content.sql`
 
-**Step 1: Write the migration file**
+#### Step 1: Write the migration file
 
 ```sql
 /*
@@ -481,7 +481,7 @@ COMMENT ON COLUMN public.profiles.show_program_content IS
   'Whether to show 12-step program content (Program tab). Default true. When false, the Program tab is hidden from navigation.';
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add supabase/migrations/20260124000006_rename_show_program_content.sql
@@ -496,7 +496,7 @@ git commit -m "feat(db): rename show_twelve_step_content to show_program_content
 
 - Modify: `types/database.ts`
 
-**Step 1: Add new type definitions after existing types**
+#### Step 1: Add new type definitions after existing types
 
 Add after the `UserStepProgress` interface (around line 170):
 
@@ -659,7 +659,7 @@ export interface UserProgramStats {
 }
 ```
 
-**Step 2: Update Profile interface**
+#### Step 2: Update Profile interface
 
 Change line 90 from:
 
@@ -679,7 +679,7 @@ To:
   show_program_content?: boolean;
 ```
 
-**Step 3: Run typecheck to verify**
+#### Step 3: Run typecheck to verify
 
 ```bash
 pnpm typecheck
@@ -687,7 +687,7 @@ pnpm typecheck
 
 Expected: PASS (or only unrelated errors)
 
-**Step 4: Commit**
+#### Step 4: Commit
 
 ```bash
 git add types/database.ts
@@ -704,7 +704,7 @@ git commit -m "feat(types): add Program section types and rename show_program_co
 
 - Create: `app/(app)/(tabs)/program/_layout.tsx`
 
-**Step 1: Write the layout file**
+#### Step 1: Write the layout file
 
 ```typescript
 // =============================================================================
@@ -882,13 +882,13 @@ const createStyles = (theme: ThemeColors, insets: { top: number }) =>
   });
 ```
 
-**Step 2: Run typecheck**
+#### Step 2: Run typecheck
 
 ```bash
 pnpm typecheck
 ```
 
-**Step 3: Commit**
+#### Step 3: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/_layout.tsx
@@ -903,7 +903,7 @@ git commit -m "feat(nav): add Program section layout with top tabs"
 
 - Create: `app/(app)/(tabs)/program/index.tsx`
 
-**Step 1: Write the index file**
+#### Step 1: Write the index file
 
 ```typescript
 import { Redirect } from 'expo-router';
@@ -916,7 +916,7 @@ export default function ProgramIndex() {
 }
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/index.tsx
@@ -933,13 +933,13 @@ git commit -m "feat(nav): add Program index redirect to steps"
 - Modify: `app/(app)/(tabs)/program/steps/_layout.tsx`
 - Modify: `app/(app)/(tabs)/program/steps/index.tsx`
 
-**Step 1: Move the steps directory**
+#### Step 1: Move the steps directory
 
 ```bash
 mv app/\(app\)/\(tabs\)/steps app/\(app\)/\(tabs\)/program/steps
 ```
 
-**Step 2: Update steps/\_layout.tsx**
+#### Step 2: Update steps/\_layout.tsx
 
 Remove the header and redirect logic (handled by parent layout now). Update the file to:
 
@@ -964,13 +964,13 @@ export default function StepsLayout() {
 }
 ```
 
-**Step 3: Update steps/index.tsx**
+#### Step 3: Update steps/index.tsx
 
 Remove the header section since it's now in the parent layout. Keep the list content.
 
 Remove lines 112-122 (the header View) and update container padding.
 
-**Step 4: Update route references in steps/index.tsx**
+#### Step 4: Update route references in steps/index.tsx
 
 Change line 107:
 
@@ -984,7 +984,7 @@ To:
 router.push(`/program/steps/${step.id}`);
 ```
 
-**Step 5: Update route references in steps/[id].tsx**
+#### Step 5: Update route references in steps/[id].tsx
 
 Change line 156:
 
@@ -1010,13 +1010,13 @@ To:
 router.push(`/program/steps/${nextStep.id}`);
 ```
 
-**Step 6: Run typecheck**
+#### Step 6: Run typecheck
 
 ```bash
 pnpm typecheck
 ```
 
-**Step 7: Commit**
+#### Step 7: Commit
 
 ```bash
 git add -A
@@ -1031,7 +1031,7 @@ git commit -m "refactor(nav): move steps screens to program section"
 
 - Modify: `app/(app)/(tabs)/_layout.tsx`
 
-**Step 1: Update tab route configuration**
+#### Step 1: Update tab route configuration
 
 Change the 'steps' entry in `tabRoutes` array (lines 52-58) to:
 
@@ -1045,7 +1045,7 @@ Change the 'steps' entry in `tabRoutes` array (lines 52-58) to:
   },
 ```
 
-**Step 2: Update imports**
+#### Step 2: Update imports
 
 Add `Heart` to the lucide-react-native import (line 7):
 
@@ -1055,7 +1055,7 @@ import { Home, Heart, TrendingUp, CheckSquare, User } from 'lucide-react-native'
 
 Remove `BookOpen` from imports.
 
-**Step 3: Update show_program_content references**
+#### Step 3: Update show_program_content references
 
 Change line 97:
 
@@ -1081,13 +1081,13 @@ Update line 161:
 tabBarItemHidden: route.name === 'program' && !showProgram,
 ```
 
-**Step 4: Run typecheck and tests**
+#### Step 4: Run typecheck and tests
 
 ```bash
 pnpm typecheck && pnpm test
 ```
 
-**Step 5: Commit**
+#### Step 5: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/_layout.tsx
@@ -1102,7 +1102,7 @@ git commit -m "feat(nav): update bottom tab from Steps to Program"
 
 - Modify: `app/(app)/settings.tsx`
 
-**Step 1: Find and replace show_twelve_step_content**
+#### Step 1: Find and replace show_twelve_step_content
 
 Search for `show_twelve_step_content` and replace with `show_program_content`.
 
@@ -1111,13 +1111,13 @@ Update the toggle label text to reflect the expanded scope:
 - Label: "Show 12 Step Program"
 - Description: "Display the Program tab with steps, daily readings, prayers, literature, and meeting tracker"
 
-**Step 2: Run tests**
+#### Step 2: Run tests
 
 ```bash
 pnpm test -- __tests__/app/settings.test.tsx
 ```
 
-**Step 3: Commit**
+#### Step 3: Commit
 
 ```bash
 git add app/\(app\)/settings.tsx
@@ -1134,7 +1134,7 @@ git commit -m "feat(settings): update to use show_program_content"
 
 - Create: `app/(app)/(tabs)/program/daily.tsx`
 
-**Step 1: Write placeholder screen**
+#### Step 1: Write placeholder screen
 
 ```typescript
 import React from 'react';
@@ -1187,7 +1187,7 @@ const createStyles = (theme: ThemeColors) =>
   });
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/daily.tsx
@@ -1202,7 +1202,7 @@ git commit -m "feat(program): add daily readings placeholder screen"
 
 - Create: `app/(app)/(tabs)/program/prayers.tsx`
 
-**Step 1: Write placeholder screen**
+#### Step 1: Write placeholder screen
 
 ```typescript
 import React from 'react';
@@ -1255,7 +1255,7 @@ const createStyles = (theme: ThemeColors) =>
   });
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/prayers.tsx
@@ -1270,7 +1270,7 @@ git commit -m "feat(program): add prayers placeholder screen"
 
 - Create: `app/(app)/(tabs)/program/literature.tsx`
 
-**Step 1: Write placeholder screen**
+#### Step 1: Write placeholder screen
 
 ```typescript
 import React from 'react';
@@ -1323,7 +1323,7 @@ const createStyles = (theme: ThemeColors) =>
   });
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/literature.tsx
@@ -1338,7 +1338,7 @@ git commit -m "feat(program): add literature placeholder screen"
 
 - Create: `app/(app)/(tabs)/program/meetings.tsx`
 
-**Step 1: Write placeholder screen**
+#### Step 1: Write placeholder screen
 
 ```typescript
 import React from 'react';
@@ -1391,7 +1391,7 @@ const createStyles = (theme: ThemeColors) =>
   });
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add app/\(app\)/\(tabs\)/program/meetings.tsx
@@ -1408,11 +1408,11 @@ git commit -m "feat(program): add meetings placeholder screen"
 
 - Modify: `__tests__/app/step-detail.test.tsx`
 
-**Step 1: Update route references**
+#### Step 1: Update route references
 
 Find all `/steps/` references and change to `/program/steps/`.
 
-**Step 2: Run tests**
+#### Step 2: Run tests
 
 ```bash
 pnpm test -- __tests__/app/step-detail.test.tsx
@@ -1420,7 +1420,7 @@ pnpm test -- __tests__/app/step-detail.test.tsx
 
 Expected: PASS
 
-**Step 3: Commit**
+#### Step 3: Commit
 
 ```bash
 git add __tests__/app/step-detail.test.tsx
@@ -1435,17 +1435,17 @@ git commit -m "test: update step detail tests for program routes"
 
 - Modify: `__tests__/app/tabs/index.test.tsx` (if exists)
 
-**Step 1: Update references from 'steps' to 'program'**
+#### Step 1: Update references from 'steps' to 'program'
 
-**Step 2: Update profile mock from `show_twelve_step_content` to `show_program_content`**
+#### Step 2: Update profile mock from `show_twelve_step_content` to `show_program_content`
 
-**Step 3: Run tests**
+#### Step 3: Run tests
 
 ```bash
 pnpm test
 ```
 
-**Step 4: Commit**
+#### Step 4: Commit
 
 ```bash
 git add __tests__/
@@ -1458,7 +1458,7 @@ git commit -m "test: update tests for program section rename"
 
 ### Task 5.1: Run All Quality Checks
 
-**Step 1: Run format, lint, typecheck, build, test**
+#### Step 1: Run format, lint, typecheck, build, test
 
 ```bash
 pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
@@ -1466,9 +1466,9 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 
 Expected: All pass
 
-**Step 2: Fix any issues that arise**
+#### Step 2: Fix any issues that arise
 
-**Step 3: Final commit if fixes were needed**
+#### Step 3: Final commit if fixes were needed
 
 ```bash
 git add -A
@@ -1485,7 +1485,7 @@ git commit -m "fix: resolve quality check issues"
 
 - Modify: `CHANGELOG.md`
 
-**Step 1: Add entries under [Unreleased]**
+#### Step 1: Add entries under [Unreleased]
 
 ```markdown
 ### Added
@@ -1502,7 +1502,7 @@ git commit -m "fix: resolve quality check issues"
 - Update Settings toggle label to reflect expanded Program section
 ```
 
-**Step 2: Commit**
+#### Step 2: Commit
 
 ```bash
 git add CHANGELOG.md
