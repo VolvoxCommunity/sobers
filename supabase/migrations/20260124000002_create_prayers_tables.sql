@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS public.user_prayer_history (
   viewed_at timestamptz DEFAULT now()
 );
 
+-- Index for efficient history queries (recent prayers by user)
+CREATE INDEX IF NOT EXISTS idx_user_prayer_history_user_viewed
+  ON public.user_prayer_history(user_id, viewed_at DESC);
+
 -- Trigger for updated_at (idempotent)
 DROP TRIGGER IF EXISTS update_prayers_updated_at ON public.prayers;
 CREATE TRIGGER update_prayers_updated_at

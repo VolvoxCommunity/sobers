@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS public.literature_books (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
   program text NOT NULL CHECK (program IN ('aa', 'na')),
-  chapter_count int NOT NULL,
+  chapter_count int NOT NULL CHECK (chapter_count >= 1),
   external_url text,
-  sort_order int NOT NULL DEFAULT 0,
+  sort_order int NOT NULL DEFAULT 0 CHECK (sort_order >= 0),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.literature_books (
 CREATE TABLE IF NOT EXISTS public.literature_chapters (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id uuid NOT NULL REFERENCES public.literature_books(id) ON DELETE CASCADE,
-  chapter_number int NOT NULL,
+  chapter_number int NOT NULL CHECK (chapter_number >= 1),
   title text NOT NULL,
   page_range text,
   created_at timestamptz DEFAULT now(),

@@ -10,6 +10,10 @@
  * These tests import the actual screen components to ensure coverage.
  */
 
+// =============================================================================
+// Imports
+// =============================================================================
+
 import React from 'react';
 import { screen } from '@testing-library/react-native';
 import { renderWithProviders } from '@/__tests__/test-utils';

@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import { SettingsContent } from '@/components/settings/SettingsContent';
 
 // =============================================================================
@@ -243,7 +244,7 @@ describe('SettingsContent Analytics Tracking', () => {
 
   describe('Theme Change Analytics', () => {
     it('tracks SETTINGS_CHANGED event when theme is changed to light', async () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       // Press the light theme button directly (theme options are visible)
       const lightOption = screen.getByText('Light');
@@ -261,7 +262,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('tracks SETTINGS_CHANGED event when theme is changed to dark', async () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const darkOption = screen.getByText('Dark');
       fireEvent.press(darkOption);
@@ -278,7 +279,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('tracks SETTINGS_CHANGED event when theme is changed to system', async () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const systemOption = screen.getByText('System');
       fireEvent.press(systemOption);
@@ -300,7 +301,7 @@ describe('SettingsContent Analytics Tracking', () => {
       // Set up profile with hidden card
       mockProfile = { ...defaultMockProfile, hide_savings_card: true };
 
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       // Toggle savings card visibility
       const toggleButton = screen.getByTestId('settings-show-savings-toggle');
@@ -319,7 +320,7 @@ describe('SettingsContent Analytics Tracking', () => {
 
     it('tracks SETTINGS_CHANGED event when savings card visibility is toggled off', async () => {
       // Profile starts with hide_savings_card: false (default)
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const toggleButton = screen.getByTestId('settings-show-savings-toggle');
       fireEvent.press(toggleButton);
@@ -347,7 +348,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('fires test analytics event when dev tool button is pressed', () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const testEventButton = screen.getByText('Fire Test Analytics Event');
       fireEvent.press(testEventButton);
@@ -361,7 +362,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('shows success toast when test analytics event is fired', () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const testEventButton = screen.getByText('Fire Test Analytics Event');
       fireEvent.press(testEventButton);
@@ -372,7 +373,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('toggles analytics debug mode', () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const analyticsDebugToggle = screen.getByTestId('toggle-analytics-debug');
       fireEvent.press(analyticsDebugToggle);
@@ -383,7 +384,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('shows disabled message when analytics debug is toggled off', () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const analyticsDebugToggle = screen.getByTestId('toggle-analytics-debug');
 
@@ -403,7 +404,7 @@ describe('SettingsContent Analytics Tracking', () => {
 
   describe('Analytics Not Fired for Non-Preference Changes', () => {
     it("does not track analytics for What's New button press", () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const whatsNewButton = screen.getByText(/what's new/i);
       fireEvent.press(whatsNewButton);
@@ -413,7 +414,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('does not track analytics for sign out button press', () => {
-      render(<SettingsContent />);
+      renderWithProviders(<SettingsContent />);
 
       const signOutButton = screen.getByText('Sign Out');
       fireEvent.press(signOutButton);
