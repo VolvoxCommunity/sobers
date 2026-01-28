@@ -16,12 +16,16 @@ test.describe('Step Navigation', () => {
   test('should navigate to next and previous steps', async ({ page }) => {
     const firstUrl = page.url();
 
-    await page.getByText('Next').click();
+    await page
+      .locator('[data-testid="step-detail-next-button"]:not([aria-disabled="true"])')
+      .click();
     await stepDetailPage.expectOnStepDetailPage();
     const secondUrl = page.url();
     expect(secondUrl).not.toBe(firstUrl);
 
-    await page.getByText('Previous').click();
+    await page
+      .locator('[data-testid="step-detail-prev-button"]:not([aria-disabled="true"])')
+      .click();
     await stepDetailPage.expectOnStepDetailPage();
     const thirdUrl = page.url();
     expect(thirdUrl).not.toBe(secondUrl);

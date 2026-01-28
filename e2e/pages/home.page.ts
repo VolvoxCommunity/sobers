@@ -99,4 +99,13 @@ export class HomePage extends BasePage {
     await this.moneySavedMenuButton.click();
     await this.page.getByText('Edit savings').click();
   }
+
+  async dismissWhatsNewIfPresent(): Promise<void> {
+    const closeButton = this.page.getByTestId('whats-new-close-button');
+    const isVisible = await closeButton.isVisible().catch(() => false);
+    if (isVisible) {
+      await closeButton.click();
+      await closeButton.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined);
+    }
+  }
 }
