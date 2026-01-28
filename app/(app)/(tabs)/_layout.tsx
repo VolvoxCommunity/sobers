@@ -17,7 +17,7 @@ import { NativeTabs } from '@/components/navigation/NativeBottomTabs';
 // Loaded via require() which Metro bundles as native image assets
 const androidIcons = {
   home: require('@/assets/icons/home.svg'),
-  book: require('@/assets/icons/book-open.svg'),
+  heart: require('@/assets/icons/heart.svg'),
   trending: require('@/assets/icons/trending-up.svg'),
   tasks: require('@/assets/icons/check-square.svg'),
   profile: require('@/assets/icons/user.svg'),
@@ -53,7 +53,7 @@ const tabRoutes: TabRoute[] = [
     name: 'program',
     title: 'Program',
     sfSymbol: 'heart.fill',
-    androidIconKey: 'book',
+    androidIconKey: 'heart',
     icon: Heart,
   },
   {

@@ -26,10 +26,11 @@ const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 /**
- * Renders a React component with all required providers.
+ * Renders a React component with a consistent wrapper for tests.
  *
- * This is the standard way to render components in tests. It ensures components
- * have access to keyboard handling, bottom sheets, authentication, and theme contexts.
+ * This is the standard way to render components in tests. It provides a minimal
+ * wrapper to avoid conflicts with test-specific mocks. Individual tests should
+ * mock contexts like AuthContext and ThemeContext via jest.mock() as needed.
  *
  * @param ui - The component to render
  * @param options - Optional render options
