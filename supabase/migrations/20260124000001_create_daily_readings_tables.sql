@@ -40,11 +40,13 @@ CREATE TABLE IF NOT EXISTS public.user_reading_history (
   UNIQUE(user_id, reading_date, program)
 );
 
--- Triggers for updated_at
+-- Triggers for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_daily_readings_updated_at ON public.daily_readings;
 CREATE TRIGGER update_daily_readings_updated_at
   BEFORE UPDATE ON public.daily_readings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_reading_preferences_updated_at ON public.user_reading_preferences;
 CREATE TRIGGER update_user_reading_preferences_updated_at
   BEFORE UPDATE ON public.user_reading_preferences
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

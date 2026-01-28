@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS public.user_meetings (
   updated_at timestamptz DEFAULT now()
 );
 
--- Trigger for updated_at
+-- Trigger for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_user_meetings_updated_at ON public.user_meetings;
 CREATE TRIGGER update_user_meetings_updated_at
   BEFORE UPDATE ON public.user_meetings
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();

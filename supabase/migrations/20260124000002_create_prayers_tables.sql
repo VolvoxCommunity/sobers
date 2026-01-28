@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS public.user_prayer_history (
   viewed_at timestamptz DEFAULT now()
 );
 
--- Trigger for updated_at
+-- Trigger for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_prayers_updated_at ON public.prayers;
 CREATE TRIGGER update_prayers_updated_at
   BEFORE UPDATE ON public.prayers
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
