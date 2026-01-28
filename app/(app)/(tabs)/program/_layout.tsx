@@ -68,7 +68,7 @@ export default function ProgramLayout(): React.ReactElement {
         </View>
 
         {/* Top Tab Bar */}
-        <View style={styles.tabBar}>
+        <View style={styles.tabBar} testID="program-tab-bar">
           {TAB_ITEMS.map((tab) => {
             const isActive = activeTab === tab.name;
             const Icon = tab.icon;
@@ -77,6 +77,7 @@ export default function ProgramLayout(): React.ReactElement {
                 key={tab.name}
                 style={[styles.tab, isActive && styles.tabActive]}
                 onPress={() => handleTabPress(tab.name)}
+                testID={`program-tab-${tab.name}`}
               >
                 <Icon size={18} color={isActive ? theme.primary : theme.textSecondary} />
                 <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
