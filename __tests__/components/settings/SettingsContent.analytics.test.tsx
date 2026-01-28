@@ -12,6 +12,29 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { SettingsContent } from '@/components/settings/SettingsContent';
 
 // =============================================================================
+// Test Data (must be defined before mocks that reference them)
+// =============================================================================
+
+const defaultMockProfile = {
+  id: 'user-123',
+  email: 'test@example.com',
+  display_name: 'Test User',
+  theme: 'system' as const,
+  hide_savings_card: false,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+  notification_preferences: {
+    tasks: true,
+    messages: true,
+    milestones: true,
+    daily: true,
+  },
+};
+
+// Mutable profile for tests that need to modify it
+let mockProfile = { ...defaultMockProfile };
+
+// =============================================================================
 // Mocks
 // =============================================================================
 
@@ -112,29 +135,91 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-// Mock Supabase
-const mockSupabase = {
-  from: jest.fn(() => ({
-    update: jest.fn(() => ({
-      eq: jest.fn(() => Promise.resolve({ data: null, error: null })),
-    })),
-  })),
-};
-
+// Mock Supabase - inline to avoid hoisting issues
 jest.mock('@/lib/supabase', () => ({
-  supabase: mockSupabase,
+  supabase: {
+    from: jest.fn(() => ({
+      update: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+    })),
+  },
 }));
 
-// Mock logger
+// Mock logger with all LogCategory values used by the component
 jest.mock('@/lib/logger', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),
     debug: jest.fn(),
+    warn: jest.fn(),
   },
   LogCategory: {
     ANALYTICS: 'ANALYTICS',
+    AUTH: 'AUTH',
+    DATABASE: 'DATABASE',
+    ERROR: 'ERROR',
+    UI: 'UI',
   },
+}));
+
+// Mock refreshProfile function (defined outside mock for reference in tests)
+const mockRefreshProfile = jest.fn().mockResolvedValue(undefined);
+
+// Mock AuthContext - uses mockProfile variable which can be modified between tests
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    signOut: jest.fn(),
+    deleteAccount: jest.fn(),
+    profile: mockProfile,
+    refreshProfile: mockRefreshProfile,
+  }),
+}));
+
+// Mock ThemeContext
+jest.mock('@/contexts/ThemeContext', () => ({
+  useTheme: () => ({
+    theme: {
+      primary: '#007AFF',
+      primaryLight: '#E5F1FF',
+      text: '#111827',
+      textSecondary: '#6b7280',
+      textTertiary: '#9ca3af',
+      background: '#ffffff',
+      surface: '#ffffff',
+      card: '#ffffff',
+      border: '#e5e7eb',
+      borderLight: '#f3f4f6',
+      danger: '#ef4444',
+      dangerLight: '#fef2f2',
+      dangerBorder: '#fecaca',
+      success: '#10b981',
+      successAlt: '#059669',
+      warning: '#f59e0b',
+      error: '#dc2626',
+      info: '#3b82f6',
+      infoLight: '#eff6ff',
+      fontRegular: 'JetBrainsMono_400Regular',
+      fontMedium: 'JetBrainsMono_500Medium',
+      fontSemiBold: 'JetBrainsMono_600SemiBold',
+      fontBold: 'JetBrainsMono_700Bold',
+    },
+    themeMode: 'system',
+    setThemeMode: jest.fn(),
+    isDark: false,
+  }),
+}));
+
+// Mock DevToolsContext
+jest.mock('@/contexts/DevToolsContext', () => ({
+  useDevTools: () => ({
+    verboseLogging: false,
+    setVerboseLogging: jest.fn(),
+    timeTravelDays: 0,
+    setTimeTravelDays: jest.fn(),
+    analyticsDebug: false,
+    setAnalyticsDebug: jest.fn(),
+  }),
 }));
 
 // =============================================================================
@@ -144,56 +229,19 @@ jest.mock('@/lib/logger', () => ({
 const { trackEvent: mockTrackEvent } = require('@/lib/analytics');
 
 // =============================================================================
-// Test Data
-// =============================================================================
-
-const mockProfile = {
-  id: 'user-123',
-  email: 'test@example.com',
-  display_name: 'Test User',
-  theme: 'system' as const,
-  hide_savings_card: false,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  notification_preferences: {
-    tasks: true,
-    messages: true,
-    milestones: true,
-    daily: true,
-  },
-};
-
-const mockTheme = {
-  primary: '#007AFF',
-  text: '#000000',
-  textSecondary: '#666666',
-  card: '#FFFFFF',
-  background: '#F5F5F5',
-  border: '#E5E7EB',
-  fontRegular: 'System',
-};
-
-// =============================================================================
 // Tests
 // =============================================================================
 
 describe('SettingsContent Analytics Tracking', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset profile to default values
+    mockProfile = { ...defaultMockProfile };
   });
 
   describe('Theme Change Analytics', () => {
     it('tracks SETTINGS_CHANGED event when theme is changed to light', async () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       // Press the light theme button directly (theme options are visible)
       const lightOption = screen.getByText('Light');
@@ -211,16 +259,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('tracks SETTINGS_CHANGED event when theme is changed to dark', async () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const darkOption = screen.getByText('Dark');
       fireEvent.press(darkOption);
@@ -237,16 +276,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('tracks SETTINGS_CHANGED event when theme is changed to system', async () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const systemOption = screen.getByText('System');
       fireEvent.press(systemOption);
@@ -264,23 +294,11 @@ describe('SettingsContent Analytics Tracking', () => {
   });
 
   describe('Dashboard Preferences Analytics', () => {
-    // TODO: This test requires proper AuthContext mocking - component doesn't accept profile prop
-    it.skip('tracks SETTINGS_CHANGED event when savings card visibility is toggled on', async () => {
-      const profileWithHiddenCard = {
-        ...mockProfile,
-        hide_savings_card: true,
-      };
+    it('tracks SETTINGS_CHANGED event when savings card visibility is toggled on', async () => {
+      // Set up profile with hidden card
+      mockProfile = { ...defaultMockProfile, hide_savings_card: true };
 
-      render(
-        <SettingsContent
-          profile={profileWithHiddenCard}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       // Toggle savings card visibility
       const toggleButton = screen.getByTestId('settings-show-savings-toggle');
@@ -297,18 +315,9 @@ describe('SettingsContent Analytics Tracking', () => {
       });
     });
 
-    // TODO: This test requires proper AuthContext mocking - component doesn't accept profile prop
-    it.skip('tracks SETTINGS_CHANGED event when savings card visibility is toggled off', async () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+    it('tracks SETTINGS_CHANGED event when savings card visibility is toggled off', async () => {
+      // Profile starts with hide_savings_card: false (default)
+      render(<SettingsContent />);
 
       const toggleButton = screen.getByTestId('settings-show-savings-toggle');
       fireEvent.press(toggleButton);
@@ -336,16 +345,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('fires test analytics event when dev tool button is pressed', () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const testEventButton = screen.getByText('Fire Test Analytics Event');
       fireEvent.press(testEventButton);
@@ -359,16 +359,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('shows success toast when test analytics event is fired', () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const testEventButton = screen.getByText('Fire Test Analytics Event');
       fireEvent.press(testEventButton);
@@ -379,16 +370,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('toggles analytics debug mode', () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const analyticsDebugToggle = screen.getByTestId('toggle-analytics-debug');
       fireEvent.press(analyticsDebugToggle);
@@ -399,18 +381,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('shows disabled message when analytics debug is toggled off', () => {
-      // Need to render with analytics debug initially enabled
-      // This would require DevToolsContext mock, so we'll test the toggle behavior
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const analyticsDebugToggle = screen.getByTestId('toggle-analytics-debug');
 
@@ -430,16 +401,7 @@ describe('SettingsContent Analytics Tracking', () => {
 
   describe('Analytics Not Fired for Non-Preference Changes', () => {
     it("does not track analytics for What's New button press", () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const whatsNewButton = screen.getByText(/what's new/i);
       fireEvent.press(whatsNewButton);
@@ -449,16 +411,7 @@ describe('SettingsContent Analytics Tracking', () => {
     });
 
     it('does not track analytics for sign out button press', () => {
-      render(
-        <SettingsContent
-          profile={mockProfile}
-          theme={mockTheme}
-          isDark={false}
-          setTheme={jest.fn()}
-          onSignOut={jest.fn()}
-          onRefreshProfile={jest.fn()}
-        />
-      );
+      render(<SettingsContent />);
 
       const signOutButton = screen.getByText('Sign Out');
       fireEvent.press(signOutButton);

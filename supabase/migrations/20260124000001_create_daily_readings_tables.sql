@@ -70,7 +70,8 @@ CREATE POLICY "Users can insert own reading preferences"
 
 CREATE POLICY "Users can update own reading preferences"
   ON public.user_reading_preferences FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- user_reading_history: Users can manage their own
 CREATE POLICY "Users can read own reading history"
