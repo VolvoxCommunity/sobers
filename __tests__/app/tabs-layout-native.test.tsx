@@ -27,7 +27,7 @@ import TabsLayout from '@/app/(app)/(tabs)/_layout';
 import { useAuth } from '@/contexts/AuthContext';
 
 jest.mock('@/assets/icons/home.svg', () => 'mock-home-icon');
-jest.mock('@/assets/icons/book-open.svg', () => 'mock-book-icon');
+jest.mock('@/assets/icons/heart.svg', () => 'mock-heart-icon');
 jest.mock('@/assets/icons/trending-up.svg', () => 'mock-trending-icon');
 jest.mock('@/assets/icons/check-square.svg', () => 'mock-tasks-icon');
 jest.mock('@/assets/icons/user.svg', () => 'mock-profile-icon');
@@ -300,7 +300,7 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       expect(mockCapturedTabBarIcons['index']()).toBe('mock-home-icon');
-      expect(mockCapturedTabBarIcons['program']()).toBe('mock-book-icon');
+      expect(mockCapturedTabBarIcons['program']()).toBe('mock-heart-icon');
       expect(mockCapturedTabBarIcons['journey']()).toBe('mock-trending-icon');
       expect(mockCapturedTabBarIcons['tasks']()).toBe('mock-tasks-icon');
       expect(mockCapturedTabBarIcons['profile']()).toBe('mock-profile-icon');
