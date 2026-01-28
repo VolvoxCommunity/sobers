@@ -636,7 +636,7 @@ jest.mock('@expo/vector-icons', () => {
 jest.mock('react-native-keyboard-controller', () => {
   const React = require('react');
   return {
-    KeyboardProvider: ({ children }) => children,
+    KeyboardProvider: ({ children }) => React.createElement(React.Fragment, null, children),
     KeyboardAwareScrollView: ({ children, ...props }) =>
       React.createElement('KeyboardAwareScrollView', props, children),
     KeyboardAvoidingView: ({ children, ...props }) =>
