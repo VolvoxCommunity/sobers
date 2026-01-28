@@ -9,6 +9,10 @@
  * - Program opt-out redirect
  */
 
+// =============================================================================
+// Imports
+// =============================================================================
+
 import React from 'react';
 import { screen } from '@testing-library/react-native';
 import { renderWithProviders } from '@/__tests__/test-utils';

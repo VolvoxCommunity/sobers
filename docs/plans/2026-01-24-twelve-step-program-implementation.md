@@ -1530,7 +1530,7 @@ git commit -m "docs: update CHANGELOG for Program section"
 - Placeholder screens ready for implementation
 - All tests passing
 
-**Next steps (future plans):**
+**Next steps:**
 
 - Implement Daily Readings screen with API integration
 - Seed prayers content and implement Prayers screen

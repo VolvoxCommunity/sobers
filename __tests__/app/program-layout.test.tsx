@@ -8,6 +8,10 @@
  * - Tab press handling
  */
 
+// =============================================================================
+// Imports
+// =============================================================================
+
 import React from 'react';
 import { screen, fireEvent } from '@testing-library/react-native';
 import { renderWithProviders } from '@/__tests__/test-utils';

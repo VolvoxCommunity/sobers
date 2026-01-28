@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS public.daily_readings (
   program text NOT NULL CHECK (program IN ('aa', 'na')),
   month int NOT NULL CHECK (month >= 1 AND month <= 12),
   day int NOT NULL CHECK (day >= 1 AND day <= 31),
+  -- Validate month/day combinations (prevents invalid dates like Feb 31)
+  CONSTRAINT valid_month_day CHECK (
+    (month IN (1, 3, 5, 7, 8, 10, 12) AND day <= 31) OR
+    (month IN (4, 6, 9, 11) AND day <= 30) OR
+    (month = 2 AND day <= 29)
+  ),
   title text NOT NULL,
   content text NOT NULL,
   source text,

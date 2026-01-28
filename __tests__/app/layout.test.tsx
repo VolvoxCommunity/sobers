@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
 
 // =============================================================================
 // Mocks
@@ -165,7 +166,7 @@ describe('RootLayout', () => {
       mockFontError = null;
 
       const RootLayout = getLayout();
-      const { toJSON } = render(<RootLayout />);
+      const { toJSON } = renderWithProviders(<RootLayout />);
 
       expect(toJSON()).toBeNull();
     });
@@ -175,7 +176,7 @@ describe('RootLayout', () => {
       mockFontError = null;
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -185,7 +186,7 @@ describe('RootLayout', () => {
       mockFontError = new Error('Font loading failed');
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -195,7 +196,7 @@ describe('RootLayout', () => {
     it('always renders Stack navigator immediately without auth checks', () => {
       // Root layout must always render Stack per Expo Router best practices
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -203,7 +204,7 @@ describe('RootLayout', () => {
     it('does not show loading indicator in root layout', () => {
       // Loading state is handled in (app)/_layout.tsx, not here
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.queryByTestId('loading-indicator')).toBeNull();
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
@@ -213,7 +214,7 @@ describe('RootLayout', () => {
   describe('status bar', () => {
     it('renders status bar', () => {
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('status-bar-dark')).toBeTruthy();
     });
@@ -222,7 +223,7 @@ describe('RootLayout', () => {
   describe('screen configuration', () => {
     it('renders correct stack screens for new architecture', () => {
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       // Public routes at root level
       expect(screen.getByTestId('screen-login')).toBeTruthy();
@@ -238,7 +239,7 @@ describe('RootLayout', () => {
 
     it('does not include settings at root level (moved to (app))', () => {
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       // Settings is now inside (app)/_layout.tsx, not root
       expect(screen.queryByTestId('screen-settings')).toBeNull();
@@ -251,7 +252,7 @@ describe('RootLayout', () => {
       mockPathname = '/';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(trackScreenView).toHaveBeenCalledWith('Home');
     });
@@ -261,7 +262,7 @@ describe('RootLayout', () => {
       mockPathname = '/login';
 
       const RootLayout = getLayout();
-      const { rerender } = render(<RootLayout />);
+      const { rerender } = renderWithProviders(<RootLayout />);
 
       expect(trackScreenView).toHaveBeenCalledWith('login');
 
@@ -277,7 +278,7 @@ describe('RootLayout', () => {
       mockPathname = '/manage-tasks';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(trackScreenView).toHaveBeenCalledWith('manage tasks');
     });
@@ -287,7 +288,7 @@ describe('RootLayout', () => {
       mockPathname = '/login';
 
       const RootLayout = getLayout();
-      const { rerender } = render(<RootLayout />);
+      const { rerender } = renderWithProviders(<RootLayout />);
 
       const callCount = trackScreenView.mock.calls.length;
 
@@ -304,7 +305,7 @@ describe('RootLayout', () => {
       mockPathname = null as unknown as string;
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -313,7 +314,7 @@ describe('RootLayout', () => {
       mockPathname = '/';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -322,7 +323,7 @@ describe('RootLayout', () => {
       mockPathname = '/program';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -331,7 +332,7 @@ describe('RootLayout', () => {
       mockPathname = '/program/steps/abc-123-uuid';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -340,7 +341,7 @@ describe('RootLayout', () => {
       mockPathname = '/unknown-route';
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
@@ -370,7 +371,7 @@ describe('app lifecycle analytics tracking', () => {
       const AppState = getAppStateMock();
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       expect(AppState.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
     });
@@ -380,7 +381,7 @@ describe('app lifecycle analytics tracking', () => {
       const AppState = getAppStateMock();
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       // Clear initial mount events
       trackEvent.mockClear();
@@ -405,7 +406,7 @@ describe('app lifecycle analytics tracking', () => {
       const AppState = getAppStateMock();
 
       const RootLayout = getLayout();
-      render(<RootLayout />);
+      renderWithProviders(<RootLayout />);
 
       // Get the change listener
       const changeListener = AppState.addEventListener.mock.calls[0]?.[1];
@@ -430,7 +431,7 @@ describe('app lifecycle analytics tracking', () => {
       const AppState = getAppStateMock();
 
       const RootLayout = getLayout();
-      const { unmount } = render(<RootLayout />);
+      const { unmount } = renderWithProviders(<RootLayout />);
 
       const subscription = AppState.addEventListener.mock.results[0]?.value;
       expect(subscription).toBeDefined();
