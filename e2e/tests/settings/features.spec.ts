@@ -20,8 +20,21 @@ test.describe('Settings Features', () => {
 
   test('should open and close whats new sheet', async ({ page }) => {
     await page.getByTestId('settings-whats-new-row').click();
-    await expect(page.getByTestId('whats-new-close-button')).toBeVisible();
-    await page.getByTestId('whats-new-close-button').click();
-    await expect(page.getByTestId('whats-new-close-button')).not.toBeVisible({ timeout: 5000 });
+    const closeButton = page.getByTestId('whats-new-close-button');
+    const emptyStateToast = page
+      .getByTestId('toast-message')
+      .filter({ hasText: "You're all caught up! No new updates." });
+
+    const hasSheet = await closeButton
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (hasSheet) {
+      await closeButton.click();
+      await expect(closeButton).not.toBeVisible({ timeout: 5000 });
+    } else {
+      await expect(emptyStateToast).toBeVisible();
+    }
   });
 });

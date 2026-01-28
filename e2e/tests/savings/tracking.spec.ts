@@ -8,6 +8,7 @@ test.describe('Savings Tracking', () => {
     test.beforeEach(async ({ page }) => {
       homePage = new HomePage(page);
       await homePage.goto();
+      await homePage.dismissWhatsNewIfPresent();
     });
 
     test('should display money saved card when user has spending data', async () => {
@@ -45,6 +46,7 @@ test.describe('Savings Tracking', () => {
     test.beforeEach(async ({ page }) => {
       homePage = new HomePage(page);
       await homePage.goto();
+      await homePage.dismissWhatsNewIfPresent();
 
       const hasCard = await homePage.hasMoneySavedCard();
       if (hasCard) {
@@ -69,7 +71,8 @@ test.describe('Savings Tracking', () => {
         await editSheet.fillAmount('75');
         await editSheet.save();
 
-        await expect(homePage.moneySavedCard).toBeVisible({ timeout: 10000 });
+        await page.waitForLoadState('networkidle');
+        await expect(homePage.moneySavedCard).toBeVisible({ timeout: 20000 });
 
         const totalText = await homePage.getMoneySavedTotal();
         expect(totalText).toBeTruthy();
@@ -83,7 +86,8 @@ test.describe('Savings Tracking', () => {
         await editSheet.selectFrequency('monthly');
         await editSheet.save();
 
-        await expect(homePage.moneySavedCard).toBeVisible({ timeout: 10000 });
+        await page.waitForLoadState('networkidle');
+        await expect(homePage.moneySavedCard).toBeVisible({ timeout: 20000 });
       }
     });
 

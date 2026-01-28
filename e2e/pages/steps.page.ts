@@ -42,8 +42,8 @@ export class StepDetailPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.stepTitle = page.getByTestId('step-detail-title');
-    this.stepContent = page.getByTestId('step-detail-content');
+    this.stepTitle = page.locator('[data-testid="step-detail-title"]:visible');
+    this.stepContent = page.locator('[data-testid="step-detail-content"]:visible');
     this.markCompleteButton = page.getByTestId('step-detail-complete-button');
     this.backButton = page.getByTestId('step-detail-back-button');
   }
