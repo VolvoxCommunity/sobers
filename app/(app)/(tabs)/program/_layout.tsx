@@ -51,11 +51,7 @@ export default function ProgramLayout(): React.ReactElement {
   const styles = useMemo(() => createStyles(theme, insets), [theme, insets]);
 
   const handleTabPress = (tabName: string) => {
-    if (tabName === 'steps') {
-      router.push('/program/steps');
-    } else {
-      router.push(`/program/${tabName}`);
-    }
+    router.push(`/program/${tabName}`);
   };
 
   return (
