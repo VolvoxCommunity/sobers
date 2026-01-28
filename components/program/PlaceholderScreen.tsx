@@ -12,8 +12,6 @@ import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 interface PlaceholderScreenProps {
   title: string;
   subtitle?: string;
-  /** Optional testID prefix for E2E testing. Defaults to lowercase title. */
-  testIDPrefix?: string;
 }
 
 // =============================================================================
@@ -25,12 +23,11 @@ interface PlaceholderScreenProps {
 export default function PlaceholderScreen({
   title,
   subtitle = 'Coming soon',
-  testIDPrefix,
 }: PlaceholderScreenProps) {
   const { theme } = useTheme();
   const tabBarHeight = useTabBarPadding();
   const styles = createStyles(theme);
-  const prefix = testIDPrefix ?? title.toLowerCase().replace(/\s+/g, '-');
+  const prefix = title.toLowerCase().replace(/\s+/g, '-');
 
   return (
     <View style={[styles.container, { paddingBottom: tabBarHeight }]} testID={`${prefix}-screen`}>
