@@ -1,5 +1,9 @@
 // __tests__/lib/meeting-utils.test.ts
-import { calculateMeetingStreak } from '@/lib/meeting-utils';
+import {
+  calculateMeetingStreak,
+  checkMeetingMilestones,
+  MEETING_COUNT_MILESTONES,
+} from '@/lib/meeting-utils';
 
 describe('calculateMeetingStreak', () => {
   const today = new Date('2026-01-28');
@@ -56,5 +60,51 @@ describe('calculateMeetingStreak', () => {
       { attended_at: '2026-01-26T10:00:00Z' }, // Gap on 27th
     ];
     expect(calculateMeetingStreak(meetings)).toBe(1);
+  });
+});
+
+describe('checkMeetingMilestones', () => {
+  it('returns first meeting milestone', () => {
+    const result = checkMeetingMilestones(1, 0, []);
+    expect(result).toContainEqual({
+      type: 'count',
+      value: 1,
+      label: 'First Meeting!',
+    });
+  });
+
+  it('returns 5 meetings milestone', () => {
+    const result = checkMeetingMilestones(5, 0, []);
+    expect(result).toContainEqual({
+      type: 'count',
+      value: 5,
+      label: '5 Meetings',
+    });
+  });
+
+  it('does not return already achieved milestone', () => {
+    const existing = [{ milestone_type: 'count', milestone_value: 1 }];
+    const result = checkMeetingMilestones(1, 0, existing);
+    expect(result).not.toContainEqual(expect.objectContaining({ type: 'count', value: 1 }));
+  });
+
+  it('returns 7-day streak milestone', () => {
+    const result = checkMeetingMilestones(10, 7, []);
+    expect(result).toContainEqual({
+      type: 'streak',
+      value: 7,
+      label: '7-Day Streak!',
+    });
+  });
+
+  it('does not return streak milestone if not reached', () => {
+    const result = checkMeetingMilestones(10, 6, []);
+    expect(result).not.toContainEqual(expect.objectContaining({ type: 'streak', value: 7 }));
+  });
+});
+
+describe('MEETING_COUNT_MILESTONES', () => {
+  it('includes expected values', () => {
+    expect(MEETING_COUNT_MILESTONES).toEqual([1, 5, 10, 25, 50, 100]);
   });
 });
