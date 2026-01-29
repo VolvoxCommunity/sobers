@@ -3,9 +3,9 @@
  *
  * Tests the placeholder screens for:
  * - Daily Readings
- * - Prayers
  * - Literature
- * - Meetings
+ *
+ * Note: Prayers and Meetings are no longer placeholders - see their respective test files.
  *
  * These tests import the actual screen components to ensure coverage.
  */
@@ -18,9 +18,7 @@ import React from 'react';
 import { screen } from '@testing-library/react-native';
 import { renderWithProviders } from '@/__tests__/test-utils';
 import DailyReadingsScreen from '@/app/(app)/(tabs)/program/daily';
-import PrayersScreen from '@/app/(app)/(tabs)/program/prayers';
 import LiteratureScreen from '@/app/(app)/(tabs)/program/literature';
-import MeetingsScreen from '@/app/(app)/(tabs)/program/meetings';
 
 // =============================================================================
 // Mocks
@@ -64,20 +62,6 @@ describe('Program Placeholder Screens', () => {
     });
   });
 
-  describe('PrayersScreen', () => {
-    it('renders the Prayers title', () => {
-      renderWithProviders(<PrayersScreen />);
-
-      expect(screen.getByText('Prayers')).toBeTruthy();
-    });
-
-    it('renders the Coming soon subtitle', () => {
-      renderWithProviders(<PrayersScreen />);
-
-      expect(screen.getByText('Coming soon')).toBeTruthy();
-    });
-  });
-
   describe('LiteratureScreen', () => {
     it('renders the Literature title', () => {
       renderWithProviders(<LiteratureScreen />);
@@ -87,20 +71,6 @@ describe('Program Placeholder Screens', () => {
 
     it('renders the Coming soon subtitle', () => {
       renderWithProviders(<LiteratureScreen />);
-
-      expect(screen.getByText('Coming soon')).toBeTruthy();
-    });
-  });
-
-  describe('MeetingsScreen', () => {
-    it('renders the Meetings title', () => {
-      renderWithProviders(<MeetingsScreen />);
-
-      expect(screen.getByText('Meetings')).toBeTruthy();
-    });
-
-    it('renders the Coming soon subtitle', () => {
-      renderWithProviders(<MeetingsScreen />);
 
       expect(screen.getByText('Coming soon')).toBeTruthy();
     });
