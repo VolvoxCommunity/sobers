@@ -1,6 +1,6 @@
 // app/(app)/(tabs)/program/meetings.tsx
 import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, SectionList } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,9 +9,14 @@ import { logger, LogCategory } from '@/lib/logger';
 import { useTabBarPadding } from '@/hooks/useTabBarPadding';
 import MeetingStatsHeader from '@/components/program/MeetingStatsHeader';
 import MeetingsCalendar from '@/components/program/MeetingsCalendar';
+import MeetingListItem from '@/components/program/MeetingListItem';
 import DayDetailSheet, { DayDetailSheetRef } from '@/components/program/DayDetailSheet';
 import LogMeetingSheet, { LogMeetingSheetRef } from '@/components/program/LogMeetingSheet';
-import { calculateMeetingStreak, checkMeetingMilestones } from '@/lib/meeting-utils';
+import {
+  calculateMeetingStreak,
+  checkMeetingMilestones,
+  getInvalidMilestones,
+} from '@/lib/meeting-utils';
 import type { UserMeeting, UserMeetingMilestone } from '@/types/database';
 
 /**
@@ -118,27 +123,38 @@ export default function MeetingsScreen() {
 
   // Handle meeting logged - check for milestones
   const handleMeetingLogged = useCallback(async () => {
-    await fetchData();
+    // Refetch to get updated meetings list
+    const { data: updatedMeetings } = await supabase
+      .from('user_meetings')
+      .select('*')
+      .eq('user_id', profile?.id)
+      .order('attended_at', { ascending: false });
 
-    // Check for new milestones
-    if (!profile) return;
+    if (!updatedMeetings || !profile) {
+      await fetchData();
+      return;
+    }
+
+    // Calculate streak with updated meetings
+    const updatedStreak = calculateMeetingStreak(updatedMeetings);
 
     const newMilestones = checkMeetingMilestones(
-      meetings.length + 1, // +1 for the just-logged meeting
-      streak,
+      updatedMeetings,
+      updatedStreak,
       milestones.map((m) => ({
         milestone_type: m.milestone_type,
         milestone_value: m.milestone_value,
       }))
     );
 
-    // Save new milestones
+    // Save new milestones with correct achieved_at date
     for (const milestone of newMilestones) {
       try {
         await supabase.from('user_meeting_milestones').insert({
           user_id: profile.id,
           milestone_type: milestone.type,
           milestone_value: milestone.value,
+          achieved_at: milestone.achievedAt,
         });
         logger.info(`Meeting milestone achieved: ${milestone.label}`, {
           category: LogCategory.DATABASE,
@@ -149,7 +165,70 @@ export default function MeetingsScreen() {
         });
       }
     }
-  }, [fetchData, profile, meetings.length, streak, milestones]);
+
+    // Refresh data
+    await fetchData();
+  }, [fetchData, profile, milestones]);
+
+  // Handle meeting deleted - remove invalid milestones
+  const handleMeetingDeleted = useCallback(async () => {
+    if (!profile) {
+      await fetchData();
+      return;
+    }
+
+    // Refetch to get updated meetings list
+    const { data: updatedMeetings } = await supabase
+      .from('user_meetings')
+      .select('*')
+      .eq('user_id', profile.id)
+      .order('attended_at', { ascending: false });
+
+    if (!updatedMeetings) {
+      await fetchData();
+      return;
+    }
+
+    // Calculate updated streak
+    const updatedStreak = calculateMeetingStreak(updatedMeetings);
+
+    // Find milestones that are no longer valid
+    const invalidMilestones = getInvalidMilestones(
+      updatedMeetings.length,
+      updatedStreak,
+      milestones.map((m) => ({
+        milestone_type: m.milestone_type,
+        milestone_value: m.milestone_value,
+      }))
+    );
+
+    // Delete invalid milestones
+    for (const milestone of invalidMilestones) {
+      try {
+        await supabase
+          .from('user_meeting_milestones')
+          .delete()
+          .eq('user_id', profile.id)
+          .eq('milestone_type', milestone.type)
+          .eq('milestone_value', milestone.value);
+        logger.info(`Meeting milestone removed: ${milestone.type}-${milestone.value}`, {
+          category: LogCategory.DATABASE,
+        });
+      } catch (err) {
+        logger.error('Failed to remove milestone', err as Error, {
+          category: LogCategory.DATABASE,
+        });
+      }
+    }
+
+    // Refresh data
+    await fetchData();
+  }, [fetchData, profile, milestones]);
+
+  // Handle press on meeting in list
+  const handleMeetingPress = useCallback((meeting: UserMeeting) => {
+    logMeetingRef.current?.present(undefined, meeting);
+  }, []);
 
   if (loading) {
     return (
@@ -163,22 +242,46 @@ export default function MeetingsScreen() {
 
   return (
     <View style={[styles.container, { paddingBottom: tabBarHeight }]}>
-      <MeetingStatsHeader totalMeetings={meetings.length} streak={streak} />
-
-      <MeetingsCalendar
-        meetingDates={meetingDates}
-        onDayPress={handleDayPress}
-        selectedDate={selectedDate}
+      <SectionList
+        sections={[{ key: 'meetings', data: meetings }]}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <>
+            <MeetingStatsHeader totalMeetings={meetings.length} streak={streak} />
+            <MeetingsCalendar
+              meetingDates={meetingDates}
+              onDayPress={handleDayPress}
+              selectedDate={selectedDate}
+            />
+            {meetings.length > 0 ? (
+              <Text style={styles.sectionTitle}>Recent Meetings</Text>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No meetings logged yet</Text>
+                <Text style={styles.emptySubtext}>
+                  Tap any day on the calendar to log your first meeting
+                </Text>
+              </View>
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.listItemContainer}>
+            <MeetingListItem meeting={item} onPress={handleMeetingPress} showDate />
+          </View>
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No meetings logged yet</Text>
+            <Text style={styles.emptySubtext}>
+              Tap any day on the calendar to log your first meeting
+            </Text>
+          </View>
+        }
+        contentContainerStyle={styles.listContent}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
       />
-
-      {meetings.length === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No meetings logged yet</Text>
-          <Text style={styles.emptySubtext}>
-            Tap any day on the calendar to log your first meeting
-          </Text>
-        </View>
-      )}
 
       <DayDetailSheet
         ref={dayDetailRef}
@@ -189,7 +292,7 @@ export default function MeetingsScreen() {
       <LogMeetingSheet
         ref={logMeetingRef}
         onMeetingLogged={handleMeetingLogged}
-        onMeetingDeleted={fetchData}
+        onMeetingDeleted={handleMeetingDeleted}
       />
     </View>
   );
@@ -205,6 +308,20 @@ const createStyles = (theme: ThemeColors) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    listContent: {
+      flexGrow: 1,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontFamily: theme.fontSemiBold,
+      color: theme.text,
+      paddingHorizontal: 16,
+      paddingTop: 24,
+      paddingBottom: 12,
+    },
+    listItemContainer: {
+      paddingHorizontal: 16,
     },
     emptyState: {
       alignItems: 'center',

@@ -313,7 +313,7 @@ describe('SettingsContent - Section Structure', () => {
       expect(screen.queryByText('Dashboard')).toBeNull();
 
       // Should have 12-step program toggle
-      expect(screen.getByText('Show 12 Step Program')).toBeTruthy();
+      expect(screen.getByText('Show 12 Step Content')).toBeTruthy();
       expect(screen.getByText(/Display the Program tab with steps, daily readings/)).toBeTruthy();
       expect(screen.getByTestId('settings-twelve-step-toggle')).toBeTruthy();
     });

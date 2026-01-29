@@ -1,0 +1,3 @@
+-- Migration stub: This migration was applied directly to production before local migration tracking.
+-- It added the show_twelve_step_content column to profiles (now renamed to show_program_content).
+-- No SQL needed here as this is only for tracking purposes.

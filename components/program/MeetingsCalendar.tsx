@@ -120,24 +120,28 @@ export default function MeetingsCalendar({
             <Pressable
               key={day}
               testID={`calendar-day-${day}`}
-              style={[
-                styles.dayCell,
-                isToday && styles.todayCell,
-                isSelected && styles.selectedCell,
-              ]}
+              style={styles.dayCell}
               onPress={() => !isFuture && onDayPress(dateStr)}
               disabled={isFuture}
             >
-              <Text
+              <View
                 style={[
-                  styles.dayText,
-                  isToday && styles.todayText,
-                  isSelected && styles.selectedText,
-                  isFuture && styles.futureText,
+                  styles.dayInner,
+                  isToday && styles.todayCell,
+                  isSelected && styles.selectedCell,
                 ]}
               >
-                {day}
-              </Text>
+                <Text
+                  style={[
+                    styles.dayText,
+                    isToday && styles.todayText,
+                    isSelected && styles.selectedText,
+                    isFuture && styles.futureText,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </View>
               {hasMeeting && <View style={styles.meetingDot} />}
             </Pressable>
           );
@@ -191,13 +195,18 @@ const createStyles = (theme: ThemeColors) =>
       alignItems: 'center',
       position: 'relative',
     },
+    dayInner: {
+      width: 36,
+      height: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 18,
+    },
     todayCell: {
       backgroundColor: theme.primaryLight,
-      borderRadius: 20,
     },
     selectedCell: {
       backgroundColor: theme.primary,
-      borderRadius: 20,
     },
     dayText: {
       fontSize: 16,
@@ -216,7 +225,7 @@ const createStyles = (theme: ThemeColors) =>
     },
     meetingDot: {
       position: 'absolute',
-      bottom: 4,
+      bottom: 0,
       width: 6,
       height: 6,
       borderRadius: 3,

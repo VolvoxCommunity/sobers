@@ -118,13 +118,13 @@ describe('ProgramLayout', () => {
       expect(screen.getByText('Program')).toBeTruthy();
     });
 
-    it('renders all five tabs', () => {
+    it('renders all four visible tabs', () => {
       renderWithProviders(<ProgramLayout />);
 
       expect(screen.getByText('Steps')).toBeTruthy();
       expect(screen.getByText('Daily')).toBeTruthy();
       expect(screen.getByText('Prayers')).toBeTruthy();
-      expect(screen.getByText('Lit')).toBeTruthy();
+      // Literature tab is currently hidden
       expect(screen.getByText('Meet')).toBeTruthy();
     });
 
@@ -170,7 +170,8 @@ describe('ProgramLayout', () => {
       expect(mockPush).toHaveBeenCalledWith('/program/prayers');
     });
 
-    it('navigates to literature when Lit tab is pressed', () => {
+    // Literature tab is currently hidden
+    it.skip('navigates to literature when Lit tab is pressed', () => {
       renderWithProviders(<ProgramLayout />);
 
       fireEvent.press(screen.getByText('Lit'));

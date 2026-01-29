@@ -70,18 +70,19 @@ export interface MeetingMilestone {
   type: 'count' | 'streak' | 'monthly';
   value: number;
   label: string;
+  achievedAt: string; // ISO timestamp of when milestone was achieved
 }
 
 /**
  * Checks if any new milestones have been achieved.
  *
- * @param totalCount - Total number of meetings attended
+ * @param meetings - Array of meetings sorted by attended_at descending (newest first)
  * @param currentStreak - Current day streak
  * @param existingMilestones - Already achieved milestones
  * @returns Array of newly achieved milestones
  */
 export function checkMeetingMilestones(
-  totalCount: number,
+  meetings: { attended_at: string }[],
   currentStreak: number,
   existingMilestones: { milestone_type: string; milestone_value: number }[]
 ): MeetingMilestone[] {
@@ -90,13 +91,23 @@ export function checkMeetingMilestones(
     existingMilestones.map((m) => `${m.milestone_type}-${m.milestone_value}`)
   );
 
+  const totalCount = meetings.length;
+
+  // Sort meetings by date ascending to find Nth meeting
+  const sortedMeetings = [...meetings].sort(
+    (a, b) => new Date(a.attended_at).getTime() - new Date(b.attended_at).getTime()
+  );
+
   // Check count milestones
   MEETING_COUNT_MILESTONES.forEach((milestone) => {
     if (totalCount >= milestone && !existing.has(`count-${milestone}`)) {
+      // Use the date of the Nth meeting (milestone - 1 for 0-indexed)
+      const nthMeeting = sortedMeetings[milestone - 1];
       achieved.push({
         type: 'count',
         value: milestone,
         label: milestone === 1 ? 'First Meeting!' : `${milestone} Meetings`,
+        achievedAt: nthMeeting.attended_at,
       });
     }
   });
@@ -107,8 +118,39 @@ export function checkMeetingMilestones(
       type: 'streak',
       value: 7,
       label: '7-Day Streak!',
+      achievedAt: new Date().toISOString(),
     });
   }
 
   return achieved;
+}
+
+/**
+ * Identifies milestones that are no longer valid after meetings are deleted.
+ *
+ * @param meetingCount - Current total number of meetings
+ * @param currentStreak - Current day streak
+ * @param existingMilestones - Currently stored milestones
+ * @returns Array of milestone keys to delete (e.g., ['count-5', 'streak-7'])
+ */
+export function getInvalidMilestones(
+  meetingCount: number,
+  currentStreak: number,
+  existingMilestones: { milestone_type: string; milestone_value: number }[]
+): { type: string; value: number }[] {
+  const invalid: { type: string; value: number }[] = [];
+
+  existingMilestones.forEach((milestone) => {
+    // Check count milestones - invalid if meeting count dropped below the milestone value
+    if (milestone.milestone_type === 'count' && meetingCount < milestone.milestone_value) {
+      invalid.push({ type: milestone.milestone_type, value: milestone.milestone_value });
+    }
+
+    // Check streak milestones - invalid if streak dropped below the milestone value
+    if (milestone.milestone_type === 'streak' && currentStreak < milestone.milestone_value) {
+      invalid.push({ type: milestone.milestone_type, value: milestone.milestone_value });
+    }
+  });
+
+  return invalid;
 }

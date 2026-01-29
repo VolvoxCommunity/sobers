@@ -15,7 +15,12 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import {
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+  BottomSheetFooter,
+} from '@gorhom/bottom-sheet';
+import type { BottomSheetFooterProps } from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { X, MapPin, Calendar, Clock, Trash2 } from 'lucide-react-native';
 import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
@@ -43,7 +48,7 @@ interface LogMeetingSheetProps {
  */
 const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
   ({ onMeetingLogged, onMeetingDeleted }, ref) => {
-    const { theme } = useTheme();
+    const { theme, isDark } = useTheme();
     const { profile } = useAuth();
     const sheetRef = useRef<GlassBottomSheetRef>(null);
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -53,18 +58,17 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
     const [date, setDate] = useState(new Date());
     const [location, setLocation] = useState('');
     const [notes, setNotes] = useState('');
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     const isEditing = editingMeeting !== null;
 
-    // Round time to nearest 30 minutes
-    const roundTo30Min = (d: Date): Date => {
+    // Round time down to the most recent 15-minute mark
+    const roundTo15Min = (d: Date): Date => {
       const result = new Date(d);
       const minutes = result.getMinutes();
-      const roundedMinutes = Math.round(minutes / 30) * 30;
+      const roundedMinutes = Math.floor(minutes / 15) * 15;
       result.setMinutes(roundedMinutes, 0, 0);
       return result;
     };
@@ -72,11 +76,10 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
     const resetForm = useCallback(() => {
       setEditingMeeting(null);
       setName('');
-      setDate(roundTo30Min(new Date()));
+      setDate(roundTo15Min(new Date()));
       setLocation('');
       setNotes('');
       setError('');
-      setShowDatePicker(false);
       setShowTimePicker(false);
     }, []);
 
@@ -90,8 +93,11 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
           setLocation(meeting.location || '');
           setNotes(meeting.notes || '');
         } else if (initialDate) {
-          const d = new Date(initialDate + 'T12:00:00');
-          setDate(roundTo30Min(d));
+          // Use the selected date with the current time (rounded down to 30 min)
+          const now = new Date();
+          const [year, month, day] = initialDate.split('-').map(Number);
+          const d = new Date(year, month - 1, day, now.getHours(), now.getMinutes());
+          setDate(roundTo15Min(d));
         }
         sheetRef.current?.present();
       },
@@ -218,12 +224,43 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
       minute: '2-digit',
     });
 
+    const renderFooter = useCallback(
+      (props: BottomSheetFooterProps) => (
+        <BottomSheetFooter {...props} bottomInset={0}>
+          <View style={styles.footer}>
+            {isEditing && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+                disabled={isSubmitting}
+              >
+                <Trash2 size={20} color={theme.danger} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.submitText}>{isEditing ? 'Save Changes' : 'Log Meeting'}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </BottomSheetFooter>
+      ),
+      [styles, isEditing, isSubmitting, handleDelete, handleSubmit, theme.danger]
+    );
+
     return (
       <GlassBottomSheet
         ref={sheetRef}
         snapPoints={['70%', '90%']}
         onDismiss={handleDismiss}
         keyboardBehavior="interactive"
+        footerComponent={renderFooter}
       >
         <View style={styles.header}>
           <View style={styles.headerIcon}>
@@ -259,10 +296,10 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
           <View style={styles.row}>
             <View style={[styles.formGroup, styles.flex1]}>
               <Text style={styles.label}>Date</Text>
-              <TouchableOpacity style={styles.pickerButton} onPress={() => setShowDatePicker(true)}>
+              <View style={styles.dateDisplay}>
                 <Calendar size={18} color={theme.textSecondary} />
                 <Text style={styles.pickerText}>{formattedDate}</Text>
-              </TouchableOpacity>
+              </View>
             </View>
 
             <View style={[styles.formGroup, styles.flex1]}>
@@ -274,21 +311,26 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
             </View>
           </View>
 
-          {(showDatePicker || showTimePicker) && Platform.OS !== 'web' && (
-            <DateTimePicker
-              value={date}
-              mode={showDatePicker ? 'date' : 'time'}
-              display={showTimePicker ? 'spinner' : 'default'}
-              minuteInterval={30}
-              maximumDate={new Date()}
-              onChange={(event, selectedDate) => {
-                if (selectedDate) {
-                  setDate(selectedDate);
-                }
-                setShowDatePicker(false);
-                setShowTimePicker(false);
-              }}
-            />
+          {showTimePicker && Platform.OS !== 'web' && (
+            <View
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderTerminationRequest={() => false}
+            >
+              <DateTimePicker
+                value={date}
+                mode="time"
+                display="spinner"
+                minuteInterval={15}
+                themeVariant={isDark ? 'dark' : 'light'}
+                onChange={(_, selectedDate) => {
+                  if (selectedDate) {
+                    setDate(selectedDate);
+                  }
+                  setShowTimePicker(false);
+                }}
+              />
+            </View>
           )}
 
           <View style={styles.formGroup}>
@@ -316,29 +358,6 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
             />
           </View>
         </BottomSheetScrollView>
-
-        <View style={styles.footer}>
-          {isEditing && (
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDelete}
-              disabled={isSubmitting}
-            >
-              <Trash2 size={20} color={theme.danger} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.submitText}>{isEditing ? 'Save Changes' : 'Log Meeting'}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
       </GlassBottomSheet>
     );
   }
@@ -427,6 +446,15 @@ const createStyles = (theme: ThemeColors) =>
       padding: 12,
       gap: 8,
     },
+    dateDisplay: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.background,
+      borderRadius: 8,
+      padding: 12,
+      gap: 8,
+      opacity: 0.7,
+    },
     pickerText: {
       fontSize: 16,
       fontFamily: theme.fontRegular,
@@ -438,6 +466,7 @@ const createStyles = (theme: ThemeColors) =>
       padding: 20,
       borderTopWidth: 1,
       borderTopColor: theme.border,
+      backgroundColor: theme.surface,
     },
     deleteButton: {
       padding: 16,

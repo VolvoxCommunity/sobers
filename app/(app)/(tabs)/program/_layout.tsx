@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BookOpen, Sun, Heart, BookMarked, Users } from 'lucide-react-native';
+import { BookOpen, Sun, Heart, Users } from 'lucide-react-native';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import SettingsButton from '@/components/navigation/SettingsButton';
 
@@ -25,7 +25,7 @@ const TAB_ITEMS: TabItem[] = [
   { name: 'steps', label: 'Steps', icon: BookOpen },
   { name: 'daily', label: 'Daily', icon: Sun },
   { name: 'prayers', label: 'Prayers', icon: Heart },
-  { name: 'literature', label: 'Lit', icon: BookMarked },
+  // { name: 'literature', label: 'Lit', icon: BookMarked }, // Hidden for now
   { name: 'meetings', label: 'Meet', icon: Users },
 ];
 

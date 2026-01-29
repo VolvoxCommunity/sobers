@@ -1022,12 +1022,12 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             disabled={isSavingTwelveStep}
             accessibilityRole="switch"
             accessibilityState={{ checked: profile?.show_program_content !== false }}
-            accessibilityLabel="Show 12 Step Program"
+            accessibilityLabel="Show 12 Step Content"
           >
             <View style={styles.menuItemLeft}>
               <BookOpen size={20} color={theme.textSecondary} />
               <View>
-                <Text style={styles.menuItemText}>Show 12 Step Program</Text>
+                <Text style={styles.menuItemText}>Show 12 Step Content</Text>
                 <Text style={styles.menuItemSubtext}>
                   Display the Program tab with steps, daily readings, prayers, literature, and
                   meeting tracker
@@ -1665,6 +1665,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       backgroundColor: theme.card,
     },
     menuItemLeft: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,

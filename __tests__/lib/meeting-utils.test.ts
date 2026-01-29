@@ -64,41 +64,60 @@ describe('calculateMeetingStreak', () => {
 });
 
 describe('checkMeetingMilestones', () => {
-  it('returns first meeting milestone', () => {
-    const result = checkMeetingMilestones(1, 0, []);
+  it('returns first meeting milestone with correct date', () => {
+    const meetings = [{ attended_at: '2026-01-26T10:00:00Z' }];
+    const result = checkMeetingMilestones(meetings, 0, []);
     expect(result).toContainEqual({
       type: 'count',
       value: 1,
       label: 'First Meeting!',
+      achievedAt: '2026-01-26T10:00:00Z',
     });
   });
 
-  it('returns 5 meetings milestone', () => {
-    const result = checkMeetingMilestones(5, 0, []);
+  it('returns 5 meetings milestone with date of 5th meeting', () => {
+    const meetings = [
+      { attended_at: '2026-01-20T10:00:00Z' },
+      { attended_at: '2026-01-21T10:00:00Z' },
+      { attended_at: '2026-01-22T10:00:00Z' },
+      { attended_at: '2026-01-23T10:00:00Z' },
+      { attended_at: '2026-01-24T10:00:00Z' },
+    ];
+    const result = checkMeetingMilestones(meetings, 0, []);
     expect(result).toContainEqual({
       type: 'count',
       value: 5,
       label: '5 Meetings',
+      achievedAt: '2026-01-24T10:00:00Z',
     });
   });
 
   it('does not return already achieved milestone', () => {
+    const meetings = [{ attended_at: '2026-01-26T10:00:00Z' }];
     const existing = [{ milestone_type: 'count', milestone_value: 1 }];
-    const result = checkMeetingMilestones(1, 0, existing);
+    const result = checkMeetingMilestones(meetings, 0, existing);
     expect(result).not.toContainEqual(expect.objectContaining({ type: 'count', value: 1 }));
   });
 
   it('returns 7-day streak milestone', () => {
-    const result = checkMeetingMilestones(10, 7, []);
-    expect(result).toContainEqual({
-      type: 'streak',
-      value: 7,
-      label: '7-Day Streak!',
-    });
+    const meetings = Array.from({ length: 10 }, (_, i) => ({
+      attended_at: `2026-01-${20 + i}T10:00:00Z`,
+    }));
+    const result = checkMeetingMilestones(meetings, 7, []);
+    expect(result).toContainEqual(
+      expect.objectContaining({
+        type: 'streak',
+        value: 7,
+        label: '7-Day Streak!',
+      })
+    );
   });
 
   it('does not return streak milestone if not reached', () => {
-    const result = checkMeetingMilestones(10, 6, []);
+    const meetings = Array.from({ length: 10 }, (_, i) => ({
+      attended_at: `2026-01-${20 + i}T10:00:00Z`,
+    }));
+    const result = checkMeetingMilestones(meetings, 6, []);
     expect(result).not.toContainEqual(expect.objectContaining({ type: 'streak', value: 7 }));
   });
 });

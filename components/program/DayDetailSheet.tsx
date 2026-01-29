@@ -1,9 +1,12 @@
 // components/program/DayDetailSheet.tsx
 import React, { forwardRef, useImperativeHandle, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetScrollView, BottomSheetFooter } from '@gorhom/bottom-sheet';
 import { X, Plus, Calendar } from 'lucide-react-native';
-import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
+import GlassBottomSheet, {
+  GlassBottomSheetRef,
+  BottomSheetFooterProps,
+} from '@/components/GlassBottomSheet';
 import MeetingListItem from '@/components/program/MeetingListItem';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import type { UserMeeting } from '@/types/database';
@@ -55,8 +58,22 @@ const DayDetailSheet = forwardRef<DayDetailSheetRef, DayDetailSheetProps>(
         })
       : '';
 
+    const renderFooter = useCallback(
+      (props: BottomSheetFooterProps) => (
+        <BottomSheetFooter {...props} bottomInset={0}>
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.logButton} onPress={handleLogMeeting}>
+              <Plus size={20} color="#fff" />
+              <Text style={styles.logButtonText}>Log Meeting</Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetFooter>
+      ),
+      [styles, handleLogMeeting]
+    );
+
     return (
-      <GlassBottomSheet ref={sheetRef} snapPoints={['50%', '80%']}>
+      <GlassBottomSheet ref={sheetRef} snapPoints={['50%', '80%']} footerComponent={renderFooter}>
         <View style={styles.header}>
           <View style={styles.headerIcon}>
             <Calendar size={24} color={theme.primary} />
@@ -82,13 +99,6 @@ const DayDetailSheet = forwardRef<DayDetailSheetRef, DayDetailSheetProps>(
             ))
           )}
         </BottomSheetScrollView>
-
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.logButton} onPress={handleLogMeeting}>
-            <Plus size={20} color="#fff" />
-            <Text style={styles.logButtonText}>Log Meeting</Text>
-          </TouchableOpacity>
-        </View>
       </GlassBottomSheet>
     );
   }
@@ -146,6 +156,7 @@ const createStyles = (theme: ThemeColors) =>
       padding: 20,
       borderTopWidth: 1,
       borderTopColor: theme.border,
+      backgroundColor: theme.surface,
     },
     logButton: {
       flexDirection: 'row',
