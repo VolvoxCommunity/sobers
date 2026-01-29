@@ -338,6 +338,17 @@ export interface UserMeeting {
 }
 
 /**
+ * Milestone achieved for meeting attendance.
+ */
+export interface UserMeetingMilestone {
+  id: string;
+  user_id: string;
+  milestone_type: 'count' | 'streak' | 'monthly';
+  milestone_value: number;
+  achieved_at: string;
+}
+
+/**
  * Cached user program statistics.
  */
 export interface UserProgramStats {
