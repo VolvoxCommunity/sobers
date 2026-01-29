@@ -6,7 +6,16 @@ import {
 } from '@/lib/meeting-utils';
 
 describe('calculateMeetingStreak', () => {
-  const today = new Date('2026-01-28');
+  // Helper to create a date at noon local time for a given day offset from today
+  const getLocalNoon = (daysAgo: number): Date => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    date.setHours(12, 0, 0, 0);
+    return date;
+  };
+
+  // Set "today" to a fixed local noon time
+  const today = getLocalNoon(0);
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -22,42 +31,46 @@ describe('calculateMeetingStreak', () => {
   });
 
   it('returns 1 for meeting today', () => {
-    const meetings = [{ attended_at: '2026-01-28T10:00:00Z' }];
+    const meetings = [{ attended_at: getLocalNoon(0).toISOString() }];
     expect(calculateMeetingStreak(meetings)).toBe(1);
   });
 
   it('returns 1 for meeting yesterday (grace period)', () => {
-    const meetings = [{ attended_at: '2026-01-27T10:00:00Z' }];
+    const meetings = [{ attended_at: getLocalNoon(1).toISOString() }];
     expect(calculateMeetingStreak(meetings)).toBe(1);
   });
 
   it('returns 0 for meeting 2 days ago (streak broken)', () => {
-    const meetings = [{ attended_at: '2026-01-26T10:00:00Z' }];
+    const meetings = [{ attended_at: getLocalNoon(2).toISOString() }];
     expect(calculateMeetingStreak(meetings)).toBe(0);
   });
 
   it('counts consecutive days correctly', () => {
     const meetings = [
-      { attended_at: '2026-01-28T10:00:00Z' },
-      { attended_at: '2026-01-27T10:00:00Z' },
-      { attended_at: '2026-01-26T10:00:00Z' },
+      { attended_at: getLocalNoon(0).toISOString() },
+      { attended_at: getLocalNoon(1).toISOString() },
+      { attended_at: getLocalNoon(2).toISOString() },
     ];
     expect(calculateMeetingStreak(meetings)).toBe(3);
   });
 
   it('counts multiple meetings on same day as 1 day', () => {
+    const todayMorning = getLocalNoon(0);
+    todayMorning.setHours(10, 0, 0, 0);
+    const todayAfternoon = getLocalNoon(0);
+    todayAfternoon.setHours(14, 0, 0, 0);
     const meetings = [
-      { attended_at: '2026-01-28T10:00:00Z' },
-      { attended_at: '2026-01-28T14:00:00Z' },
-      { attended_at: '2026-01-27T10:00:00Z' },
+      { attended_at: todayMorning.toISOString() },
+      { attended_at: todayAfternoon.toISOString() },
+      { attended_at: getLocalNoon(1).toISOString() },
     ];
     expect(calculateMeetingStreak(meetings)).toBe(2);
   });
 
   it('breaks streak on gap day', () => {
     const meetings = [
-      { attended_at: '2026-01-28T10:00:00Z' },
-      { attended_at: '2026-01-26T10:00:00Z' }, // Gap on 27th
+      { attended_at: getLocalNoon(0).toISOString() },
+      { attended_at: getLocalNoon(2).toISOString() }, // Gap on day 1
     ];
     expect(calculateMeetingStreak(meetings)).toBe(1);
   });

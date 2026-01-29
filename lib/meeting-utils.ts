@@ -1,10 +1,11 @@
 // lib/meeting-utils.ts
 
 /**
- * Gets the date string in YYYY-MM-DD format from a Date, treating it as UTC.
+ * Gets the date string in YYYY-MM-DD format from a Date, using local timezone.
+ * Uses 'en-CA' locale which produces YYYY-MM-DD format.
  */
-function getUTCDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+function getLocalDateString(date: Date): string {
+  return date.toLocaleDateString('en-CA');
 }
 
 /**
@@ -17,19 +18,19 @@ function getUTCDateString(date: Date): string {
 export function calculateMeetingStreak(meetings: { attended_at: string }[]): number {
   if (meetings.length === 0) return 0;
 
-  // Get unique days with meetings (UTC dates)
+  // Get unique days with meetings (local dates)
   const meetingDays = new Set<string>();
   meetings.forEach((m) => {
     const date = new Date(m.attended_at);
-    meetingDays.add(getUTCDateString(date));
+    meetingDays.add(getLocalDateString(date));
   });
 
   const today = new Date();
-  const todayStr = getUTCDateString(today);
+  const todayStr = getLocalDateString(today);
 
   const yesterday = new Date(today);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  const yesterdayStr = getUTCDateString(yesterday);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = getLocalDateString(yesterday);
 
   // Streak must end today or yesterday
   if (!meetingDays.has(todayStr) && !meetingDays.has(yesterdayStr)) {
@@ -42,14 +43,14 @@ export function calculateMeetingStreak(meetings: { attended_at: string }[]): num
 
   // Start from today if has meeting, otherwise yesterday
   if (!meetingDays.has(todayStr)) {
-    checkDate.setUTCDate(checkDate.getUTCDate() - 1);
+    checkDate.setDate(checkDate.getDate() - 1);
   }
 
   while (true) {
-    const dateStr = getUTCDateString(checkDate);
+    const dateStr = getLocalDateString(checkDate);
     if (meetingDays.has(dateStr)) {
       streak++;
-      checkDate.setUTCDate(checkDate.getUTCDate() - 1);
+      checkDate.setDate(checkDate.getDate() - 1);
     } else {
       break;
     }
