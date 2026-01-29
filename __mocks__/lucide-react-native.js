@@ -144,4 +144,5 @@ module.exports = {
   DollarSign: createIconMock('DollarSign'),
   Layout: createIconMock('Layout'),
   Sparkles: createIconMock('Sparkles'),
+  Flame: createIconMock('Flame'),
 };
