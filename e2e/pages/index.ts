@@ -17,8 +17,8 @@ export { EditSavingsSheet } from './savings.page';
 export {
   ProgramPage,
   PlaceholderPage,
+  PrayersPage,
+  MeetingsPage,
   createDailyReadingsPage,
-  createPrayersPage,
   createLiteraturePage,
-  createMeetingsPage,
 } from './program.page';

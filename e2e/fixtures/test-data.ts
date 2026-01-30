@@ -65,6 +65,38 @@ export const TEST_TASKS = {
 } as const;
 
 /**
+ * Test prayers seeded for Program > Prayers E2E coverage.
+ */
+export const TEST_PRAYERS = {
+  step: {
+    id: '66666666-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    title: 'Step Three Prayer',
+    content: 'Guide me to turn my will and my life over to your care.',
+    category: 'step' as const,
+    stepNumber: 3,
+    sortOrder: 10,
+  },
+  common: {
+    id: '77777777-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    title: 'Serenity Prayer',
+    content: 'Grant me the serenity to accept the things I cannot change.',
+    category: 'common' as const,
+    sortOrder: 20,
+  },
+} as const;
+
+/**
+ * Test meetings seeded for Program > Meetings E2E coverage.
+ */
+export const TEST_MEETINGS = {
+  today: {
+    id: '88888888-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    name: 'E2E Morning Meeting',
+    location: 'Online',
+  },
+} as const;
+
+/**
  * Create a unique signup email address for end-to-end tests.
  *
  * @returns An email address in the format `e2e-signup-<timestamp>@sobers-test.com`, where `<timestamp>` is the number of milliseconds since the Unix epoch.

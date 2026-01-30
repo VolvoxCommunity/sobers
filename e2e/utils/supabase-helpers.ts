@@ -1,5 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { TEST_USERS, TEST_TASKS, TEST_INVITE_CODES } from '../fixtures/test-data';
+import {
+  TEST_USERS,
+  TEST_TASKS,
+  TEST_INVITE_CODES,
+  TEST_PRAYERS,
+  TEST_MEETINGS,
+} from '../fixtures/test-data';
 
 // Lazy-initialized client to avoid errors when listing tests without env vars
 let adminClient: SupabaseClient | null = null;
@@ -45,11 +51,16 @@ export async function resetTestData(): Promise<void> {
   const client = getAdminClient();
   const now = new Date().toISOString();
   const inviteExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const recentMeetingTime = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
   // Reset task completions for test users (IDs from test-data.ts fixtures)
   const testUserIds = [TEST_USERS.primary.id, TEST_USERS.sponsor.id, TEST_USERS.sponsee.id];
 
   await client.from('task_completions').delete().in('user_id', testUserIds);
+
+  await client.from('user_prayer_favorites').delete().eq('user_id', TEST_USERS.primary.id);
+  await client.from('user_meeting_milestones').delete().eq('user_id', TEST_USERS.primary.id);
+  await client.from('user_meetings').delete().eq('user_id', TEST_USERS.primary.id);
 
   // Reset onboarding user profile
   await client.from('profiles').delete().eq('email', TEST_USERS.onboarding.email);
@@ -103,6 +114,35 @@ export async function resetTestData(): Promise<void> {
     throw new Error(`Failed to seed relationships: ${relationshipsError.message}`);
   }
 
+  const { error: prayersError } = await client.from('prayers').upsert(
+    [
+      {
+        id: TEST_PRAYERS.step.id,
+        title: TEST_PRAYERS.step.title,
+        content: TEST_PRAYERS.step.content,
+        category: TEST_PRAYERS.step.category,
+        step_number: TEST_PRAYERS.step.stepNumber,
+        sort_order: TEST_PRAYERS.step.sortOrder,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        id: TEST_PRAYERS.common.id,
+        title: TEST_PRAYERS.common.title,
+        content: TEST_PRAYERS.common.content,
+        category: TEST_PRAYERS.common.category,
+        sort_order: TEST_PRAYERS.common.sortOrder,
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+    { onConflict: 'id' }
+  );
+
+  if (prayersError) {
+    throw new Error(`Failed to seed prayers: ${prayersError.message}`);
+  }
+
   const { error: tasksError } = await client.from('tasks').upsert([
     {
       id: TEST_TASKS.meditation.id,
@@ -138,6 +178,26 @@ export async function resetTestData(): Promise<void> {
 
   if (tasksError) {
     throw new Error(`Failed to seed tasks: ${tasksError.message}`);
+  }
+
+  const { error: meetingsError } = await client.from('user_meetings').upsert(
+    [
+      {
+        id: TEST_MEETINGS.today.id,
+        user_id: TEST_USERS.primary.id,
+        meeting_name: TEST_MEETINGS.today.name,
+        meeting_type: 'other',
+        location: TEST_MEETINGS.today.location,
+        attended_at: recentMeetingTime,
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+    { onConflict: 'id' }
+  );
+
+  if (meetingsError) {
+    throw new Error(`Failed to seed meetings: ${meetingsError.message}`);
   }
 
   const { error: inviteError } = await client.from('invite_codes').upsert(
