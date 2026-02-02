@@ -8,11 +8,20 @@
 *.jsx text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+*.txt text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 *.css text eol=lf
 *.html text eol=lf
+*.svg text eol=lf
 *.sql text eol=lf
+*.env text eol=lf
+*.lock text eol=lf
+
+# Config and certificate files
+*.conf text eol=lf
+*.pem text eol=lf
+*.crt text eol=lf
 
 # Keep binary files as-is
 *.png binary
