@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps/index.tsx
+ * @fileoverview Tests for app/(app)/(tabs)/program/steps/index.tsx
  *
  * Tests the Steps list screen including:
  * - Loading, error, and empty states
@@ -9,8 +9,9 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import StepsScreen from '@/app/(app)/(tabs)/steps/index';
+import { screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
+import StepsScreen from '@/app/(app)/(tabs)/program/steps/index';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================
@@ -204,7 +205,7 @@ describe('StepsScreen', () => {
 
   describe('loading state', () => {
     it('shows loading text initially', () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       // Initially shows loading (before async completes)
       expect(screen.getByText('Loading steps...')).toBeTruthy();
@@ -216,7 +217,7 @@ describe('StepsScreen', () => {
       mockStepsData = null;
       mockStepsError = new Error('Network error');
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Failed to load steps content')).toBeTruthy();
@@ -227,7 +228,7 @@ describe('StepsScreen', () => {
       mockStepsData = null;
       mockStepsError = new Error('Network error');
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Retry')).toBeTruthy();
@@ -239,7 +240,7 @@ describe('StepsScreen', () => {
     it('shows empty message when no steps available', async () => {
       mockStepsData = [];
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('No steps content available')).toBeTruthy();
@@ -248,17 +249,8 @@ describe('StepsScreen', () => {
   });
 
   describe('steps list', () => {
-    it('renders header correctly', async () => {
-      render(<StepsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-        expect(screen.getByText('Your path to recovery')).toBeTruthy();
-      });
-    });
-
     it('renders all steps when loaded', async () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -268,7 +260,7 @@ describe('StepsScreen', () => {
     });
 
     it('renders step numbers', async () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('1')).toBeTruthy();
@@ -278,7 +270,7 @@ describe('StepsScreen', () => {
     });
 
     it('renders step descriptions', async () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('The first step in recovery')).toBeTruthy();
@@ -289,7 +281,7 @@ describe('StepsScreen', () => {
 
   describe('step navigation', () => {
     it('navigates to detail screen when step is pressed', async () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -297,11 +289,11 @@ describe('StepsScreen', () => {
 
       fireEvent.press(screen.getByText('We admitted we were powerless'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-1');
     });
 
     it('navigates with correct id for different steps', async () => {
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Came to believe')).toBeTruthy();
@@ -309,7 +301,7 @@ describe('StepsScreen', () => {
 
       fireEvent.press(screen.getByText('Came to believe'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-2');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-2');
     });
   });
 
@@ -320,7 +312,7 @@ describe('StepsScreen', () => {
         { id: 'progress-1', step_number: 1, user_id: 'user-123', completed: true },
       ];
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('Completed')).toBeTruthy();
@@ -334,7 +326,7 @@ describe('StepsScreen', () => {
         { id: 'progress-2', step_number: 2, user_id: 'user-123', completed: true },
       ];
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         // Should have two "Completed" badges
@@ -346,7 +338,7 @@ describe('StepsScreen', () => {
     it('does not show completed badge for incomplete steps', async () => {
       mockProgressData = [];
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
@@ -374,16 +366,10 @@ describe('StepsScreen', () => {
         updated_at: '2024-01-01T00:00:00Z',
       };
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       // Verify component renders successfully with display_name in profile
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can access profile and use it (via profile.id in fetchProgress)
-      // The component uses profile.id to fetch user step progress, which confirms
-      // the profile structure is correct and the component can access profile properties
+      // and can access profile.id to fetch user step progress
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
@@ -411,14 +397,9 @@ describe('StepsScreen', () => {
         updated_at: '2024-01-01T00:00:00Z',
       };
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
-      // Verify component still renders successfully
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can still fetch and display steps
+      // Verify component still renders successfully and fetches steps
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
@@ -446,21 +427,16 @@ describe('StepsScreen', () => {
         updated_at: '2024-01-01T00:00:00Z',
       };
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
-      // Verify component still renders successfully
-      await waitFor(() => {
-        expect(screen.getByText('The 12 Steps')).toBeTruthy();
-      });
-
-      // Verify component can still fetch and display steps
+      // Verify component still renders successfully and fetches steps
       await waitFor(() => {
         expect(screen.getByText('We admitted we were powerless')).toBeTruthy();
       });
 
       // Verify navigation still works when display_name is undefined
       fireEvent.press(screen.getByText('We admitted we were powerless'));
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-1');
     });
   });
 
@@ -492,7 +468,7 @@ describe('StepsScreen', () => {
         };
       });
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(logger.error).toHaveBeenCalledWith(
@@ -527,7 +503,7 @@ describe('StepsScreen', () => {
         };
       });
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(logger.error).toHaveBeenCalledWith(
@@ -556,7 +532,7 @@ describe('StepsScreen', () => {
         };
       });
 
-      render(<StepsScreen />);
+      renderWithProviders(<StepsScreen />);
 
       await waitFor(() => {
         expect(screen.getByText('An unexpected error occurred')).toBeTruthy();

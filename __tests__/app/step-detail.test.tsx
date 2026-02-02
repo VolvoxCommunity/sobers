@@ -1,5 +1,5 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps/[id].tsx
+ * @fileoverview Tests for app/(app)/(tabs)/program/steps/[id].tsx
  *
  * Tests the Step Detail screen including:
  * - Loading and error states
@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
-import StepDetailScreen from '@/app/(app)/(tabs)/steps/[id]';
+import StepDetailScreen from '@/app/(app)/(tabs)/program/steps/[id]';
 import { StepContent, Profile } from '@/types/database';
 
 // =============================================================================
@@ -414,7 +414,7 @@ describe('StepDetailScreen', () => {
 
       fireEvent.press(screen.getByText('Previous'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-1');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-1');
     });
 
     it('navigates to next step when Next is pressed', async () => {
@@ -426,7 +426,7 @@ describe('StepDetailScreen', () => {
 
       fireEvent.press(screen.getByText('Next'));
 
-      expect(mockPush).toHaveBeenCalledWith('/steps/step-2');
+      expect(mockPush).toHaveBeenCalledWith('/program/steps/step-2');
     });
 
     it('disables Previous button on first step', async () => {

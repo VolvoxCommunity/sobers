@@ -4,6 +4,8 @@ import { config } from 'dotenv';
 // Load environment variables from .env file
 config({ path: '.env' });
 
+const webPort = Number(process.env.E2E_WEB_PORT) || 8081;
+
 export default defineConfig({
   testDir: 'e2e/',
   fullyParallel: true,
@@ -18,7 +20,7 @@ export default defineConfig({
   expect: { timeout: 5_000 },
 
   use: {
-    baseURL: 'http://localhost:8081',
+    baseURL: `http://localhost:${webPort}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -54,6 +56,23 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
+    {
+      name: 'mobile',
+      use: {
+        ...devices['iPhone 14'],
+        storageState: 'e2e/.auth/primary-state.json',
+      },
+      dependencies: ['setup'],
+    },
+    /* Test against branded browsers. */
+    {
+      name: 'google chrome',
+      use: { ...devices['Desktop Chrome'], channel: 'chrome' }, // or 'chrome-beta'
+    },
+    {
+      name: 'microsoft edge',
+      use: { ...devices['Desktop Edge'], channel: 'msedge' }, // or 'msedge-dev'
+    },
   ],
 
   // In CI, the web server is started by the workflow (build + serve)
@@ -61,8 +80,8 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined
     : {
-        command: 'pnpm web',
-        url: 'http://localhost:8081',
+        command: `RCT_METRO_PORT=${webPort} EXPO_DEV_SERVER_PORT=${webPort} EXPO_WEB_PORT=${webPort} pnpm web -- --port ${webPort}`,
+        url: `http://localhost:${webPort}`,
         reuseExistingServer: true,
         timeout: 120_000,
       },

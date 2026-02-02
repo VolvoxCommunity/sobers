@@ -2,7 +2,7 @@ export const TEST_USERS = {
   primary: {
     id: 'b81936a6-125f-420a-a736-eeb5943c28b1',
     email: 'e2e-primary@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Primary User',
     sobrietyDate: '2024-01-15',
     /** Spending amount for savings tracking E2E tests (USD per week) */
@@ -13,20 +13,20 @@ export const TEST_USERS = {
   sponsor: {
     id: '3a28e197-e07d-4cba-b7e4-01804e7cca73',
     email: 'e2e-sponsor@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Sponsor User',
     sobrietyDate: '2020-06-01',
   },
   sponsee: {
     id: '80f409b9-db2d-4c84-aa41-ad90ba1b212a',
     email: 'e2e-sponsee@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
     displayName: 'E2E Sponsee User',
     sobrietyDate: '2024-10-01',
   },
   onboarding: {
     email: 'e2e-onboarding@sobers-test.com',
-    password: process.env.E2E_TEST_PASSWORD || 'test-password-change-me',
+    password: process.env.E2E_TEST_PASSWORD || 'E2E-Password1!',
   },
 } as const;
 
@@ -61,6 +61,38 @@ export const TEST_TASKS = {
     description: 'This task has been completed',
     stepNumber: 5,
     status: 'completed',
+  },
+} as const;
+
+/**
+ * Test prayers seeded for Program > Prayers E2E coverage.
+ */
+export const TEST_PRAYERS = {
+  step: {
+    id: '66666666-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    title: 'Step Three Prayer',
+    content: 'Guide me to turn my will and my life over to your care.',
+    category: 'step' as const,
+    stepNumber: 3,
+    sortOrder: 10,
+  },
+  common: {
+    id: '77777777-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    title: 'Serenity Prayer',
+    content: 'Grant me the serenity to accept the things I cannot change.',
+    category: 'common' as const,
+    sortOrder: 20,
+  },
+} as const;
+
+/**
+ * Test meetings seeded for Program > Meetings E2E coverage.
+ */
+export const TEST_MEETINGS = {
+  today: {
+    id: '88888888-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    name: 'E2E Morning Meeting',
+    location: 'Online',
   },
 } as const;
 

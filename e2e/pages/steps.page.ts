@@ -12,7 +12,7 @@ export class StepsPage extends BasePage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/steps');
+    await this.page.goto('/program/steps');
     await this.waitForPageLoad();
   }
 
@@ -42,15 +42,15 @@ export class StepDetailPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.stepTitle = page.getByTestId('step-detail-title');
-    this.stepContent = page.getByTestId('step-detail-content');
+    this.stepTitle = page.locator('[data-testid="step-detail-title"]:visible');
+    this.stepContent = page.locator('[data-testid="step-detail-content"]:visible');
     this.markCompleteButton = page.getByTestId('step-detail-complete-button');
     this.backButton = page.getByTestId('step-detail-back-button');
   }
 
   async expectOnStepDetailPage(): Promise<void> {
     // Steps use UUID-based URLs, not numeric step numbers
-    await expect(this.page).toHaveURL(/\/steps\/[a-f0-9-]+$/);
+    await expect(this.page).toHaveURL(/\/program\/steps\/[a-f0-9-]+$/);
     await expect(this.stepTitle).toBeVisible();
   }
 

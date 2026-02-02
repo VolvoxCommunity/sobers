@@ -8,18 +8,18 @@ inputs:
   pnpm-version:
     description: 'pnpm version'
     required: false
-    default: '10.26.2'
+    default: '10.28.2'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v6.2.0
       with:
         node-version: ${{ inputs.node-version }}
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v4.2.0
       with:
         version: ${{ inputs.pnpm-version }}
 
@@ -39,12 +39,3 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
-
-
-
-
-
-
-
-
-

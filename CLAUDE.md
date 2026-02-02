@@ -4,7 +4,8 @@
 
 ```bash
 # Development
-pnpm dev | web | ios | android    # Start dev server
+pnpm dev                          # Start dev server + Supabase
+pnpm web | ios | android          # Platform-specific
 pnpm start:clean                  # Clear Metro cache
 
 # Quality (run before commit)
@@ -14,121 +15,191 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
 pnpm test                         # All tests (80% coverage required)
 pnpm test -- path/to/file.test.ts # Single file
 pnpm test -- -t "pattern"         # By name
-
-# Release (see Release Checklist section below)
+pnpm test:e2e                     # Playwright e2e tests
 ```
 
 ## Code Quality Requirements
 
-**Mandatory workflow after ANY code change:**
+**After ANY code change:**
 
 1. Write/update tests (TDD: RED → GREEN → REFACTOR)
 2. Run: `pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test`
-3. Visual verification for UI changes (use Chrome DevTools MCP)
-4. **Update CHANGELOG.md** - Add entry under `[Unreleased]` section (Added/Changed/Fixed/Removed)
+3. Visual verification for UI changes
+4. Update CHANGELOG.md for user-facing changes only
 5. Commit with conventional commits: `<type>(<scope>): <description>`
 
-**TDD is required** - write failing test first, then implementation.
+## Changelog
 
-## CHANGELOG Maintenance (CRITICAL)
+**Only document user-facing changes** - features, bug fixes users notice, deprecations, security fixes.
 
-**⚠️ AUTOMATIC UPDATE REQUIRED: After completing ANY task, IMMEDIATELY update CHANGELOG.md**
-
-The `[Unreleased]` section MUST be kept current at all times. This is non-negotiable.
-
-**Reference:** [Keep a Changelog v1.1.0](https://keepachangelog.com/en/1.1.0/)
-
-### Guiding Principles
-
-- **For humans, not machines** - Write clear, readable entries (not commit messages)
-- **Every change documented** - No selective recording; all changes matter
-- **Reverse chronological** - Newest entries at the top
-- **ISO 8601 dates** - Use `YYYY-MM-DD` format (e.g., 2025-12-17)
-
-### Change Categories
-
-```markdown
-## [Unreleased]
-
-### Added
-
-- New features, capabilities, components, files
-
-### Changed
-
-- Modifications to existing functionality, refactors, updates
-
-### Deprecated
-
-- Features marked for removal in upcoming releases
-
-### Removed
-
-- Deleted features, removed files, eliminated functionality
-
-### Fixed
-
-- Bug fixes, error corrections, issue resolutions
-
-### Security
-
-- Vulnerability patches, security improvements
-```
-
-### What to Avoid
-
-- ❌ Copying git commit messages verbatim
-- ❌ Omitting deprecation warnings
-- ❌ Using ambiguous date formats (MM/DD/YY)
-- ❌ Skipping "minor" changes
-
-### Examples of Good Entries
-
-- `- Add user authentication with Google Sign-In`
-- `- Update profile screen to display days sober count`
-- `- Deprecate legacy API v1 endpoints (removal in v3.0)`
-- `- Fix navigation crash on Android back button press`
-- `- Remove unused utility functions from helpers module`
-- `- Security: Migrate auth tokens to SecureStore`
-
-**Never skip this step.** The changelog is the project's memory of all changes.
+**Skip:** refactors, tests, CI/CD, docs, dependency updates, tooling changes.
 
 ## Architecture
 
-**Stack:** Expo Router v6 + Supabase + React Native + TypeScript
+**Stack:** Expo 54 + React Native 0.81 + Expo Router 6 + Supabase + TypeScript 5.9
 
-**Routing:** File-based in `app/`, auth flow in `app/_layout.tsx`:
+**Routing:** File-based in `app/`
 
-- Unauthenticated → `/login`
-- No profile → `/onboarding`
-- Complete → `/(tabs)`
+- `app/_layout.tsx` - Root layout, auth flow
+- `app/(app)/(tabs)/` - Main tab screens
+- Unauthenticated → `/login` → Onboarding → `/(tabs)`
 
-**State:** Context API only (AuthContext, ThemeContext) - no Redux/Zustand
+**State:** Context API only
 
-**Data:** Supabase client in `lib/supabase.ts`, types in `types/database.ts`
+- `AuthContext` - Authentication state
+- `ThemeContext` - Light/dark mode
+- `DevToolsContext` - Development tools
 
-**Auth:** Supabase Auth (email/password, Google, Apple)
+**Data:** `lib/supabase.ts` client, types in `types/database.ts`
 
 **Logging:** Use `logger` from `@/lib/logger` - never `console.log`
 
+**Analytics:** Amplitude with automatic PII stripping (see `lib/analytics-utils.ts`)
+
+**Error Tracking:** Sentry with privacy hooks (see `lib/sentry.ts`)
+
+## Sentry
+
+```typescript
+import { captureSentryException, setSentryUser, setSentryContext } from '@/lib/sentry';
+
+// Set user on login
+setSentryUser(userId);
+
+// Add context to events
+setSentryContext('feature', { name: 'tasks', action: 'create' });
+
+// Capture exceptions manually
+captureSentryException(error, { additionalContext: 'value' });
+```
+
+**Note:** Sentry is initialized in `app/_layout.tsx`. Privacy hooks strip PII automatically.
+
+## Theming
+
+Use semantic colors from `ThemeContext`, never raw `Palette` colors:
+
+```typescript
+const { theme } = useTheme();
+// ✅ theme.primary, theme.text, theme.background
+// ❌ Palette.iosBlue, '#007AFF'
+```
+
+**Font:** JetBrains Mono (Regular, Medium, SemiBold, Bold)
+
+## Bottom Sheets
+
+Use `GlassBottomSheet` wrapper (not raw `@gorhom/bottom-sheet`):
+
+```typescript
+import GlassBottomSheet, { GlassBottomSheetRef } from '@/components/GlassBottomSheet';
+
+const sheetRef = useRef<GlassBottomSheetRef>(null);
+
+// Open/close
+sheetRef.current?.present();
+sheetRef.current?.dismiss();
+
+<GlassBottomSheet
+  ref={sheetRef}
+  snapPoints={['50%', '90%']}
+  onDismiss={() => {}}
+  keyboardBehavior="interactive"  // For sheets with inputs
+>
+  <BottomSheetScrollView>
+    {/* Content */}
+  </BottomSheetScrollView>
+</GlassBottomSheet>
+```
+
+**Note:** Use `BottomSheetTextInput` for inputs inside sheets, not regular `TextInput`.
+
+## Keyboard Handling
+
+**For screens (login, signup, onboarding):**
+
+```typescript
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+
+<KeyboardAvoidingView
+  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  style={styles.container}
+>
+  <ScrollView contentContainerStyle={styles.scrollContent}>
+    {/* Form content */}
+  </ScrollView>
+</KeyboardAvoidingView>
+```
+
+**For complex forms (onboarding):**
+
+```typescript
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+
+<KeyboardAwareScrollView>
+  {/* Form with many inputs */}
+</KeyboardAwareScrollView>
+```
+
+**Note:** `KeyboardProvider` wraps the app in `_layout.tsx`.
+
+## Icons (Lucide)
+
+```typescript
+import { Heart, Eye, EyeOff, Plus, X } from 'lucide-react-native';
+
+<Heart size={24} color={theme.primary} />
+<Heart size={24} color={theme.primary} fill={theme.primary} />  // Filled
+```
+
+Browse icons: https://lucide.dev/icons
+
+## Component Organization
+
+```
+components/
+├── auth/           # Authentication (AppleSignInButton, SocialLogos)
+├── dashboard/      # Home screen cards
+├── navigation/     # Tab bar, nav components
+├── onboarding/     # Onboarding flow
+├── profile/        # Profile screen components
+├── settings/       # Settings content
+├── sheets/         # Bottom sheets (EditDisplayNameSheet, etc.)
+├── tasks/          # Task-related (TaskCard, TaskFilters)
+└── whats-new/      # Release notes UI
+```
+
+## Custom Hooks
+
+| Hook                | Purpose                            |
+| ------------------- | ---------------------------------- |
+| `useDaysSober`      | Calculate days since sobriety date |
+| `useTabBarPadding`  | Safe area padding for tab bar      |
+| `useFrameworkReady` | Expo framework initialization      |
+
 ## Supabase Schema
 
-| Table                           | Purpose                               |
-| ------------------------------- | ------------------------------------- |
-| `profiles`                      | User data, sobriety_date, preferences |
-| `sponsor_sponsee_relationships` | Mentor connections                    |
-| `tasks` / `task_completions`    | Recovery work items                   |
-| `milestones`                    | Sobriety tracking                     |
-| `messages` / `notifications`    | Communication                         |
-
-**Key concept:** Role is contextual per relationship (sponsor_id vs sponsee_id)
+| Table                           | Purpose                         |
+| ------------------------------- | ------------------------------- |
+| `profiles`                      | User data, sobriety_date, prefs |
+| `sponsor_sponsee_relationships` | Mentor connections              |
+| `tasks` / `task_completions`    | Recovery work items             |
+| `milestones`                    | Sobriety tracking               |
+| `messages` / `notifications`    | Communication                   |
 
 ## Testing
 
 - Tests in `__tests__/` mirroring source structure
 - Use `renderWithProviders()` from `__tests__/test-utils.tsx`
-- Mock Supabase, navigation, and Expo modules (configured in `jest.setup.js`)
-- 80% coverage enforced in CI
+- Mocks configured in `jest.setup.js`
+- E2E tests with Playwright in `e2e/`
+
+## Types
+
+| File                 | Purpose                               |
+| -------------------- | ------------------------------------- |
+| `types/database.ts`  | Supabase generated types (don't edit) |
+| `types/analytics.ts` | Amplitude event types                 |
 
 ## Environment Variables
 
@@ -146,114 +217,23 @@ EXPO_PUBLIC_SENTRY_DSN=xxx        # Production
 **Commits:** `<type>(<scope>): <description>`
 
 - Scopes: auth, journey, tasks, profile, supabase, theme, deps, config
-- Commit after each task, push only when ALL tasks complete
 
-**Never:** Force push to main/develop, skip typecheck, skip formatting, skip running tests, skip building, commit .env
+**Never:** Force push to main/develop, skip quality checks, commit .env
 
 ## Release Checklist
 
-Before creating a release, complete these 5 steps:
-
-### 1. Verify All Changes Committed
-
-```bash
-git status                        # Should show clean working tree
-git log --oneline -10             # Review recent commits
-```
-
-### 2. Run Full Quality Suite
-
-```bash
-pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test
-```
-
-All must pass with no errors.
-
-### 3. Update CHANGELOG.md
-
-Move all entries from `[Unreleased]` to the new version section:
-
-1. Create new version heading: `## [X.Y.Z] - YYYY-MM-DD`
-2. Move all content from `[Unreleased]` to the new version section
-3. Leave `[Unreleased]` section empty (ready for next cycle)
-4. Update comparison links at bottom of file
-
-```markdown
-## [Unreleased]
-
-## [X.Y.Z] - YYYY-MM-DD
-
-### Added
-
-- New feature description (moved from Unreleased)
-
-### Changed
-
-- Modified behavior description (moved from Unreleased)
-
-### Fixed
-
-- Bug fix description (moved from Unreleased)
-```
-
-### 4. Bump Version (Manual)
-
-Use semantic versioning (MAJOR.MINOR.PATCH):
-
-| Type      | When to Use                       |
-| --------- | --------------------------------- |
-| **PATCH** | Bug fixes, minor updates          |
-| **MINOR** | New features, backward-compatible |
-| **MAJOR** | Breaking changes                  |
-
-**Steps:**
-
-1. Update `version` in `package.json` (e.g., `"1.2.1"` → `"1.2.2"`)
-2. Update `version` in `app.config.ts` to match
-3. Stage and commit: `git add -A && git commit -m "vX.Y.Z"`
-4. Create tag: `git tag vX.Y.Z`
-5. Push with tags: `git push origin HEAD --tags`
-
-### 5. Create Release PR
-
-Create a pull request for the release:
-
-- **Title:** `vX.Y.Z` (the release version)
-- **Description:** Include the changelog entries for this release
-
-```bash
-gh pr create --title "vX.Y.Z" --body "$(cat <<'EOF'
-## Release vX.Y.Z
-
-### Added
-- Feature descriptions from CHANGELOG
-
-### Changed
-- Change descriptions from CHANGELOG
-
-### Fixed
-- Fix descriptions from CHANGELOG
-EOF
-)"
-```
-
-## Visual Verification (UI Changes)
-
-```bash
-pnpm web  # Start dev server
-# Then use Chrome DevTools MCP:
-# - navigate_page, take_snapshot, take_screenshot
-# - click, fill, list_console_messages
-# - Verify: no errors, correct layout, interactions work
-```
-
-Skip only for: docs-only, type-only, test-only, or config changes.
+1. `git status` - verify clean working tree
+2. `pnpm format && pnpm lint && pnpm typecheck && pnpm build:web && pnpm test`
+3. Move CHANGELOG `[Unreleased]` entries to new version section
+4. Bump version in `package.json` and `app.config.ts`
+5. Commit, tag, push: `git add -A && git commit -m "vX.Y.Z" && git tag vX.Y.Z && git push origin HEAD --tags`
+6. Create PR with changelog entries
 
 ## Common Pitfalls
 
 1. Wrap test components with `renderWithProviders`
 2. Use `@/` path alias for imports
-3. Types come from `types/database.ts` - don't edit generated types
+3. Types from `types/database.ts` - don't edit generated types
 4. Platform-specific code needs `Platform.OS` checks
 5. Metro issues → `pnpm start:clean`
 6. Use logger, not console (ESLint enforces)

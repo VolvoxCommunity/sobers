@@ -4,7 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import SettingsButton from '@/components/navigation/SettingsButton';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabase';
-import { UserStepProgress, SlipUp, Task } from '@/types/database';
+import {
+  UserStepProgress,
+  SlipUp,
+  Task,
+  UserMeeting,
+  UserMeetingMilestone,
+} from '@/types/database';
 import {
   Calendar,
   CheckCircle,
@@ -15,6 +21,8 @@ import {
   CheckSquare,
   ListChecks,
   Target,
+  MapPin,
+  Trophy,
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useDaysSober } from '@/hooks/useDaysSober';
@@ -28,7 +36,9 @@ type TimelineEventType =
   | 'step_completion'
   | 'milestone'
   | 'task_completion'
-  | 'task_milestone';
+  | 'task_milestone'
+  | 'meeting_logged'
+  | 'meeting_milestone';
 
 /**
  * Metadata types for different timeline event types.
@@ -55,7 +65,9 @@ interface TimelineEvent {
     | 'trending'
     | 'check-square'
     | 'list-checks'
-    | 'target';
+    | 'target'
+    | 'map-pin'
+    | 'trophy';
   color: string;
   metadata?: TimelineEventMetadata;
 }
@@ -84,6 +96,8 @@ export default function JourneyScreen() {
     slipUps: SlipUp[];
     stepProgress: UserStepProgress[];
     completedTasks: Task[];
+    meetings: UserMeeting[];
+    meetingMilestones: UserMeetingMilestone[];
   }
 
   const [timelineData, setTimelineData] = useState<TimelineRawData | null>(null);
@@ -132,10 +146,29 @@ export default function JourneyScreen() {
 
       if (tasksError) throw tasksError;
 
+      // 4. Fetch meetings
+      const { data: meetings, error: meetingsError } = await supabase
+        .from('user_meetings')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('attended_at', { ascending: false });
+
+      if (meetingsError) throw meetingsError;
+
+      // 5. Fetch meeting milestones
+      const { data: meetingMilestones, error: meetingMilestonesError } = await supabase
+        .from('user_meeting_milestones')
+        .select('*')
+        .eq('user_id', profile.id);
+
+      if (meetingMilestonesError) throw meetingMilestonesError;
+
       setTimelineData({
         slipUps: slipUps || [],
         stepProgress: stepProgress || [],
         completedTasks: completedTasks || [],
+        meetings: meetings || [],
+        meetingMilestones: meetingMilestones || [],
       });
     } catch (err) {
       logger.error('Timeline data fetch failed', err as Error, {
@@ -151,7 +184,7 @@ export default function JourneyScreen() {
   React.useEffect(() => {
     if (!profile || !timelineData) return;
 
-    const { slipUps, stepProgress, completedTasks } = timelineData;
+    const { slipUps, stepProgress, completedTasks, meetings, meetingMilestones } = timelineData;
     const timelineEvents: TimelineEvent[] = [];
 
     // 1. Sobriety start date
@@ -241,7 +274,55 @@ export default function JourneyScreen() {
       });
     }
 
-    // 6. Sobriety milestones
+    // 6. Meeting events
+    meetings.forEach((meeting) => {
+      const subtitle = [
+        meeting.location,
+        new Date(meeting.attended_at).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      ]
+        .filter(Boolean)
+        .join(' • ');
+
+      timelineEvents.push({
+        id: `meeting-${meeting.id}`,
+        type: 'meeting_logged',
+        date: new Date(meeting.attended_at),
+        title: meeting.meeting_name,
+        description: subtitle,
+        icon: 'map-pin',
+        color: theme.info,
+      });
+    });
+
+    // 7. Meeting milestones
+    meetingMilestones.forEach((milestone) => {
+      let title = '';
+      if (milestone.milestone_type === 'count') {
+        title =
+          milestone.milestone_value === 1
+            ? 'First Meeting!'
+            : `${milestone.milestone_value} Meetings`;
+      } else if (milestone.milestone_type === 'streak') {
+        title = '7-Day Meeting Streak!';
+      } else if (milestone.milestone_type === 'monthly') {
+        title = `${milestone.milestone_value} Meetings This Month`;
+      }
+
+      timelineEvents.push({
+        id: `meeting-milestone-${milestone.milestone_type}-${milestone.milestone_value}`,
+        type: 'meeting_milestone',
+        date: new Date(milestone.achieved_at),
+        title,
+        description: 'Meeting attendance milestone',
+        icon: 'trophy',
+        color: theme.award,
+      });
+    });
+
+    // 8. Sobriety milestones
     // IMPORTANT: Milestones are calculated from currentStreakStartDate (recovery restart date),
     // NOT from the original profile.sobriety_date. This is intentional:
     // - If user has slip-ups, milestones reset to their most recent recovery restart
@@ -313,6 +394,10 @@ export default function JourneyScreen() {
         return <Award size={size} color={color} />;
       case 'trending':
         return <TrendingUp size={size} color={color} />;
+      case 'map-pin':
+        return <MapPin size={size} color={color} />;
+      case 'trophy':
+        return <Trophy size={size} color={color} />;
       default:
         return <Calendar size={size} color={color} />;
     }

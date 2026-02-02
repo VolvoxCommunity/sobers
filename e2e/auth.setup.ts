@@ -11,6 +11,16 @@ setup('authenticate', async ({ page }) => {
     TEST_USERS.primary.email,
     TEST_USERS.primary.password
   );
+  await ensureTestUserExists(
+    TEST_USERS.sponsor.id,
+    TEST_USERS.sponsor.email,
+    TEST_USERS.sponsor.password
+  );
+  await ensureTestUserExists(
+    TEST_USERS.sponsee.id,
+    TEST_USERS.sponsee.email,
+    TEST_USERS.sponsee.password
+  );
 
   // Reset test data before running tests
   await resetTestData();

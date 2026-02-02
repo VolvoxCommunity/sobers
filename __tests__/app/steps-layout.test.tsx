@@ -1,96 +1,83 @@
 /**
- * @fileoverview Tests for app/(tabs)/steps/_layout.tsx
+ * @fileoverview Tests for app/(app)/(tabs)/program/steps/_layout.tsx
  *
  * Tests the steps navigation stack layout including:
  * - Stack navigator configuration
  * - Screen options and styling
  * - Header configuration
  * - Navigation structure
+ * - Program opt-out redirect
  */
 
-import React from 'react';
-import { View } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
-import StepsLayout from '@/app/(app)/(tabs)/steps/_layout';
+// =============================================================================
+// Imports
+// =============================================================================
 
-// Import useAuth after mock
-import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
+import { screen } from '@testing-library/react-native';
+import { renderWithProviders } from '@/__tests__/test-utils';
+import StepsLayout from '@/app/(app)/(tabs)/program/steps/_layout';
 
 // =============================================================================
 // Mocks
 // =============================================================================
 
 // Track screenOptions and screen configurations
-let capturedScreenOptions: Record<string, unknown> | null = null;
-const capturedScreens: { name: string; options?: Record<string, unknown> }[] = [];
+let mockCapturedScreenOptions: Record<string, unknown> | null = null;
+const mockCapturedScreens: { name: string; options?: Record<string, unknown> }[] = [];
 
-// Mock Stack component
-function MockStack({
-  children,
-  screenOptions,
-  ...props
-}: {
-  children: React.ReactNode;
-  screenOptions?: Record<string, unknown>;
-}) {
-  // Capture screenOptions for assertions
-  capturedScreenOptions = screenOptions || null;
-  return (
-    <View testID="stack-navigator" {...props}>
-      {children}
-    </View>
-  );
-}
-MockStack.displayName = 'MockStack';
+let mockShowProgramContent: boolean | undefined = true;
+let mockIsLoading = false;
 
-// Mock Screen component
-function MockScreen({ name, options }: { name: string; options?: Record<string, unknown> }) {
-  // Track screen configurations for assertions
-  capturedScreens.push({ name, options });
-  return <View testID={`stack-screen-${name}`} />;
-}
-MockScreen.displayName = 'MockScreen';
-
-// Attach Screen to Stack
-MockStack.Screen = MockScreen;
-
-// Mock router for redirect testing
-const mockReplace = jest.fn();
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    profile:
+      mockShowProgramContent === undefined
+        ? null
+        : { show_program_content: mockShowProgramContent },
+    loading: mockIsLoading,
+  }),
+}));
 
 // Mock expo-router Stack with Screen subcomponent
-jest.mock('expo-router', () => ({
-  Stack: MockStack,
-  useRouter: () => ({
-    replace: mockReplace,
-  }),
-}));
+jest.mock('expo-router', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require('react-native');
 
-// Mock profile for useAuth
-const mockProfile = {
-  id: 'test-user-id',
-  display_name: 'Test User',
-  sobriety_date: '2024-01-01',
-  show_twelve_step_content: true,
-};
+  // Mock Stack component
+  function MockStack({
+    children,
+    screenOptions,
+    ...props
+  }: {
+    children: React.ReactNode;
+    screenOptions?: Record<string, unknown>;
+  }) {
+    // Capture screenOptions for assertions
+    mockCapturedScreenOptions = screenOptions || null;
+    return React.createElement(View, { testID: 'stack-navigator', ...props }, children);
+  }
+  MockStack.displayName = 'MockStack';
 
-// Mock useAuth hook
-jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: jest.fn(() => ({
-    profile: mockProfile,
-  })),
-}));
+  // Mock Screen component
+  function MockScreen({ name, options }: { name: string; options?: Record<string, unknown> }) {
+    // Track screen configurations for assertions
+    mockCapturedScreens.push({ name, options });
+    return React.createElement(View, { testID: `stack-screen-${name}` });
+  }
+  MockScreen.displayName = 'MockScreen';
 
-// Mock ThemeContext
-jest.mock('@/contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      background: '#FFFFFF',
-      text: '#000000',
-      primary: '#007AFF',
-    },
-    isDark: false,
-  }),
-}));
+  // Attach Screen to Stack
+  MockStack.Screen = MockScreen;
+
+  return {
+    Stack: MockStack,
+    Redirect: ({ href }: { href: string }) =>
+      React.createElement(View, { testID: 'redirect', accessibilityLabel: href }),
+  };
+});
 
 // =============================================================================
 // Test Suite
@@ -99,24 +86,21 @@ jest.mock('@/contexts/ThemeContext', () => ({
 describe('StepsLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    capturedScreenOptions = null;
-    capturedScreens.length = 0;
-    mockReplace.mockClear();
-    // Default to showing 12-step content
-    (useAuth as jest.Mock).mockReturnValue({
-      profile: { ...mockProfile, show_twelve_step_content: true },
-    });
+    mockCapturedScreenOptions = null;
+    mockCapturedScreens.length = 0;
+    mockShowProgramContent = true;
+    mockIsLoading = false;
   });
 
   describe('rendering', () => {
     it('renders stack navigator', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders without errors', () => {
-      const { toJSON } = render(<StepsLayout />);
+      const { toJSON } = renderWithProviders(<StepsLayout />);
 
       expect(toJSON()).toBeTruthy();
     });
@@ -124,118 +108,72 @@ describe('StepsLayout', () => {
 
   describe('navigation structure', () => {
     it('configures Stack with headerShown false', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
-      expect(capturedScreenOptions).toEqual({ headerShown: false });
+      expect(mockCapturedScreenOptions).toEqual({ headerShown: false });
     });
 
     it('registers both index and detail screens', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
-      const screenNames = capturedScreens.map((s) => s.name);
+      const screenNames = mockCapturedScreens.map((s) => s.name);
       expect(screenNames).toContain('index');
       expect(screenNames).toContain('[id]');
     });
 
     it('configures detail screen with slide_from_right animation', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
-      const detailScreen = capturedScreens.find((s) => s.name === '[id]');
+      const detailScreen = mockCapturedScreens.find((s) => s.name === '[id]');
       expect(detailScreen?.options).toEqual({ animation: 'slide_from_right' });
     });
   });
 
   describe('header configuration', () => {
     it('hides headers globally via screenOptions', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
-      expect(capturedScreenOptions?.headerShown).toBe(false);
+      expect(mockCapturedScreenOptions?.headerShown).toBe(false);
     });
 
     it('handles dark theme rendering', () => {
-      // The component uses useTheme which is mocked at module level
-      // Dark theme rendering behavior is the same as light theme for this component
-      // since it only configures Stack navigation (no theme-dependent styles in this layout)
-      const { toJSON } = render(<StepsLayout />);
+      // The component uses useAuth which is mocked at module level
+      // Theme rendering is not affected since no theme values are used
+      const { toJSON } = renderWithProviders(<StepsLayout />);
       expect(toJSON()).toBeTruthy();
+    });
+  });
+
+  describe('program opt-out', () => {
+    it('redirects when program content is disabled', () => {
+      mockShowProgramContent = false;
+      renderWithProviders(<StepsLayout />);
+
+      expect(screen.getByTestId('redirect')).toBeTruthy();
+    });
+
+    it('does not redirect while auth is loading', () => {
+      mockShowProgramContent = false;
+      mockIsLoading = true;
+      renderWithProviders(<StepsLayout />);
+
+      expect(screen.queryByTestId('redirect')).toBeNull();
+      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
   });
 
   describe('edge cases', () => {
     it('renders with mocked theme values', () => {
-      render(<StepsLayout />);
+      renderWithProviders(<StepsLayout />);
 
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
 
     it('renders consistently across multiple renders', () => {
-      const { rerender } = render(<StepsLayout />);
+      const { rerender } = renderWithProviders(<StepsLayout />);
 
       rerender(<StepsLayout />);
 
-      expect(screen.getByTestId('stack-navigator')).toBeTruthy();
-    });
-  });
-
-  describe('redirect when 12-step content disabled', () => {
-    it('redirects to home when show_twelve_step_content is false', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).toHaveBeenCalledWith('/(app)/(tabs)');
-    });
-
-    it('does not redirect when show_twelve_step_content is true', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: true },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when show_twelve_step_content is undefined (existing users)', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: undefined },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when show_twelve_step_content is null (existing users)', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: null },
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('does not redirect when profile is null', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: null,
-      });
-
-      render(<StepsLayout />);
-
-      expect(mockReplace).not.toHaveBeenCalled();
-    });
-
-    it('renders stack navigator even when redirecting', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_twelve_step_content: false },
-      });
-
-      render(<StepsLayout />);
-
-      // The stack navigator should still render (redirect happens via useEffect)
       expect(screen.getByTestId('stack-navigator')).toBeTruthy();
     });
   });

@@ -50,8 +50,30 @@ export class EditSavingsSheet extends BasePage {
    * Save the current changes and wait for the sheet to close.
    */
   async save(): Promise<void> {
+    const whatsNewClose = this.page.getByTestId('whats-new-close-button');
+    const hasWhatsNew = await whatsNewClose.isVisible().catch(() => false);
+    if (hasWhatsNew) {
+      await whatsNewClose.click();
+      await whatsNewClose.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined);
+    }
+
     await this.saveButton.click();
-    // Wait for the sheet to close by waiting for the amount input to disappear
+    await this.expectToast('Savings tracking updated');
+
+    const isStillVisible = await this.amountInput.isVisible().catch(() => false);
+    if (isStillVisible) {
+      const hasWhatsNewAfterSave = await whatsNewClose.isVisible().catch(() => false);
+      if (hasWhatsNewAfterSave) {
+        await whatsNewClose.click();
+        await whatsNewClose.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined);
+      }
+      const backdrop = this.page.getByRole('button', { name: 'Bottom sheet backdrop' }).first();
+      const hasBackdrop = await backdrop.isVisible().catch(() => false);
+      if (hasBackdrop) {
+        await backdrop.click({ force: true });
+      }
+    }
+
     await this.amountInput.waitFor({ state: 'hidden', timeout: 10000 });
   }
 

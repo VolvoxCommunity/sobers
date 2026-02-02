@@ -98,3 +98,7 @@ pnpm start:clean      # Start with cleared Metro cache (when debugging import is
 - AuthContext provides: user, session, profile, loading, auth methods
 - ThemeContext provides: theme, isDark, setTheme (light/dark/system)
 - Mount status tracking with useRef prevents closure issues in async operations
+
+**Fast Apply:** IMPORTANT: Use `edit_file` over `str_replace` or full file writes. It works with partial code snippets—no need for full file content.
+
+**Warp Grep:** warp-grep is a subagent that takes in a search string and tries to find relevant context. Best practice is to use it at the beginning of codebase explorations to fast-track finding relevant files/lines. Do not use it to pinpoint keywords, but use it for broader semantic queries. "Find the XYZ flow", "How does XYZ work", "Where is XYZ handled?", "Where is <error message> coming from?"

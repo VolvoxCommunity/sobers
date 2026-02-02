@@ -115,7 +115,7 @@ export default function OnboardingScreen() {
 
   // Preferences state - initialize from profile to preserve existing preference on re-onboarding
   const [showTwelveStepContent, setShowTwelveStepContent] = useState(
-    () => profile?.show_twelve_step_content !== false
+    () => profile?.show_program_content !== false
   );
 
   // Savings tracking state (optional feature)
@@ -316,7 +316,7 @@ export default function OnboardingScreen() {
         // Capture the user's timezone for date calculations
         timezone: userTimezone,
         // Save 12-step content preference
-        show_twelve_step_content: showTwelveStepContent,
+        show_program_content: showTwelveStepContent,
         // Add spending data if enabled
         ...(isSavingsEnabled &&
           spendingAmount.trim() && {

@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Home, BookOpen, TrendingUp, CheckSquare, User } from 'lucide-react-native';
+import { Home, Compass, TrendingUp, CheckSquare, User } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SFSymbol } from 'sf-symbols-typescript';
@@ -17,7 +17,7 @@ import { NativeTabs } from '@/components/navigation/NativeBottomTabs';
 // Loaded via require() which Metro bundles as native image assets
 const androidIcons = {
   home: require('@/assets/icons/home.svg'),
-  book: require('@/assets/icons/book-open.svg'),
+  compass: require('@/assets/icons/compass.svg'),
   trending: require('@/assets/icons/trending-up.svg'),
   tasks: require('@/assets/icons/check-square.svg'),
   profile: require('@/assets/icons/user.svg'),
@@ -50,11 +50,11 @@ const tabRoutes: TabRoute[] = [
     icon: Home,
   },
   {
-    name: 'steps',
-    title: 'Steps',
-    sfSymbol: 'book.fill',
-    androidIconKey: 'book',
-    icon: BookOpen,
+    name: 'program',
+    title: 'Program',
+    sfSymbol: 'safari.fill',
+    androidIconKey: 'compass',
+    icon: Compass,
   },
   {
     name: 'journey',
@@ -92,15 +92,15 @@ export default function TabLayout(): React.ReactElement {
   const { theme, isDark } = useTheme();
   const { profile } = useAuth();
 
-  // Determine if Steps tab should be visible
-  // Show Steps tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
-  const showSteps = profile?.show_twelve_step_content !== false;
+  // Determine if Program tab should be visible
+  // Show Program tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
+  const shouldShowProgram = profile?.show_program_content !== false;
 
   // Filter tab routes for web navigation items only
   // Native tabs use tabBarItemHidden instead of conditional rendering
   const visibleTabRoutes = useMemo(() => {
-    return showSteps ? tabRoutes : tabRoutes.filter((route) => route.name !== 'steps');
-  }, [showSteps]);
+    return shouldShowProgram ? tabRoutes : tabRoutes.filter((route) => route.name !== 'program');
+  }, [shouldShowProgram]);
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {
@@ -157,8 +157,8 @@ export default function TabLayout(): React.ReactElement {
               Platform.OS === 'ios'
                 ? { sfSymbol: route.sfSymbol }
                 : androidIcons[route.androidIconKey],
-            // Hide Steps tab when user has disabled 12-step content
-            tabBarItemHidden: route.name === 'steps' && !showSteps,
+            // Hide Program tab when user has disabled 12-step content
+            tabBarItemHidden: route.name === 'program' && !shouldShowProgram,
           }}
         />
       ))}

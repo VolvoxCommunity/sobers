@@ -153,14 +153,14 @@ export default function StepDetailScreen() {
   const handlePreviousStep = () => {
     if (hasPrevious) {
       const prevStep = allSteps[currentIndex - 1];
-      router.push(`/steps/${prevStep.id}`);
+      router.push(`/program/steps/${prevStep.id}`);
     }
   };
 
   const handleNextStep = () => {
     if (hasNext) {
       const nextStep = allSteps[currentIndex + 1];
-      router.push(`/steps/${nextStep.id}`);
+      router.push(`/program/steps/${nextStep.id}`);
     }
   };
 
@@ -330,6 +330,7 @@ export default function StepDetailScreen() {
           {/* Step Navigation */}
           <View style={styles.navigation}>
             <Pressable
+              testID="step-detail-prev-button"
               onPress={handlePreviousStep}
               style={[styles.navButton, !hasPrevious && styles.navButtonDisabled]}
               disabled={!hasPrevious}
@@ -341,6 +342,7 @@ export default function StepDetailScreen() {
             </Pressable>
 
             <Pressable
+              testID="step-detail-next-button"
               onPress={handleNextStep}
               style={[styles.navButton, !hasNext && styles.navButtonDisabled]}
               disabled={!hasNext}

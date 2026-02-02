@@ -737,11 +737,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
     setIsSavingTwelveStep(true);
     try {
-      const currentValue = profile.show_twelve_step_content !== false;
+      const currentValue = profile.show_program_content !== false;
       const newValue = !currentValue;
       const { error } = await supabase
         .from('profiles')
-        .update({ show_twelve_step_content: newValue })
+        .update({ show_program_content: newValue })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -750,7 +750,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
 
       // Track settings change
       trackEvent(AnalyticsEvents.SETTINGS_CHANGED, {
-        setting: 'show_twelve_step_content',
+        setting: 'show_program_content',
         value: newValue,
       });
 
@@ -764,7 +764,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
     } finally {
       setIsSavingTwelveStep(false);
     }
-  }, [profile?.id, profile?.show_twelve_step_content, isSavingTwelveStep, refreshProfile]);
+  }, [profile?.id, profile?.show_program_content, isSavingTwelveStep, refreshProfile]);
 
   /**
    * Opens the sobriety date picker with the current sobriety date pre-selected.
@@ -1021,14 +1021,17 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             onPress={handleToggleTwelveStepContent}
             disabled={isSavingTwelveStep}
             accessibilityRole="switch"
-            accessibilityState={{ checked: profile?.show_twelve_step_content !== false }}
-            accessibilityLabel="Include 12-Step Content"
+            accessibilityState={{ checked: profile?.show_program_content !== false }}
+            accessibilityLabel="Show 12 Step Content"
           >
             <View style={styles.menuItemLeft}>
               <BookOpen size={20} color={theme.textSecondary} />
               <View>
-                <Text style={styles.menuItemText}>Include 12-Step Content</Text>
-                <Text style={styles.menuItemSubtext}>Show the 12 Steps tab</Text>
+                <Text style={styles.menuItemText}>Show 12 Step Content</Text>
+                <Text style={styles.menuItemSubtext}>
+                  Display the Program tab with steps, daily readings, prayers, literature, and
+                  meeting tracker
+                </Text>
               </View>
             </View>
             {isSavingTwelveStep ? (
@@ -1037,11 +1040,11 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
               <View
                 style={[
                   styles.toggle,
-                  profile?.show_twelve_step_content !== false && styles.toggleActive,
+                  profile?.show_program_content !== false && styles.toggleActive,
                 ]}
               >
                 <Text style={styles.toggleText}>
-                  {profile?.show_twelve_step_content !== false ? 'ON' : 'OFF'}
+                  {profile?.show_program_content !== false ? 'ON' : 'OFF'}
                 </Text>
               </View>
             )}
@@ -1662,6 +1665,7 @@ const createStyles = (theme: ReturnType<typeof useTheme>['theme']) =>
       backgroundColor: theme.card,
     },
     menuItemLeft: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,

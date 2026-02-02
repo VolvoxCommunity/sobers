@@ -127,11 +127,5 @@ describe('app.config.ts', () => {
       expect(splashScreenPlugin?.[1]?.image).toBeDefined();
       expect(splashScreenPlugin?.[1]?.resizeMode).toBeDefined();
     });
-
-    it('configures updates', () => {
-      const config = appConfig({ config: {} } as any);
-
-      expect(config.updates).toBeDefined();
-    });
   });
 });

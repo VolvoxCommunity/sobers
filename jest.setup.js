@@ -1,3 +1,6 @@
+// Set deterministic timezone for date/time tests
+process.env.TZ = 'UTC';
+
 // Mock React Native
 jest.mock('react-native', () => {
   const React = require('react');
@@ -633,7 +636,7 @@ jest.mock('@expo/vector-icons', () => {
 jest.mock('react-native-keyboard-controller', () => {
   const React = require('react');
   return {
-    KeyboardProvider: ({ children }) => children,
+    KeyboardProvider: ({ children }) => React.createElement(React.Fragment, null, children),
     KeyboardAwareScrollView: ({ children, ...props }) =>
       React.createElement('KeyboardAwareScrollView', props, children),
     KeyboardAvoidingView: ({ children, ...props }) =>

@@ -39,6 +39,10 @@ export async function initializePlatformAnalytics(config: AnalyticsConfig): Prom
   try {
     await amplitude.init(config.apiKey, undefined, {
       logLevel: isDebugMode() ? amplitude.Types.LogLevel.Warn : amplitude.Types.LogLevel.None,
+      trackingSessionEvents: true,
+      // Disable cookie storage - fixes "Cannot set property 'cookie' of undefined"
+      // error on native platforms. The SDK will use AsyncStorage instead.
+      disableCookies: true,
     }).promise;
 
     isInitialized = true;
