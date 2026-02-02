@@ -24,3 +24,51 @@
 *.woff2 binary
 *.ttf binary
 *.eot binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+
+# Executables and libraries
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Documents
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+
+# Video
+*.mp4 binary
+*.webm binary
+*.mov binary
+*.avi binary
+*.mkv binary
+
+# Audio
+*.mp3 binary
+*.wav binary
+
+# Java
+*.class binary
+*.jar binary
+*.war binary
+
+# Python compiled
+*.pyc binary
+*.pyo binary
+
+# Databases
+*.db binary
+*.sqlite binary
+
+# Other binary formats
+*.webp binary
+*.avif binary
+*.otf binary
+*.psd binary
