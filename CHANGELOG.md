@@ -11,15 +11,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add Program section replacing Steps tab with 5 sub-sections: Steps, Daily, Prayers, Literature, Meetings
 - Add horizontal top tabs navigation within Program section
+- Add sponsor/sponsee connection system with Intent & Ownership pattern
+- Add `ConnectionIntent` type with `not_looking`, `seeking_sponsor`, `open_to_sponsoring`, `open_to_both` options
+- Add `ConnectionIntentSelector` component for users to set their connection preferences on profile
+- Add `PersistentInviteCard` component showing active invite codes with expiration timer, copy, share, regenerate, and revoke actions
+- Add `SymmetricRevealSection` component for mutual consent contact sharing within relationships
+- Add `ExternalHandlesSection` in Settings for storing private contact info (Discord, Telegram, WhatsApp, Signal, Phone)
+- Add `external_handles` JSONB field to profiles for storing contact info privately
+- Add `sponsor_reveal_consent` and `sponsee_reveal_consent` columns to relationships for symmetric reveal
+- Add `revoked_at` and `intent` columns to invite_codes for better invite management
+- Add `FindSupportSection` component for opt-in matching to find sponsors/sponsees based on complementary intents
+- Add `connection_matches` table with bilateral acceptance pattern (both parties must accept to connect)
+- Add `find_potential_matches`, `accept_match`, and `reject_match` database functions for matching workflow
+- Add database migration with RLS policies for connection intent, external handles, symmetric reveal, and opt-in matching
 
 ### Changed
 
 - Move Steps screens from `/steps` to `/program/steps`
 - Update Settings toggle label from "Include 12-Step Content" to "Show 12-Step Program" with expanded description
+- Extract `getTimeRemaining` and `formatTimeRemaining` to shared `lib/time-utils.ts` (DRY refactor)
+- Extract `getPlatformIcon` and `getPlatformLabel` to shared `lib/platform-icons.tsx` (DRY refactor)
+- Extract `SheetInputComponent` to shared `lib/sheet-input.tsx` for platform-specific bottom sheet inputs
+- Improve `lib/platform-icons.tsx` organization with canonical section dividers
+- Enhance platform-icons test suite with size verification tests
+- Switch invite code generation to cryptographically secure `expo-crypto` (replacing `Math.random()`)
+- Memoize `handleConnectionIntentChange` with `useCallback` for performance optimization
+- Export `IconTheme` interface from `lib/platform-icons.tsx` for type safety
+- Strengthen `platformLabels` typing with `Record<PlatformKey, string>` constraint
+- Rename boolean props for consistency (myConsent → hasMyConsent, theirConsent → hasTheirConsent, disabled → isDisabled, loadingInviteCode → isLoadingInviteCode)
 
 ### Removed
 
 ### Fixed
+
+- Fix Steps tab still showing in native tab bar when 12-step content toggle is disabled
+- Fix bottom sheet text inputs not working on web by using platform-specific InputComponent pattern
+- Fix UPDATE policy missing `revoked_at` check in invite_codes RLS migration
+- Fix overly broad RLS policy for profile viewing via invite code, replaced with SECURITY DEFINER RPC
+- Fix UNIQUE constraint preventing sponsor/sponsee rematches after disconnect, converted to partial index
+- Fix external handles exposure in profile queries before consent check
+- Fix RLS violation when providers create connection matches directly
+- Fix external handles DB write on every keystroke, added debouncing with draft state
+- Fix timer showing stale values on mount, now updates immediately when expires_at changes
+- Fix clipboard copy errors not handled in PersistentInviteCard
+- Fix togglePlatform UI/data state mixing in ExternalHandlesSection
+- Fix flaky time-utils test by using deterministic fake timers
+- Fix import aliases not using @/ prefix in RelationshipCard and SettingsContent
+- Fix empty external handle values shown in SymmetricRevealSection
+- Fix timer display not showing minutes when hours = 0 in FindSupportSection
+- Fix potential memory leak in SymmetricRevealSection using ref-based mount guard pattern
 
 ## [1.3.0] - 2026-01-27
 

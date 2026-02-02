@@ -68,6 +68,25 @@ jest.mock('lucide-react-native', () => ({
   UserMinus: () => null,
   CheckCircle: () => null,
   Settings: () => null,
+  // ConnectionIntentSelector icons
+  Search: () => null,
+  Users: () => null,
+  UserPlus: () => null,
+  // PersistentInviteCard icons
+  Copy: () => null,
+  RefreshCw: () => null,
+  Trash2: () => null,
+  Clock: () => null,
+  Plus: () => null,
+  // SymmetricRevealSection icons
+  Eye: () => null,
+  EyeOff: () => null,
+  MessageCircle: () => null,
+  Phone: () => null,
+  Send: () => null,
+  Check: () => null,
+  Shield: () => null,
+  X: () => null,
 }));
 
 jest.mock('@/lib/logger', () => ({

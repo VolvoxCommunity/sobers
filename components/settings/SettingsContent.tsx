@@ -64,9 +64,11 @@ import { showConfirm } from '@/lib/alert';
 import { showToast } from '@/lib/toast';
 import { useWhatsNew } from '@/lib/whats-new';
 import { WhatsNewSheet, type WhatsNewSheetRef } from '@/components/whats-new';
+import ExternalHandlesSection from '@/components/settings/ExternalHandlesSection';
 import packageJson from '../../package.json';
 
 import type { SettingsContentProps } from './types';
+import type { ExternalHandles } from '@/types/database';
 import { EXTERNAL_LINKS, noop } from './constants';
 import { getBuildInfo, formatBuildInfoForCopy } from './utils';
 
@@ -490,6 +492,10 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const [isSavingTwelveStep, setIsSavingTwelveStep] = useState(false);
+  const [isSavingHandles, setIsSavingHandles] = useState(false);
+  // Draft state for external handles to allow immediate UI updates while debouncing DB writes
+  const [draftHandles, setDraftHandles] = useState<ExternalHandles | null>(null);
+  const handlesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
   const buildInfo = getBuildInfo();
@@ -765,6 +771,51 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       setIsSavingTwelveStep(false);
     }
   }, [profile?.id, profile?.show_program_content, isSavingTwelveStep, refreshProfile]);
+
+  /**
+   * Updates the user's external handles (Discord, Telegram, etc.).
+   * These are stored privately and only revealed with mutual consent.
+   * Uses debouncing to avoid DB writes on every keystroke.
+   */
+  const handleExternalHandlesChange = useCallback(
+    (handles: ExternalHandles) => {
+      if (!profile?.id) return;
+
+      // Update draft state immediately for responsive UI
+      setDraftHandles(handles);
+
+      // Clear existing debounce timeout
+      if (handlesDebounceRef.current) {
+        clearTimeout(handlesDebounceRef.current);
+      }
+
+      // Debounce the actual database write
+      handlesDebounceRef.current = setTimeout(async () => {
+        setIsSavingHandles(true);
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ external_handles: handles })
+            .eq('id', profile.id);
+
+          if (error) throw error;
+
+          await refreshProfile();
+          // Clear draft state after successful save
+          setDraftHandles(null);
+          // No toast - inline editing feels better without interruptions
+        } catch (error: unknown) {
+          logger.error('External handles update failed', error as Error, {
+            category: LogCategory.DATABASE,
+          });
+          showToast.error('Failed to save contact info');
+        } finally {
+          setIsSavingHandles(false);
+        }
+      }, 500);
+    },
+    [profile?.id, refreshProfile]
+  );
 
   /**
    * Opens the sobriety date picker with the current sobriety date pre-selected.
@@ -1076,6 +1127,14 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
           </Pressable>
         </View>
       </View>
+
+      {/* External Contacts Section */}
+      <ExternalHandlesSection
+        value={draftHandles ?? profile?.external_handles}
+        onChange={handleExternalHandlesChange}
+        theme={theme}
+        isSaving={isSavingHandles}
+      />
 
       {/* About Section */}
       <View style={styles.section}>

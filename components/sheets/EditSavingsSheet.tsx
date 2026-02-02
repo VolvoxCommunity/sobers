@@ -9,16 +9,9 @@ import React, {
   useRef,
   useMemo,
 } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { SheetInputComponent } from '@/lib/sheet-input';
 import { useTheme, type ThemeColors } from '@/contexts/ThemeContext';
 import { X, DollarSign } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
@@ -277,8 +270,6 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
       onClose();
     }, [onClose]);
 
-    const AmountInput = Platform.OS === 'web' ? TextInput : BottomSheetTextInput;
-
     // ---------------------------------------------------------------------------
     // Styles
     // ---------------------------------------------------------------------------
@@ -320,7 +311,7 @@ const EditSavingsSheet = forwardRef<EditSavingsSheetRef, EditSavingsSheetProps>(
             <Text style={styles.label}>Amount</Text>
             <View style={styles.amountInputContainer}>
               <DollarSign size={20} color={theme.textSecondary} style={styles.dollarIcon} />
-              <AmountInput
+              <SheetInputComponent
                 testID="edit-savings-amount-input"
                 style={styles.amountInput}
                 value={amount}

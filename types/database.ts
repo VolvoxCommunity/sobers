@@ -10,6 +10,33 @@ export type NotificationType =
   | 'connection_request'
   | 'task_completed';
 
+/**
+ * Status of a connection match proposal.
+ */
+export type MatchStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+
+/**
+ * User's stated intent for sponsor/sponsee connections.
+ * Used for opt-in matching and invite code context.
+ */
+export type ConnectionIntent =
+  | 'not_looking'
+  | 'seeking_sponsor'
+  | 'open_to_sponsoring'
+  | 'open_to_both';
+
+/**
+ * External platform handles for out-of-app communication.
+ * Only revealed with mutual consent per-connection.
+ */
+export interface ExternalHandles {
+  discord?: string;
+  telegram?: string;
+  whatsapp?: string;
+  signal?: string;
+  phone?: string;
+}
+
 // =============================================================================
 // Database Interfaces
 // =============================================================================
@@ -89,6 +116,16 @@ export interface Profile {
    * Existing users (null/undefined) are treated as true.
    */
   show_program_content?: boolean;
+  /**
+   * User's stated intent for sponsor/sponsee connections.
+   * Used for opt-in matching and invite code context.
+   */
+  connection_intent?: ConnectionIntent | null;
+  /**
+   * External platform handles stored privately.
+   * Only revealed with mutual consent per-connection.
+   */
+  external_handles?: ExternalHandles;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
@@ -106,6 +143,14 @@ export interface SponsorSponseeRelationship {
   status: RelationshipStatus;
   connected_at: string;
   disconnected_at?: string;
+  /**
+   * Whether sponsor has opted in to reveal their external handles to this sponsee.
+   */
+  sponsor_reveal_consent?: boolean;
+  /**
+   * Whether sponsee has opted in to reveal their external handles to this sponsor.
+   */
+  sponsee_reveal_consent?: boolean;
   created_at: string;
   sponsor?: Profile;
   sponsee?: Profile;
@@ -118,6 +163,14 @@ export interface InviteCode {
   expires_at: string;
   used_by?: string;
   used_at?: string;
+  /**
+   * Timestamp when the invite code was manually revoked by the sponsor.
+   */
+  revoked_at?: string | null;
+  /**
+   * The connection intent the sponsor had when creating this invite code.
+   */
+  intent?: ConnectionIntent | null;
   created_at: string;
   sponsor?: Profile;
 }
@@ -368,4 +421,49 @@ export interface TaskTemplate {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * A system-proposed match between a user seeking a sponsor and a potential sponsor.
+ * Part of the opt-in matching system where both parties must accept to connect.
+ *
+ * @remarks
+ * Matches are created when users with complementary intents are found:
+ * - seeking_sponsor ↔ open_to_sponsoring
+ * - open_to_both can match with either side
+ *
+ * Both seeker_accepted and provider_accepted must be true for a relationship to form.
+ */
+export interface ConnectionMatch {
+  id: string;
+  /** User with intent seeking_sponsor or open_to_both */
+  seeker_id: string;
+  /** User with intent open_to_sponsoring or open_to_both */
+  provider_id: string;
+  /** Seeker's acceptance: null=pending, true=accepted, false=rejected */
+  seeker_accepted: boolean | null;
+  /** Provider's acceptance: null=pending, true=accepted, false=rejected */
+  provider_accepted: boolean | null;
+  /** Overall match status */
+  status: MatchStatus;
+  /** Relationship ID created when both accept */
+  relationship_id?: string | null;
+  created_at: string;
+  /** Match expires after 7 days if not resolved */
+  expires_at: string;
+  /** Timestamp when match was resolved (accepted/rejected/expired) */
+  resolved_at?: string | null;
+  /** Joined seeker profile data */
+  seeker?: Profile;
+  /** Joined provider profile data */
+  provider?: Profile;
+}
+
+/**
+ * Result from find_potential_matches database function.
+ */
+export interface PotentialMatch {
+  matched_user_id: string;
+  matched_intent: ConnectionIntent;
+  display_name: string | null;
 }
