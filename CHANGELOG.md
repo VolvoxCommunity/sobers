@@ -32,12 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extract `getTimeRemaining` and `formatTimeRemaining` to shared `lib/time-utils.ts` (DRY refactor)
 - Extract `getPlatformIcon` and `getPlatformLabel` to shared `lib/platform-icons.tsx` (DRY refactor)
 - Extract `SheetInputComponent` to shared `lib/sheet-input.tsx` for platform-specific bottom sheet inputs
-- Add canonical section dividers to `lib/platform-icons.tsx` for better code organization
-- Add size verification tests to platform-icons test suite
-- Replace `Math.random()` with cryptographically secure `expo-crypto` for invite code generation
+- Improve `lib/platform-icons.tsx` organization with canonical section dividers
+- Enhance platform-icons test suite with size verification tests
+- Switch invite code generation to cryptographically secure `expo-crypto` (replacing `Math.random()`)
 - Memoize `handleConnectionIntentChange` with `useCallback` for performance optimization
 - Export `IconTheme` interface from `lib/platform-icons.tsx` for type safety
 - Strengthen `platformLabels` typing with `Record<PlatformKey, string>` constraint
+- Rename boolean props for consistency (myConsent → hasMyConsent, theirConsent → hasTheirConsent, disabled → isDisabled, loadingInviteCode → isLoadingInviteCode)
 
 ### Removed
 

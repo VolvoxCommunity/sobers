@@ -113,6 +113,7 @@ export default function SymmetricRevealSection({
 
     if (revealState !== 'mutual') {
       setOtherHandles({});
+      setIsLoadingHandles(false);
       return;
     }
 
