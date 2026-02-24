@@ -28,6 +28,12 @@ describe('MeetingsCalendar', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-01-25T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('renders month and year header', () => {
