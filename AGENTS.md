@@ -42,6 +42,13 @@ pnpm start:clean      # Start with cleared Metro cache (when debugging import is
 - Storage adapter handles SSR gracefully (no-op during server-side rendering)
 - Client auto-refreshes tokens and persists sessions across app restarts
 
+**Daily Reflections Flow:**
+
+- Program `Daily` tab uses Supabase Edge Function `daily-reflection` (not direct AA API calls from app code)
+- Edge Function is cache-first against `public.daily_readings` (`program='aa'`, `month`, `day`)
+- On cache miss, function fetches `https://www.aa.org/api/reflections/MM/DD`, parses HTML payload, and upserts cache
+- Date mismatches from AA payload (rollover day) are treated as errors to prevent incorrect reflection display
+
 **Role System:**
 
 - No role field in profiles - users can be both sponsors and sponsees

@@ -78,6 +78,22 @@ pnpm android  # Android
 | `pnpm build:web`   | Build static web export       |
 | `pnpm start:clean` | Clear Metro cache and restart |
 
+## Daily Reflections (AA)
+
+- The Program `Daily` tab reads from the Supabase Edge Function `daily-reflection`.
+- Function flow:
+
+1. Read `public.daily_readings` cache for (`program='aa'`, `month`, `day`).
+2. On cache miss, fetch `https://www.aa.org/api/reflections/MM/DD`, parse response HTML, and upsert cache.
+
+```bash
+# Serve function locally
+supabase functions serve daily-reflection --env-file .env.local
+
+# Deploy function
+supabase functions deploy daily-reflection
+```
+
 ## Project Structure
 
 ```
@@ -92,13 +108,14 @@ app/                      # Expo Router screens
         ├── tasks.tsx     # Task management
         ├── journey.tsx   # Recovery timeline
         ├── profile.tsx   # User profile
-        └── steps/        # 12-step content
+        └── program/      # 12-step program section (steps, daily, prayers, meetings)
 components/               # Reusable UI components
 contexts/                 # AuthContext, ThemeContext
 hooks/                    # Custom React hooks
 lib/                      # Utilities (supabase, logger, etc.)
 types/                    # TypeScript types
 supabase/                 # Database migrations
+└── functions/            # Supabase Edge Functions
 e2e/                      # Playwright E2E tests
 __tests__/                # Jest unit tests
 ```

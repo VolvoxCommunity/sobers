@@ -18,6 +18,7 @@
     "**/__tests__/**/*",
     "**/*.test.ts",
     "**/*.test.tsx",
+    "supabase/functions/**/*",
     "dist",
     ".expo",
     ".expo-shared",
