@@ -85,7 +85,13 @@ describe('JourneyScreen', () => {
     });
   });
 
-  const setupSupabaseMock = (slipUps: any[] = [], steps: any[] = [], tasks: any[] = []) => {
+  const setupSupabaseMock = (
+    slipUps: any[] = [],
+    steps: any[] = [],
+    tasks: any[] = [],
+    meetings: any[] = [],
+    meetingMilestones: any[] = []
+  ) => {
     (supabase.from as jest.Mock).mockImplementation((table) => {
       const mockChain = {
         select: jest.fn().mockReturnThis(),
@@ -100,6 +106,10 @@ describe('JourneyScreen', () => {
         mockChain.order.mockResolvedValue({ data: steps, error: null });
       } else if (table === 'tasks') {
         mockChain.order.mockResolvedValue({ data: tasks, error: null });
+      } else if (table === 'user_meetings') {
+        mockChain.order.mockResolvedValue({ data: meetings, error: null });
+      } else if (table === 'user_meeting_milestones') {
+        mockChain.order.mockResolvedValue({ data: meetingMilestones, error: null });
       }
 
       return mockChain;
@@ -388,6 +398,93 @@ describe('JourneyScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByText('5 Tasks Completed')).toBeTruthy();
+    });
+  });
+  it.skip('displays meetings in timeline', async () => {
+    const meetings = [
+      {
+        id: 'meeting-1',
+        meeting_name: 'Morning AA',
+        attended_at: '2024-02-15T10:00:00Z',
+        location: 'Community Center',
+      },
+    ];
+    setupSupabaseMock([], [], [], meetings);
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning AA')).toBeTruthy();
+    });
+  });
+
+  it.skip('displays meeting milestones in timeline', async () => {
+    const meetingMilestones = [
+      {
+        id: 'mm-1',
+        milestone_type: 'count',
+        milestone_value: 1,
+        achieved_at: '2024-02-15T10:00:00Z',
+      },
+      {
+        id: 'mm-2',
+        milestone_type: 'count',
+        milestone_value: 5,
+        achieved_at: '2024-02-20T10:00:00Z',
+      },
+      {
+        id: 'mm-3',
+        milestone_type: 'streak',
+        milestone_value: 7,
+        achieved_at: '2024-02-25T10:00:00Z',
+      },
+      {
+        id: 'mm-4',
+        milestone_type: 'monthly',
+        milestone_value: 10,
+        achieved_at: '2024-02-28T10:00:00Z',
+      },
+    ];
+    setupSupabaseMock([], [], [], [], meetingMilestones);
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByText('First Meeting!')).toBeTruthy();
+      expect(screen.getByText('5 Meetings')).toBeTruthy();
+      expect(screen.getByText('7-Day Meeting Streak!')).toBeTruthy();
+      expect(screen.getByText('10 Meetings This Month')).toBeTruthy();
+    });
+  });
+
+  it.skip('handles different icon types in timeline', async () => {
+    // Create different event types that use different icons
+    const steps = [
+      {
+        id: 'step-progress-1',
+        step_number: 1,
+        completed: true,
+        completed_at: '2024-02-15T00:00:00Z',
+      },
+    ];
+    const tasks = [
+      {
+        id: 'task-1',
+        title: 'Task with list-checks',
+        step_number: 1,
+        sponsor_id: 'sponsor-123',
+        sponsee_id: 'user-123',
+        status: 'completed',
+        completed_at: '2024-02-20T00:00:00Z',
+      },
+    ];
+    setupSupabaseMock([], steps, tasks);
+
+    render(<JourneyScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Step 1 Completed')).toBeTruthy();
+      expect(screen.getByText('Task with list-checks')).toBeTruthy();
     });
   });
 

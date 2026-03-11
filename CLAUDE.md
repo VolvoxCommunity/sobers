@@ -36,7 +36,7 @@ pnpm test:e2e                     # Playwright e2e tests
 
 ## Architecture
 
-**Stack:** Expo 54 + React Native 0.81 + Expo Router 6 + Supabase + TypeScript 5.9
+**Stack:** Expo 55 + React Native 0.83 + Expo Router 55 + Supabase + TypeScript 5.9
 
 **Routing:** File-based in `app/`
 

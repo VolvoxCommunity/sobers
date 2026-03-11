@@ -233,6 +233,7 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
                 style={styles.deleteButton}
                 onPress={handleDelete}
                 disabled={isSubmitting}
+                testID="delete-button"
               >
                 <Trash2 size={20} color={theme.danger} />
               </TouchableOpacity>
@@ -243,7 +244,7 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator testID="submit-loading" size="small" color="#fff" />
               ) : (
                 <Text style={styles.submitText}>{isEditing ? 'Save Changes' : 'Log Meeting'}</Text>
               )}
@@ -267,7 +268,7 @@ const LogMeetingSheet = forwardRef<LogMeetingSheetRef, LogMeetingSheetProps>(
             <MapPin size={24} color={theme.primary} />
           </View>
           <Text style={styles.title}>{isEditing ? 'Edit Meeting' : 'Log Meeting'}</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton} testID="close-button">
             <X size={24} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>

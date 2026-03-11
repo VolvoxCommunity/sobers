@@ -7,9 +7,11 @@ import {
   Share,
   Platform,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareScrollViewRef,
+} from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,7 +48,7 @@ export default function ProfileScreen() {
   const scrollPadding = useTabBarPadding();
   const logSlipUpSheetRef = useRef<LogSlipUpSheetRef>(null);
   const inviteCodeSheetRef = useRef<EnterInviteCodeSheetRef>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<KeyboardAwareScrollViewRef>(null);
   const [sponsorRelationships, setSponsorRelationships] = useState<SponsorSponseeRelationship[]>(
     []
   );

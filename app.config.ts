@@ -31,7 +31,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/images/logo.png',
   version: '1.3.0',
   orientation: 'portrait',
-  newArchEnabled: true,
   // ===========================================================================
   // iOS Configuration
   // ===========================================================================
@@ -57,7 +56,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundImage: './assets/images/logo.png',
       monochromeImage: './assets/images/logo.png',
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
   },
   web: {
@@ -78,7 +76,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-secure-store',
     'expo-web-browser',
-    'expo-build-properties',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          buildReactNativeFromSource: true,
+          useHermesV1: true,
+        },
+        android: {
+          buildReactNativeFromSource: true,
+          useHermesV1: true,
+        },
+      },
+    ],
     [
       'expo-splash-screen',
       {
@@ -99,8 +109,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         organization: 'volvox',
       },
     ],
-    // Edge-to-edge with Material 3 theme for native Android bottom tabs
-    // This replaces the standalone react-native-bottom-tabs plugin when edgeToEdgeEnabled is true
+    // Material 3 theme for native Android bottom tabs (edge-to-edge is mandatory in SDK 55)
     ['react-native-edge-to-edge', { android: { parentTheme: 'Material3' } }],
   ],
   experiments: {
@@ -112,6 +121,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // ===========================================================================
   updates: {
     url: 'https://u.expo.dev/d17ee0bf-d2d6-4a29-9348-8dc79fffb815',
+    enableBsdiffPatchSupport: true,
   },
   runtimeVersion: {
     policy: 'appVersion',

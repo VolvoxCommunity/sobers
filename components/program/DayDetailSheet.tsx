@@ -79,7 +79,7 @@ const DayDetailSheet = forwardRef<DayDetailSheetRef, DayDetailSheetProps>(
             <Calendar size={24} color={theme.primary} />
           </View>
           <Text style={styles.title}>{formattedDate}</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton} testID="close-button">
             <X size={24} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
