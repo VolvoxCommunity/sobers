@@ -18,15 +18,15 @@ jest.mock('@/contexts/ThemeContext', () => ({
   useTheme: () => mockUseTheme(),
 }));
 
-// Mock expo-blur - pass through tint and intensity for testing
+// Mock expo-blur - pass through tint, intensity, and testID for testing
 jest.mock('expo-blur', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    BlurView: ({ children, intensity, tint, style, ...props }: any) =>
+    BlurView: ({ children, intensity, tint, style, testID, ...props }: any) =>
       React.createElement(
         View,
-        { testID: 'blur-view', style, intensity, tint, ...props },
+        { testID: testID ?? 'blur-view', style, intensity, tint, ...props },
         children
       ),
   };
@@ -64,7 +64,7 @@ describe('TabBarBackground', () => {
 
     it('renders BlurView on iOS', () => {
       const { getByTestId } = render(<TabBarBackground />);
-      expect(getByTestId('blur-view')).toBeTruthy();
+      expect(getByTestId('tab-bar-blur-view')).toBeTruthy();
     });
 
     it('renders BlurView with light tint in light mode', () => {
@@ -74,7 +74,7 @@ describe('TabBarBackground', () => {
       });
 
       const { getByTestId } = render(<TabBarBackground />);
-      const blurView = getByTestId('blur-view');
+      const blurView = getByTestId('tab-bar-blur-view');
       expect(blurView).toBeTruthy();
       expect(blurView.props.tint).toBe('light');
     });
@@ -86,14 +86,14 @@ describe('TabBarBackground', () => {
       });
 
       const { getByTestId } = render(<TabBarBackground />);
-      const blurView = getByTestId('blur-view');
+      const blurView = getByTestId('tab-bar-blur-view');
       expect(blurView).toBeTruthy();
       expect(blurView.props.tint).toBe('dark');
     });
 
     it('renders BlurView with correct intensity', () => {
       const { getByTestId } = render(<TabBarBackground />);
-      const blurView = getByTestId('blur-view');
+      const blurView = getByTestId('tab-bar-blur-view');
       expect(blurView.props.intensity).toBe(80);
     });
   });
@@ -106,46 +106,62 @@ describe('TabBarBackground', () => {
       });
     });
 
-    it('renders solid View on Android (no blur)', () => {
-      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
-      // Android should NOT render BlurView - it uses a solid View instead
-      expect(queryByTestId('blur-view')).toBeNull();
-      // Android should render its dedicated View
-      expect(getByTestId('tab-bar-background-android')).toBeTruthy();
+    it('renders BlurView on Android (tinted overlay fallback)', () => {
+      const { getByTestId } = render(<TabBarBackground />);
+      expect(getByTestId('tab-bar-blur-view')).toBeTruthy();
     });
 
-    it('uses theme surface color for Android background in light mode', () => {
-      const lightSurface = '#f5f5f5';
+    it('renders BlurView with light tint in light mode on Android', () => {
       mockUseTheme.mockReturnValue({
         isDark: false,
-        theme: { surface: lightSurface },
+        theme: { surface: '#ffffff' },
       });
 
-      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
-      // Android should NOT render BlurView
-      expect(queryByTestId('blur-view')).toBeNull();
-      // Verify the background color matches theme.surface
-      const androidView = getByTestId('tab-bar-background-android');
-      expect(androidView.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ backgroundColor: lightSurface })])
-      );
+      const { getByTestId } = render(<TabBarBackground />);
+      const blurView = getByTestId('tab-bar-blur-view');
+      expect(blurView.props.tint).toBe('light');
+      expect(blurView.props.intensity).toBe(80);
     });
 
-    it('uses theme surface color for Android background in dark mode', () => {
-      const darkSurface = '#1a1a1a';
+    it('renders BlurView with dark tint in dark mode on Android', () => {
       mockUseTheme.mockReturnValue({
         isDark: true,
-        theme: { surface: darkSurface },
+        theme: { surface: '#1a1a1a' },
       });
 
-      const { queryByTestId, getByTestId } = render(<TabBarBackground />);
-      // Android should NOT render BlurView regardless of dark mode
-      expect(queryByTestId('blur-view')).toBeNull();
-      // Verify the background color matches theme.surface
-      const androidView = getByTestId('tab-bar-background-android');
-      expect(androidView.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ backgroundColor: darkSurface })])
-      );
+      const { getByTestId } = render(<TabBarBackground />);
+      const blurView = getByTestId('tab-bar-blur-view');
+      expect(blurView.props.tint).toBe('dark');
+      expect(blurView.props.intensity).toBe(80);
+    });
+  });
+
+  describe('cross-platform consistency', () => {
+    it('uses the same BlurView component on both iOS and Android', () => {
+      // Render on iOS
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'ios',
+        configurable: true,
+      });
+      const { getByTestId: getByTestIdIOS } = render(<TabBarBackground />);
+      const iosBlurView = getByTestIdIOS('tab-bar-blur-view');
+
+      // Render on Android
+      Object.defineProperty(Platform, 'OS', {
+        get: () => 'android',
+        configurable: true,
+      });
+      const { getByTestId: getByTestIdAndroid } = render(<TabBarBackground />);
+      const androidBlurView = getByTestIdAndroid('tab-bar-blur-view');
+
+      // Both should use the same tint and intensity
+      expect(iosBlurView.props.tint).toBe(androidBlurView.props.tint);
+      expect(iosBlurView.props.intensity).toBe(androidBlurView.props.intensity);
+    });
+
+    it('has a testID for identification', () => {
+      const { getByTestId } = render(<TabBarBackground />);
+      expect(getByTestId('tab-bar-blur-view')).toBeTruthy();
     });
   });
 });

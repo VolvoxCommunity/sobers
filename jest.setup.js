@@ -502,17 +502,6 @@ jest.mock('@/lib/alert/platform', () => {
   };
 });
 
-// Mock react-native-bottom-tabs
-jest.mock('react-native-bottom-tabs', () => {
-  const React = require('react');
-  return {
-    createNativeBottomTabNavigator: () => ({
-      Navigator: ({ children, ...props }) => React.createElement('TabNavigator', props, children),
-      Screen: ({ children, ...props }) => React.createElement('TabScreen', props, children),
-    }),
-  };
-});
-
 // Mock @gorhom/bottom-sheet
 jest.mock('@gorhom/bottom-sheet', () => {
   const React = require('react');

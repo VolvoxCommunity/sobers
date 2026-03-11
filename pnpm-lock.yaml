@@ -6,6 +6,7 @@ settings:
 
 overrides:
   '@react-native-async-storage/async-storage': ^2.2.0
+  hermes-compiler: 250829098.0.4
 
 importers:
 
@@ -86,6 +87,9 @@ importers:
       expo-constants:
         specifier: ~55.0.7
         version: 55.0.7(expo@55.0.5)(react-native@0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(typescript@5.9.3)
+      expo-crypto:
+        specifier: ~55.0.9
+        version: 55.0.9(expo@55.0.5)
       expo-dev-client:
         specifier: ~55.0.13
         version: 55.0.13(expo@55.0.5)(typescript@5.9.3)
@@ -3434,8 +3438,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hermes-compiler@0.14.1:
-    resolution: {integrity: sha512-+RPPQlayoZ9n6/KXKt5SFILWXCGJ/LV5d24L5smXrvTDrPS4L6dSctPczXauuvzFP3QEJbD1YO7Z3Ra4a+4IhA==}
+  hermes-compiler@250829098.0.4:
+    resolution: {integrity: sha512-8PEHLTuGOXUAnv2zByUG7Vud0TbU21fPuVqlMuek8PZgdYwb7KFWjw3+6In9J93Tx/6c/nRf5I30vzbaHBlgAQ==}
 
   hermes-estree@0.32.0:
     resolution: {integrity: sha512-KWn3BqnlDOl97Xe1Yviur6NbgIZ+IP+UVSpshlZWkq+EtoHg6/cwiDj/osP9PCEgFE15KBm1O55JRwbMEm5ejQ==}
@@ -9537,7 +9541,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hermes-compiler@0.14.1: {}
+  hermes-compiler@250829098.0.4: {}
 
   hermes-estree@0.32.0: {}
 
@@ -11314,7 +11318,7 @@ snapshots:
       commander: 12.1.0
       flow-enums-runtime: 0.0.6
       glob: 7.2.3
-      hermes-compiler: 0.14.1
+      hermes-compiler: 250829098.0.4
       invariant: 2.2.4
       jest-environment-node: 29.7.0
       memoize-one: 5.2.1

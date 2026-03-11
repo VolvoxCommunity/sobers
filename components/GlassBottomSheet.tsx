@@ -16,14 +16,16 @@ import { useTheme } from '@/contexts/ThemeContext';
 // =============================================================================
 
 /**
- * Backdrop opacity for iOS - lighter for glass-like effect with blur.
+ * Backdrop opacity for native platforms (iOS/Android) - lighter for glass-like effect.
+ * expo-blur provides blur on iOS and a tinted overlay on Android, both benefiting
+ * from a lighter backdrop.
  */
-const IOS_BACKDROP_OPACITY = 0.3;
+const NATIVE_BACKDROP_OPACITY = 0.3;
 
 /**
- * Backdrop opacity for Android/other platforms - higher opacity since no blur is used.
+ * Backdrop opacity for web/other platforms - higher opacity since no native blur is available.
  */
-const DEFAULT_BACKDROP_OPACITY = 0.5;
+const WEB_BACKDROP_OPACITY = 0.5;
 
 // =============================================================================
 // Types & Interfaces
@@ -135,7 +137,8 @@ export interface GlassBottomSheetProps {
  * Features:
  * - Platform-specific styling:
  *   - iOS: Blur backdrop with translucent glass background
- *   - Android: Solid surface color with elevation (no blur for performance)
+ *   - Android: Translucent glass background with elevation (expo-blur tinted overlay)
+ *   - Web: Solid surface color with higher-opacity backdrop
  * - Imperative API via ref: present(), dismiss(), snapToIndex()
  * - Theme-aware colors from ThemeContext
  * - Configurable snap points and keyboard behavior
@@ -238,8 +241,8 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
     // ---------------------------------------------------------------------------
     /**
      * Renders platform-specific backdrop.
-     * - iOS: BottomSheetBackdrop with reduced opacity for glass effect
-     * - Android: Standard backdrop with opacity
+     * - Native (iOS/Android): BottomSheetBackdrop with reduced opacity for glass effect
+     * - Web: Standard backdrop with higher opacity
      *
      * Note: We use BottomSheetBackdrop on all platforms to ensure proper
      * gesture handling. The BlurView approach was causing double-tap issues
@@ -249,7 +252,7 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
       (props: BottomSheetBackdropProps) => (
         <BottomSheetBackdrop
           {...props}
-          opacity={Platform.OS === 'ios' ? IOS_BACKDROP_OPACITY : DEFAULT_BACKDROP_OPACITY}
+          opacity={Platform.OS === 'web' ? WEB_BACKDROP_OPACITY : NATIVE_BACKDROP_OPACITY}
           appearsOnIndex={0}
           disappearsOnIndex={-1}
           pressBehavior="close"
@@ -263,21 +266,20 @@ const GlassBottomSheet = forwardRef<GlassBottomSheetRef, GlassBottomSheetProps>(
     // ---------------------------------------------------------------------------
     /**
      * Platform-specific background style.
-     * - iOS: Translucent glass with blur
-     * - Android: Solid surface color with elevation
+     * - iOS/Android: Translucent glass effect using theme's glassFallback color
+     * - Web/other: Solid surface color with elevation
      */
     const backgroundStyle: ViewStyle = useMemo(() => {
-      if (Platform.OS === 'ios') {
-        // Translucent glass effect for iOS using theme's glassFallback color
+      if (Platform.OS === 'web') {
         return {
-          backgroundColor: theme.glassFallback,
+          backgroundColor: theme.surface,
         };
       }
 
-      // Solid background for Android (no blur for performance)
+      // Translucent glass effect for native platforms
       return {
-        backgroundColor: theme.surface,
-        elevation: 8,
+        backgroundColor: theme.glassFallback,
+        ...(Platform.OS === 'android' && { elevation: 8 }),
       };
     }, [theme.glassFallback, theme.surface]);
 

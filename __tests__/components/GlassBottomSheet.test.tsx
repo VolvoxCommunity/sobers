@@ -203,7 +203,7 @@ describe('GlassBottomSheet', () => {
         configurable: true,
       });
       const { getByTestId } = renderWithProviders(<GlassBottomSheet {...defaultProps} />);
-      // Android uses the same backdrop component but with higher opacity (0.5)
+      // Android uses the same backdrop component with glass-like opacity (0.3)
       expect(getByTestId('bottom-sheet-backdrop')).toBeTruthy();
     });
   });

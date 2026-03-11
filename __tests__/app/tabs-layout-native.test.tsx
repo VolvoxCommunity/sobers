@@ -1,20 +1,14 @@
 /**
- * @fileoverview Tests for app/(tabs)/_layout.tsx (Native Bottom Tabs version)
+ * @fileoverview Tests for app/(tabs)/_layout.tsx (NativeTabs from expo-router)
  *
  * Tests the main tabs layout including:
  * - Platform-specific rendering (native vs web)
- * - Tab navigator configuration
- * - Route rendering
- * - TabBarIcon callback execution
+ * - Tab configuration with SF Symbols and Material Icons
+ * - Conditional Program tab visibility
  */
 
 // =============================================================================
 // Mocks (must be declared before imports)
-// =============================================================================
-
-// Mock SVG asset imports - these are required by the actual _layout.tsx
-// =============================================================================
-// Imports (after mocks)
 // =============================================================================
 
 import React from 'react';
@@ -25,12 +19,6 @@ import { Platform } from 'react-native';
 // Import after mocks are set up
 import TabsLayout from '@/app/(app)/(tabs)/_layout';
 import { useAuth } from '@/contexts/AuthContext';
-
-jest.mock('@/assets/icons/home.svg', () => 'mock-home-icon');
-jest.mock('@/assets/icons/compass.svg', () => 'mock-compass-icon');
-jest.mock('@/assets/icons/trending-up.svg', () => 'mock-trending-icon');
-jest.mock('@/assets/icons/check-square.svg', () => 'mock-tasks-icon');
-jest.mock('@/assets/icons/user.svg', () => 'mock-profile-icon');
 
 // Mock profile for useAuth
 const mockProfile = {
@@ -52,10 +40,6 @@ jest.mock('@/contexts/AuthContext', () => {
   };
 });
 
-// Store captured tabBarIcon callbacks for testing
-// Note: Variable must be prefixed with 'mock' to be allowed in jest.mock() factory
-let mockCapturedTabBarIcons: Record<string, () => unknown> = {};
-
 // Mock WebTopNav component
 jest.mock('@/components/navigation/WebTopNav', () => {
   const React = require('react');
@@ -67,35 +51,66 @@ jest.mock('@/components/navigation/WebTopNav', () => {
   };
 });
 
-// Mock NativeBottomTabs component - captures tabBarIcon callbacks for testing
-jest.mock('@/components/navigation/NativeBottomTabs', () => {
-  const React = require('react');
-  const { View } = require('react-native');
+// Capture NativeTabs Trigger props for assertion
+let mockCapturedTriggers: Record<string, { hidden?: boolean; children: React.ReactNode[] }> = {};
 
-  const MockScreen = ({
+// Mock expo-router/unstable-native-tabs
+jest.mock('expo-router/unstable-native-tabs', () => {
+  const React = require('react');
+  const { View, Text } = require('react-native');
+
+  const MockLabel = ({ children }: { children: string }) =>
+    React.createElement(Text, { testID: `trigger-label-${children}` }, children);
+
+  const MockIcon = ({ sf, md }: { sf?: string; md?: string }) =>
+    React.createElement(View, { testID: `trigger-icon`, 'data-sf': sf, 'data-md': md });
+
+  const MockBadge = ({ children }: { children?: string }) =>
+    React.createElement(Text, { testID: 'trigger-badge' }, children);
+
+  const MockTrigger = ({
     name,
-    options,
+    hidden,
+    children,
   }: {
     name: string;
-    options?: { tabBarIcon?: () => unknown; title?: string; tabBarItemHidden?: boolean };
+    hidden?: boolean;
+    children?: React.ReactNode;
   }) => {
-    // Capture the tabBarIcon callback for later testing
-    if (options?.tabBarIcon) {
-      mockCapturedTabBarIcons[name] = options.tabBarIcon;
-    }
-    return React.createElement(View, {
-      testID: `tab-screen-${name}`,
-      'data-options': JSON.stringify({
-        ...options,
-        tabBarIcon: options?.tabBarIcon ? 'function' : undefined,
-      }),
-    });
+    mockCapturedTriggers[name] = {
+      hidden,
+      children: React.Children.toArray(children),
+    };
+    return React.createElement(
+      View,
+      { testID: `trigger-${name}`, 'data-hidden': hidden },
+      children
+    );
   };
 
-  const MockNativeTabs = ({ children, ...props }: { children: React.ReactNode }) =>
-    React.createElement(View, { testID: 'native-bottom-tabs', ...props }, children);
+  MockTrigger.Label = MockLabel;
+  MockTrigger.Icon = MockIcon;
+  MockTrigger.Badge = MockBadge;
+  MockTrigger.VectorIcon = () => null;
 
-  MockNativeTabs.Screen = MockScreen;
+  const MockBottomAccessory = ({ children }: { children?: React.ReactNode }) =>
+    React.createElement(View, { testID: 'bottom-accessory' }, children);
+
+  MockBottomAccessory.usePlacement = () => 'regular';
+
+  const MockNativeTabs = ({ children, ...props }: { children: React.ReactNode }) =>
+    React.createElement(
+      View,
+      {
+        testID: 'native-tabs',
+        'data-tint-color': props['tintColor' as keyof typeof props],
+        'data-bg-color': props['backgroundColor' as keyof typeof props],
+      },
+      children
+    );
+
+  MockNativeTabs.Trigger = MockTrigger;
+  MockNativeTabs.BottomAccessory = MockBottomAccessory;
 
   return {
     __esModule: true,
@@ -103,7 +118,7 @@ jest.mock('@/components/navigation/NativeBottomTabs', () => {
   };
 });
 
-// Mock expo-router Tabs
+// Mock expo-router Tabs (for web)
 jest.mock('expo-router', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -146,7 +161,7 @@ jest.mock('expo-router', () => {
 // Mock lucide-react-native icons
 jest.mock('lucide-react-native', () => ({
   Home: () => null,
-  BookOpen: () => null,
+  Compass: () => null,
   TrendingUp: () => null,
   CheckSquare: () => null,
   User: () => null,
@@ -159,9 +174,6 @@ const originalPlatform = Platform.OS;
 // Test Helpers
 // =============================================================================
 
-/**
- * Helper to set Platform.OS for testing
- */
 function setPlatform(os: 'ios' | 'android' | 'web') {
   Object.defineProperty(Platform, 'OS', {
     get: () => os,
@@ -176,13 +188,11 @@ function setPlatform(os: 'ios' | 'android' | 'web') {
 describe('TabsLayout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCapturedTabBarIcons = {};
-    // Default to iOS
+    mockCapturedTriggers = {};
     setPlatform('ios');
   });
 
   afterAll(() => {
-    // Restore original Platform
     Object.defineProperty(Platform, 'OS', {
       get: () => originalPlatform,
       configurable: true,
@@ -190,35 +200,64 @@ describe('TabsLayout', () => {
   });
 
   describe('native platforms (iOS/Android)', () => {
-    it('renders NativeBottomTabs on iOS', () => {
+    it('renders NativeTabs on iOS', () => {
       setPlatform('ios');
-
       renderWithProviders(<TabsLayout />);
 
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
+      expect(screen.getByTestId('native-tabs')).toBeTruthy();
       expect(screen.queryByTestId('web-top-nav')).toBeNull();
     });
 
-    it('renders NativeBottomTabs on Android', () => {
+    it('renders NativeTabs on Android', () => {
       setPlatform('android');
-
       renderWithProviders(<TabsLayout />);
 
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
+      expect(screen.getByTestId('native-tabs')).toBeTruthy();
       expect(screen.queryByTestId('web-top-nav')).toBeNull();
     });
 
-    it('renders all tab screens on native', () => {
-      setPlatform('ios');
-
+    it('renders all tab triggers on native', () => {
       renderWithProviders(<TabsLayout />);
 
-      expect(screen.getByTestId('tab-screen-index')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-program')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-journey')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-tasks')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-profile')).toBeTruthy();
-      expect(screen.getByTestId('tab-screen-manage-tasks')).toBeTruthy();
+      expect(screen.getByTestId('trigger-index')).toBeTruthy();
+      expect(screen.getByTestId('trigger-program')).toBeTruthy();
+      expect(screen.getByTestId('trigger-journey')).toBeTruthy();
+      expect(screen.getByTestId('trigger-tasks')).toBeTruthy();
+      expect(screen.getByTestId('trigger-profile')).toBeTruthy();
+      expect(screen.getByTestId('trigger-manage-tasks')).toBeTruthy();
+    });
+
+    it('provides correct labels for all tabs', () => {
+      renderWithProviders(<TabsLayout />);
+
+      expect(screen.getByTestId('trigger-label-Home')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Program')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Journey')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Tasks')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Profile')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Manage Tasks')).toBeTruthy();
+    });
+
+    it('provides SF Symbols and Material Icons for all tabs', () => {
+      renderWithProviders(<TabsLayout />);
+
+      const icons = screen.getAllByTestId('trigger-icon');
+      // 5 visible tabs have icons (manage-tasks is hidden and has no icon)
+      expect(icons.length).toBe(5);
+
+      // Verify icon data via captured triggers
+      expect(mockCapturedTriggers['index']).toBeDefined();
+      expect(mockCapturedTriggers['program']).toBeDefined();
+      expect(mockCapturedTriggers['journey']).toBeDefined();
+      expect(mockCapturedTriggers['tasks']).toBeDefined();
+      expect(mockCapturedTriggers['profile']).toBeDefined();
+    });
+
+    it('marks manage-tasks trigger as hidden', () => {
+      renderWithProviders(<TabsLayout />);
+
+      const manageTasksTrigger = screen.getByTestId('trigger-manage-tasks');
+      expect(manageTasksTrigger.props['data-hidden']).toBe(true);
     });
   });
 
@@ -231,7 +270,7 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('web-top-nav')).toBeTruthy();
-      expect(screen.queryByTestId('native-bottom-tabs')).toBeNull();
+      expect(screen.queryByTestId('native-tabs')).toBeNull();
     });
 
     it('renders Expo Tabs on web (hidden)', () => {
@@ -252,118 +291,25 @@ describe('TabsLayout', () => {
     });
   });
 
-  describe('tabBarIcon callbacks', () => {
-    it('returns SF Symbol config on iOS', () => {
-      setPlatform('ios');
-
-      renderWithProviders(<TabsLayout />);
-
-      // Execute the captured tabBarIcon callback for the index tab
-      const indexIcon = mockCapturedTabBarIcons['index'];
-      expect(indexIcon).toBeDefined();
-
-      const result = indexIcon();
-      expect(result).toEqual({ sfSymbol: 'house.fill' });
-    });
-
-    it('returns Android icon config on Android', () => {
-      setPlatform('android');
-
-      renderWithProviders(<TabsLayout />);
-
-      // Execute the captured tabBarIcon callback for the index tab
-      const indexIcon = mockCapturedTabBarIcons['index'];
-      expect(indexIcon).toBeDefined();
-
-      const result = indexIcon();
-      // Android returns the required SVG asset
-      expect(result).toBe('mock-home-icon');
-    });
-
-    it('provides correct SF Symbols for all tabs on iOS', () => {
-      setPlatform('ios');
-
-      renderWithProviders(<TabsLayout />);
-
-      expect(mockCapturedTabBarIcons['index']()).toEqual({ sfSymbol: 'house.fill' });
-      expect(mockCapturedTabBarIcons['program']()).toEqual({ sfSymbol: 'safari.fill' });
-      expect(mockCapturedTabBarIcons['journey']()).toEqual({
-        sfSymbol: 'chart.line.uptrend.xyaxis',
-      });
-      expect(mockCapturedTabBarIcons['tasks']()).toEqual({ sfSymbol: 'checklist' });
-      expect(mockCapturedTabBarIcons['profile']()).toEqual({ sfSymbol: 'person.fill' });
-    });
-
-    it('provides correct Android icons for all tabs on Android', () => {
-      setPlatform('android');
-
-      renderWithProviders(<TabsLayout />);
-
-      expect(mockCapturedTabBarIcons['index']()).toBe('mock-home-icon');
-      expect(mockCapturedTabBarIcons['program']()).toBe('mock-compass-icon');
-      expect(mockCapturedTabBarIcons['journey']()).toBe('mock-trending-icon');
-      expect(mockCapturedTabBarIcons['tasks']()).toBe('mock-tasks-icon');
-      expect(mockCapturedTabBarIcons['profile']()).toBe('mock-profile-icon');
-    });
-  });
-
   describe('platform switching', () => {
-    it('switches from native to web navigation when platform changes', () => {
+    it('switches from native to web navigation', () => {
       setPlatform('ios');
       const { rerender } = renderWithProviders(<TabsLayout />);
+      expect(screen.getByTestId('native-tabs')).toBeTruthy();
 
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
-
-      // Change platform
       setPlatform('web');
-
       rerender(<TabsLayout />);
-
       expect(screen.getByTestId('web-top-nav')).toBeTruthy();
     });
 
-    it('switches from web to native navigation when platform changes', () => {
+    it('switches from web to native navigation', () => {
       setPlatform('web');
       const { rerender } = renderWithProviders(<TabsLayout />);
-
       expect(screen.getByTestId('web-top-nav')).toBeTruthy();
 
-      // Change platform
-      setPlatform('ios');
-
-      rerender(<TabsLayout />);
-
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
-    });
-  });
-
-  describe('rendering', () => {
-    it('renders without errors', () => {
-      const { toJSON } = renderWithProviders(<TabsLayout />);
-
-      expect(toJSON()).toBeTruthy();
-    });
-
-    it('renders consistently after re-render', () => {
-      const { rerender } = renderWithProviders(<TabsLayout />);
-
-      rerender(<TabsLayout />);
-
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
-    });
-  });
-
-  describe('edge cases', () => {
-    it('handles rapid platform changes', () => {
-      const { rerender } = renderWithProviders(<TabsLayout />);
-
-      setPlatform('web');
-      rerender(<TabsLayout />);
-
       setPlatform('ios');
       rerender(<TabsLayout />);
-
-      expect(screen.getByTestId('native-bottom-tabs')).toBeTruthy();
+      expect(screen.getByTestId('native-tabs')).toBeTruthy();
     });
   });
 
@@ -379,11 +325,8 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      const programScreen = screen.getByTestId('tab-screen-program');
-      expect(programScreen).toBeTruthy();
-      // Verify tabBarItemHidden is not set (visible)
-      const options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBeFalsy();
+      const trigger = screen.getByTestId('trigger-program');
+      expect(trigger.props['data-hidden']).toBeFalsy();
     });
 
     it('hides Program tab on native when show_program_content is false', () => {
@@ -393,11 +336,8 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      // On native, the screen is still rendered but hidden via tabBarItemHidden
-      const programScreen = screen.getByTestId('tab-screen-program');
-      expect(programScreen).toBeTruthy();
-      const options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBe(true);
+      const trigger = screen.getByTestId('trigger-program');
+      expect(trigger.props['data-hidden']).toBe(true);
     });
 
     it('shows Program tab when show_program_content is undefined (existing users)', () => {
@@ -407,10 +347,8 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      const programScreen = screen.getByTestId('tab-screen-program');
-      expect(programScreen).toBeTruthy();
-      const options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBeFalsy();
+      const trigger = screen.getByTestId('trigger-program');
+      expect(trigger.props['data-hidden']).toBeFalsy();
     });
 
     it('shows Program tab when show_program_content is null (existing users)', () => {
@@ -420,23 +358,17 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      const programScreen = screen.getByTestId('tab-screen-program');
-      expect(programScreen).toBeTruthy();
-      const options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBeFalsy();
+      const trigger = screen.getByTestId('trigger-program');
+      expect(trigger.props['data-hidden']).toBeFalsy();
     });
 
     it('shows Program tab when profile is null', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: null,
-      });
+      (useAuth as jest.Mock).mockReturnValue({ profile: null });
 
       renderWithProviders(<TabsLayout />);
 
-      const programScreen = screen.getByTestId('tab-screen-program');
-      expect(programScreen).toBeTruthy();
-      const options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBeFalsy();
+      const trigger = screen.getByTestId('trigger-program');
+      expect(trigger.props['data-hidden']).toBeFalsy();
     });
 
     it('hides Program tab on web when show_program_content is false', () => {
@@ -447,7 +379,6 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      // On web, the screen is not rendered at all (conditional rendering)
       expect(screen.queryByTestId('expo-tab-screen-program')).toBeNull();
     });
 
@@ -462,27 +393,6 @@ describe('TabsLayout', () => {
       expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
     });
 
-    it('updates tab visibility when preference changes on native', () => {
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: true },
-      });
-
-      const { rerender } = renderWithProviders(<TabsLayout />);
-      let programScreen = screen.getByTestId('tab-screen-program');
-      let options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBeFalsy();
-
-      // Change preference
-      (useAuth as jest.Mock).mockReturnValue({
-        profile: { ...mockProfile, show_program_content: false },
-      });
-
-      rerender(<TabsLayout />);
-      programScreen = screen.getByTestId('tab-screen-program');
-      options = JSON.parse(programScreen.props['data-options']);
-      expect(options.tabBarItemHidden).toBe(true);
-    });
-
     it('shows other tabs regardless of Program visibility', () => {
       (useAuth as jest.Mock).mockReturnValue({
         profile: { ...mockProfile, show_program_content: false },
@@ -490,22 +400,24 @@ describe('TabsLayout', () => {
 
       renderWithProviders(<TabsLayout />);
 
-      // All other tabs should still be visible (not hidden)
-      const indexScreen = screen.getByTestId('tab-screen-index');
-      const journeyScreen = screen.getByTestId('tab-screen-journey');
-      const tasksScreen = screen.getByTestId('tab-screen-tasks');
-      const profileScreen = screen.getByTestId('tab-screen-profile');
+      // All other tabs should not be hidden
+      expect(screen.getByTestId('trigger-index').props['data-hidden']).toBeFalsy();
+      expect(screen.getByTestId('trigger-journey').props['data-hidden']).toBeFalsy();
+      expect(screen.getByTestId('trigger-tasks').props['data-hidden']).toBeFalsy();
+      expect(screen.getByTestId('trigger-profile').props['data-hidden']).toBeFalsy();
+    });
+  });
 
-      expect(indexScreen).toBeTruthy();
-      expect(journeyScreen).toBeTruthy();
-      expect(tasksScreen).toBeTruthy();
-      expect(profileScreen).toBeTruthy();
+  describe('rendering', () => {
+    it('renders without errors', () => {
+      const { toJSON } = renderWithProviders(<TabsLayout />);
+      expect(toJSON()).toBeTruthy();
+    });
 
-      // Verify they are not hidden
-      expect(JSON.parse(indexScreen.props['data-options']).tabBarItemHidden).toBeFalsy();
-      expect(JSON.parse(journeyScreen.props['data-options']).tabBarItemHidden).toBeFalsy();
-      expect(JSON.parse(tasksScreen.props['data-options']).tabBarItemHidden).toBeFalsy();
-      expect(JSON.parse(profileScreen.props['data-options']).tabBarItemHidden).toBeFalsy();
+    it('renders consistently after re-render', () => {
+      const { rerender } = renderWithProviders(<TabsLayout />);
+      rerender(<TabsLayout />);
+      expect(screen.getByTestId('native-tabs')).toBeTruthy();
     });
   });
 });

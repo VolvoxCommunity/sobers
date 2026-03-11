@@ -22,14 +22,6 @@ module.exports = defineConfig([
     },
   },
   {
-    // Ignore import/no-unresolved for platform-specific module resolution
-    // Metro resolves NativeBottomTabs.web.tsx on web, NativeBottomTabs.tsx on native
-    files: ['app/(tabs)/_layout.tsx'],
-    rules: {
-      'import/no-unresolved': ['error', { ignore: ['@/components/navigation/NativeBottomTabs'] }],
-    },
-  },
-  {
     files: ['lib/logger.ts', 'lib/sentry.ts', 'jest.setup.js'],
     rules: {
       'no-console': 'off',

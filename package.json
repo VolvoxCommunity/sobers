@@ -58,6 +58,7 @@
     "expo-build-properties": "~55.0.9",
     "expo-clipboard": "^55.0.8",
     "expo-constants": "~55.0.7",
+    "expo-crypto": "~55.0.9",
     "expo-dev-client": "~55.0.13",
     "expo-device": "^55.0.9",
     "expo-font": "~55.0.4",
@@ -122,7 +123,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@react-native-async-storage/async-storage": "^2.2.0"
+      "@react-native-async-storage/async-storage": "^2.2.0",
+      "hermes-compiler": "250829098.0.4"
     }
   },
   "private": true

@@ -2,7 +2,7 @@
 // Imports
 // =============================================================================
 import { BlurView } from 'expo-blur';
-import { StyleSheet, Platform, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 // =============================================================================
@@ -12,10 +12,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 /**
  * Custom tab bar background with Liquid Glass blur effect.
  *
- * On iOS, renders a BlurView for native blur effect.
- * On Android, renders a semi-transparent solid background (blur not supported).
+ * Uses expo-blur's BlurView on all platforms:
+ * - iOS: Native UIVisualEffectView for real-time blur
+ * - Android: Semi-transparent tinted overlay via expo-blur's built-in fallback
+ *   (blurMethod defaults to 'none', which applies a tinted background color
+ *   derived from the tint style and intensity)
  *
- * @returns Tab bar background element with platform-appropriate styling
+ * @returns Tab bar background element with cross-platform blur styling
  *
  * @example
  * ```tsx
@@ -23,20 +26,14 @@ import { useTheme } from '@/contexts/ThemeContext';
  * ```
  */
 export default function TabBarBackground(): React.ReactElement {
-  const { isDark, theme } = useTheme();
+  const { isDark } = useTheme();
 
-  // Android doesn't support blur, use solid background
-  if (Platform.OS === 'android') {
-    return (
-      <View
-        testID="tab-bar-background-android"
-        style={[StyleSheet.absoluteFill, { backgroundColor: theme.surface }]}
-      />
-    );
-  }
-
-  // iOS: Use native blur effect for Liquid Glass look
   return (
-    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+    <BlurView
+      intensity={80}
+      tint={isDark ? 'dark' : 'light'}
+      style={StyleSheet.absoluteFill}
+      testID="tab-bar-blur-view"
+    />
   );
 }
