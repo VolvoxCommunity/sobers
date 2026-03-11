@@ -27,7 +27,7 @@ pnpm typecheck          # TypeScript strict-mode check (tsc --noEmit)
 pnpm lint               # ESLint via Expo (expo lint)
 pnpm format:check       # Prettier check without writing
 pnpm format             # Prettier auto-fix
-pnpm test               # Jest unit tests (98 suites, ~2270 tests)
+pnpm test               # Jest unit tests
 pnpm test -- path/to/file.test.tsx   # Single test file
 pnpm test -- -t "pattern"            # Tests matching name pattern
 pnpm build:web          # Expo web export (validates bundling)
@@ -183,7 +183,7 @@ it('renders correctly', () => {
 
 ### Key Testing Facts
 
-- Coverage threshold: **85%** (statements, branches, functions, lines)
+- Coverage threshold: **85%** statements/functions/lines, **83%** branches (see `jest.config.js`)
 - Jest mocks platform as **iOS** by default (`Platform.OS = 'ios'`)
 - Timezone is forced to **UTC** in `jest.setup.js`
 - Supabase client is mocked with a chainable query builder in `jest.setup.js`
