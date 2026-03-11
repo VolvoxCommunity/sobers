@@ -1,0 +1,34 @@
+name: Project Auto-Progress
+on:
+  issues:
+    types: [assigned, reopened]
+  pull_request:
+    types: [opened]
+    branches: [main, develop]
+
+jobs:
+  update-project-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move to In Progress on assignment
+        if: github.event_name == 'issues' && github.event.action == 'assigned'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const projectId = 'PVT_kwDOAnuWxs4BRcst';
+            const statusFieldId = 'PVTSSF_lADOAnuWxs4BRcstzg_RgWc';
+            const inProgressOptionId = '47fc9ee4';
+            
+            // Update issue status in project
+            await github.graphql(`
+              mutation {
+                updateProjectV2ItemFieldValue: updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: "${projectId}"
+                    itemId: "${{ github.event.issue.node_id }}"
+                    fieldId: "${statusFieldId}"
+                    value: { singleSelectOptionId: "${inProgressOptionId}" }
+                  }
+                ) { clientMutationId }
+              }
+            `);

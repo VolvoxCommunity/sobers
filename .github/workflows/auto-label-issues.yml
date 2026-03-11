@@ -1,0 +1,34 @@
+name: Auto-Label Issues
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label based on title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title.toLowerCase();
+            const labels = [];
+            
+            if (title.includes('bug') || title.includes('fix') || title.includes('crash')) {
+              labels.push('bug');
+            } else if (title.includes('feat') || title.includes('add') || title.includes('implement')) {
+              labels.push('enhancement');
+            } else if (title.includes('docs') || title.includes('documentation')) {
+              labels.push('documentation');
+            } else if (title.includes('test') || title.includes('testing')) {
+              labels.push('testing');
+            }
+            
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }

@@ -1,0 +1,29 @@
+name: Epic Sub-task Sync
+on:
+  issues:
+    types: [closed, reopened]
+
+jobs:
+  sync-epic-progress:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.body, 'Part of #412') || contains(github.event.issue.body, 'Parent Epic')
+    steps:
+      - name: Update epic status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find parent epic from issue body
+            const body = context.payload.issue.body;
+            const epicMatch = body.match(/#(\d+)/);
+            if (epicMatch) {
+              const epicNumber = epicMatch[1];
+              
+              // Comment on epic about sub-task status change
+              const status = context.payload.action === 'closed' ? 'completed' : 'reopened';
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: epicNumber,
+                body: `📊 Sub-task #${context.issue.number} has been **${status}**`
+              });
+            }
