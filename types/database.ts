@@ -404,4 +404,5 @@ export interface AiBuddyMessage {
   role: AiBuddyMessageRole;
   content: string;
   created_at: string;
+  updated_at: string;
 }

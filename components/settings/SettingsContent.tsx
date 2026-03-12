@@ -798,6 +798,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to update setting');
       logger.error('Failed to toggle AI Buddy', err, {
+        userId: profile.id,
         category: LogCategory.DATABASE,
       });
       showToast.error('Failed to update. Please try again.');

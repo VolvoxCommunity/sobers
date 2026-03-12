@@ -66,11 +66,18 @@ CREATE TABLE IF NOT EXISTS public.ai_buddy_messages (
   user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   role text NOT NULL CHECK (role IN ('user', 'assistant')),
   content text NOT NULL,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 COMMENT ON TABLE public.ai_buddy_messages IS
   'Individual messages within an AI Buddy conversation. Messages are from the user or the AI assistant.';
+
+-- Trigger for updated_at
+DROP TRIGGER IF EXISTS update_ai_buddy_messages_updated_at ON public.ai_buddy_messages;
+CREATE TRIGGER update_ai_buddy_messages_updated_at
+  BEFORE UPDATE ON public.ai_buddy_messages
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- =============================================================================
 -- Indexes
