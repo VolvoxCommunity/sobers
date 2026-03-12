@@ -91,7 +91,9 @@ jest.mock('expo-router/unstable-native-tabs', () => {
   MockTrigger.Label = MockLabel;
   MockTrigger.Icon = MockIcon;
   MockTrigger.Badge = MockBadge;
-  MockTrigger.VectorIcon = () => null;
+  const MockVectorIcon = () => null;
+  MockVectorIcon.displayName = 'MockVectorIcon';
+  MockTrigger.VectorIcon = MockVectorIcon;
 
   const MockBottomAccessory = ({ children }: { children?: React.ReactNode }) =>
     React.createElement(View, { testID: 'bottom-accessory' }, children);
@@ -165,6 +167,7 @@ jest.mock('lucide-react-native', () => ({
   TrendingUp: () => null,
   CheckSquare: () => null,
   User: () => null,
+  Bot: () => null,
 }));
 
 // Store original Platform.OS
@@ -220,6 +223,7 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('trigger-index')).toBeTruthy();
+      expect(screen.getByTestId('trigger-buddy')).toBeTruthy();
       expect(screen.getByTestId('trigger-program')).toBeTruthy();
       expect(screen.getByTestId('trigger-journey')).toBeTruthy();
       expect(screen.getByTestId('trigger-tasks')).toBeTruthy();
@@ -231,6 +235,7 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('trigger-label-Home')).toBeTruthy();
+      expect(screen.getByTestId('trigger-label-Buddy')).toBeTruthy();
       expect(screen.getByTestId('trigger-label-Program')).toBeTruthy();
       expect(screen.getByTestId('trigger-label-Journey')).toBeTruthy();
       expect(screen.getByTestId('trigger-label-Tasks')).toBeTruthy();
@@ -242,11 +247,12 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       const icons = screen.getAllByTestId('trigger-icon');
-      // 5 visible tabs have icons (manage-tasks is hidden and has no icon)
-      expect(icons.length).toBe(5);
+      // 6 visible tabs have icons (manage-tasks is hidden and has no icon)
+      expect(icons.length).toBe(6);
 
       // Verify icon data via captured triggers
       expect(mockCapturedTriggers['index']).toBeDefined();
+      expect(mockCapturedTriggers['buddy']).toBeDefined();
       expect(mockCapturedTriggers['program']).toBeDefined();
       expect(mockCapturedTriggers['journey']).toBeDefined();
       expect(mockCapturedTriggers['tasks']).toBeDefined();
@@ -283,6 +289,7 @@ describe('TabsLayout', () => {
       renderWithProviders(<TabsLayout />);
 
       expect(screen.getByTestId('expo-tab-screen-index')).toBeTruthy();
+      expect(screen.getByTestId('expo-tab-screen-buddy')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-program')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-journey')).toBeTruthy();
       expect(screen.getByTestId('expo-tab-screen-tasks')).toBeTruthy();
@@ -402,9 +409,71 @@ describe('TabsLayout', () => {
 
       // All other tabs should not be hidden
       expect(screen.getByTestId('trigger-index').props['data-hidden']).toBeFalsy();
+      expect(screen.getByTestId('trigger-buddy').props['data-hidden']).toBeFalsy();
       expect(screen.getByTestId('trigger-journey').props['data-hidden']).toBeFalsy();
       expect(screen.getByTestId('trigger-tasks').props['data-hidden']).toBeFalsy();
       expect(screen.getByTestId('trigger-profile').props['data-hidden']).toBeFalsy();
+    });
+  });
+
+  describe('conditional Buddy tab visibility', () => {
+    beforeEach(() => {
+      setPlatform('ios');
+    });
+
+    it('shows Buddy tab when ai_buddy_enabled is true', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, ai_buddy_enabled: true },
+      });
+
+      renderWithProviders(<TabsLayout />);
+
+      const trigger = screen.getByTestId('trigger-buddy');
+      expect(trigger.props['data-hidden']).toBeFalsy();
+    });
+
+    it('hides Buddy tab on native when ai_buddy_enabled is false', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, ai_buddy_enabled: false },
+      });
+
+      renderWithProviders(<TabsLayout />);
+
+      const trigger = screen.getByTestId('trigger-buddy');
+      expect(trigger.props['data-hidden']).toBe(true);
+    });
+
+    it('shows Buddy tab when ai_buddy_enabled is undefined (default on)', () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, ai_buddy_enabled: undefined },
+      });
+
+      renderWithProviders(<TabsLayout />);
+
+      const trigger = screen.getByTestId('trigger-buddy');
+      expect(trigger.props['data-hidden']).toBeFalsy();
+    });
+
+    it('hides Buddy tab on web when ai_buddy_enabled is false', () => {
+      setPlatform('web');
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, ai_buddy_enabled: false },
+      });
+
+      renderWithProviders(<TabsLayout />);
+
+      expect(screen.queryByTestId('expo-tab-screen-buddy')).toBeNull();
+    });
+
+    it('shows Buddy tab on web when ai_buddy_enabled is true', () => {
+      setPlatform('web');
+      (useAuth as jest.Mock).mockReturnValue({
+        profile: { ...mockProfile, ai_buddy_enabled: true },
+      });
+
+      renderWithProviders(<TabsLayout />);
+
+      expect(screen.getByTestId('expo-tab-screen-buddy')).toBeTruthy();
     });
   });
 

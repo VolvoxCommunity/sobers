@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { Home, Compass, TrendingUp, CheckSquare, User } from 'lucide-react-native';
+import { Home, Compass, TrendingUp, CheckSquare, User, Bot } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SFSymbol } from 'sf-symbols-typescript';
@@ -37,6 +37,13 @@ const TAB_ROUTES: TabRoute[] = [
     sfSymbol: 'house.fill',
     mdIcon: 'home',
     icon: Home,
+  },
+  {
+    name: 'buddy',
+    title: 'Buddy',
+    sfSymbol: 'bubble.left.and.text.bubble.right.fill',
+    mdIcon: 'smart_toy',
+    icon: Bot,
   },
   {
     name: 'program',
@@ -86,10 +93,18 @@ export default function TabLayout(): React.ReactElement {
   // Show Program tab unless explicitly set to false (treats null/undefined as true for backwards compatibility)
   const shouldShowProgram = profile?.show_program_content !== false;
 
+  // Determine if Buddy tab should be visible
+  // Show Buddy tab unless explicitly set to false (treats null/undefined as true for new users)
+  const shouldShowBuddy = profile?.ai_buddy_enabled !== false;
+
   // Filter tab routes for web navigation items only
   const visibleTabRoutes = useMemo(() => {
-    return shouldShowProgram ? TAB_ROUTES : TAB_ROUTES.filter((route) => route.name !== 'program');
-  }, [shouldShowProgram]);
+    return TAB_ROUTES.filter((route) => {
+      if (route.name === 'program' && !shouldShowProgram) return false;
+      if (route.name === 'buddy' && !shouldShowBuddy) return false;
+      return true;
+    });
+  }, [shouldShowProgram, shouldShowBuddy]);
 
   // Web: Use top navigation instead of bottom tabs
   if (Platform.OS === 'web') {
@@ -135,7 +150,10 @@ export default function TabLayout(): React.ReactElement {
         <NativeTabs.Trigger
           key={route.name}
           name={route.name}
-          hidden={route.name === 'program' && !shouldShowProgram}
+          hidden={
+            (route.name === 'program' && !shouldShowProgram) ||
+            (route.name === 'buddy' && !shouldShowBuddy)
+          }
         >
           <NativeTabs.Trigger.Label>{route.title}</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf={route.sfSymbol} md={route.mdIcon} />

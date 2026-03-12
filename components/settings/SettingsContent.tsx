@@ -51,6 +51,7 @@ import {
   Sparkles,
   Calendar,
   BookOpen,
+  Bot,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { logger, LogCategory } from '@/lib/logger';
@@ -490,6 +491,7 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const [isSavingTwelveStep, setIsSavingTwelveStep] = useState(false);
+  const [isSavingAiBuddy, setIsSavingAiBuddy] = useState(false);
   const [showSobrietyDatePicker, setShowSobrietyDatePicker] = useState(false);
   const [selectedSobrietyDate, setSelectedSobrietyDate] = useState<Date>(new Date());
   const buildInfo = getBuildInfo();
@@ -765,6 +767,45 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
       setIsSavingTwelveStep(false);
     }
   }, [profile?.id, profile?.show_program_content, isSavingTwelveStep, refreshProfile]);
+
+  /**
+   * Handles toggling the AI Buddy feature.
+   * Updates profile in Supabase and refreshes profile state.
+   */
+  const handleToggleAiBuddy = useCallback(async () => {
+    if (!profile?.id || isSavingAiBuddy) return;
+
+    setIsSavingAiBuddy(true);
+    try {
+      const currentValue = profile.ai_buddy_enabled !== false;
+      const newValue = !currentValue;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ai_buddy_enabled: newValue })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+
+      // Track settings change
+      trackEvent(newValue ? AnalyticsEvents.AI_BUDDY_ENABLED : AnalyticsEvents.AI_BUDDY_DISABLED, {
+        setting: 'ai_buddy_enabled',
+        value: newValue,
+      });
+
+      showToast.success(newValue ? 'Sobers Buddy enabled' : 'Sobers Buddy disabled');
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to update setting');
+      logger.error('Failed to toggle AI Buddy', err, {
+        userId: profile.id,
+        category: LogCategory.DATABASE,
+      });
+      showToast.error('Failed to update. Please try again.');
+    } finally {
+      setIsSavingAiBuddy(false);
+    }
+  }, [profile?.id, profile?.ai_buddy_enabled, isSavingAiBuddy, refreshProfile]);
 
   /**
    * Opens the sobriety date picker with the current sobriety date pre-selected.
@@ -1071,6 +1112,37 @@ export function SettingsContent({ onDismiss }: SettingsContentProps) {
             ) : (
               <View style={[styles.toggle, !profile?.hide_savings_card && styles.toggleActive]}>
                 <Text style={styles.toggleText}>{profile?.hide_savings_card ? 'OFF' : 'ON'}</Text>
+              </View>
+            )}
+          </Pressable>
+          <View style={styles.separator} />
+          <Pressable
+            testID="settings-ai-buddy-toggle"
+            style={styles.menuItem}
+            onPress={handleToggleAiBuddy}
+            disabled={isSavingAiBuddy}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: profile?.ai_buddy_enabled !== false }}
+            accessibilityLabel="Enable Sobers Buddy"
+          >
+            <View style={styles.menuItemLeft}>
+              <Bot size={20} color={theme.textSecondary} />
+              <View>
+                <Text style={styles.menuItemText}>Sobers Buddy</Text>
+                <Text style={styles.menuItemSubtext}>
+                  AI-powered accountability partner for your recovery journey
+                </Text>
+              </View>
+            </View>
+            {isSavingAiBuddy ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <View
+                style={[styles.toggle, profile?.ai_buddy_enabled !== false && styles.toggleActive]}
+              >
+                <Text style={styles.toggleText}>
+                  {profile?.ai_buddy_enabled !== false ? 'ON' : 'OFF'}
+                </Text>
               </View>
             )}
           </Pressable>
