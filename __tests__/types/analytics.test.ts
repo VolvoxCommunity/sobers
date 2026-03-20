@@ -66,6 +66,12 @@ describe('types/analytics', () => {
       // Savings events
       expect(AnalyticsEvents.SAVINGS_GOAL_SET).toBe('Savings Goal Set');
       expect(AnalyticsEvents.SAVINGS_UPDATED).toBe('Savings Updated');
+
+      // AI Buddy events
+      expect(AnalyticsEvents.AI_BUDDY_ENABLED).toBe('AI Buddy Enabled');
+      expect(AnalyticsEvents.AI_BUDDY_DISABLED).toBe('AI Buddy Disabled');
+      expect(AnalyticsEvents.AI_BUDDY_MESSAGE_SENT).toBe('AI Buddy Message Sent');
+      expect(AnalyticsEvents.AI_BUDDY_CONVERSATION_STARTED).toBe('AI Buddy Conversation Started');
     });
 
     it('should use Title Case naming convention', () => {
@@ -109,6 +115,7 @@ describe('types/analytics', () => {
         task_streak_current: 7,
         steps_completed_count: '4-6',
         savings_goal_set: true,
+        ai_buddy_enabled: true,
       };
       expect(props).toBeDefined();
     });
@@ -138,9 +145,9 @@ describe('types/analytics', () => {
 });
 
 describe('AnalyticsEvents constant integrity', () => {
-  it('should have exactly 37 events as documented', () => {
+  it('should have exactly 41 events as documented', () => {
     const eventCount = Object.keys(AnalyticsEvents).length;
-    expect(eventCount).toBe(37);
+    expect(eventCount).toBe(41);
   });
 
   it('should not have duplicate event values', () => {
@@ -232,6 +239,13 @@ describe('AnalyticsEvents constant integrity', () => {
     expect(AnalyticsEvents.SAVINGS_UPDATED).toBeDefined();
   });
 
+  it('should have all AI Buddy events', () => {
+    expect(AnalyticsEvents.AI_BUDDY_ENABLED).toBeDefined();
+    expect(AnalyticsEvents.AI_BUDDY_DISABLED).toBeDefined();
+    expect(AnalyticsEvents.AI_BUDDY_MESSAGE_SENT).toBeDefined();
+    expect(AnalyticsEvents.AI_BUDDY_CONVERSATION_STARTED).toBeDefined();
+  });
+
   it('should be a const object (frozen)', () => {
     // TypeScript const assertions make the object readonly
     // Attempting to modify should fail in TypeScript (compile-time check)
@@ -242,11 +256,11 @@ describe('AnalyticsEvents constant integrity', () => {
 
   it('should have event values that work as Amplitude event names', () => {
     // Amplitude recommends Title Case with spaces
-    // Each word should start with capital letter
+    // Each word starts with uppercase. Allows all-caps acronyms like "AI".
     const eventValues = Object.values(AnalyticsEvents);
     eventValues.forEach((value) => {
-      // Should contain only letters and spaces
-      expect(value).toMatch(/^[A-Z][a-z]+(?: [A-Z][a-z]+)*$/);
+      // Each word is either Title Case (e.g. "Buddy") or all-caps acronym (e.g. "AI")
+      expect(value).toMatch(/^(?:[A-Z][a-z]+|[A-Z]+)(?: (?:[A-Z][a-z]+|[A-Z]+))*$/);
     });
   });
 });
@@ -280,7 +294,7 @@ describe('Type safety', () => {
   });
 
   it('should allow all valid theme preferences', () => {
-    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+    const themes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
 
     themes.forEach((theme) => {
       const prop: UserProperties = { theme_preference: theme };
@@ -289,7 +303,7 @@ describe('Type safety', () => {
   });
 
   it('should allow all valid sign-in methods', () => {
-    const methods: Array<'email' | 'google' | 'apple'> = ['email', 'google', 'apple'];
+    const methods: ('email' | 'google' | 'apple')[] = ['email', 'google', 'apple'];
 
     methods.forEach((method) => {
       const prop: UserProperties = { sign_in_method: method };
@@ -358,6 +372,10 @@ describe('Documentation and discoverability', () => {
     // Savings events: 2
     const savingsEvents = Object.keys(AnalyticsEvents).filter((k) => k.startsWith('SAVINGS_'));
     expect(savingsEvents).toHaveLength(2);
+
+    // AI Buddy events: 4
+    const aiBuddyEvents = Object.keys(AnalyticsEvents).filter((k) => k.startsWith('AI_BUDDY_'));
+    expect(aiBuddyEvents).toHaveLength(4);
 
     // Screen viewed: 1
     expect(AnalyticsEvents.SCREEN_VIEWED).toBeDefined();

@@ -48,6 +48,7 @@ jest.mock('lucide-react-native', () => ({
   Bell: () => null,
   Calendar: () => null,
   BookOpen: () => null,
+  Bot: () => null,
 }));
 
 jest.mock('@react-native-community/datetimepicker', () => {
@@ -336,6 +337,26 @@ describe('SettingsContent - Section Structure', () => {
       // Savings card toggle should still exist in the renamed Features section
       expect(screen.getByTestId('settings-show-savings-toggle')).toBeTruthy();
       expect(screen.getByText('Show savings card')).toBeTruthy();
+    });
+
+    it('renders AI Buddy toggle in Features section', () => {
+      render(<SettingsContent onDismiss={mockOnDismiss} />);
+
+      expect(screen.getByTestId('settings-ai-buddy-toggle')).toBeTruthy();
+      expect(screen.getByText('Sobers Buddy')).toBeTruthy();
+      expect(
+        screen.getByText(/AI-powered accountability partner for your recovery journey/)
+      ).toBeTruthy();
+    });
+
+    it('displays AI Buddy toggle as ON when ai_buddy_enabled is true or undefined', () => {
+      render(<SettingsContent onDismiss={mockOnDismiss} />);
+
+      // Default profile has ai_buddy_enabled undefined, treated as true
+      const toggle = screen.getByTestId('settings-ai-buddy-toggle');
+      expect(toggle).toBeTruthy();
+
+      expect(within(toggle).getByText('ON')).toBeTruthy();
     });
   });
 });

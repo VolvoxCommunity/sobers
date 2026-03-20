@@ -56,6 +56,8 @@ export interface UserProperties {
   steps_completed_count?: StepsCompletedBucket;
   /** Whether user has set a savings goal */
   savings_goal_set?: boolean;
+  /** Whether user has AI Buddy enabled */
+  ai_buddy_enabled?: boolean;
 }
 
 /**
@@ -125,6 +127,12 @@ export const AnalyticsEvents = {
   // Savings
   SAVINGS_GOAL_SET: 'Savings Goal Set',
   SAVINGS_UPDATED: 'Savings Updated',
+
+  // AI Buddy
+  AI_BUDDY_ENABLED: 'AI Buddy Enabled',
+  AI_BUDDY_DISABLED: 'AI Buddy Disabled',
+  AI_BUDDY_MESSAGE_SENT: 'AI Buddy Message Sent',
+  AI_BUDDY_CONVERSATION_STARTED: 'AI Buddy Conversation Started',
 } as const;
 
 /**

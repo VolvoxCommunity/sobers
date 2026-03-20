@@ -209,6 +209,7 @@ jest.mock('lucide-react-native', () => ({
   RotateCcw: () => null,
   Zap: () => null,
   BookOpen: () => null,
+  Bot: () => null,
 }));
 
 jest.mock('@react-native-community/datetimepicker', () => {

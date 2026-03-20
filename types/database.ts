@@ -89,6 +89,13 @@ export interface Profile {
    * Existing users (null/undefined) are treated as true.
    */
   show_program_content?: boolean;
+  /**
+   * Whether the AI Buddy feature is enabled for this user.
+   * Default true (enabled for all new users). When false, the Buddy tab
+   * is hidden from navigation and AI features are disabled.
+   * Existing users (null/undefined) are treated as true.
+   */
+  ai_buddy_enabled?: boolean;
   notification_preferences: {
     tasks: boolean;
     messages: boolean;
@@ -366,6 +373,36 @@ export interface TaskTemplate {
   title: string;
   description: string;
   is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// =============================================================================
+// AI Buddy Types
+// =============================================================================
+
+export type AiBuddyMessageRole = 'user' | 'assistant';
+
+/**
+ * A conversation session between the user and the AI Buddy.
+ */
+export interface AiBuddyConversation {
+  id: string;
+  user_id: string;
+  title?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * An individual message within an AI Buddy conversation.
+ */
+export interface AiBuddyMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: AiBuddyMessageRole;
+  content: string;
   created_at: string;
   updated_at: string;
 }
